@@ -13,6 +13,8 @@ import math
 import pathlib
 import re
 import sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import figures  # noqa: E402  (the illustrations, in tools/figures.py)
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 WPM = 230  # reading speed used for the reading-time estimates
@@ -57,7 +59,8 @@ def esc(s):
     return html.escape(s, quote=True)
 
 
-def build(sections):
+def build(sections, outline):
+    figs = figures.figures(outline)
     total_words = 0
     for s in sections:
         s["words"] = sum(words(p) for p in s["paragraphs"]) + words(s.get("lede", ""))
@@ -75,10 +78,12 @@ def build(sections):
     blocks = []
     for i, s in enumerate(sections):
         paras = []
+        extra = figures.place([], s["paragraphs"], figs.get(s["id"], []))
         for k, p in enumerate(s["paragraphs"]):
             scene = s.get("paragraph_scenes", {}).get(str(k))
             attr = f' data-scene="{scene}"' if scene is not None else ""
             paras.append(f"<p{attr}>{clean_inline(p)}</p>")
+            paras.extend(extra.get(k, []))
             if k == 1 and s.get("facts"):
                 facts = "".join(f"<div><dt>{esc(f['label'])}</dt><dd>{esc(f['value'])}</dd></div>" for f in s["facts"])
                 paras.append(f'<aside class="card glance" aria-label="At a glance"><div class="kicker">At a glance</div><dl>{facts}</dl></aside>')
@@ -434,7 +439,7 @@ def page(total_words, total_min, toc, body, page_data, map_data, engine_tag):
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The Story of Türkiye</title>
 <meta name="description" content="A long read on the history of Türkiye, from Göbekli Tepe to today, with animated scenes, a timeline, a map of the sites and sources for every section.">
-<style>{CSS}</style>
+<style>{CSS}{figures.CSS}</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><g id="star8"><rect x="-6" y="-6" width="12" height="12" fill="#d9a441"/><rect x="-6" y="-6" width="12" height="12" fill="#d9a441" transform="rotate(45)"/><circle r="3.4" fill="#56b6c2"/></g></defs></svg>
@@ -490,11 +495,11 @@ window.TURKEY_OPTIONS = {{ embedded: true, canvas: document.getElementById('scen
 def main():
     content = json.loads((ROOT / "content" / "history.json").read_text())
     sections = content["sections"]
-    total_words, total_min, toc, body, page_data = build(sections)
     engine = (ROOT / "turkey-animation.js").read_text()
     asia = json.loads(re.search(r"const MAP_ASIA = (\[.*?\]);", engine, re.S).group(1))
     europe = json.loads(re.search(r"const MAP_EUROPE = (\[.*?\]);", engine, re.S).group(1))
     map_data = {"asia": asia, "europe": europe}
+    total_words, total_min, toc, body, page_data = build(sections, map_data)
     out = page(total_words, total_min, toc, body, page_data, map_data, '<script src="turkey-animation.js"></script>')
     (ROOT / "history.html").write_text(out)
     print(f"history.html: {total_words} words, about {total_min} minutes, {len(sections)} sections")
