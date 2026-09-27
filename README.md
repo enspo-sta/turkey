@@ -1,13 +1,13 @@
 # turkey
 Turkey vacation
 
-## Türkiye in Sixty Seconds
+## Türkiye in Two Minutes
 
-`index.html` is a 60-second animation of the history of Türkiye, from Göbekli Tepe (around 9600 BCE) to the Republic, modern Istanbul and a sunrise over Cappadocia. It ends with *İyi yolculuklar!* ("Have a wonderful trip").
+`index.html` is a two-minute animation of the history of Türkiye, with music, from Göbekli Tepe (around 9600 BCE) to the Republic, modern Istanbul and a sunrise over Cappadocia. It ends with *İyi yolculuklar!* ("Have a wonderful trip").
 
 Open `index.html` in any browser. Nothing else is needed: every scene, the map and the flag are drawn in code with the Canvas 2D API, and the music is synthesised live with the Web Audio API, with no images, audio files, fonts, libraries or network requests.
 
-- The loop lasts exactly 60 seconds and restarts.
+- The loop lasts exactly two minutes and restarts. Each chapter holds for 5½ to 7½ seconds, long enough to read its caption and watch the scene.
 - Tap or click anywhere to turn the sound on or off (browsers only allow sound after an interaction). The M key does the same.
 - Space pauses and resumes. The left and right arrow keys jump between chapters.
 - The layout adapts to landscape and portrait screens. With "reduce motion" switched on in the operating system, the camera cuts between chapters instead of panning.
@@ -16,7 +16,7 @@ Chapters: Göbekli Tepe · Çatalhöyük · the Hittites · Troy · Lydia · Ale
 
 ### The music
 
-The score runs at 120 beats per minute and every chapter arrives on a beat. It is locked to the picture: while sound is on, the animation follows the audio clock.
+The score runs at 96 beats per minute and every chapter arrives on a beat. It is locked to the picture: while sound is on, the animation follows the audio clock.
 
 | Chapter | What you hear |
 |---|---|

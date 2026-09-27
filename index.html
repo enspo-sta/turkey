@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Türkiye in Sixty Seconds</title>
-<meta name="description" content="A sixty-second animation, drawn entirely in code, through nearly twelve thousand years of history in Anatolia and Thrace.">
+<title>Türkiye in Two Minutes</title>
+<meta name="description" content="A two-minute animation with music, drawn and composed entirely in code, through nearly twelve thousand years of history in Anatolia and Thrace.">
 <!--
-  Türkiye in Sixty Seconds
+  Türkiye in Two Minutes
   Everything on screen is drawn with the Canvas 2D API, and the music is synthesised live with the Web Audio API:
   no images, audio files, fonts, libraries or network requests.
-  The loop lasts exactly 60 seconds. Tap or click for sound (M toggles it), Space pauses, the arrow keys jump between chapters.
+  The loop lasts exactly two minutes. Tap or click for sound (M toggles it), Space pauses, the arrow keys jump between chapters.
 
   Sources for the dates and facts used in the captions:
   Göbekli Tepe, 9600–8200 BCE ............ https://whc.unesco.org/en/list/1572/
@@ -46,7 +46,7 @@
 </style>
 </head>
 <body>
-<canvas id="stage" role="img" aria-label="A sixty-second animated history of Türkiye, from Göbekli Tepe to the Republic and modern Istanbul."></canvas>
+<canvas id="stage" role="img" aria-label="A two-minute animated history of Türkiye, from Göbekli Tepe to the Republic and modern Istanbul."></canvas>
 <div id="safe"></div>
 <p id="live" class="sr" aria-live="polite"></p>
 <script>
@@ -63,9 +63,12 @@ const safeEl = document.getElementById('safe');
 const TAU = Math.PI * 2;
 const SP = 1600;      // world distance between chapters (stage units)
 const GY = 700;       // ground line
-const MOVE = 1;       // seconds of camera travel between chapters (two beats of the music)
-const TOTAL = 60;     // seconds per loop
-const DRIFT = 44;     // slow camera drift while a chapter holds
+const BPM = 96, BEAT = 60 / BPM; // the tempo of the score; every chapter starts and ends on a beat
+const STEP = BEAT / 2;            // one eighth note
+const BAR = 8 * STEP;             // one bar of four beats
+const MOVE = 3 * BEAT;            // camera travel between chapters
+const TOTAL = 192 * BEAT;         // the whole loop: 192 beats, exactly two minutes
+const DRIFT = 60;                 // slow camera drift while a chapter holds
 const SERIF = '"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif';
 const SANS = 'system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
 const reduce = matchMedia('(prefers-reduced-motion: reduce)');
@@ -480,7 +483,7 @@ function sHattusa(o) {
     for (let r = 0; r < 6; r++) for (let c = 0; c < 11; c++) { if (hash(r * 13 + c) < .18) continue; wedge(-58 + c * 10.8, -38 + r * 15, hash(r * 7 + c * 3) > .5); }
     ctx.restore();
   }
-  chariot(-520 + lt * 330, 742, t);
+  chariot(-520 + lt * 200, 742, t);
 }
 
 /* 4 · Troy */
@@ -594,7 +597,7 @@ function sLydia(o) {
   fillP([px - 14, py, px + 8, py, px + 14, py - 26, px - 2, py - 40, px - 16, py - 20], c); circ(px + 8, py - 46, 8, c);
   line(px + 6, py - 34, px + 30 + sw, py - 10, 4, c); ell(px + 36 + sw, py - 6, 16, 4, '#6b5a45'); circ(px + 36 + sw, py - 8, 2, '#ffd76a');
   for (let k = 0; k < 8; k++) {
-    const p = ((o.lt * .5 + k / 8) % 1 + 1) % 1, x = -320 + k * 70 + p * 140, y = 760 - 4 * 230 * p * (1 - p);
+    const p = ((o.lt / BAR + k / 8) % 1 + 1) % 1, x = -320 + k * 70 + p * 140, y = 760 - 4 * 230 * p * (1 - p);
     ctx.save(); ctx.globalAlpha = smooth(0, .1, p) * (1 - smooth(.9, 1, p)); ctx.translate(x, y); ctx.scale(Math.max(.08, Math.abs(Math.cos(t * 6 + k))), 1);
     circ(0, 0, 11, '#e7c96d'); ctx.strokeStyle = '#b08a36'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
   }
@@ -698,7 +701,7 @@ function sConst(o) {
   }
   for (let k = 0; k < 12; k++) { const x = -640 + k * 112 + hash(k) * 40, base = hyC(x) + 22 + hash(k + 4) * 20; if (base < 680 && Math.abs(x - 110) > 250) ell(x, base - 26, 7, 30, '#2f3b2c'); }
   column(-330, hyC(-330) + 4);
-  hagia(110, hyC(110) + 8, smooth(.5, .83, u));
+  hagia(110, hyC(110) + 8, smooth(.5, 18 / 22, u)); // the dome is finished on the bell, eighth note 18 of 22
   water(-730, 730, 672, '#3b5b80', '#1f3452', t, { glitterX: 330, glit: [255, 214, 140] });
   galley(-440 + Math.max(0, lt) * 18, 712, 1.05, 0, '#3a2a26', '#efe0c4', t, { stripe: '#6d2a58' });
   birds(-100 + (t * 26) % 300, 330, 4, t, 'rgba(60,40,40,.6)', .9);
@@ -766,7 +769,7 @@ function janissary(x, y, arm, arm2) {
   });
 }
 function cannon(x, y, t, lt) {
-  const q = ((lt % 2) + 2) % 2 / 2, rec = q < .12 ? (1 - q / .12) * 10 : 0;
+  const q = ((lt % BAR) + BAR) % BAR / BAR, rec = q < .12 ? (1 - q / .12) * 10 : 0;
   fillP([x - 70, y, x + 40, y, x + 30, y - 22, x - 60, y - 22], '#3b2a1e');
   ctx.save(); ctx.translate(x - 10 - rec, y - 30); ctx.rotate(-.2);
   fillP([-70, -16, 120, -12, 120, 12, -70, 16], '#7d6340');
@@ -893,7 +896,7 @@ function sGalli(o) {
   [{ x: 120, s: .62 }, { x: 380, s: .5 }, { x: 600, s: .42 }].forEach((sh, i) => {
     for (let k = 0; k < 5; k++) { const a = (t * .35 + k / 5 + i * .3) % 1; ell(sh.x - 10 * sh.s - a * 90, 636 - 70 * sh.s - a * 50, (6 + a * 20) * sh.s * 1.6, (4 + a * 12) * sh.s * 1.6, `rgba(60,64,70,${.4 * (1 - a)})`); }
     warship(sh.x, 638, sh.s, '#2d333b');
-    const q = (((lt - i * .5) % 1.5) + 1.5) % 1.5 / 1.5; if (q < .05) glow(sh.x + 60 * sh.s, 638 - 22 * sh.s, 50, [255, 210, 140], .9 * (1 - q / .05), true);
+    const q = (((lt - i * 2 * STEP) % (6 * STEP)) + 6 * STEP) % (6 * STEP) / (6 * STEP); if (q < .05) glow(sh.x + 60 * sh.s, 638 - 22 * sh.s, 50, [255, 210, 140], .9 * (1 - q / .05), true);
   });
   const CL = [-800, 900, -800, 452, -720, 444, -640, 462, -560, 450, -490, 474, -420, 496, -360, 534, -300, 590, -262, 640, -236, 690, -210, 760, -170, 900];
   fillP(CL, '#57513f');
@@ -907,7 +910,7 @@ function sGalli(o) {
   for (let k = 0; k < 14; k++) ell(-784 + k * 22, 462 + k * 1.4, 8, 4, '#6d6450');
   for (let k = 0; k < 5; k++) { const x = -760 + k * 62; ctx.beginPath(); ctx.arc(x, 462 + (x + 790) / 15, 5, Math.PI, TAU); ctx.fillStyle = '#4a4636'; ctx.fill(); }
   for (let i = 0; i < 3; i++) {
-    const q = (((lt - i * .5 - 1) % 1.5) + 1.5) % 1.5 / 1.5;
+    const q = (((lt - (i * 2 + 4) * STEP) % (6 * STEP)) + 6 * STEP) % (6 * STEP) / (6 * STEP);
     if (q < .5) { const p = q / .5, bx = -640 + i * 120, by = 520 + i * 26; glow(bx, by, 70 * (1 - p) + 10, [255, 170, 90], .6 * (1 - p), true); for (let k = 0; k < 5; k++) ell(bx + Math.cos(k * 1.3) * p * 30, by - p * 50 - k * 6, 8 + p * 22, 6 + p * 14, `rgba(95,88,76,${.45 * (1 - p)})`); }
   }
   for (let k = 0; k < 3; k++) rowboat(-170 + k * 110 + Math.sin(t * .8 + k) * 4, 690 + (k % 2) * 14 + Math.sin(t * 1.6 + k) * 2, t, k);
@@ -927,7 +930,7 @@ function sRepub(o) {
   }
   masonry(-610, 470, -330, 528, '#ab9878', 'rgba(70,58,44,.4)', 77, 18); crenel(-610, -330, 470, 12, 10, '#ab9878');
   for (const x of [-600, -520, -440, -350]) { masonry(x - 17, 448, x + 17, 528, '#b6a383', 'rgba(70,58,44,.4)', x, 18); crenel(x - 17, x + 17, 448, 9, 8, '#b6a383'); }
-  const rise = smooth(0, .38, u);
+  const rise = smooth(0, 1 / 3, u); // the flag reaches the top on the bell, eighth note 8 of 24
   line(200, 708, 200, 256, 5, '#d9dbe0'); circ(200, 252, 6, '#e2c25a');
   wavingFlag(203, lerp(600, 264, rise), 150, t, 6 + 10 * rise);
   // 1928: the new Latin-based alphabet, letter by letter
@@ -1090,46 +1093,46 @@ const SITES = {
   ankara: [32.85, 39.93], bridge: [29.035, 41.045], goreme: [34.83, 38.64]
 };
 const SC = [
-  { hold: 2.5, draw: sIntro, big: 'Türkiye', eyebrow: 'WHERE EUROPE MEETS ASIA', title: '11,600 years in sixty seconds',
+  { hold: 8 * BEAT, draw: sIntro, big: 'Türkiye', eyebrow: 'WHERE EUROPE MEETS ASIA', title: '11,600 years in two minutes',
     line: 'Its heartland, Anatolia, takes its name from the Greek anatolē: “sunrise”.', site: null,
     pal: pal({ top: '#050817', mid: '#101a45', bot: '#2c2b58', far: '#1a1c3c', hill: '#131430', ground: '#0f0f22', stars: 1, hb: 668, ha: 80 }) },
-  { hold: 3, draw: sGobekli, y0: -9600, circa: true, eyebrow: 'ŞANLIURFA · SOUTHEAST ANATOLIA', title: 'Göbekli Tepe',
+  { hold: 9 * BEAT, draw: sGobekli, y0: -9600, circa: true, eyebrow: 'ŞANLIURFA · SOUTHEAST ANATOLIA', title: 'Göbekli Tepe',
     line: 'Hunter-gatherers raise the oldest known monumental megaliths in the world.', site: ['gobekli'],
     pal: pal({ top: '#070b22', mid: '#141d4a', bot: '#3b3563', far: '#1f1e40', hill: '#17152e', ground: '#191424', stars: 1, hb: 668, ha: 80, moon: [430, 170, 32] }) },
-  { hold: 3, draw: sCatal, y0: -7400, circa: true, eyebrow: 'KONYA PLAIN · CENTRAL ANATOLIA', title: 'Çatalhöyük',
+  { hold: 10 * BEAT, draw: sCatal, y0: -7400, circa: true, eyebrow: 'KONYA PLAIN · CENTRAL ANATOLIA', title: 'Çatalhöyük',
     line: 'An early farming town with no streets: people walked over the roofs and climbed in by ladder.', site: ['catal'],
     pal: pal({ top: '#283064', mid: '#9a5b86', bot: '#f3a36c', far: '#7c5b80', hill: '#5d4262', ground: '#6a4a3e', stars: .12, hb: 660, ha: 70, sun: [360, 610, 64, '#ffd08a'] }) },
-  { hold: 3, draw: sHattusa, fx: 50, y0: -1259, circa: true, eyebrow: 'HATTUSA · NEAR BOĞAZKALE, ÇORUM', title: 'The Hittites',
+  { hold: 10 * BEAT, draw: sHattusa, fx: 50, y0: -1259, circa: true, eyebrow: 'HATTUSA · NEAR BOĞAZKALE, ÇORUM', title: 'The Hittites',
     line: 'Their kings rule from Hattusa and sign the oldest known peace treaty, with Egypt.', site: ['hattusa'],
     pal: pal({ top: '#3a6cb4', mid: '#8fbde2', bot: '#f0dcb0', far: '#9aa7bf', hill: '#8f8b82', ground: '#9a8058', stars: 0, hb: 664, ha: 70, sun: [430, 236, 50, '#fff4d2'] }) },
-  { hold: 2.5, draw: sTroy, fx: -40, back: bTroy, y0: -1200, circa: true, eyebrow: 'ÇANAKKALE · THE DARDANELLES', title: 'Troy',
+  { hold: 9 * BEAT, draw: sTroy, fx: -40, back: bTroy, y0: -1200, circa: true, eyebrow: 'ÇANAKKALE · THE DARDANELLES', title: 'Troy',
     line: 'Layer upon layer of cities over 4,000 years, and the setting of Homer’s Trojan War.', site: ['troy'],
     pal: pal({ top: '#3874c0', mid: '#92c2e6', bot: '#efe2c4', far: '#a3b3c4', hill: '#98927d', ground: '#a58a5a', stars: 0, hb: 690, ha: 36, sun: [470, 190, 46, '#fff6da'] }) },
-  { hold: 2.5, draw: sLydia, fx: 30, back: bLydia, y0: -630, circa: true, eyebrow: 'SARDIS · WESTERN ANATOLIA', title: 'Lydia',
+  { hold: 9 * BEAT, draw: sLydia, fx: 30, back: bLydia, y0: -630, circa: true, eyebrow: 'SARDIS · WESTERN ANATOLIA', title: 'Lydia',
     line: 'The world’s first coins are struck here from electrum, a natural gold and silver alloy.', site: ['sardis'],
     pal: pal({ top: '#3a6db8', mid: '#a6cbe6', bot: '#f5e4b2', far: '#b0b4bf', hill: '#a39468', ground: '#ad8b4f', stars: 0, hb: 676, ha: 50, sun: [470, 206, 44, '#fff6d8'] }) },
-  { hold: 2.5, draw: sAlex, fx: 120, back: bAlex, y0: -334, eyebrow: 'THE HELLESPONT · RIVER GRANICUS', title: 'Alexander the Great',
+  { hold: 9 * BEAT, draw: sAlex, fx: 120, back: bAlex, y0: -334, eyebrow: 'THE HELLESPONT · RIVER GRANICUS', title: 'Alexander the Great',
     line: 'Crosses from Europe into Asia and defeats the Persian army at the river Granicus.', site: ['granicus'],
     pal: pal({ top: '#3a639e', mid: '#9bb8d4', bot: '#f0c98e', far: '#8f9bb0', hill: '#8d7d62', ground: '#9b7a4c', stars: 0, hb: 694, ha: 34, sun: [440, 286, 54, '#fff0c8'] }) },
-  { hold: 3, draw: sConst, y0: 330, y1: 537, yk: [[0, 330], [.3, 330], [.5, 532], [.83, 537], [1, 537]], eyebrow: 'BYZANTIUM · CONSTANTINOPLE', title: 'New Rome',
+  { hold: 11 * BEAT, draw: sConst, y0: 330, y1: 537, yk: [[0, 330], [.3, 330], [.5, 532], [18 / 22, 537], [1, 537]], eyebrow: 'BYZANTIUM · CONSTANTINOPLE', title: 'New Rome',
     line: 'Constantine makes the city his capital in 330. In 537 Justinian completes Hagia Sophia.', site: ['istanbul'],
     pal: pal({ top: '#2c4b86', mid: '#c98e6a', bot: '#f6cf87', far: '#a07e84', hill: '#8a6c70', ground: '#7e5d49', stars: 0, hb: 648, ha: 50, sun: [330, 318, 62, '#ffe3a4'] }) },
-  { hold: 2.5, draw: sManz, fx: -40, back: bManz, y0: 1071, eyebrow: 'MALAZGİRT · EASTERN ANATOLIA', title: 'Manzikert',
+  { hold: 10 * BEAT, draw: sManz, fx: -40, back: bManz, y0: 1071, eyebrow: 'MALAZGİRT · EASTERN ANATOLIA', title: 'Manzikert',
     line: 'Alp Arslan’s Seljuk Turks defeat Byzantium and capture its emperor, opening Anatolia to the Turks.', site: ['malazgirt'],
     pal: pal({ top: '#4a3f64', mid: '#c07d56', bot: '#ebb46c', far: '#8a6d74', hill: '#7a5a4c', ground: '#8a6843', stars: 0, hb: 690, ha: 40, sun: [520, 430, 58, '#ffd9a0'] }) },
-  { hold: 3.5, draw: sOtto, fx: -20, y0: 1299, y1: 1453, eyebrow: 'SÖĞÜT → CONSTANTINOPLE', title: 'The Ottomans',
+  { hold: 12 * BEAT, draw: sOtto, fx: -20, y0: 1299, y1: 1453, eyebrow: 'SÖĞÜT → CONSTANTINOPLE', title: 'The Ottomans',
     line: 'Osman’s small state grows. In 1453 Mehmed II hauls ships over a hill and takes Constantinople.', site: ['sogut', 'istanbul'],
     pal: pal({ top: '#0b0a20', mid: '#2e1c3e', bot: '#94432f', far: '#2b1d31', hill: '#211724', ground: '#1d1520', stars: .75, hb: 700, ha: 24, moon: [250, 150, 24] }) },
-  { hold: 2.5, draw: sSuley, fx: 110, y0: 1520, y1: 1557, eyebrow: 'ISTANBUL', title: 'Süleyman the Magnificent',
+  { hold: 9 * BEAT, draw: sSuley, fx: 110, y0: 1520, y1: 1557, eyebrow: 'ISTANBUL', title: 'Süleyman the Magnificent',
     line: 'The empire at its height. Master architect Sinan completes the Süleymaniye Mosque in 1557.', site: ['istanbul'],
     pal: pal({ top: '#1a2657', mid: '#7d4a78', bot: '#ef8a55', far: '#5a3a5c', hill: '#3b2a48', ground: '#2a2035', stars: .35, hb: 700, ha: 20, moon: [440, 176, 24], venus: true }) },
-  { hold: 3, draw: sGalli, fx: -60, y0: 1915, eyebrow: 'GELİBOLU PENINSULA', title: 'Gallipoli',
+  { hold: 10 * BEAT, draw: sGalli, fx: -60, y0: 1915, eyebrow: 'GELİBOLU PENINSULA', title: 'Gallipoli',
     line: 'The Allied landings fail. Mustafa Kemal rises to fame as the Ottoman Empire nears its end.', site: ['gallipoli'],
     pal: pal({ top: '#343b48', mid: '#5f6875', bot: '#9ea3a4', far: '#5d6570', hill: '#4c535c', ground: '#4a4a45', stars: 0, hb: 696, ha: 30 }) },
-  { hold: 3.5, draw: sRepub, fx: 120, y0: 1923, y1: 1934, eyebrow: 'ANKARA', title: 'The Republic',
+  { hold: 12 * BEAT, draw: sRepub, fx: 120, y0: 1923, y1: 1934, eyebrow: 'ANKARA', title: 'The Republic',
     line: 'Proclaimed on 29 October 1923 with Mustafa Kemal, later Atatürk, as president. New alphabet 1928; women win the vote 1934.', site: ['ankara'],
     pal: pal({ top: '#2a6fc6', mid: '#7fbbe8', bot: '#e6f0f2', far: '#9fb5c7', hill: '#8f9a8a', ground: '#9c8a5c', stars: 0, hb: 680, ha: 44, sun: [540, 206, 48, '#fffbe6'] }) },
-  { hold: 3, draw: sModern, back: bModern, y0: 1973, y1: 2022, eyebrow: 'ISTANBUL · THE BOSPHORUS', title: 'Two continents, one city',
+  { hold: 10 * BEAT, draw: sModern, back: bModern, y0: 1973, y1: 2022, eyebrow: 'ISTANBUL · THE BOSPHORUS', title: 'Two continents, one city',
     line: 'The Bosphorus Bridge joins Europe and Asia in 1973. In 2022 the United Nations adopts “Türkiye”.', site: ['bridge'],
     pal: pal({ top: '#050918', mid: '#111c42', bot: '#2c3a6a', far: '#141b38', hill: '#10152c', ground: '#11131f', stars: .35, hb: 720, ha: 10, moon: [470, 150, 28] }) },
   { hold: 0, draw: sFinale, back: bFinale, y0: 2026, today: true, eyebrow: 'GÖREME · CAPPADOCIA', title: 'Anatolia at sunrise',
@@ -1156,7 +1159,7 @@ function drawMap(mx, my, mw, big, prog, marker, t, visited) {
     ctx.setLineDash([len * mw * prog, len * mw * 2]); ctx.strokeStyle = 'rgba(246,238,220,.85)'; ctx.lineWidth = lerp(1.1, 2, big); ctx.lineJoin = 'round'; ctx.stroke(); ctx.setLineDash([]);
   }
   if (big > .02) {
-    const la = big * smooth(.4, 1.6, t);
+    const la = big * smooth(.6, 2.4, t);
     ctx.fillStyle = `rgba(246,238,220,${.75 * la})`; ctx.font = `600 ${Math.max(10, mw * .018)}px ${SANS}`; ctx.textAlign = 'center';
     if ('letterSpacing' in ctx) ctx.letterSpacing = `${Math.max(1.5, mw * .004)}px`;
     for (const [txt, ll] of [['BLACK SEA', [34.6, 42.75]], ['MEDITERRANEAN SEA', [31.4, 35.25]], ['EUROPE', [26.3, 42.6]], ['ASIA', [36.4, 39.35]]]) { const q = pr(ll); ctx.fillText(txt, q[0], q[1]); }
@@ -1266,9 +1269,9 @@ const yearVal = (st, t) => {
 function fmtYear(y) { const r = Math.round(y); if (r <= 0) return [String(Math.max(1, -r)), 'BCE']; if (r < 1000) return [String(r), 'CE']; return [String(r), '']; }
 function capAlpha(k, t) {
   const sc = SC[k];
-  const inA = k === 0 ? 1 : smooth(sc.hs - .45, sc.hs + .15, t);
-  let out = 1 - smooth(sc.he + .2, sc.he + .55, t);
-  if (sc === FIN) out = 1 - smooth(FIN.hs + 2.4, FIN.hs + 2.9, t);
+  const inA = k === 0 ? 1 : smooth(sc.hs - .6, sc.hs + .15, t);
+  let out = 1 - smooth(sc.he + .35, sc.he + .8, t);
+  if (sc === FIN) out = 1 - smooth(FIN.hs + 3.1, FIN.hs + 3.6, t);
   return inA * out;
 }
 const siteLL = (sc, which) => sc.site ? SITES[sc.site[which === 1 ? sc.site.length - 1 : 0]] : null;
@@ -1353,7 +1356,7 @@ function render(t) {
       else { const A = siteLL(SC[st.a], 1), B = siteLL(SC[st.b], 0); marker = A && B ? [lerp(A[0], B[0], st.e), lerp(A[1], B[1], st.e)] : B && st.e > .5 ? B : null; }
       for (let k = 1; k < st.a; k++) { const ll = siteLL(SC[k], 1); if (ll) visited.push(ll); }
     }
-    const prog = t < SC[0].he + 1 ? smooth(.05, 2.2, t) : 1;
+    const prog = t < SC[0].he + 1 ? smooth(.1, 3.2, t) : 1;
     drawMap(mx, my, mw, big, prog, marker, t, visited);
   }
 
@@ -1380,7 +1383,7 @@ function render(t) {
   }
   // the year counter
   {
-    const cA = smooth(SC[0].he + .1, SC[0].he + .7, t) * (1 - smooth(FIN.hs + 2.4, FIN.hs + 2.9, t));
+    const cA = smooth(SC[0].he + .1, SC[0].he + .7, t) * (1 - smooth(FIN.hs + 3.1, FIN.hs + 3.6, t));
     if (cA > .01) {
       const todayA = smooth(FIN.hs - .15, FIN.hs + .25, t), [num, era] = fmtYear(yearVal(st, t));
       ctx.font = fYear(); ctx.fillStyle = '#f6eedc';
@@ -1394,7 +1397,7 @@ function render(t) {
   ctx.globalAlpha = 1;
   // closing words
   {
-    const ma = smooth(FIN.hs + 2.9, FIN.hs + 3.6, t);
+    const ma = smooth(FIN.hs + 12 * STEP, FIN.hs + 12 * STEP + .7, t); // with the bells
     if (ma > 0) {
       const msg = clamp(Math.min(W * .085, H * .12), 34, 112), cx = W / 2, cy = portrait ? Lay.ty + Lay.capH * .45 : oy + 250 * s;
       ctx.globalAlpha = ma; ctx.textAlign = 'center';
@@ -1416,7 +1419,7 @@ function render(t) {
     glow(px, y, 14, [95, 208, 196], .6); circ(px, y, 4, '#5fd0c4');
   }
   // chapter-change dip for reduced motion, and the loop's fade in and out
-  let fade = Math.max(1 - smooth(0, .7, t), smooth(TOTAL - .7, TOTAL, t));
+  let fade = Math.max(1 - smooth(0, 1, t), smooth(TOTAL - 1.2, TOTAL, t));
   if (rm && !st.holding) fade = Math.max(fade, 1 - Math.abs(2 * st.p - 1));
   if (fade > 0) { ctx.fillStyle = `rgba(5,7,18,${fade})`; ctx.fillRect(0, 0, W, H); }
 
@@ -1431,8 +1434,7 @@ function render(t) {
 // The score is synthesised live with the Web Audio API: drones, frame drums, a ney flute, a lyre and a saz
 // (plucked strings made with the Karplus–Strong method), a Byzantine choir, bells, the zurna and davul of the
 // Ottoman mehter band, a brass fanfare and a modern synth. Every note sits on a grid of eighth notes at
-// 120 beats per minute, and every chapter arrives on a beat. Browsers only allow sound after a tap or click.
-const STEP = .25;
+// 96 beats per minute, and every chapter arrives on a beat. Browsers only allow sound after a tap or click.
 const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
 let AC = null, OUT = null, VERB = null, NOISE = null, epoch = null, soundOn = false, soundT = -1e9, schedAbs = null;
 const KS = new Map();
@@ -1570,28 +1572,28 @@ const mel = (list, j, fn) => { for (const n of list) if (n[0] === j) fn(n[1], n[
 const SUNRISE = [[0, 62, 2], [2, 63, 1], [3, 66, 1], [4, 67, 2], [6, 69, 4]]; // D E♭ F♯ G A: the Hicaz makam rising
 const MUS = [
   { sus: (t, d, a) => drone(t, d, [38, 45], .032, 'triangle', 700, a), // prologue
-    step: (j, t) => { if (j === 0) dum(t, .3, 60, .9); mel(SUNRISE.map(n => [n[0] + 1, n[1], n[2]]), j, (m, d) => ney(t, m, d, .13)); } },
+    step: (j, t) => { if (j === 0) dum(t, .3, 60, .9); mel([...SUNRISE.map(n => [n[0] + 1, n[1], n[2]]), [11, 70, 1], [12, 69, 4]], j, (m, d) => ney(t, m, d, .11)); } },
   { sus: (t, d, a) => drone(t, d, [38, 45], .04, 'sawtooth', 380, a), // Göbekli Tepe: a heartbeat, the fire, a low flute
     step: (j, t, i) => {
       if (j >= 0 && pat('D..D....', j) === 'D') dum(t, .5, 68, .5);
       if (j >= -2) for (let c = 0; c < 3; c++) if (hash(i * 3.1 + c) > .45) crackle(t + hash(i * 5.7 + c) * STEP, .05 + hash(i + c) * .08);
-      mel([[0, 57, 5], [6, 55, 2], [8, 53, 4]], j, (m, d) => ney(t, m, d, .13));
+      mel([[0, 57, 5], [6, 55, 2], [8, 53, 4], [13, 55, 2], [15, 50, 3]], j, (m, d) => ney(t, m, d, .13));
     } },
   { sus: (t, d, a) => drone(t, d, [38, 45], .035, 'triangle', 900, a), // Çatalhöyük: frame drum and lyre
     step: (j, t) => {
       if (j < 0) return; const c = pat('D.T.D.TT', j); if (c === 'D') dum(t, .45, 85, .35); else if (c === 'T') tek(t, .26);
-      pluck(t, pat([62, 65, 67, 69, 72, 69, 67, 65], j), .36, .6, j % 2 ? .3 : -.3, .35);
+      pluck(t, pat([62, 65, 67, 69, 72, 69, 67, 65, 60, 62, 65, 67, 69, 67, 65, 62], j), .48, .6, j % 2 ? .3 : -.3, .35);
     } },
   { sus: (t, d, a) => { drone(t, d, [38, 45], .045, 'sawtooth', 600, a); brass(t, 38, Math.max(.3, d - .4), .04); }, // the Hittites: a galloping drum
     step: (j, t) => {
       if (j < 0) return; if (j === 0) zil(t, .1);
       const c = pat('D.TTD.TT', j); if (c === 'D') dum(t, .55, 80, .4); else if (c === 'T') tek(t, .26, 2200);
-      if (j % 2 === 0) pluck(t, pat([50, 57, 62, 57], j / 2), .26, .7, 0, .3);
+      if (j % 2 === 0) pluck(t, pat([50, 57, 62, 57], j / 2), .36, .7, 0, .3);
     } },
   { sus: (t, d, a) => drone(t, d, [38, 45], .035, 'triangle', 900, a), // Troy: a lyre in the Dorian mode
     step: (j, t) => {
-      if (j < 0) return; const c = pat('D...T...', j); if (c === 'D') dum(t, .35, 80, .4); else if (c === 'T') tek(t, .18);
-      pluck(t, pat([62, 64, 65, 69, 67, 65, 64, 62, 64, 65], j), .36, .55, j % 2 ? .25 : -.25, .45);
+      if (j < 0) return; const c = pat('D...T...', j); if (c === 'D') dum(t, .42, 80, .4); else if (c === 'T') tek(t, .2);
+      pluck(t, pat([62, 64, 65, 69, 67, 65, 64, 62, 64, 65], j), .48, .55, j % 2 ? .25 : -.25, .45);
     } },
   { sus: (t, d, a) => drone(t, d, [50, 57], .03, 'triangle', 1400, a), // Lydia: every falling coin rings a note of the Lydian mode
     step: (j, t) => {
@@ -1603,58 +1605,59 @@ const MUS = [
     step: (j, t) => {
       if (j < 0) return; const c = pat('D.S.D.SS', j); if (c === 'D') dum(t, .5, 75, .4); else if (c === 'S') snare(t, .26);
       if (j % 2 === 0) brass(t, pat([50, 50, 57, 55, 53, 53, 57, 50], j / 2), .42, .08);
-      if (j === 3) for (const m of [62, 65, 69]) brass(t, m, 1.4, .035);
+      if (j === 5) for (const m of [62, 65, 69]) brass(t, m, 1.8, .035);
     } },
-  { sus: (t, d, a) => { choir(t, 50, d, .07, 0, a); drone(t, d, [38], .025, 'triangle', 500, a); }, // New Rome: a chant over a held note; a bell for Hagia Sophia
+  { sus: (t, d, a) => { choir(t, 50, d, .085, 0, a); drone(t, d, [38], .025, 'triangle', 500, a); }, // New Rome: a chant over a held note; a bell for Hagia Sophia
     step: (j, t) => {
-      mel([[0, 57, 2], [2, 58, 1], [3, 57, 1], [4, 55, 2], [6, 53, 2], [8, 55, 2], [10, 57, 3]], j, (m, d) => choir(t, m, d, .11, .15));
-      if (j === 10) { bell(t, 50, .22, 5.5); bell(t + .01, 62, .08, 4); }
+      mel([[0, 57, 2], [2, 58, 1], [3, 57, 1], [4, 55, 2], [6, 53, 2], [8, 55, 2], [10, 57, 3], [14, 60, 2], [16, 58, 1], [17, 57, 1], [18, 62, 4]], j, (m, d) => choir(t, m, d, .14, .15));
+      if (j === 18) { bell(t, 50, .22, 5.5); bell(t + .01, 62, .08, 4); }
     } },
   { sus: (t, d, a) => drone(t, d, [38, 45], .04, 'sawtooth', 750, a), // Manzikert: the saz in the Hicaz makam, a davul
     step: (j, t) => {
-      if (j < 0) return; pluck(t, pat([62, 63, 66, 63, 62, 63, 66, 67], j), .2, .95, j % 2 ? .2 : -.2, .25);
-      if (j % 2 === 0) pluck(t, 50, .16, .8, 0, .2);
+      if (j < 0) return; pluck(t, pat([62, 63, 66, 63, 62, 63, 66, 67], j), .3, .95, j % 2 ? .2 : -.2, .25);
+      if (j % 2 === 0) pluck(t, 50, .22, .8, 0, .2);
       const c = pat('x.t.x.tt', j); if (c === 'x') dum(t, .6, 58, .5); else if (c === 't') tek(t, .3, 1700);
     } },
   { sus: (t, d, a) => drone(t, d, [38, 45], .035, 'sawtooth', 800, a), // the Ottomans: mehter band; the bombard fires on the downbeat
     step: (j, t) => {
-      if (j === 0 || j === 8) boom(t, .7, 1.4, 220);
+      if (j >= 0 && j % 8 === 0) boom(t, .7, 1.4, 220);
       if (j < 0) return; if (pat('x...x.x.', j) === 'x') dum(t, .7, 55, .55); if (j % 8 === 0) zil(t, .18); if (j % 2 === 1) tek(t, .2, 1600);
-      mel([[0, 62, 2], [2, 62, 1], [3, 63, 1], [4, 66, 2], [6, 67, 2], [8, 69, 2], [10, 67, 1], [11, 66, 1], [12, 63, 1], [13, 62, 1]], j,
+      mel([[0, 62, 2], [2, 62, 1], [3, 63, 1], [4, 66, 2], [6, 67, 2], [8, 69, 2], [10, 67, 1], [11, 66, 1], [12, 63, 1], [13, 62, 1], [14, 69, 2], [16, 70, 1], [17, 69, 1], [18, 67, 2], [20, 66, 1], [21, 63, 1], [22, 62, 2]], j,
         (m, d) => { zurna(t, m, d, .05, -.25); zurna(t + .006, m, d, .04, .25); });
     } },
   { sus: (t, d, a) => { drone(t, d, [38, 45], .028, 'triangle', 800, a); drone(t, d, [54, 57], .01, 'triangle', 1200, a); }, // Süleyman: ney and kanun at dusk
     step: (j, t) => {
-      if (j < 0) return; mel([[0, 69, 3], [3, 70, 1], [4, 69, 2], [6, 67, 1], [7, 66, 1], [8, 67, 2]], j, (m, d) => ney(t, m, d, .14));
+      if (j < 0) return; mel([[0, 69, 3], [3, 70, 1], [4, 69, 2], [6, 67, 1], [7, 66, 1], [8, 67, 2], [10, 66, 1], [11, 63, 1], [12, 62, 4]], j, (m, d) => ney(t, m, d, .12));
       if (j % 2 === 1) pluck(t, pat([74, 78, 81, 78, 74], (j - 1) / 2), .12, 1, .35, .5);
       const c = pat('D.....T.', j); if (c === 'D') dum(t, .3, 75, .45); else if (c === 'T') tek(t, .14, 2000);
     } },
-  { sus: (t, d, a) => { pad(t, d, [38, 45, 53], .03, a, 700); rain(t, d, .008, a); }, // Gallipoli: a lament; the guns are heard a beat after their flash
+  { sus: (t, d, a) => { pad(t, d, [38, 45, 53], .024, a, 700); rain(t, d, .007, a); }, // Gallipoli: a lament; the guns are heard a beat after their flash
     step: (j, t) => {
       for (let s = 0; s < 3; s++) { const q = j - 1 - 2 * s; if (q >= 0 && q % 6 === 0) boom(t, [.3, .2, .14][s], 1.8, 160); }
-      mel([[0, 65, 3], [3, 64, 1], [4, 62, 4], [8, 60, 2], [10, 62, 2]], j, (m, d) => ney(t, m, d, .13));
+      mel([[0, 65, 3], [3, 64, 1], [4, 62, 4], [8, 60, 2], [10, 62, 2], [12, 65, 2], [14, 64, 1], [15, 62, 5]], j, (m, d) => ney(t, m, d, .11));
     } },
   { sus: (t, d, a) => pad(t, d, [50, 57, 62, 66], .018, a, 1800), // the Republic: a fanfare as the flag rises, then a march
     step: (j, t) => {
       if (j === 0) zil(t, .15);
-      mel([[0, 62, 1, 57], [1, 66, 1, 62], [2, 69, 2, 66], [4, 74, 3, 69]], j, (m, d, low) => { brass(t, m, d, .09, -.15); brass(t, low, d, .06, .15); });
-      if (j === 5) bell(t, 74, .1, 3);
+      mel([[0, 62, 2, 57], [2, 66, 2, 62], [4, 69, 2, 66], [6, 74, 4, 69], [16, 74, 2, 69], [18, 71, 2, 67], [20, 69, 2, 66], [22, 74, 2, 69]], j,
+        (m, d, low) => { brass(t, m, d, .09, -.15); brass(t, low, d, .06, .15); });
+      if (j === 8) bell(t, 74, .1, 3);
       if (j < 0) return; const c = pat('D.S.D.SS', j); if (c === 'D') dum(t, .5, 70, .4); else if (c === 'S') snare(t, .22);
-      if (j >= 6) { pluck(t, pat([62, 66, 69, 74, 69, 66, 62, 66], j), .12, .8, j % 2 ? .25 : -.25, .3); if (j % 2 === 0) brass(t, pat([50, 57], j / 2), .4, .06); }
+      if (j >= 10) { pluck(t, pat([62, 66, 69, 74, 69, 66, 62, 66], j), .12, .8, j % 2 ? .25 : -.25, .3); if (j % 2 === 0) brass(t, pat([50, 57], j / 2), .4, .06); }
     } },
   { sus: (t, d, a) => pad(t, d, [50, 57, 62, 66], .02, a, 1500), // today's Istanbul: a pulse under a Hicaz arpeggio
     step: (j, t) => {
       if (j === 0) boom(t, .3, .8, 300);
       if (j < 0) return; if (j % 2 === 0) dum(t, .42, 52, .26); if (j % 4 === 2) snare(t, .2); if (j % 2 === 1) hat(t, .12);
       sub(t, pat([38, 38, 50, 38, 38, 50, 38, 45], j), .22, .12);
-      synth(t, pat([62, 66, 69, 70, 69, 66, 63, 66], j), .13, .34, j % 2 ? .35 : -.35);
+      synth(t, pat([62, 66, 69, 70, 69, 66, 63, 66], j), .16, .38, j % 2 ? .35 : -.35);
     } },
-  { sus: (t, d, a) => { pad(t, d - .6, [50, 54, 57, 62], .026, a, 1600); drone(t, d - .6, [38, 45], .024, 'triangle', 700, a); }, // sunrise: the opening theme comes home
+  { sus: (t, d, a) => { pad(t, d - .6, [50, 54, 57, 62], .021, a, 1600); drone(t, d - .6, [38, 45], .024, 'triangle', 700, a); }, // sunrise: the opening theme comes home
     step: (j, t) => {
       if (j === 0) { zil(t, .1); dum(t, .35, 65, .6); }
-      mel([...SUNRISE, [10, 70, 1], [11, 69, 3], [14, 66, 2], [16, 62, 6]], j, (m, d) => ney(t, m, d, .15));
-      if (j >= 0 && j < 20) pluck(t, pat([50, 57, 62, 66, 69, 66, 62, 57], j), .16, .7, j % 2 ? .3 : -.3, .4);
-      if (j >= 0 && j < 16) { const c = pat('D...T...', j); if (c === 'D') dum(t, .28, 75, .45); else if (c === 'T') tek(t, .12); }
+      mel([...SUNRISE, [10, 70, 1], [11, 69, 3], [14, 66, 2], [16, 62, 6]], j, (m, d) => ney(t, m, d, .12));
+      if (j >= 0 && j < 22) pluck(t, pat([50, 57, 62, 66, 69, 66, 62, 57], j), .16, .7, j % 2 ? .3 : -.3, .4);
+      if (j >= 0 && j < 18) { const c = pat('D...T...', j); if (c === 'D') dum(t, .28, 75, .45); else if (c === 'T') tek(t, .12); }
       if (j === 12) { bell(t, 74, .12, 4, -.2); bell(t + .12, 78, .08, 4, .2); bell(t + .24, 81, .07, 4); }
     } }
 ];
@@ -1663,7 +1666,7 @@ const secEnd = k => k === SC.length - 1 ? TOTAL : SC[k].he;
 function secAt(mt) { for (let k = SC.length - 1; k > 0; k--) if (mt >= secStart(k) - 1e-6) return k; return 0; }
 function stepAt(mt, t, i) {
   const k = secAt(mt), j = Math.round((mt - SC[k].hs) / STEP);
-  if (k > 0 && j === -MOVE / STEP) whoosh(t, MOVE, reduce.matches ? .1 : .2);
+  if (k > 0 && j === -MOVE / STEP) whoosh(t, MOVE, reduce.matches ? .08 : .16);
   if (MUS[k].sus && Math.abs(mt - secStart(k)) < 1e-6) MUS[k].sus(t, secEnd(k) - secStart(k), .8);
   MUS[k].step(j, t, i);
 }
@@ -1751,7 +1754,7 @@ addEventListener('keydown', e => {
 });
 window.turkeyAnimation = {
   seek: v => { setTime(v); render(T); drawSoundHint(); }, pause: () => setPaused(true), play: () => setPaused(false),
-  chapters: SC.map(c => ({ title: c.title, start: c.hs, end: c.he })), renderMusic
+  chapters: SC.map(c => ({ title: c.title, start: c.hs, end: c.he })), total: TOTAL, renderMusic
 };
 layout();
 requestAnimationFrame(frame);
