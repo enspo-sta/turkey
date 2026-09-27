@@ -5,7 +5,7 @@ Turkey vacation
 
 `index.html` is an animation of the history of Türkiye, with music, from Göbekli Tepe (around 9600 BCE) through Adana and Kastabala to the Republic, modern Istanbul and a sunrise over Cappadocia. It ends with *İyi yolculuklar!* ("Have a wonderful trip").
 
-Open `index.html` in any browser. Nothing else is needed: every scene, the map and the flag are drawn in code with the Canvas 2D API, and the music is synthesised live with the Web Audio API, with no images, audio files, fonts, libraries or network requests.
+Open `index.html` in any browser (keep `turkey-animation.js` in the same folder; the page loads the animation from it). Nothing else is needed: every scene, the map and the flag are drawn in code with the Canvas 2D API, and the music is synthesised live with the Web Audio API, with no images, audio files, fonts, libraries or network requests.
 
 - The loop lasts 2 minutes 20 seconds and restarts. Each chapter holds for 5½ to 7½ seconds, long enough to read its caption and watch the scene.
 - Tap or click anywhere to turn the sound on or off (browsers only allow sound after an interaction). The M key does the same.
@@ -39,3 +39,28 @@ The score runs at 96 beats per minute and every chapter arrives on a beat. It is
 The plucked strings use the Karplus–Strong method; the reverb, drums, choir, bells and wind instruments are all built from oscillators, filters and generated noise.
 
 The sources for every date in the captions are listed in a comment at the top of `index.html`.
+
+## The Story of Türkiye (long read)
+
+`history.html` is an interactive long read on the history of Türkiye in 18 sections, from Göbekli Tepe to 2023, with a travellers' guide at the end. It has about 16,400 words, roughly 71 minutes at 230 words a minute. Open it in a browser with `turkey-animation.js` in the same folder.
+
+- **Scenes that follow the text.** The animation above runs in a panel beside the text (above it on a phone) and switches to the matching scene as you read. Some paragraphs switch it too, for example to Kastabala or to Constantinople. *Play the whole film* runs the full 2 minutes 20 seconds with music; *Hide scenes* folds the panel away.
+- **Timeline.** Every date in the text is on a timeline scaled so that the deep past is compressed. The section you are reading is highlighted. Hover over a dot for its label, or click it to jump to that section.
+- **Map.** In the last section, a map pins every place mentioned on the page, 55 in all, with filters by era. Each pin opens a short note, says what a visitor can see today and links back to the section.
+- **A quiz question per section,** with your score kept at the end of the page.
+- **Reading aids:** a progress bar, the minutes left, finished sections ticked in the contents, and a *Continue* button that takes you back to where you stopped. All of this is stored in your browser only.
+- **Sources.** Every paragraph links to a source, and every section lists all of its sources.
+
+### How it is built
+
+- The text lives in `content/history.json`.
+- `python3 tools/build_history.py` turns it into `history.html`.
+- `python3 tools/build_history.py --artifact PATH` also writes a self-contained copy with the animation code included in the file.
+- The standalone film and the long read share the same engine, `turkey-animation.js`. The long read runs it in embedded mode: it sets `window.TURKEY_OPTIONS` and calls `window.turkeyAnimation`.
+
+Most sources were found with web searches. Where the search allowance ran out, sections were written from facts already checked and from peer-reviewed papers found with the [Consensus](https://consensus.app/) academic search engine. A few periods are covered only in outline for that reason:
+
+- the Ottoman conquests between Osman and 1453;
+- the campaigns of 1920–1922;
+- early Christianity in the Roman section;
+- events after 2023.
