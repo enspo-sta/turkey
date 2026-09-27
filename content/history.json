@@ -611,12 +611,12 @@
     "In May 1873 Schliemann announced his most famous find, a hoard of gold, jewellery and other valuables, including a golden diadem, which he called <a href='https://www.worldhistory.org/article/2196/discovery-of-troy/'>Priam's Treasure</a>. He smuggled the hoard, around 8,000 objects, out of the Ottoman Empire. The name was wrong. The treasure came from Troy II, a burnt layer of the third millennium BCE, more than a thousand years older than any Priam of Homer's story. Most of it went to the Neues Museum in Berlin. During the Second World War it was hidden beneath Berlin Zoo, where Soviet soldiers found it. They took it to Moscow, and most of it is still in the Pushkin State Museum of Fine Arts.",
     "Wilhelm Dörpfeld dug for two seasons, in 1893 and 1894. He exposed the walls of Troy VI, up to five metres thick with large towers, and numbered the layers from I to IX. He believed <a href='https://www.britannica.com/biography/Wilhelm-Dorpfeld'>Troy VI was Homer's city</a>, although later study pointed rather to Troy VIIa. Carl Blegen of the University of Cincinnati led seven seasons from 1932 to 1938, identified 47 strata and concluded that Troy VI had been destroyed by an earthquake. From 1988 to 2005 <a href='https://en.wikipedia.org/wiki/Manfred_Korfmann'>Manfred Korfmann</a> led a team from Tübingen and Cincinnati and found a lower town of about 20 hectares south of the citadel. Since 2013 Rüstem Aslan of Çanakkale Onsekiz Mart University has directed the excavation.",
     "Whether Homer's war took place is still argued. Troy VI may have been damaged by war around 1250 BCE, although there is also evidence of a major earthquake at that time. Troy VIIa was <a href='https://archive.archaeology.org/0405/etc/troy.html'>destroyed violently</a>, probably between about 1230 and 1180 BCE, and arrowheads have been found in its burnt debris. Hittite texts add a political setting. They name a western Anatolian kingdom called <a href='https://archive.archaeology.org/0405/etc/troy3.html'>Wilusa</a>, whose king Alaksandu made a treaty with the Hittite king Muwatalli II around 1280 BCE. Most scholars accept Wilusa as the Hittite form of Ilios, a Greek name for Troy, and Taruisa as a form of Troia. The name Alaksandu recalls Alexandros, a Trojan prince of Greek legend.",
-    "The same texts show Wilusa caught up in disputes between the Hittites and Ahhiyawa, a western power usually identified with the Greeks. Yet they never say that Ahhiyawa attacked Wilusa, and the historian Trevor Bryce warns that they offer <a href='https://en.wikipedia.org/wiki/Wilusa'>no evidence of an actual Trojan War</a>. Archaeology can show a city destroyed by war, but not who the attackers were or why they came. On the mound today the walls of Troy VI and the remains of the later cities are still visible, and finds from the excavations are shown in the <a href='https://en.wikipedia.org/wiki/Troy_Museum'>Troy Museum</a> near the site."
+    "The same texts show Wilusa caught up in disputes between the Hittites and Ahhiyawa, a western power usually identified with the Greeks. Yet they never say that Ahhiyawa attacked Wilusa, and the historian Trevor Bryce warns that they offer <a href='https://en.wikipedia.org/wiki/Wilusa'>no evidence of an actual Trojan War</a>. Archaeology can show a city destroyed by war, but not who the attackers were or why they came. On the mound today the walls of Troy VI and the remains of the later cities are still visible, and finds from the excavations are shown in the <a href='https://en.wikipedia.org/wiki/Troy_Museum'>Troy Museum</a>, which opened near the site, at Tevfikiye in <a href='https://www.turkishmuseums.com/museum/detail/2021-troy-museum-canakkale/2021/4'>Çanakkale province</a>, on 10 October 2018."
    ],
    "facts": [
     {
      "label": "Location",
-     "value": "Hisarlık mound, north-western Türkiye"
+     "value": "Hisarlık mound, Çanakkale province"
     },
     {
      "label": "Layers",
@@ -673,7 +673,7 @@
      "name": "Troy Museum",
      "lat": 39.9597,
      "lon": 26.2463,
-     "note": "Museum close to the archaeological site, presenting finds from the excavations at Troy.",
+     "note": "Museum at Tevfikiye near the archaeological site, opened on 10 October 2018, presenting finds from Troy and the surrounding region.",
      "visit": "Finds from the excavations at Troy."
     }
    ],
@@ -735,6 +735,10 @@
     {
      "title": "Wikipedia: Troy Museum",
      "url": "https://en.wikipedia.org/wiki/Troy_Museum"
+    },
+    {
+     "title": "Turkish Museums: Troy Museum, Çanakkale",
+     "url": "https://www.turkishmuseums.com/museum/detail/2021-troy-museum-canakkale/2021/4"
     }
    ],
    "scene": 4,
@@ -1291,64 +1295,66 @@
   },
   {
    "id": "rome",
-   "title": "Rome in Asia Minor",
-   "dates": "133 BCE–330 CE",
-   "lede": "How western Anatolia passed from Pergamon to Rome as the province of Asia, told through the fortunes of Sardis, up to Constantine's new capital.",
+   "title": "Roman Asia and the first Christians",
+   "dates": "133 BCE–451 CE",
+   "lede": "How western Anatolia became the Roman province of Asia, and how Christianity spread there from Paul's journeys through persecution to the councils of Nicaea and Chalcedon.",
    "paragraphs": [
-    "Rome's ally in western Anatolia was <a href='https://whc.unesco.org/en/list/1457/'>Pergamon</a>, whose Attalid kings ruled from a fortified hill above today's Bergama, where temples, theatres, a gymnasium and a library are set into the slopes. After Rome and Pergamon defeated the Seleucid king Antiochus III in 190 BCE, the <a href='https://en.wikipedia.org/wiki/Treaty_of_Apamea'>Treaty of Apamea</a> of 188 BCE gave large areas to Rome's allies, and the Romans handed <a href='https://consensus.app/papers/details/6b9e7df9afd550509a52f469ded1363b/?utm_source=claude_desktop'>Sardis</a> to the king of Pergamon. Sardis had been the capital of Lydia, the western capital of the Persian Empire at the end of the Royal Road, and the Seleucid capital of Asia Minor north of the Taurus from 281 to 188 BCE. Antiochus III had refounded it in 213 BCE after it backed Achaeus in his attempt to seize power.",
-    "In 133 BCE Sardis passed to Rome and became part of the <a href='https://consensus.app/papers/details/6b9e7df9afd550509a52f469ded1363b/?utm_source=claude_desktop'>province of Asia</a>. Soon afterwards it became the centre of one of the province's nine <em>conventus</em>, its judicial districts. The province was fought over for decades. In 89 or 88 BCE <a href='https://www.worldhistory.org/Mithridates_VI/'>Mithridates VI of Pontus</a> organised the massacre of Romans and Italians across Asia Minor, and the wars against him ended only when Pompey defeated him in 66 BCE. Sardis declined somewhat after 90 BCE, but by the time of Augustus peace and confidence had returned.",
-    "The Romans called their new province simply Asia. It grew out of the kingdom of Pergamon, which its last king, Attalus III, <a href='https://www.encyclopedia.com/religion/encyclopedias-almanacs-transcripts-and-maps/asia-minor-early-church'>bequeathed to Rome</a> when he died in 133 BCE, and its heart was the populous western seaboard. The name Asia Minor, now used for the whole peninsula, came much later. The Christian historian Orosius is the first writer known to have used it, around 400 CE, in his <em>Seven Books of History Against the Pagans</em>. He used it to set apart the region where Paul the Apostle had spread Christianity from the rest of Asia.",
-    "Augustus and his successors also favoured Ilion, the Roman city on the mound of Troy, with <a href='https://www.britannica.com/place/Troy-ancient-city-Turkey'>fine public buildings</a>, because they traced their ancestry to the Trojan prince Aeneas. Further east, Rome annexed <a href='https://whc.unesco.org/en/list/448/'>Commagene</a>, the small kingdom between the Taurus Mountains and the Euphrates, in 72 CE. Sardis shows how a city could flourish under Roman rule, even after disaster. In 17 CE an <a href='https://consensus.app/papers/details/6b9e7df9afd550509a52f469ded1363b/?utm_source=claude_desktop'>earthquake devastated the city</a>. Reconstruction went on well into the 2nd century, and by then Sardis probably had around 100,000 inhabitants. The city lies in the <a href='https://consensus.app/papers/details/abfb89d90b0d59978bb3c0045467a844/?utm_source=claude_desktop'>Hermus valley</a>, nearly 100 kilometres east of İzmir, and it served as a centre of government under the Roman Empire.",
-    "Sardis had good reasons to prosper. The <a href='https://consensus.app/papers/details/b4d9c4c717ea5afe997ca8275f98439f/?utm_source=claude_desktop'>fertile Hermus plain</a> and the city's strategic position inland, on the road to the Roman east, both favoured it. The wealth of Croesus had long gone, but the people of Roman Sardis again lived in prosperous times. Under the Severan emperors the city enjoyed <a href='https://consensus.app/papers/details/6b9e7df9afd550509a52f469ded1363b/?utm_source=claude_desktop'>great prosperity</a> and completed much building work. Nowhere in the ruins of Sardis is the wealth of the 3rd century clearer than in the Marble Court of its bath-gymnasium. The court was first built, together with the gymnasium, under the emperor Lucius Verus in 165 CE. At first it was connected with the gymnasium but did not lead straight into it, and architecturally it belonged to the palaestra, the exercise ground in front.",
-    "In 212 and 213 the Marble Court was <a href='https://consensus.app/papers/details/b4d9c4c717ea5afe997ca8275f98439f/?utm_source=claude_desktop'>elaborately enlarged</a>. Pavilions were added on three sides, and a monumental gate with a pediment led into the gymnasium. On the fourth side a screen of columns separated the court from the palaestra. Most of the head-capitals found at Sardis, column tops carved with human heads, come from this colonnade. Other Roman remains include <a href='https://consensus.app/papers/details/e9d167e13ca559beb1fc4f3fc3818d1b/?utm_source=claude_desktop'>columned streets and a synagogue</a>. Like Priene, Sardis had a <a href='https://consensus.app/papers/details/6b9e7df9afd550509a52f469ded1363b/?utm_source=claude_desktop'>Jewish community</a>. The expedition that began work at Sardis in 1958, led by George Hanfmann, studied the city's <a href='https://consensus.app/papers/details/2d64622f192f5e6db9f5bc0a69f77ed7/?utm_source=claude_desktop'>Jewish community and its Christianisation</a> alongside its Lydian, Hellenistic and Roman past.",
-    "The later Roman centuries were kind to Sardis. The second half of the 3rd century, although troubled elsewhere, seems to have been peaceful and prosperous there. Under Diocletian the city became the <a href='https://consensus.app/papers/details/6b9e7df9afd550509a52f469ded1363b/?utm_source=claude_desktop'>capital of a new province of Lydia</a> and a major military centre, and its commercial and industrial life flourished until 616 CE. In 324 <a href='https://www.britannica.com/biography/Constantine-I-Roman-emperor'>Constantine the Great</a> defeated his last rival and reunited the Roman Empire, and on 11 May 330 he dedicated a new capital, Constantinople, on the Bosphorus. Sardis remained a <a href='https://consensus.app/papers/details/abfb89d90b0d59978bb3c0045467a844/?utm_source=claude_desktop'>metropolis of Lydia</a> in Late Roman and Byzantine times. Sardis and the Lydian burial mounds of Bin Tepe were placed on <a href='https://consensus.app/papers/details/e9d167e13ca559beb1fc4f3fc3818d1b/?utm_source=claude_desktop'>UNESCO's tentative list</a> in 2013 and <a href='https://whc.unesco.org/en/list/1731/'>inscribed as a World Heritage Site</a> in July 2025."
+    "Rome gained western Anatolia by inheritance. The kingdom of <a href='https://whc.unesco.org/en/list/1457/'>Pergamon</a> was ruled by the Attalid kings from a fortified hill above today's Bergama, and when the last of them, Attalus III, died in 133 BCE, he <a href='https://www.encyclopedia.com/religion/encyclopedias-almanacs-transcripts-and-maps/asia-minor-early-church'>bequeathed his kingdom to Rome</a>. The Romans called their new province simply Asia. The name Asia Minor, now used for the whole peninsula, came much later. The Christian historian Orosius is the first writer known to have used it, around 400 CE, to set apart the region where Paul the Apostle had spread Christianity.",
+    "<a href='https://consensus.app/papers/details/6b9e7df9afd550509a52f469ded1363b/?utm_source=claude_desktop'>Sardis</a>, the old capital of Lydia, which Rome had handed to the kings of Pergamon in 188 BCE, passed to Rome with the rest of the kingdom. It soon became the centre of one of the province's nine <em>conventus</em>, its judicial districts. The province was fought over for decades. In 89 or 88 BCE <a href='https://www.worldhistory.org/Mithridates_VI/'>Mithridates VI of Pontus</a> organised the massacre of Romans and Italians across Asia Minor, and the wars against him ended only when Pompey defeated him in 66 BCE. By the time of Augustus peace and confidence had returned.",
+    "Sardis shows how a city of the province could recover from disaster. In 17 CE an <a href='https://consensus.app/papers/details/6b9e7df9afd550509a52f469ded1363b/?utm_source=claude_desktop'>earthquake devastated the city</a>. Reconstruction went on well into the 2nd century, and by then Sardis probably had around 100,000 inhabitants. The <a href='https://consensus.app/papers/details/b4d9c4c717ea5afe997ca8275f98439f/?utm_source=claude_desktop'>fertile Hermus plain</a> and the city's position inland, on the road to the Roman east, both favoured it. Under the Severan emperors the city enjoyed great prosperity and completed much building work.",
+    "The clearest sign of that wealth is the Marble Court of the city's bath-gymnasium, first built with the gymnasium under the emperor Lucius Verus in 165 CE. In 212 and 213 the court was <a href='https://consensus.app/papers/details/b4d9c4c717ea5afe997ca8275f98439f/?utm_source=claude_desktop'>elaborately enlarged</a> with pavilions and a monumental gate, and most of the head-capitals found at Sardis, column tops carved with human heads, come from its colonnade. Other Roman remains include <a href='https://consensus.app/papers/details/e9d167e13ca559beb1fc4f3fc3818d1b/?utm_source=claude_desktop'>columned streets and a synagogue</a> of the city's <a href='https://consensus.app/papers/details/6b9e7df9afd550509a52f469ded1363b/?utm_source=claude_desktop'>Jewish community</a>. In July 2025 Sardis and the Lydian burial mounds of Bin Tepe were <a href='https://whc.unesco.org/en/list/1731/'>inscribed as a World Heritage Site</a>.",
+    "The Acts of the Apostles describes how Paul of Tarsus carried the Christian message across Anatolia. On his first journey, around 46 to 48 CE, he and Barnabas landed at Perga in Pamphylia and <a href='https://www.worldhistory.org/article/2515/the-journeys-of-paul-the-apostle/'>pressed inland</a> to Antioch in Pisidia. There Paul preached in the synagogue and won Jewish and Gentile converts until opponents had the pair expelled. At Iconium, today's <a href='https://www.britannica.com/place/Konya'>Konya</a>, they learned of a plot to kill them and moved on to Lystra, where Paul was stoned, and then to Derbe. Paul returned to Iconium in 50 and 53. On his third journey he spent about two years preaching at Ephesus.",
+    "Paul saw <a href='https://www.britannica.com/place/Ephesus'>Ephesus</a> as the perfect base for his mission. The city stood on the estuary of the Kaystros, and <a href='https://whc.unesco.org/en/list/1018/'>UNESCO</a>, which lists it as a World Heritage Site, calls it an outstanding example of a Roman port city. Its monuments include Hadrian's Temple, the Library of Celsus, dedicated in 110 CE, and the Great Theatre, the scene, according to Acts, of a riot by the city's silversmiths against Paul. Ephesus heads the list of <a href='https://en.wikipedia.org/wiki/Seven_churches_of_Asia'>seven churches</a> to which the Book of Revelation is addressed. Revelation names them as Ephesus, Smyrna, Pergamum, Thyatira, Sardis, Philadelphia and Laodicea, all in today's Türkiye.",
+    "Roman officials were unsure how to treat the new faith. In about 111, while governing Bithynia, <a href='https://www.britannica.com/biography/Pliny-the-Younger'>Pliny the Younger</a> executed Christians who refused to worship the emperor and the Roman gods, then asked the emperor Trajan whether they should be punished for the name of Christian itself. Trajan replied that Christians properly brought before a governor should be punished, and that governors should not hunt for them. Diocletian later took a far harsher line. After incidents at <a href='https://www.britannica.com/place/ancient-Rome/Diocletian'>Nicomedia</a>, where a church stood across from his palace, edicts of 303 and 304 ordered churches destroyed, sacred books seized, clergy imprisoned and death for anyone who refused to sacrifice to the gods. In 311 the emperor Galerius admitted that the persecution had failed and proclaimed an edict of tolerance.",
+    "Full legal rights followed in 313, when Constantine and his fellow emperor Licinius agreed the <a href='https://www.britannica.com/topic/Edict-of-Milan'>Edict of Milan</a>. It allowed Christians to organise churches and ordered confiscated property returned. Constantine hoped a general council would settle a dispute in the eastern church over the teaching of Arius of Alexandria, who held that Christ was a created being, more than human but less than God. In 325 the emperor called the first ecumenical council of the church to <a href='https://www.britannica.com/question/What-was-the-significance-of-the-Council-of-Nicaea'>Nicaea</a>, today's İznik. The council condemned Arius and adopted the Creed of Nicaea, which declared Christ \"begotten, not made\" and <em>homoousios</em>, \"of one substance\", with the Father.",
+    "The fourth ecumenical council met at <a href='https://www.britannica.com/event/Council-of-Chalcedon'>Chalcedon</a> in 451. About 520 bishops or their representatives attended, making it the largest and best documented of the early councils. It declared Christ \"perfect in deity and perfect in humanity\", in two natures, without being mixed, divided or separated, and rejected the teaching that Christ had only one nature. From then on the <a href='https://www.britannica.com/topic/miaphysitism'>Oriental Orthodox churches</a>, among them the Armenian Apostolic, Coptic and Syriac Orthodox churches, were largely out of contact with the other main branches of Christianity. The Roman and Greek churches called them monophysites. They call their own view miaphysite, a single nature in which divinity and humanity are equally present."
    ],
    "facts": [
     {
      "label": "Province of Asia",
-     "value": "Sardis part of it from 133 BCE"
+     "value": "Bequeathed to Rome by Attalus III in 133 BCE"
     },
     {
-     "label": "Sardis earthquake",
-     "value": "17 CE, rebuilding into the 2nd century"
+     "label": "Paul's first journey",
+     "value": "About 46–48 CE: Perga, Antioch in Pisidia, Iconium, Lystra, Derbe"
     },
     {
-     "label": "Roman Sardis",
-     "value": "Probably around 100,000 people by the 2nd century CE"
+     "label": "Seven churches of Revelation",
+     "value": "Ephesus, Smyrna, Pergamum, Thyatira, Sardis, Philadelphia, Laodicea"
     },
     {
-     "label": "Marble Court",
-     "value": "Built 165 CE, enlarged 212–213"
+     "label": "Persecution and toleration",
+     "value": "Edicts of 303–304, Galerius's edict of tolerance 311, Edict of Milan 313"
     },
     {
-     "label": "Province of Lydia",
-     "value": "Created under Diocletian, capital Sardis"
+     "label": "Church councils",
+     "value": "Nicaea (İznik) 325; Chalcedon 451, about 520 bishops"
     }
    ],
    "timeline": [
     {
      "year": -133,
-     "label": "Sardis passes to Rome, province of Asia"
+     "label": "Attalus III bequeaths Pergamon to Rome"
     },
     {
-     "year": -66,
-     "label": "Pompey defeats Mithridates VI"
+     "year": 47,
+     "label": "Paul reaches Iconium on his first journey"
     },
     {
-     "year": 17,
-     "label": "Earthquake devastates Sardis"
+     "year": 303,
+     "label": "Diocletian's edicts against Christians begin"
     },
     {
-     "year": 72,
-     "label": "Rome annexes Commagene"
+     "year": 313,
+     "label": "Edict of Milan gives Christians legal rights"
     },
     {
-     "year": 165,
-     "label": "Gymnasium and Marble Court built at Sardis"
+     "year": 325,
+     "label": "Council of Nicaea condemns Arius"
     },
     {
-     "year": 330,
-     "label": "Constantinople dedicated as new capital"
+     "year": 451,
+     "label": "Council of Chalcedon defines Christ's two natures"
     }
    ],
    "places": [
@@ -1356,19 +1362,33 @@
      "name": "Sardis, Roman bath-gymnasium",
      "lat": 38.488,
      "lon": 28.04,
-     "note": "Old Lydian capital that became a leading city of Roman Asia, rebuilt after the earthquake of 17 CE; a World Heritage Site with the Bin Tepe tumuli since 2025.",
+     "note": "Old Lydian capital, a leading city of Roman Asia and one of Revelation's seven churches; a World Heritage Site with the Bin Tepe tumuli since 2025.",
      "visit": "Remains of the Roman bath-gymnasium with its Marble Court, columned streets and a synagogue."
+    },
+    {
+     "name": "Ephesus",
+     "lat": 37.939,
+     "lon": 27.341,
+     "note": "Roman port city on the old Kaystros estuary, Paul's base for about two years according to Acts, and first of Revelation's seven churches.",
+     "visit": "Library of Celsus, Great Theatre, Hadrian's Temple and Terrace House 2 with wall paintings and mosaics."
+    },
+    {
+     "name": "İznik (ancient Nicaea)",
+     "lat": 40.429,
+     "lon": 29.72,
+     "note": "Where Constantine called the first ecumenical council of the church in 325; it condemned Arius and adopted the Creed of Nicaea.",
+     "visit": ""
     }
    ],
    "quiz": {
-    "q": "What devastated Sardis in 17 CE?",
+    "q": "Where did the first ecumenical council of the church meet in 325?",
     "options": [
-     "An earthquake",
-     "A Persian siege",
-     "A great fire"
+     "Nicaea, today's İznik",
+     "Ephesus",
+     "Sardis"
     ],
     "answer": 0,
-    "explain": "An earthquake devastated Sardis in 17 CE. Rebuilding went on well into the 2nd century, by which time the city probably had around 100,000 inhabitants."
+    "explain": "Constantine called the council to Nicaea, today's İznik, hoping to settle the dispute over the teaching of Arius. It condemned Arius and adopted the Creed of Nicaea."
    },
    "sources": [
     {
@@ -1376,8 +1396,8 @@
      "url": "https://whc.unesco.org/en/list/1457/"
     },
     {
-     "title": "Wikipedia: Treaty of Apamea",
-     "url": "https://en.wikipedia.org/wiki/Treaty_of_Apamea"
+     "title": "Encyclopedia.com (New Catholic Encyclopedia): Asia Minor, early Church in",
+     "url": "https://www.encyclopedia.com/religion/encyclopedias-almanacs-transcripts-and-maps/asia-minor-early-church"
     },
     {
      "title": "Trebilco (1991), Unknown Journal: Jewish Communities in Asia Minor: The Jewish communities at Sardis and Priene",
@@ -1388,18 +1408,6 @@
      "url": "https://www.worldhistory.org/Mithridates_VI/"
     },
     {
-     "title": "Britannica: Troy",
-     "url": "https://www.britannica.com/place/Troy-ancient-city-Turkey"
-    },
-    {
-     "title": "UNESCO World Heritage Centre: Nemrut Dağ",
-     "url": "https://whc.unesco.org/en/list/448/"
-    },
-    {
-     "title": "Majewski (1973), Journal of The American Institute for Conservation: The Conservation of Archaeological Materials at Sardis, Turkey",
-     "url": "https://consensus.app/papers/details/abfb89d90b0d59978bb3c0045467a844/?utm_source=claude_desktop"
-    },
-    {
      "title": "Hirschland (1967), Papers of the British School at Rome: The Head-Capitals of Sardis",
      "url": "https://consensus.app/papers/details/b4d9c4c717ea5afe997ca8275f98439f/?utm_source=claude_desktop"
     },
@@ -1408,20 +1416,52 @@
      "url": "https://consensus.app/papers/details/e9d167e13ca559beb1fc4f3fc3818d1b/?utm_source=claude_desktop"
     },
     {
-     "title": "Meeks et al. (1983), The Journal of Hellenic Studies: Sardis from Prehistoric to Roman Times: Results of the Archaeological Exploration of Sardis 1958-1975",
-     "url": "https://consensus.app/papers/details/2d64622f192f5e6db9f5bc0a69f77ed7/?utm_source=claude_desktop"
-    },
-    {
-     "title": "Britannica: Constantine I",
-     "url": "https://www.britannica.com/biography/Constantine-I-Roman-emperor"
-    },
-    {
-     "title": "Encyclopedia.com (New Catholic Encyclopedia): Asia Minor, early Church in",
-     "url": "https://www.encyclopedia.com/religion/encyclopedias-almanacs-transcripts-and-maps/asia-minor-early-church"
-    },
-    {
      "title": "UNESCO World Heritage Centre: Sardis and the Lydian Tumuli of Bin Tepe",
      "url": "https://whc.unesco.org/en/list/1731/"
+    },
+    {
+     "title": "World History Encyclopedia: The Journeys of Paul the Apostle",
+     "url": "https://www.worldhistory.org/article/2515/the-journeys-of-paul-the-apostle/"
+    },
+    {
+     "title": "Britannica: Konya",
+     "url": "https://www.britannica.com/place/Konya"
+    },
+    {
+     "title": "Britannica: Ephesus",
+     "url": "https://www.britannica.com/place/Ephesus"
+    },
+    {
+     "title": "UNESCO World Heritage Centre: Ephesus",
+     "url": "https://whc.unesco.org/en/list/1018/"
+    },
+    {
+     "title": "Wikipedia: Seven churches of Asia",
+     "url": "https://en.wikipedia.org/wiki/Seven_churches_of_Asia"
+    },
+    {
+     "title": "Britannica: Pliny the Younger",
+     "url": "https://www.britannica.com/biography/Pliny-the-Younger"
+    },
+    {
+     "title": "Britannica: Ancient Rome, Diocletian",
+     "url": "https://www.britannica.com/place/ancient-Rome/Diocletian"
+    },
+    {
+     "title": "Britannica: Edict of Milan",
+     "url": "https://www.britannica.com/topic/Edict-of-Milan"
+    },
+    {
+     "title": "Britannica: What was the significance of the Council of Nicaea?",
+     "url": "https://www.britannica.com/question/What-was-the-significance-of-the-Council-of-Nicaea"
+    },
+    {
+     "title": "Britannica: Council of Chalcedon",
+     "url": "https://www.britannica.com/event/Council-of-Chalcedon"
+    },
+    {
+     "title": "Britannica: Miaphysitism",
+     "url": "https://www.britannica.com/topic/miaphysitism"
     }
    ],
    "scene": 8,
@@ -1430,7 +1470,8 @@
     451
    ],
    "paragraph_scenes": {
-    "6": 9
+    "7": 9,
+    "8": 9
    }
   },
   {
@@ -1759,17 +1800,20 @@
    "id": "ottoman-rise",
    "title": "The rise of the Ottomans",
    "dates": "1299–1453",
-   "lede": "How the Turkmen principality of Osman, in north-western Anatolia, emerged from the break-up of Seljuk and Mongol power and in 1453 took Constantinople.",
+   "lede": "How Osman's Turkmen principality in north-western Anatolia took Bursa, crossed into Europe, survived defeat by Timur and in 1453 captured Constantinople.",
    "paragraphs": [
-    "By the early 14th century Anatolia was divided among Turkmen principalities, the beyliks, and Mongol power was fading. <a href='https://consensus.app/papers/details/ab40a372e9e45ef7b7fd71217f44f2c7/?utm_source=claude_desktop'>Ilkhanid rule ended in 1335</a> with the death of the ruler Abu Saʿid, although the Ilkhans' successors, based mainly in greater Azerbaijan, <a href='https://consensus.app/papers/details/73726a9b90f15094b6b78e78b1c1fd3d/?utm_source=claude_desktop'>lasted until the rise of Timur</a>. These troubled decades were also a time of intense Islamisation, when Sufism spread and new kinds of literature grew up in Anatolia's thriving cities. In Konya, between 1311 and 1332, illuminated manuscripts were made for Turkmen princes and for Mevlevi dervishes, among them a large two-volume Qur'an and a copy of Rumi's <em>Masnavi</em>.",
-    "One beylik in north-western Anatolia would become the core of an empire. Its ruler, <a href='https://www.britannica.com/biography/Osman-I'>Osman I</a>, was born about 1258 and belonged to the Kayı branch of the Oğuz Turks. His father, Ertuğrul, had held a principality centred on Söğüt. The dynasty took its name from the Arabic form of Osman's name, ʿUthmān, which is the origin of the word Ottoman. Tradition dates the <a href='https://www.worldhistory.org/Osman_I/'>founding of Osman's state to 1299</a>. He died in 1324 or 1326; the sources disagree.",
-    "Historians have long argued about where the Ottoman state came from. In the traditional Turkish account, as <a href='https://consensus.app/papers/details/da3276df47bc549aa174a0e4b16bc4cc/?utm_source=claude_desktop'>a survey of Mongol Anatolia</a> explains, Ottoman history grows seamlessly out of the Seljuks of Rum, and the Mongol century appears as an unwelcome interlude that wrecked the country and left nothing lasting. The historian Kafesoğlu wrote that Osman's beylik, on the western frontier of the Seljuk state, 'kept Anatolia as a Turkish motherland'. Other scholars study Anatolian society in the late 13th and 14th centuries, when the Ilkhanate was the dominant power. Coin specialists have recently stressed how much early Ottoman practice continued Ilkhanid ways, which suggests that the Mongol years left their mark on the new state.",
-    "The Ottomans also built on older traditions. Seljuk architects had adapted Byzantine structural ideas and joined them to Islamic decoration, with geometric motifs, calligraphy and muqarnas. A <a href='https://consensus.app/papers/details/d875804858d25e8fb6040795c530fce8/?utm_source=claude_desktop'>2025 comparative study</a> of this blend examines the Great Mosque of Divriği, Hagia Sophia and the Green Mosque in Bursa. It concludes that the mix of Byzantine engineering and Seljuk ornament strongly shaped later Ottoman architecture. The influence ran both ways, since later Byzantine buildings borrowed Seljuk geometric patterns and muqarnas for their decoration.",
-    "Among the surviving monuments of the early sultans is the imaret, a charitable kitchen and hospice, that Sultan Murad I built at İznik, the old Nicaea, for his <a href='https://www.turkishmuseums.com/museum/detail/2012-bursa-iznik-nilufer-hatun-imaret-turkish-islamic-arts-museum/2012/4'>mother Nilüfer Hatun in 1388</a>. Its plan, an inverted T, is rare in Ottoman architecture. After serving as a warehouse, it was restored in 1960 and opened the same year as the İznik Museum, which shows finds from prehistory to the Ottoman period, among them material from the excavations of the town's tile kilns. Those excavations are still going on, and İznik is on <a href='https://whc.unesco.org/en/tentativelists/5900/'>UNESCO's tentative list</a> for World Heritage status.",
-    "Trade changed as well. The Ottomans inherited the Seljuk caravanserai, but they <a href='https://consensus.app/papers/details/ff445839ffdc54139e65d6e8d1ab22b0/?utm_source=claude_desktop'>moved the han from isolated highways into the hearts of cities</a>, where it became the centre of bazaars, workshops and commercial districts. Hüseyin Gökalp links this to a wider shift of trade from overland caravan routes to sea lanes and city markets. A survey of khans in south-eastern Anatolia found that the security-minded buildings of the 13th century gave way, as <a href='https://consensus.app/papers/details/ee71ff93efe158a881a04e2e58e50fc9/?utm_source=claude_desktop'>trade declined in the 14th century</a>, to smaller, enclosed plans. Open courtyards returned from the 15th century.",
-    "The sultans' own infantry were the <a href='https://en.wikipedia.org/wiki/Janissary'>Janissaries</a>, the <em>yeniçeri</em> or 'new soldiers', an elite standing force first formed under Sultan Murad I around 1380. They fought as the sultan's household troops and guarded his person. Their recruits came through the <a href='https://en.wikipedia.org/wiki/Devshirme'>devşirme</a>, 'the collecting', a periodic levy of boys from Christian peasant families, mostly in the Balkans. The boys were taken from their families, converted to Islam and trained as soldiers or as servants of the palace.",
-    "Under Murad II, who reigned from 1421 to 1451 with a break between 1444 and 1446, the Janissaries became perhaps the first infantry force in the world to be <a href='https://en.wikipedia.org/wiki/Janissary'>equipped mainly with firearms</a>. Ottoman armies marched to the music of the <a href='https://en.wikipedia.org/wiki/Ottoman_military_band'>mehter</a>, the military band. Its instruments included the kös, a giant kettledrum, the nakkare, the davul bass drum, zil cymbals, the zurna and the boru trumpet. The mehter is thought to be the oldest kind of military marching band.",
-    "The great prize was Constantinople. Sultan Mehmed II began the <a href='https://www.britannica.com/event/Fall-of-Constantinople-1453'>siege of the city on 6 April 1453</a>. A chain across the Golden Horn, the inlet that forms the city's harbour, kept the Ottoman fleet out. On the night of 22 April the Ottomans found a way round it. <a href='https://byzantine-world.com/historical-events/fall-of-constantinople-1453/'>Some seventy ships</a> were dragged overland on greased rollers over the hill behind Galata and launched into the Golden Horn. The final assault came before dawn on 29 May 1453, and the city fell to the Ottomans."
+    "By the early 14th century Anatolia was divided among Turkmen principalities, the beyliks. The ruler of one in the north-west, <a href='https://www.britannica.com/biography/Osman-I'>Osman I</a>, was born about 1258 and belonged to the Kayı branch of the Oğuz Turks. His father, Ertuğrul, had held a principality centred on Söğüt. The word Ottoman comes from ʿUthmān, the Arabic form of Osman's name. Tradition dates the <a href='https://www.worldhistory.org/Osman_I/'>founding of his state to 1299</a>. He died in 1324 or 1326; the sources disagree.",
+    "Osman's son <a href='https://www.britannica.com/biography/Orhan'>Orhan</a> took Bursa on 6 April 1326, though some sources date its capture to 1324. The city gave the principality the means to become a real state with an army, and Orhan declared himself independent of his overlords. <a href='https://www.britannica.com/place/Ottoman-Empire/Osman-and-Orhan'>Nicaea, today's İznik, fell in 1331</a>. Orhan built mosques, colleges and caravanserais in the conquered towns, above all in Bursa, the first great Ottoman capital, where the <a href='https://www.britannica.com/place/Bursa-Turkey'>tombs of Osman and Orhan</a> stand on a terrace above the city.",
+    "In 2014 UNESCO inscribed <a href='https://whc.unesco.org/en/list/1452/'>Bursa and Cumalıkızık: the Birth of the Ottoman Empire</a> on the World Heritage List. Its eight components show how the early sultans built their capital. Orhan, Murad I, Bayezid I, Mehmed I and Murad II each founded a <em>külliye</em>, a complex of mosque, madrasa, bath, public kitchen and tomb, and these complexes set the limits of the city. The nearby village of Cumalıkızık was endowed to provide income for Orhan's complex.",
+    "The Ottomans reached Europe through a Byzantine civil war. In 1346 Orhan became the chief ally of the future emperor John VI Cantacuzenus and <a href='https://www.britannica.com/biography/Orhan'>married his daughter Theodora</a>. From 1354 Orhan's son Süleyman made <a href='https://www.britannica.com/place/Ottoman-Empire/Osman-and-Orhan'>Gallipoli</a>, on the European side of the Dardanelles, a permanent base for expansion. Orhan's successor, Murad I, pushed into Thrace and in 1361, or 1362 in some accounts, took Adrianople, the second city of the Byzantine Empire. Renamed Edirne, it became the Ottoman centre in Thrace; sources differ on whether it was also the capital before 1413.",
+    "The sultans' own infantry were the <a href='https://en.wikipedia.org/wiki/Janissary'>Janissaries</a>, the <em>yeniçeri</em> or 'new soldiers', an elite standing force first formed under Murad I around 1380. They served as the sultan's household troops and bodyguard. Recruits came through the <em>devşirme</em>, 'the collecting', a periodic levy of boys from Christian peasant families, mostly in the Balkans, who were converted to Islam and trained as soldiers or palace servants.",
+    "Murad I also built an imaret, a charitable kitchen and hospice, at İznik for his <a href='https://www.turkishmuseums.com/museum/detail/2012-bursa-iznik-nilufer-hatun-imaret-turkish-islamic-arts-museum/2012/4'>mother Nilüfer Hatun in 1388</a>. Its plan, an inverted T, is rare in Ottoman architecture. After serving as a warehouse, it was restored in 1960 and opened the same year as the İznik Museum. It shows finds from prehistory to the Ottoman period, among them material from the continuing excavations of the town's tile kilns.",
+    "On 28 June 1389 Murad fought the Serbian prince Lazar Hrebeljanović at <a href='https://www.britannica.com/event/Battle-of-Kosovo-1389-Balkans'>Kosovo Polje</a>. Both leaders died, the Ottomans won and Serbia collapsed. Murad's son <a href='https://www.britannica.com/biography/Bayezid-I'>Bayezid I</a> blockaded Constantinople from 1391 to 1398. On 25 September 1396, at <a href='https://www.britannica.com/event/Battle-of-Nicopolis'>Nicopolis</a>, now Nikopol in Bulgaria, he destroyed a crusader army led by King Sigismund of Hungary. The French knights charged rashly and were broken by Bayezid's reserves and a flanking attack by some 5,000 Serbian soldiers.",
+    "At the <a href='https://www.britannica.com/event/Battle-of-Ankara-1402'>Battle of Ankara</a> on 20 July 1402 the exhausted, thirsty army of Bayezid, called Yıldırım, 'the Thunderbolt', about 85,000 men, faced an estimated 140,000 under Timur, or Tamerlane. Anatolian troops deserted, and Bayezid became the first Ottoman ruler captured by an enemy. He died in captivity in 1403. Timur divided the Ottoman lands among Bayezid's sons, who fought each other for eleven years. <a href='https://www.britannica.com/biography/Mehmed-I'>Mehmed I</a>, helped by the Byzantine emperor Manuel II, defeated his brother Musa at Çamurlu in 1413 and reunited the state. The capital moved from <a href='https://www.britannica.com/place/Bursa-Turkey'>Bursa</a>, sacked by Timur, to Edirne.",
+    "Under Murad II, who reigned from 1421 to 1451 with a break between 1444 and 1446, the Janissaries became perhaps the first infantry force in the world <a href='https://en.wikipedia.org/wiki/Janissary'>equipped mainly with firearms</a>. Ottoman armies marched to the music of the <a href='https://en.wikipedia.org/wiki/Ottoman_military_band'>mehter</a>, the military band, with the kös, a giant kettledrum, the nakkare, the davul bass drum, zil cymbals, the zurna and the boru trumpet. The mehter is thought to be the oldest kind of military marching band.",
+    "In June 1444 Murad II made peace at Edirne and abdicated in favour of his 12-year-old son, Mehmed II. A crusade called by Pope Eugene IV and led by János Hunyadi of Transylvania and Władysław III, king of Poland and Hungary, marched on the Ottomans. Murad took command again, and on 10 November he crushed the crusaders at <a href='https://www.britannica.com/event/Battle-of-Varna'>Varna</a>, in today's Bulgaria. Władysław died in a rash attack. The battle ended the efforts of European powers to save Constantinople.",
+    "Mehmed II returned to the throne in 1451. In 1452 he built the fortress of <a href='https://www.britannica.com/place/Rumelihisari'>Rumeli Hisarı</a> on the European bank of the Bosporus, at its narrowest point, to restrict passage between the Black Sea and the Mediterranean. He set Urban, a Hungarian gunsmith, to arm the fortress and to build cannon powerful enough to bring down the walls of Constantinople. By March 1453 <a href='https://www.britannica.com/event/Fall-of-Constantinople-1453'>Urban's cannon</a> had been hauled from Edirne to the outskirts of the city.",
+    "Mehmed began the <a href='https://www.britannica.com/event/Fall-of-Constantinople-1453'>siege on 6 April 1453</a>. A chain across the Golden Horn, the inlet that forms the city's harbour, kept the Ottoman fleet out. On the night of 22 April <a href='https://byzantine-world.com/historical-events/fall-of-constantinople-1453/'>some seventy ships</a> were dragged overland on greased rollers over the hill behind Galata and launched into the Golden Horn. The final assault came before dawn on 29 May 1453. The Ottomans broke through the ancient land wall, and the Byzantine Empire came to an end."
    ],
    "facts": [
     {
@@ -1777,20 +1821,20 @@
      "value": "Osman I, born about 1258"
     },
     {
-     "label": "Traditional founding",
-     "value": "1299"
+     "label": "First capital",
+     "value": "Bursa, taken 1326 (or 1324)"
     },
     {
-     "label": "Origin",
-     "value": "Kayı branch of the Oğuz Turks"
+     "label": "Foothold in Europe",
+     "value": "Gallipoli, from 1354"
+    },
+    {
+     "label": "Interregnum",
+     "value": "1402 to 1413, after defeat at Ankara"
     },
     {
      "label": "Siege of Constantinople",
      "value": "6 April to 29 May 1453"
-    },
-    {
-     "label": "Ships hauled overland",
-     "value": "About 70, on 22 April 1453"
     }
    ],
    "timeline": [
@@ -1799,16 +1843,24 @@
      "label": "Traditional founding of Osman's state"
     },
     {
-     "year": 1324,
-     "label": "Osman I dies (1324 or 1326)"
+     "year": 1326,
+     "label": "Orhan takes Bursa"
     },
     {
-     "year": 1380,
-     "label": "Janissary corps formed under Murad I"
+     "year": 1389,
+     "label": "Murad I killed at Kosovo"
     },
     {
-     "year": 1388,
-     "label": "Murad I builds the Nilüfer Hatun imaret"
+     "year": 1402,
+     "label": "Timur captures Bayezid I at Ankara"
+    },
+    {
+     "year": 1413,
+     "label": "Mehmed I reunites the state"
+    },
+    {
+     "year": 1444,
+     "label": "Murad II defeats the crusaders at Varna"
     },
     {
      "year": 1453,
@@ -1817,25 +1869,18 @@
    ],
    "places": [
     {
-     "name": "Söğüt",
-     "lat": 40.018,
-     "lon": 30.182,
-     "note": "Town in north-western Anatolia where Osman's father Ertuğrul held a principality, the starting point of the Ottoman state.",
-     "visit": ""
+     "name": "Tombs of Osman and Orhan, Bursa",
+     "lat": 40.187,
+     "lon": 29.058,
+     "note": "Tombs of the dynasty's founder Osman I and his son Orhan, who took Bursa and made it the first great Ottoman capital.",
+     "visit": "The two tombs on a terrace overlooking the city, within the Bursa and Cumalıkızık World Heritage Site."
     },
     {
      "name": "Green Mosque (Yeşil Cami), Bursa",
      "lat": 40.182,
      "lon": 29.074,
-     "note": "Studied as a key example of the blend of Byzantine building ideas and Seljuk ornament that shaped Ottoman architecture.",
-     "visit": ""
-    },
-    {
-     "name": "Golden Horn, Istanbul",
-     "lat": 41.028,
-     "lon": 28.962,
-     "note": "The city's inlet harbour. In 1453 a chain across it kept the Ottoman fleet out until about seventy ships were dragged overland behind Galata.",
-     "visit": ""
+     "note": "Mosque of 1421 that began a purely Turkish style. The nearby Green Tomb holds Mehmed I, who reunited the state after the civil war.",
+     "visit": "The mosque, and the tomb of Mehmed I close by."
     },
     {
      "name": "Nilüfer Hatun Imaret (İznik Museum)",
@@ -1843,27 +1888,33 @@
      "lon": 29.7236,
      "note": "Charitable kitchen built by Murad I for his mother Nilüfer Hatun in 1388; since 1960 the İznik Museum.",
      "visit": "Finds from prehistory to the Ottoman period, including material from the İznik tile kilns."
+    },
+    {
+     "name": "Rumeli Hisarı, Istanbul",
+     "lat": 41.085,
+     "lon": 29.056,
+     "note": "Fortress Mehmed II built in 1452 at the narrowest point of the Bosporus, to restrict passage through the strait before the siege of Constantinople.",
+     "visit": "The 1452 fortress on the European shore of the Bosporus."
+    },
+    {
+     "name": "Golden Horn, Istanbul",
+     "lat": 41.028,
+     "lon": 28.962,
+     "note": "The city's inlet harbour. In 1453 a chain across it kept the Ottoman fleet out until about seventy ships were dragged overland behind Galata.",
+     "visit": ""
     }
    ],
    "quiz": {
-    "q": "How did the Ottoman fleet get past the chain across the Golden Horn in 1453?",
+    "q": "Who defeated and captured Sultan Bayezid I at the Battle of Ankara in 1402?",
     "options": [
-     "Ships were dragged overland on greased rollers",
-     "Divers cut the chain at night",
-     "Cannon fire broke the chain"
+     "Timur",
+     "King Sigismund of Hungary",
+     "John VI Cantacuzenus"
     ],
     "answer": 0,
-    "explain": "On the night of 22 April some seventy ships were hauled over the hill behind Galata and launched into the Golden Horn, behind the chain."
+    "explain": "Timur's larger army routed the Ottomans near Ankara on 20 July 1402. Bayezid, the first Ottoman ruler captured by an enemy, died in captivity in 1403, and eleven years of civil war followed."
    },
    "sources": [
-    {
-     "title": "Jackson (2020): Early Fourteenth-century Manuscripts from Konya and Sivas",
-     "url": "https://consensus.app/papers/details/ab40a372e9e45ef7b7fd71217f44f2c7/?utm_source=claude_desktop"
-    },
-    {
-     "title": "Lane (2021), Journal of Islamic Studies: Islam, Literature and Society in Mongol Anatolia By A. C. S. Peacock",
-     "url": "https://consensus.app/papers/details/73726a9b90f15094b6b78e78b1c1fd3d/?utm_source=claude_desktop"
-    },
     {
      "title": "Britannica: Osman I",
      "url": "https://www.britannica.com/biography/Osman-I"
@@ -1873,28 +1924,60 @@
      "url": "https://www.worldhistory.org/Osman_I/"
     },
     {
-     "title": "Melville (2009): Anatolia under the Mongols",
-     "url": "https://consensus.app/papers/details/da3276df47bc549aa174a0e4b16bc4cc/?utm_source=claude_desktop"
+     "title": "Britannica: Orhan",
+     "url": "https://www.britannica.com/biography/Orhan"
     },
     {
-     "title": "Nazer et al. (2025), Journal of Design, Planning and Aesthetics Research: Metric-Based Comparative Analysis of Seljuk and Byzantine Architectural Practices in Medieval Anatolia",
-     "url": "https://consensus.app/papers/details/d875804858d25e8fb6040795c530fce8/?utm_source=claude_desktop"
+     "title": "Britannica: Ottoman Empire, Osman and Orhan",
+     "url": "https://www.britannica.com/place/Ottoman-Empire/Osman-and-Orhan"
     },
     {
-     "title": "Gökalp (2026), Türkiye İlahiyat Araştırmaları Dergisi: From Seljuk Caravanserais to Ottoman Hans: The Transformation of Merchant Accommodations in Anatolia",
-     "url": "https://consensus.app/papers/details/ff445839ffdc54139e65d6e8d1ab22b0/?utm_source=claude_desktop"
+     "title": "Britannica: Bursa",
+     "url": "https://www.britannica.com/place/Bursa-Turkey"
     },
     {
-     "title": "Kakdaş Ateş (2025), Iconarp International J. of Architecture and Planning: The Impact of Trade on Architecture During the Seljuk-Ottoman Period: A Study on Caravanserai and Khan Structures in the Southeastern Anatolia Region",
-     "url": "https://consensus.app/papers/details/ee71ff93efe158a881a04e2e58e50fc9/?utm_source=claude_desktop"
+     "title": "UNESCO World Heritage Centre: Bursa and Cumalıkızık: the Birth of the Ottoman Empire",
+     "url": "https://whc.unesco.org/en/list/1452/"
     },
     {
      "title": "Wikipedia: Janissary",
      "url": "https://en.wikipedia.org/wiki/Janissary"
     },
     {
+     "title": "Turkish Museums: Bursa İznik Nilüfer Hatun Imaret, Turkish-Islamic Arts Museum",
+     "url": "https://www.turkishmuseums.com/museum/detail/2012-bursa-iznik-nilufer-hatun-imaret-turkish-islamic-arts-museum/2012/4"
+    },
+    {
+     "title": "Britannica: Battle of Kosovo (1389)",
+     "url": "https://www.britannica.com/event/Battle-of-Kosovo-1389-Balkans"
+    },
+    {
+     "title": "Britannica: Bayezid I",
+     "url": "https://www.britannica.com/biography/Bayezid-I"
+    },
+    {
+     "title": "Britannica: Battle of Nicopolis (1396)",
+     "url": "https://www.britannica.com/event/Battle-of-Nicopolis"
+    },
+    {
+     "title": "Britannica: Battle of Ankara (1402)",
+     "url": "https://www.britannica.com/event/Battle-of-Ankara-1402"
+    },
+    {
+     "title": "Britannica: Mehmed I",
+     "url": "https://www.britannica.com/biography/Mehmed-I"
+    },
+    {
      "title": "Wikipedia: Ottoman military band",
      "url": "https://en.wikipedia.org/wiki/Ottoman_military_band"
+    },
+    {
+     "title": "Britannica: Battle of Varna (1444)",
+     "url": "https://www.britannica.com/event/Battle-of-Varna"
+    },
+    {
+     "title": "Britannica: Rumelihisarı",
+     "url": "https://www.britannica.com/place/Rumelihisari"
     },
     {
      "title": "Britannica: Fall of Constantinople (1453)",
@@ -1903,18 +1986,6 @@
     {
      "title": "Byzantine World: Fall of Constantinople (1453)",
      "url": "https://byzantine-world.com/historical-events/fall-of-constantinople-1453/"
-    },
-    {
-     "title": "Turkish Museums: Bursa İznik Nilüfer Hatun Imaret, Turkish-Islamic Arts Museum",
-     "url": "https://www.turkishmuseums.com/museum/detail/2012-bursa-iznik-nilufer-hatun-imaret-turkish-islamic-arts-museum/2012/4"
-    },
-    {
-     "title": "UNESCO World Heritage Centre: İznik (tentative list)",
-     "url": "https://whc.unesco.org/en/tentativelists/5900/"
-    },
-    {
-     "title": "Wikipedia: Devshirme",
-     "url": "https://en.wikipedia.org/wiki/Devshirme"
     }
    ],
    "scene": 11,
@@ -2230,17 +2301,21 @@
    "id": "collapse",
    "title": "War and the end of empire",
    "dates": "1914–1923",
-   "lede": "How the Ottoman Empire fought and lost the First World War, the deportations and mass killings of Armenians, and the national movement that won the War of Independence.",
+   "lede": "How the Ottoman Empire lost the First World War, the deportation and mass killing of the Armenians, and the War of Independence that ended at Lausanne in 1923.",
    "paragraphs": [
-    "The empire entered the First World War as Germany's ally. On 2 August 1914 the Ottoman and German governments <a href='https://consensus.app/papers/details/dc3a868964a4532cb92931992c2e90e0/?utm_source=claude_desktop'>agreed an alliance</a>, and on 29 October the Ottoman Empire officially joined the war as one of the Central Powers. In November the sultan proclaimed a jihad against the Allies. Ottoman and German officials printed pamphlets, leaflets and newspapers aimed at the Muslims of India, Egypt and other Allied colonies. Some of this material called Muslims to holy war, while some appealed to them through the caliphate and the Ottoman state. Among the aims were mutiny by colonial troops in the Allied armies, Muslim unity and sympathy for Germany.",
-    "The first great offensive ended in disaster. In late December 1914 <a href='https://consensus.app/papers/details/9a8b0ee1e05050e49129425847be2c9f/?utm_source=claude_desktop'>Enver Pasha</a> sent tens of thousands of poorly clothed and poorly equipped soldiers across mountain passes more than 2,000 metres high in the Caucasus. He meant to capture a strategic railhead in the Russian Caucasus and inflict a heavy defeat on the Russian army. The campaign around Sarıkamış lasted about two weeks. Some 50,000 Ottoman soldiers died, about a quarter of them from frostbite and exposure. Recent histories of the war in the Middle East stress how much life was wasted through poor command on every side, from the Caucasus to Gallipoli and Mesopotamia.",
+    "The empire entered the First World War as Germany's ally. On 2 August 1914 the Ottoman and German governments <a href='https://consensus.app/papers/details/dc3a868964a4532cb92931992c2e90e0/?utm_source=claude_desktop'>agreed an alliance</a>, and on 29 October the Ottoman Empire officially joined the war as one of the Central Powers. In November the sultan proclaimed a jihad against the Allies, and Ottoman and German propaganda called the Muslims of India, Egypt and other Allied colonies to holy war.",
+    "The first great offensive ended in disaster. In late December 1914 <a href='https://consensus.app/papers/details/9a8b0ee1e05050e49129425847be2c9f/?utm_source=claude_desktop'>Enver Pasha</a> sent tens of thousands of poorly clothed and poorly equipped soldiers across mountain passes more than 2,000 metres high in the Caucasus, hoping to capture a strategic railhead and inflict a heavy defeat on the Russian army. The campaign around Sarıkamış lasted about two weeks. Some 50,000 Ottoman soldiers died, about a quarter of them from frostbite and exposure.",
     "In 1915 the Allies struck at the capital. The <a href='https://www.britannica.com/summary/Gallipoli-Campaign'>Gallipoli campaign</a> was a British-led attempt to force a way through the Dardanelles, take the Gallipoli peninsula and occupy Constantinople. When Allied troops landed in April 1915, <a href='https://www.awm.gov.au/articles/encyclopedia/ataturk'>Mustafa Kemal</a> commanded the 19th Division, the main reserve of the Ottoman Fifth Army, and his men opposed the landing of the Australian and New Zealand troops known as the Anzacs. The fighting on the peninsula went on into 1916 and ended in failure for the Allies.",
     "Behind the fronts, the war brought mass death to the empire's Armenians. In 1915 and 1916 the Ottoman government deported its Armenian subjects, and massacres accompanied the deportations. Estimates made between 1915 and 1923 most often put the number who died in these two years at <a href='https://consensus.app/papers/details/5e90b5a724d8573ba0e0a73e040d08f1/?utm_source=claude_desktop'>about one million</a>. By these calculations some 600,000 died in 1915 in the deportations and massacres, and around 400,000 died in 1916 in camps in Syria and Mesopotamia, from starvation and disease and in the violence that followed when the camps were broken up. The historian <a href='https://consensus.app/papers/details/aa5905ae328158d6a237dd4b56a0702d/?utm_source=claude_desktop'>Raymond Kévorkian</a> puts the number of Armenian dead at up to 1.5 million. After the war there were attempts to bring those responsible to justice.",
     "Except in Turkey and among pro-Turkish commentators, it is <a href='https://consensus.app/papers/details/41d6a13457ff5bac84a98e8882801955/?utm_source=claude_desktop'>generally accepted</a> that what happened to the Armenians in 1915 and 1916 was genocide. By 2019 <a href='https://consensus.app/papers/details/eb0ce35c4312521f9984988fa379fd0f/?utm_source=claude_desktop'>more than 20 countries</a> had recognised the Armenian genocide, while Turkey denies it. Turkish history textbooks present the deportations as a wartime relocation under a law on dispatch and settlement, a response to Armenian revolts that was not intended to exterminate the Armenians. Other Christians also suffered in the empire's last decades, when millions of people, mostly Christians, died, were forcibly moved or were expelled. Many writers now describe the fate of Ottoman Greeks and Assyrians between 1915 and 1923 as genocide too. Andrekos Varnava argues that the term fits the Armenian case of 1915–1916 but not the Greek one.",
-    "In the Arab provinces Britain looked for allies among the empire's Arab subjects. The most important were the Hashemites of the Hejaz, the region around the holy cities of Mecca and Medina, led by Sharif Hussein. In June 1916 they <a href='https://consensus.app/papers/details/1b9f00fe995953a89c52371f4a899cdf/?utm_source=claude_desktop'>rose in revolt</a> and attacked the Ottoman garrison in Mecca with success. An assault on Medina, the terminus of the Hejaz Railway from Damascus, failed, and its garrison held out until the government in Istanbul ordered it to surrender in 1919. Britain, and to a lesser extent France, provided military supplies, money and advisers. The British valued the Hashemites as allies in the war and for the order that would follow it. The Hashemites hoped to end Ottoman rule and create Arab states under their own leadership.",
-    "The empire's war ended with the <a href='https://consensus.app/papers/details/44b2e99b5be45c82bed91923702c79dc/?utm_source=claude_desktop'>Armistice of Mudros</a>, signed on 30 October 1918. On the morning of 13 November a fleet of British, French, Italian and Greek battleships sailed to Istanbul and dropped anchor without meeting resistance. The historian Ari Şekeryan sees that day as the beginning of the end of the empire, whose break-up brought great suffering and chaos, and new opportunities, to Muslims and non-Muslims alike. The Allies began to <a href='https://consensus.app/papers/details/148a4430c2145cb2a806c9b1fc68ec9d/?utm_source=claude_desktop'>carry out the partition plans</a> they had drawn up during the war, and occupations spread across the country. When Greece occupied İzmir, the news caused alarm and fear. Towns such as Niğde sent telegrams of protest to the Allied governments, the government in Istanbul and the sultan.",
-    "Resistance took shape in Anatolia. <a href='https://consensus.app/papers/details/148a4430c2145cb2a806c9b1fc68ec9d/?utm_source=claude_desktop'>Mustafa Kemal Pasha</a>, who would lead the national struggle, arrived in Samsun with the post of army inspector, a turning point that let the struggle start from Anatolia. Local and national congresses followed, and representatives sent from towns across the country turned scattered protest into an organised movement. On 23 April 1920 a new parliament, the <a href='https://www.turkishmuseums.com/museum/detail/1945-ankara-museum-of-the-war-of-independence-the-first-building-of-the-grand-national-assembly-of-turkey/1945/4'>Grand National Assembly</a>, opened in Ankara in a one-storey building of local andesite stone. Thousands gathered in Ulus Square for the opening. Şerif Bey, the deputy for Sinop, was chosen to preside as the oldest member and made the first speech. The assembly met in this building until October 1924.",
-    "The occupation did not last. Mustafa Kemal's resistance army won the Turkish War of Independence and drove out the occupying armies, and in 1922 the national movement ended the Ottoman monarchy by deposing the last sultan, Mehmed VI Vahdettin, as a <a href='https://consensus.app/papers/details/beb05b5e31fb55ce9172cd4403f1f7e9/?utm_source=claude_desktop'>study of Türkiye’s economic crises</a> summarises in its historical introduction. Britannica names the three steps that cleared the way for Ankara to be declared the capital on 13 October 1923: the <a href='https://www.britannica.com/place/Ankara'>victory of the nationalists, the abolition of the sultanate and the signing of the Treaty of Lausanne</a>. Under the Lausanne settlement the straits were <a href='https://www.britannica.com/event/Straits-Question'>placed under international control</a> until the Montreux Convention of 1936 restored Turkish sovereignty. Sixteen days after Ankara became the capital, the republic was proclaimed."
+    "In the Arab provinces Britain found allies in the Hashemites of the Hejaz, the region around Mecca and Medina, led by Sharif Hussein. In June 1916 they <a href='https://consensus.app/papers/details/1b9f00fe995953a89c52371f4a899cdf/?utm_source=claude_desktop'>rose in revolt</a> and overcame the Ottoman garrison in Mecca, though Medina held out until 1919. Britain, and to a lesser extent France, provided supplies, money and advisers. The Hashemites hoped to end Ottoman rule and create Arab states under their own leadership.",
+    "The empire's war ended with the <a href='https://consensus.app/papers/details/44b2e99b5be45c82bed91923702c79dc/?utm_source=claude_desktop'>Armistice of Mudros</a>, signed on 30 October 1918. On the morning of 13 November a fleet of British, French, Italian and Greek battleships sailed to Istanbul and dropped anchor without meeting resistance. The historian Ari Şekeryan sees that day as the beginning of the end of the empire. In May 1919 Greece, with Allied permission, <a href='https://www.britannica.com/event/Greco-Turkish-War-1921-1922'>landed troops at İzmir</a>, a port city with a large Greek population.",
+    "Resistance took shape in Anatolia. On 19 May 1919 Mustafa Kemal <a href='https://www.britannica.com/biography/Kemal-Ataturk/The-nationalist-movement-and-the-war-for-independence'>landed at Samsun</a> on an official mission to eastern Anatolia. In July and August the Erzurum Congress elected him its head and drafted the text that became the National Pact, which held that all Ottoman lands inhabited by Turks when the Mudros armistice was signed must stay undivided. The <a href='https://www.britannica.com/topic/Sivas-Congress'>Sivas Congress</a> ratified it in September. On 23 April 1920 a new parliament, the <a href='https://www.turkishmuseums.com/museum/detail/1945-ankara-museum-of-the-war-of-independence-the-first-building-of-the-grand-national-assembly-of-turkey/1945/4'>Grand National Assembly</a>, opened in Ankara in a one-storey building of local andesite stone. The assembly met there until October 1924.",
+    "The Allies set out their terms in the <a href='https://www.britannica.com/event/Treaty-of-Sevres'>Treaty of Sèvres</a> of 10 August 1920. Turkey was to renounce all rights over Arab Asia and North Africa and accept an independent Armenia and an autonomous Kurdistan. Greece would gain a presence in eastern Thrace and on the Anatolian west coast, in terms that pointed to the eventual loss of İzmir. An Allied commission would oversee the demilitarised straits, and Europeans would control Ottoman finances. The nationalists rejected the treaty. In the east their troops <a href='https://www.britannica.com/place/Armenia/Modern-Armenia'>attacked Armenia</a> in September 1920 and took Kars. The <a href='https://en.wikipedia.org/wiki/Treaty_of_Kars'>Treaty of Kars</a>, signed with Soviet Armenia, Azerbaijan and Georgia on 13 October 1921, fixed the border that Türkiye and Armenia still share.",
+    "In the south, French forces held Cilicia, including Adana. After defeats by the nationalists in 1920 and 1921, France signed the <a href='https://www.britannica.com/event/Treaty-of-Ankara'>Treaty of Ankara</a> on 20 October 1921. It agreed to evacuate Cilicia and in effect recognised the Grand National Assembly as the sovereign power in Turkey. In the west the Greek army <a href='https://www.britannica.com/event/Greco-Turkish-War-1921-1922'>advanced into Anatolia</a> in January 1921 and was <a href='https://www.britannica.com/biography/Ismet-Inonu'>repelled at İnönü</a> that month and again in April. In July it attacked once more and pushed towards Ankara, until the <a href='https://www.britannica.com/topic/Battle-of-the-Sakarya-River'>Battle of the Sakarya River</a>, fought from 23 August to 13 September 1921, halted the advance.",
+    "On 26 August 1922 Mustafa Kemal launched the <a href='https://www.aa.com.tr/en/turkiye/turkiye-remembers-great-offensive-one-of-the-greatest-military-victories-in-history/2672307'>Great Offensive</a> from Kocatepe. At Dumlupınar the Greek army was decisively defeated by 30 August, a victory Türkiye marks each year as <a href='https://www.aa.com.tr/en/turkiye/turkiye-commemorates-101st-anniversary-of-victory-day/2979056'>Victory Day</a>. The Greeks were pushed back to the sea, and on 9 September Turkish troops entered İzmir. Four days later a <a href='https://en.wikipedia.org/wiki/Burning_of_Smyrna'>fire broke out</a> that by 22 September had destroyed the Greek and Armenian quarters, while the Muslim and Jewish quarters escaped. Many Greeks and Armenians were killed, and estimates of the dead vary widely. Responsibility is disputed. Some sources blame Turks, others Greeks or Armenians. The historian Norman Naimark sees the sparing of the Turkish quarter as a sign of Turkish responsibility, while others argue that burning the city ran against Turkish interests.",
+    "The <a href='https://www.britannica.com/topic/Armistice-of-Mudanya'>Armistice of Mudanya</a> of 11 October 1922 ended the fighting with the Allies, who accepted the Turkish return to Istanbul and eastern Thrace. On 1 November the assembly abolished the sultanate, and sixteen days later <a href='https://www.britannica.com/biography/Mehmed-VI'>Mehmed VI</a> boarded a British warship and left for Malta. The <a href='https://www.britannica.com/event/Treaty-of-Lausanne-1923'>Treaty of Lausanne</a>, signed on 24 July 1923 by Turkey on one side and by Britain, France, Italy, Japan, Greece, Romania and the Kingdom of Serbs, Croats and Slovenes on the other, replaced Sèvres and recognised the borders of the new Turkish state. The Allies dropped their demands for Kurdish autonomy and Armenian territory, and the straits were demilitarised.",
+    "Greece and Turkey had already agreed a compulsory exchange of populations in a <a href='https://en.wikipedia.org/wiki/Convention_Concerning_the_Exchange_of_Greek_and_Turkish_Populations'>convention signed at Lausanne</a> on 30 January 1923. The Greeks of Istanbul and the Muslims of Western Thrace were exempted. Britannica estimates that about 1.3 million Greeks <a href='https://www.britannica.com/event/Treaty-of-Lausanne-1923'>left Turkey</a> and some 400,000 Turks came from Greece. <a href='https://en.wikipedia.org/wiki/Convention_Concerning_the_Exchange_of_Greek_and_Turkish_Populations'>Other counts</a> give about 1.2 million Greek Orthodox Christians and between 355,000 and 400,000 Muslims. Tens of thousands of destitute Greek refugees had already fled in 1922, which <a href='https://www.britannica.com/event/Greco-Turkish-War-1921-1922'>Britannica</a> describes as the end of a 2,500-year Greek presence in Asia Minor."
    ],
    "facts": [
     {
@@ -2248,24 +2323,20 @@
      "value": "29 October 1914"
     },
     {
-     "label": "Gallipoli campaign",
-     "value": "1915–1916"
-    },
-    {
      "label": "Armenian dead, 1915–1916",
      "value": "About 1 million to 1.5 million (estimates)"
-    },
-    {
-     "label": "Armistice of Mudros",
-     "value": "30 October 1918"
     },
     {
      "label": "Assembly opens in Ankara",
      "value": "23 April 1920"
     },
     {
-     "label": "Ankara declared capital",
-     "value": "13 October 1923"
+     "label": "Treaty of Lausanne",
+     "value": "24 July 1923"
+    },
+    {
+     "label": "Population exchange",
+     "value": "About 1.2–1.3 million Greeks and 355,000–400,000 Muslims"
     }
    ],
    "timeline": [
@@ -2282,16 +2353,20 @@
      "label": "Armistice of Mudros; Allied fleet reaches Istanbul"
     },
     {
+     "year": 1919,
+     "label": "Mustafa Kemal lands at Samsun"
+    },
+    {
      "year": 1920,
-     "label": "Grand National Assembly opens in Ankara"
+     "label": "Assembly opens in Ankara; Treaty of Sèvres"
     },
     {
      "year": 1922,
-     "label": "Sultanate abolished; last sultan deposed"
+     "label": "Great Offensive; Turks enter İzmir; sultanate ends"
     },
     {
      "year": 1923,
-     "label": "Treaty of Lausanne; Ankara becomes capital"
+     "label": "Population exchange; Treaty of Lausanne"
     }
    ],
    "places": [
@@ -2313,19 +2388,33 @@
      "name": "Samsun",
      "lat": 41.286,
      "lon": 36.33,
-     "note": "Black Sea port where Mustafa Kemal Pasha arrived as an army inspector, a turning point that let the national struggle start from Anatolia.",
+     "note": "Black Sea port where Mustafa Kemal landed on 19 May 1919 on an official mission to eastern Anatolia, before the congresses at Erzurum and Sivas.",
+     "visit": ""
+    },
+    {
+     "name": "Sakarya battlefield",
+     "lat": 39.55,
+     "lon": 31.95,
+     "note": "Area on the Sakarya River west of Ankara where the Turkish army halted the Greek advance on Ankara between 23 August and 13 September 1921.",
+     "visit": ""
+    },
+    {
+     "name": "Dumlupınar",
+     "lat": 38.85,
+     "lon": 29.98,
+     "note": "Place in Kütahya province where the Greek army was decisively defeated in the Great Offensive of August 1922, remembered in Türkiye on 30 August as Victory Day.",
      "visit": ""
     }
    ],
    "quiz": {
-    "q": "Where did Enver Pasha's winter offensive against Russia end in disaster in 1914–1915?",
+    "q": "Which treaty of 1923 replaced the Treaty of Sèvres and recognised the borders of the new Turkish state?",
     "options": [
-     "Sarıkamış",
-     "Gallipoli",
-     "Medina"
+     "The Treaty of Lausanne",
+     "The Treaty of Kars",
+     "The Armistice of Mudanya"
     ],
     "answer": 0,
-    "explain": "In late December 1914 Enver Pasha sent troops across passes more than 2,000 metres high. In about two weeks some 50,000 Ottoman soldiers died, about a quarter from frostbite and exposure."
+    "explain": "Signed on 24 July 1923 by Turkey and seven other states, among them Britain, France, Italy and Greece, the Treaty of Lausanne replaced Sèvres, which the nationalists had rejected."
    },
    "sources": [
     {
@@ -2369,24 +2458,72 @@
      "url": "https://consensus.app/papers/details/44b2e99b5be45c82bed91923702c79dc/?utm_source=claude_desktop"
     },
     {
-     "title": "Öztürk (2018), Turkish Studies: Milli Mücadelede İşgal ve Zaferlerin Niğde'deki Yansımaları",
-     "url": "https://consensus.app/papers/details/148a4430c2145cb2a806c9b1fc68ec9d/?utm_source=claude_desktop"
+     "title": "Britannica: Greco-Turkish War (1921–1922)",
+     "url": "https://www.britannica.com/event/Greco-Turkish-War-1921-1922"
+    },
+    {
+     "title": "Britannica: Kemal Atatürk, the nationalist movement and the war for independence",
+     "url": "https://www.britannica.com/biography/Kemal-Ataturk/The-nationalist-movement-and-the-war-for-independence"
     },
     {
      "title": "Turkish Museums: Ankara Museum of the War of Independence (The First Building of the Grand National Assembly of Turkey)",
      "url": "https://www.turkishmuseums.com/museum/detail/1945-ankara-museum-of-the-war-of-independence-the-first-building-of-the-grand-national-assembly-of-turkey/1945/4"
     },
     {
-     "title": "Taskinsoy (2019), Journal of Accounting, Finance and Auditing Studies: A hiccup in Turkey’s prolonged credit-fuelled economic transition",
-     "url": "https://consensus.app/papers/details/beb05b5e31fb55ce9172cd4403f1f7e9/?utm_source=claude_desktop"
+     "title": "Britannica: Treaty of Sèvres",
+     "url": "https://www.britannica.com/event/Treaty-of-Sevres"
     },
     {
-     "title": "Britannica: Ankara",
-     "url": "https://www.britannica.com/place/Ankara"
+     "title": "Wikipedia: Treaty of Kars",
+     "url": "https://en.wikipedia.org/wiki/Treaty_of_Kars"
     },
     {
-     "title": "Britannica: Straits Question",
-     "url": "https://www.britannica.com/event/Straits-Question"
+     "title": "Britannica: Treaty of Ankara",
+     "url": "https://www.britannica.com/event/Treaty-of-Ankara"
+    },
+    {
+     "title": "Anadolu Agency: Türkiye remembers Great Offensive, one of the greatest military victories in history",
+     "url": "https://www.aa.com.tr/en/turkiye/turkiye-remembers-great-offensive-one-of-the-greatest-military-victories-in-history/2672307"
+    },
+    {
+     "title": "Wikipedia: Burning of Smyrna",
+     "url": "https://en.wikipedia.org/wiki/Burning_of_Smyrna"
+    },
+    {
+     "title": "Britannica: Mehmed VI",
+     "url": "https://www.britannica.com/biography/Mehmed-VI"
+    },
+    {
+     "title": "Britannica: Treaty of Lausanne",
+     "url": "https://www.britannica.com/event/Treaty-of-Lausanne-1923"
+    },
+    {
+     "title": "Britannica: Sivas Congress",
+     "url": "https://www.britannica.com/topic/Sivas-Congress"
+    },
+    {
+     "title": "Britannica: İsmet İnönü",
+     "url": "https://www.britannica.com/biography/Ismet-Inonu"
+    },
+    {
+     "title": "Britannica: Battle of the Sakarya River",
+     "url": "https://www.britannica.com/topic/Battle-of-the-Sakarya-River"
+    },
+    {
+     "title": "Britannica: Armenia, modern Armenia",
+     "url": "https://www.britannica.com/place/Armenia/Modern-Armenia"
+    },
+    {
+     "title": "Britannica: Armistice of Mudanya",
+     "url": "https://www.britannica.com/topic/Armistice-of-Mudanya"
+    },
+    {
+     "title": "Wikipedia: Convention Concerning the Exchange of Greek and Turkish Populations",
+     "url": "https://en.wikipedia.org/wiki/Convention_Concerning_the_Exchange_of_Greek_and_Turkish_Populations"
+    },
+    {
+     "title": "Anadolu Agency: Türkiye commemorates 101st anniversary of Victory Day",
+     "url": "https://www.aa.com.tr/en/turkiye/turkiye-commemorates-101st-anniversary-of-victory-day/2979056"
     }
    ],
    "scene": 13,
@@ -2554,22 +2691,26 @@
   {
    "id": "modern",
    "title": "Türkiye since 1945",
-   "dates": "1945–2023",
-   "lede": "Elections, coups and crises since 1945, from the first multi-party vote, NATO and Cyprus to the Kurdish conflict, Erdoğan's presidency, the 2016 coup attempt, the 2018 currency crisis and the 2023 earthquakes.",
+   "dates": "1945–2026",
+   "lede": "Coups, elections and crises since 1945, from NATO and Cyprus to Erdoğan's presidency, the 2023 earthquakes, the Istanbul mayor's arrest and a peace process with the Kurdistan Workers' Party.",
    "paragraphs": [
-    "The one-party era ended after the Second World War. In 1946 Celal Bayar and Adnan Menderes, who had been expelled from the Republican People's Party the year before, founded the Democrat Party. In the <a href='https://en.wikipedia.org/wiki/1950_Turkish_general_election'>election of 14 May 1950</a>, with a turnout of 89 per cent, it won 55 per cent of the vote and 416 of 487 seats. Bayar became president and Menderes prime minister. The new government sent a brigade of about 4,500 soldiers to fight under the United Nations Command in Korea from October 1950, and on 18 February 1952 Turkey joined NATO together with Greece, in the alliance's first enlargement.",
-    "Menderes' decade in power ended with a <a href='https://www.britannica.com/place/Turkey/The-military-coup-of-1960'>military coup</a> on 27 May 1960, carried out by 38 officers acting outside the chain of command. Bayar, Menderes and members of their government were tried on the island of Yassıada in the Sea of Marmara. Foreign Minister Fatin Rüştü Zorlu and Finance Minister Hasan Polatkan were hanged on 16 September 1961, and Menderes the next day on İmralı island. The army intervened again on 12 March 1971, when the chief of the general staff, Memduh Tağmaç, handed Prime Minister Süleyman Demirel a memorandum demanding a strong government to end street and campus violence. Demirel resigned the same day.",
-    "Cyprus became the most lasting foreign-policy dispute. On 15 July 1974 Greek Cypriot nationalists backed by the military junta in Athens overthrew the island's president, Archbishop Makarios, with the aim of union with Greece. On 20 July Turkish troops landed in the north. Turkey presents its action as a response to the coup and to <a href='https://www.mfa.gov.tr/how-did-the-greek-cypriots-persecute-the-turks-of-cyprus-between-1963-1974_.en.mfa'>attacks on Turkish Cypriots since 1963</a>, while Greek Cypriots regard it as an invasion. By 18 August Turkish forces held about 36 per cent of the island, and the junta in Athens had fallen. In 1983 the north declared itself the <a href='https://www.britannica.com/place/Turkish-Republic-of-Northern-Cyprus'>Turkish Republic of Northern Cyprus</a>, which only Turkey recognises.",
-    "On 12 September 1980 the armed forces under General Kenan Evren seized power again and dissolved parliament. According to <a href='https://www.aa.com.tr/en/turkey/turkey-remembers-bloody-1980-coup-40-years-ago/1970965'>Anadolu Agency</a>, some 650,000 people were detained, 230,000 were put on trial, 50 were executed and 299 died from torture or prison conditions. One of those hanged, Erdal Eren, was 17 years old. A new constitution was approved by 91 per cent of voters in 1982. The economy was opened up by <a href='https://www.britannica.com/biography/Turgut-Ozal'>Turgut Özal</a>, the main architect of the “24 January decisions” of 1980. In 1983, when the military government lifted its ban on political parties, his new Motherland Party won a parliamentary majority. He lifted exchange controls and liberalised trade, and served as prime minister until 1989 and as president from 1989 to 1993.",
-    "On 15 August 1984 the Kurdistan Workers' Party (PKK) raided police posts in Eruh and Şemdinli, the start of a full-scale armed insurgency in the south-east. The conflict between the PKK and the Turkish state is <a href='https://www.crisisgroup.org/europe-central-asia/western-europemediterranean/turkey/turkey-s-pkk-conflict-death-toll'>commonly estimated</a> to have killed between 30,000 and 40,000 people since then. The International Crisis Group notes that the overall toll is difficult to determine, because many death claims cannot be verified independently. In December 1999 European Union leaders, meeting in Helsinki, <a href='https://www.consilium.europa.eu/en/policies/turkiye/'>granted Turkey candidate status</a>. Accession negotiations were formally opened at an intergovernmental conference on 3 October 2005.",
-    "The <a href='https://www.britannica.com/topic/Justice-and-Development-Party-political-party-Turkey'>Justice and Development Party (AKP)</a>, which Recep Tayyip Erdoğan co-founded in 2001, won the election of 3 November 2002 with 34 per cent of the vote and 363 of 550 seats. Erdoğan himself was at first barred from office. After the ban was overturned he won a by-election in Siirt and became prime minister in March 2003, with Abdullah Gül as foreign minister. Erdoğan remained prime minister until 2014, when he became president.",
-    "In late May 2013 a sit-in by environmental activists in <a href='https://www.hrw.org/news/2019/03/25/turkey-baseless-charges-over-landmark-2013-protests'>Gezi Park</a>, beside Istanbul's Taksim Square, opposed a plan to cut down its trees and build a replica Ottoman barracks with shops. After police cleared the park with tear gas on 30 May, protests spread to more than 80 cities, with an estimated 2 to 3.5 million participants by late June. Demonstrators voiced anger over urban planning, limits on alcohol sales and what they saw as the growing authoritarianism of Prime Minister Erdoğan. In 2019 prosecutors brought new charges over the protests, which Human Rights Watch called baseless.",
-    "Engineering changed the Bosphorus. The <a href='https://www.ice.org.uk/what-is-civil-engineering/infrastructure-projects/bosphorus-bridges'>first Bosphorus Bridge</a>, a suspension bridge between Europe and Asia, opened on 30 October 1973, and the Fatih Sultan Mehmet Bridge followed on 3 July 1988. On 29 October 2013 the Marmaray rail tunnel opened beneath the strait, the first standard-gauge rail link between the two continents. Archaeological finds had caused repeated delays. At Yenikapı, excavators found a 4th-century Byzantine harbour and about 35 ships from the 7th to 10th centuries. A third suspension bridge, the Yavuz Sultan Selim Bridge, opened on 26 August 2016.",
-    "Six weeks before that opening, on 15 July 2016, an <a href='https://consensus.app/papers/details/b9ad007a20645b11b1e4707177c04202/?utm_source=claude_desktop'>attempted military coup</a> left 246 people dead and 2,194 wounded. A limited number of officers tried to overthrow the government and capture or kill President Erdoğan. The government accused them of belonging to the movement of Fethullah Gülen, a cleric living in voluntary exile in Pennsylvania, and sought his extradition. A <a href='https://consensus.app/papers/details/f2af890b295b521ca912f9f611f47c47/?utm_source=claude_desktop'>2016 analysis of the purge</a> noted that it had produced no clear evidence to support that request. The first Bosphorus Bridge now carries the date in its official name, the <a href='https://www.ice.org.uk/what-is-civil-engineering/infrastructure-projects/bosphorus-bridges'>15 July Martyrs' Bridge</a>.",
-    "On 21 July the government imposed a nationwide <a href='https://consensus.app/papers/details/b9ad007a20645b11b1e4707177c04202/?utm_source=claude_desktop'>state of emergency</a> and gave notice that it would derogate from the European Convention on Human Rights. Emergency decrees closed more than 3,000 schools, media outlets and other bodies, and several tens of thousands of people were detained or arrested. More than 130,000 judges, prosecutors, military personnel, police officers, teachers and other civil servants were dismissed. A legal study in the Human Rights Law Review concludes that this purge cannot be reconciled with Turkey's obligations under the Convention.",
-    "In January 2017 parliament approved a package of constitutional amendments, and on 16 April they were put to a referendum. According to <a href='https://consensus.app/papers/details/3f8cc0ecd8dc5a598db9a5ff36246ac5/?utm_source=claude_desktop'>unofficial results</a>, 51.4 per cent voted in favour of a “presidential system”. President Erdoğan and the AKP had campaigned vigorously for the changes, and there were some allegations of irregularities. Most of the changes, including the abolition of the office of prime minister, were to take effect after the next presidential and parliamentary elections.",
-    "The economy entered a new crisis in 2018. Between 2 and 13 August the dollar rose from 5.09 to 7.24 lira, inflation climbed to 26 per cent and the central bank raised its main interest rate to 24 per cent, according to <a href='https://consensus.app/papers/details/beb05b5e31fb55ce9172cd4403f1f7e9/?utm_source=claude_desktop'>the economist John Taskinsoy</a>. The government blamed hostile policies with no economic basis. <a href='https://consensus.app/papers/details/ccb047f5b7ec54b8a9f52658055ea1e7/?utm_source=claude_desktop'>Özgür Orhangazi and his co-author</a> trace the crisis instead to the growth model followed after 2001, which relied on inflows of foreign capital, external debt and construction. The Covid-19 pandemic of 2020 and 2021 brought another recession and another sharp fall of the lira.",
-    "In June 2022 the United Nations began to use the name <a href='https://turkiye.un.org/en/184798-turkeys-name-changed-t%C3%BCrkiye'>Türkiye</a> in place of Turkey, after Foreign Minister Mevlüt Çavuşoğlu wrote to Secretary-General António Guterres. The campaign for the new name had begun with a <a href='https://www.npr.org/2022/06/03/1102841197/turkey-changes-its-official-name-to-turkiye'>presidential decree in December 2021</a>. Eight months later, in February 2023, two earthquakes of magnitude 7.8 and 7.5 struck the south-east within hours of each other. More than 50,000 people died in Türkiye and over 7,000 in Syria in the <a href='https://pmc.ncbi.nlm.nih.gov/articles/PMC10123572/'>Kahramanmaraş earthquake disaster</a>, the deadliest in modern Turkish history."
+    "The one-party era ended after the Second World War. In 1946 Celal Bayar and Adnan Menderes, expelled from the Republican People's Party (CHP) the year before, founded the Democrat Party. In the <a href='https://en.wikipedia.org/wiki/1950_Turkish_general_election'>election of 14 May 1950</a> it won 55 per cent of the vote and 416 of 487 seats. Bayar became president and Menderes prime minister. From October 1950 about 4,500 Turkish soldiers fought under the United Nations Command in Korea, and on 18 February 1952 Turkey joined NATO.",
+    "Menderes' decade in power ended with a <a href='https://www.britannica.com/place/Turkey/The-military-coup-of-1960'>military coup</a> on 27 May 1960. After trials on the island of Yassıada, Menderes was hanged on İmralı island on 17 September 1961, a day after two of his ministers. The army intervened again on 12 March 1971, when the chief of the general staff handed Prime Minister Süleyman Demirel a memorandum demanding a strong government to end street and campus violence. Demirel resigned the same day.",
+    "Cyprus became the most lasting foreign-policy dispute. On 15 July 1974 Greek Cypriot nationalists backed by the junta in Athens overthrew the island's president, Archbishop Makarios, seeking union with Greece. On 20 July Turkish troops landed in the north. Turkey presents its action as a response to the coup and to <a href='https://www.mfa.gov.tr/how-did-the-greek-cypriots-persecute-the-turks-of-cyprus-between-1963-1974_.en.mfa'>attacks on Turkish Cypriots since 1963</a>, while Greek Cypriots regard it as an invasion. By 18 August Turkish forces held about 36 per cent of the island. In 1983 the north declared itself the <a href='https://www.britannica.com/place/Turkish-Republic-of-Northern-Cyprus'>Turkish Republic of Northern Cyprus</a>, which only Turkey recognises.",
+    "On 12 September 1980 the armed forces under General Kenan Evren seized power again. According to <a href='https://www.aa.com.tr/en/turkey/turkey-remembers-bloody-1980-coup-40-years-ago/1970965'>Anadolu Agency</a>, some 650,000 people were detained, 230,000 were tried, 50 were executed and 299 died from torture or prison conditions. A new constitution was approved by 91 per cent of voters in 1982. <a href='https://www.britannica.com/biography/Turgut-Ozal'>Turgut Özal</a>, the main architect of the “24 January decisions” of 1980 that opened up the economy, led his new Motherland Party to a parliamentary majority in 1983. He served as prime minister until 1989 and as president until 1993.",
+    "On 15 August 1984 the Kurdistan Workers' Party (PKK) raided police posts in Eruh and Şemdinli, the start of a full-scale armed insurgency in the south-east. The conflict is <a href='https://www.crisisgroup.org/europe-central-asia/western-europemediterranean/turkey/turkey-s-pkk-conflict-death-toll'>commonly estimated</a> to have killed between 30,000 and 40,000 people, although the International Crisis Group notes that many death claims cannot be verified independently. In December 1999 European Union leaders meeting in Helsinki <a href='https://www.consilium.europa.eu/en/policies/turkiye/'>granted Turkey candidate status</a>, and accession negotiations opened on 3 October 2005.",
+    "The <a href='https://www.britannica.com/topic/Justice-and-Development-Party-political-party-Turkey'>Justice and Development Party (AKP)</a>, co-founded by Recep Tayyip Erdoğan in 2001, won the election of 3 November 2002 with 34 per cent of the vote and 363 of 550 seats. Erdoğan was at first barred from office. After the ban was overturned he won a by-election in Siirt and became prime minister in March 2003. He held the post until 2014, when he became president.",
+    "In late May 2013 a sit-in in <a href='https://www.hrw.org/news/2019/03/25/turkey-baseless-charges-over-landmark-2013-protests'>Gezi Park</a>, beside Istanbul's Taksim Square, opposed a plan to build a replica Ottoman barracks there. After police cleared the park on 30 May, protests spread to more than 80 cities, with an estimated 2 to 3.5 million participants. They voiced anger over urban planning, limits on alcohol sales and what they saw as Erdoğan's growing authoritarianism. In 2019 prosecutors brought new charges over the protests, which Human Rights Watch called baseless.",
+    "Engineering changed the Bosphorus. The <a href='https://www.ice.org.uk/what-is-civil-engineering/infrastructure-projects/bosphorus-bridges'>first Bosphorus Bridge</a> opened on 30 October 1973 and the Fatih Sultan Mehmet Bridge on 3 July 1988. On 29 October 2013 the Marmaray rail tunnel opened beneath the strait, after repeated delays caused by archaeological finds. At Yenikapı excavators uncovered a 4th-century Byzantine harbour and about 35 ships of the 7th to 10th centuries. A third suspension bridge, the Yavuz Sultan Selim, opened on 26 August 2016.",
+    "Six weeks before that opening, on 15 July 2016, an <a href='https://consensus.app/papers/details/b9ad007a20645b11b1e4707177c04202/?utm_source=claude_desktop'>attempted military coup</a> left 246 people dead and 2,194 wounded. The government blamed followers of Fethullah Gülen, a cleric living in Pennsylvania, and sought his extradition, although a <a href='https://consensus.app/papers/details/f2af890b295b521ca912f9f611f47c47/?utm_source=claude_desktop'>2016 analysis</a> noted that the government had produced no clear evidence to support the request. The first Bosphorus Bridge now carries the date in its official name, the <a href='https://www.ice.org.uk/what-is-civil-engineering/infrastructure-projects/bosphorus-bridges'>15 July Martyrs' Bridge</a>. Under a state of emergency, more than 130,000 judges, soldiers, police officers, teachers and other public servants were dismissed, a purge that a study in the Human Rights Law Review finds incompatible with the European Convention on Human Rights.",
+    "In a 2017 referendum voters narrowly approved an executive presidency in place of the parliamentary system. It came into force with the <a href='https://www.aljazeera.com/news/2018/6/25/erdogan-wins-re-election-in-historic-turkish-polls'>elections of 24 June 2018</a>, the first in which voters chose a president and a parliament on the same day. Erdoğan won 52.5 per cent and became the first executive president, and in the parliamentary vote his AKP took 42.4 per cent and its far-right ally 11.2 per cent. A currency crisis followed. Between 2 and 13 August the dollar rose from 5.09 to 7.24 lira, according to <a href='https://consensus.app/papers/details/beb05b5e31fb55ce9172cd4403f1f7e9/?utm_source=claude_desktop'>the economist John Taskinsoy</a>.",
+    "The civil war in Syria brought millions of refugees to Türkiye, which for more than a decade has hosted <a href='https://www.unhcr.org/sites/default/files/2025-06/T%C3%BCrkiye%20ARR%202024.pdf'>one of the largest refugee populations in the world</a>. At the end of 2024 some 2.9 million Syrians lived there under temporary protection, according to the United Nations refugee agency, UNHCR. After the Assad government fell in December 2024, many began to go back. UNHCR reported that around 560,000 Syrians <a href='https://www.unhcr.org/tr/en/news/press-releases/unhcr-historic-return-displaced-syrians-presents-opportunity-and-urgent'>returned voluntarily from Türkiye</a> within a year.",
+    "On 6 February 2023 a magnitude 7.8 earthquake struck south of <a href='https://www.britannica.com/event/2023-Turkey-Syria-earthquake'>Kahramanmaraş</a>, and less than 12 hours later a second powerful shock hit north-west of the city. About 280,000 buildings collapsed or were severely damaged. Hatay, with about 21,900 dead, and Kahramanmaraş, with about 12,600, were the worst-hit provinces. In Türkiye and Syria together the earthquakes killed more than 50,000 people and injured about 107,000.",
+    "Three months later Erdoğan faced Kemal Kılıçdaroğlu, leader of the CHP. In the <a href='https://www.aljazeera.com/news/2023/5/28/follow-the-vote-turkey-election-run-off-results-2023'>first round on 14 May</a> Erdoğan took 49.5 per cent and Kılıçdaroğlu 44.9, so neither won outright, while the AKP and its allies kept a parliamentary majority with 323 of 600 seats. The nationalist Sinan Oğan, who had won 5.2 per cent, then endorsed Erdoğan. In the run-off on 28 May Erdoğan won 52.2 per cent to 47.8 and secured five more years in office.",
+    "The opposition gained ground in the local elections of 31 March 2024. The CHP's Ekrem İmamoğlu <a href='https://www.aljazeera.com/news/2024/3/31/turkeys-opposition-set-to-hold-power-in-major-cities-partial-results-show'>held Istanbul</a> with just over 51 per cent and Mansur Yavaş held Ankara with just over 60. Al Jazeera called the result the biggest defeat for Erdoğan and the AKP in more than two decades. Nationally the CHP won 37.8 per cent of the vote to just under 35.5 per cent for the AKP, and it led in 36 of the 81 provinces.",
+    "On 19 March 2025 İmamoğlu, seen as a key rival to Erdoğan, was detained and later jailed on corruption and terrorism charges. The arrest set off what Al Jazeera described as the <a href='https://www.aljazeera.com/news/2025/3/29/huge-istanbul-protests-over-imamoglus-arrest-and-imprisonment-in-turkiye'>largest anti-government protests in a decade</a>, and nearly 1,900 people were detained. The CHP called the arrest a “coup”. The government rejects claims that the case is politically motivated and insists that the judiciary is independent.",
+    "In February 2025 the PKK's imprisoned founder, Abdullah Öcalan, called on the group to lay down its arms and dissolve itself. After a congress in northern Iraq, the PKK <a href='https://www.aljazeera.com/news/2025/5/12/kurdish-pkk-to-disband-potentially-ending-decades-of-conflict-turkey'>announced on 12 May</a> that it would dissolve and end its armed struggle, and Erdoğan hailed the move as serving “peace and fraternity”. On 11 July about 20 to 30 fighters <a href='https://www.aljazeera.com/news/2025/7/11/pkk-begins-disarmament-process-after-40-years-of-armed-struggle-in-turkiye'>burned their weapons</a> in a cauldron at a ceremony in Sulaymaniyah, in Iraq's Kurdish region. On 10 August 2026 parliament <a href='https://www.aljazeera.com/news/2026/8/10/turkiye-approves-pardon-like-bill-for-thousands-of-pkk-fighters'>approved a law</a> by 468 votes to 88 that offers a conditional pardon to thousands of PKK members who lay down their weapons, without a general amnesty.",
+    "In May 2026 a court annulled the CHP's 2023 leadership election, removing Özgür Özel as party leader and naming his predecessor, Kılıçdaroğlu, as interim leader. In July Özel and 90 other deputies who had broken with the CHP launched the <a href='https://www.aljazeera.com/news/2026/7/28/new-party-why-turkiye-opposition-suffered-a-split-and-what-that-means'>New Party</a>, which he said marked “the hope of a new beginning” in the effort to unseat Erdoğan. Analysts said the split could help Erdoğan and the AKP by dividing the opposition."
    ],
    "facts": [
     {
@@ -2581,26 +2722,22 @@
      "value": "About 30,000–40,000 since 1984"
     },
     {
-     "label": "European Union talks opened",
-     "value": "3 October 2005"
+     "label": "First executive president",
+     "value": "Erdoğan, elected 24 June 2018 with 52.5 per cent"
     },
     {
-     "label": "2016 coup attempt",
-     "value": "246 dead, 2,194 wounded"
+     "label": "Syrians under temporary protection",
+     "value": "About 2.9 million (end of 2024)"
     },
     {
-     "label": "2017 referendum",
-     "value": "51.4 per cent yes (unofficial results)"
+     "label": "2023 earthquakes",
+     "value": "6 February; more than 50,000 dead in Türkiye and Syria"
     }
    ],
    "timeline": [
     {
      "year": 1950,
      "label": "Democrat Party ends one-party rule"
-    },
-    {
-     "year": 1960,
-     "label": "Military coup; Menderes executed in 1961"
     },
     {
      "year": 1974,
@@ -2620,7 +2757,11 @@
     },
     {
      "year": 2023,
-     "label": "Kahramanmaraş earthquakes kill more than 50,000"
+     "label": "Earthquakes kill over 50,000; Erdoğan re-elected"
+    },
+    {
+     "year": 2025,
+     "label": "PKK announces it will dissolve"
     }
    ],
    "places": [
@@ -2658,17 +2799,24 @@
      "lon": 28.9869,
      "note": "Small park beside Taksim Square whose planned redevelopment set off the nationwide protests of May and June 2013.",
      "visit": "A public park next to Taksim Square."
+    },
+    {
+     "name": "Kahramanmaraş",
+     "lat": 37.585,
+     "lon": 36.937,
+     "note": "The magnitude 7.8 earthquake of 6 February 2023 was centred south of this south-eastern city. Kahramanmaraş and Hatay were the worst-hit provinces.",
+     "visit": ""
     }
    ],
    "quiz": {
-    "q": "Which office was to be abolished under the constitutional changes put to a referendum in April 2017?",
+    "q": "What did the Kurdistan Workers' Party (PKK) announce on 12 May 2025?",
     "options": [
-     "Prime minister",
-     "President",
-     "Chief of the general staff"
+     "That it would dissolve and end its armed struggle",
+     "That it would stand in parliamentary elections",
+     "A new offensive in the south-east"
     ],
     "answer": 0,
-    "explain": "According to unofficial results, 51.4 per cent voted for a presidential system. Most of the changes, including the abolition of the office of prime minister, were to take effect after the next elections."
+    "explain": "Its imprisoned founder, Abdullah Öcalan, had called on it in February 2025 to lay down its arms. In August 2026 parliament approved a conditional pardon for thousands of PKK members."
    },
    "sources": [
     {
@@ -2708,44 +2856,68 @@
      "url": "https://www.britannica.com/topic/Justice-and-Development-Party-political-party-Turkey"
     },
     {
-     "title": "Institution of Civil Engineers: Bosphorus Bridges",
-     "url": "https://www.ice.org.uk/what-is-civil-engineering/infrastructure-projects/bosphorus-bridges"
-    },
-    {
      "title": "Human Rights Watch: Turkey, baseless charges over landmark 2013 protests",
      "url": "https://www.hrw.org/news/2019/03/25/turkey-baseless-charges-over-landmark-2013-protests"
+    },
+    {
+     "title": "Institution of Civil Engineers: Bosphorus Bridges",
+     "url": "https://www.ice.org.uk/what-is-civil-engineering/infrastructure-projects/bosphorus-bridges"
     },
     {
      "title": "Ruys et al. (2018), Human Rights Law Review: Turkey’s Post-Coup ‘Purification Process’: Collective Dismissals of Public Servants under the European Convention on Human Rights",
      "url": "https://consensus.app/papers/details/b9ad007a20645b11b1e4707177c04202/?utm_source=claude_desktop"
     },
     {
-     "title": "Zanotti et al. (2017), Unknown Journal: Turkey: Erdogan's Referendum Victory Delivers 'Presidential System' [April 20, 2017]",
-     "url": "https://consensus.app/papers/details/3f8cc0ecd8dc5a598db9a5ff36246ac5/?utm_source=claude_desktop"
-    },
-    {
-     "title": "PMC: Preconditioning the 2023 Kahramanmaraş (Türkiye) earthquake disaster",
-     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10123572/"
-    },
-    {
      "title": "Terrill (2016), Strategic Insights: The great purge and the future of the Turkish military",
      "url": "https://consensus.app/papers/details/f2af890b295b521ca912f9f611f47c47/?utm_source=claude_desktop"
+    },
+    {
+     "title": "Al Jazeera: Erdogan wins re-election in historic Turkish polls",
+     "url": "https://www.aljazeera.com/news/2018/6/25/erdogan-wins-re-election-in-historic-turkish-polls"
     },
     {
      "title": "Taskinsoy (2019), Journal of Accounting, Finance and Auditing Studies: A hiccup in Turkey’s prolonged credit-fuelled economic transition",
      "url": "https://consensus.app/papers/details/beb05b5e31fb55ce9172cd4403f1f7e9/?utm_source=claude_desktop"
     },
     {
-     "title": "Orhangazi et al. (2021), Development and Change: The re-making of the Turkish crisis",
-     "url": "https://consensus.app/papers/details/ccb047f5b7ec54b8a9f52658055ea1e7/?utm_source=claude_desktop"
+     "title": "UNHCR: Annual Results Report 2024, Türkiye",
+     "url": "https://www.unhcr.org/sites/default/files/2025-06/T%C3%BCrkiye%20ARR%202024.pdf"
     },
     {
-     "title": "United Nations in Türkiye: Turkey’s name changed to Türkiye",
-     "url": "https://turkiye.un.org/en/184798-turkeys-name-changed-t%C3%BCrkiye"
+     "title": "UNHCR Türkiye: Historic return of displaced Syrians presents opportunity and urgent challenges",
+     "url": "https://www.unhcr.org/tr/en/news/press-releases/unhcr-historic-return-displaced-syrians-presents-opportunity-and-urgent"
     },
     {
-     "title": "NPR: Turkey changes its official name to Türkiye",
-     "url": "https://www.npr.org/2022/06/03/1102841197/turkey-changes-its-official-name-to-turkiye"
+     "title": "Britannica: Kahramanmaraş earthquake of 2023",
+     "url": "https://www.britannica.com/event/2023-Turkey-Syria-earthquake"
+    },
+    {
+     "title": "Al Jazeera: Turkey election run-off results 2023 by the numbers",
+     "url": "https://www.aljazeera.com/news/2023/5/28/follow-the-vote-turkey-election-run-off-results-2023"
+    },
+    {
+     "title": "Al Jazeera: Turkey local elections, opposition claims big city wins in blow to Erdogan",
+     "url": "https://www.aljazeera.com/news/2024/3/31/turkeys-opposition-set-to-hold-power-in-major-cities-partial-results-show"
+    },
+    {
+     "title": "Al Jazeera: Large rallies continue over former Istanbul mayor’s imprisonment in Turkiye",
+     "url": "https://www.aljazeera.com/news/2025/3/29/huge-istanbul-protests-over-imamoglus-arrest-and-imprisonment-in-turkiye"
+    },
+    {
+     "title": "Al Jazeera: PKK to disband, potentially ending decades of conflict in Turkiye",
+     "url": "https://www.aljazeera.com/news/2025/5/12/kurdish-pkk-to-disband-potentially-ending-decades-of-conflict-turkey"
+    },
+    {
+     "title": "Al Jazeera: Turkiye approves pardon-like bill for thousands of PKK fighters",
+     "url": "https://www.aljazeera.com/news/2026/8/10/turkiye-approves-pardon-like-bill-for-thousands-of-pkk-fighters"
+    },
+    {
+     "title": "Al Jazeera: New Party, why Turkiye’s opposition suffered a split and what that means",
+     "url": "https://www.aljazeera.com/news/2026/7/28/new-party-why-turkiye-opposition-suffered-a-split-and-what-that-means"
+    },
+    {
+     "title": "Al Jazeera: PKK begins disarmament process after 40 years of armed struggle in Türkiye",
+     "url": "https://www.aljazeera.com/news/2025/7/11/pkk-begins-disarmament-process-after-40-years-of-armed-struggle-in-turkiye"
     }
    ],
    "scene": 15,
@@ -2759,13 +2931,13 @@
    "id": "visiting",
    "title": "Visiting history today",
    "dates": "Today",
-   "lede": "A traveller's guide to the places in this story, region by region, from Istanbul and Troy to Hattusa, Cappadocia, Adana and Göbekli Tepe.",
+   "lede": "A traveller's guide to the places in this story, region by region, from Istanbul, Troy and Ephesus to Hattusa, Cappadocia, Adana and Göbekli Tepe.",
    "paragraphs": [
     "Almost every chapter of this story left something a traveller can still see. The atlas below pins every place named on these pages. Choose a pin for a short note, or filter the pins by era. The notes below group the main sites into journeys by region. Many are on UNESCO's World Heritage List, from <a href='https://whc.unesco.org/en/list/1572/'>Göbekli Tepe</a>, inscribed in 2018, to <a href='https://whc.unesco.org/en/list/357/'>Göreme and the rock sites of Cappadocia</a>, inscribed in 1985. Others wait on UNESCO's tentative list, among them <a href='https://whc.unesco.org/en/tentativelists/5910/'>Anazarbos</a> in Cilicia and the <a href='https://whc.unesco.org/en/tentativelists/6039/'>rock tombs of the kings of Pontus</a> at Amasya.",
     "Istanbul deserves several days. UNESCO's listing of the <a href='https://whc.unesco.org/en/list/356/'>Historic Areas of Istanbul</a> names the Hippodrome of Constantine, Hagia Sophia and the Süleymaniye Mosque among the city's masterpieces. Justinian's <a href='https://muze.gen.tr/muze-detay/ayasofya'>Hagia Sophia</a> opened for worship on 27 December 537, after the Nika riots had destroyed the older church on the site. Since 15 January 2024 foreign visitors have paid <a href='https://hotelperula.com/en/blog/hagia-sophia-guide/'>€25</a> and follow a route through the upper galleries, where the Byzantine mosaics are, while worship continues on the ground floor. Sinan's <a href='https://smarthistory.org/mimar-sinan-suleymaniye-mosque-istanbul/'>Süleymaniye</a> was founded in 1550 and inaugurated in 1557. Its complex held a hospital, a soup kitchen, schools, a bath, a caravanserai, four madrasas and a medical school, and the tombs of Süleyman and his family stand in its grounds.",
     "Beyond the old centre, the <a href='https://en.wikipedia.org/wiki/The_Chora'>Chora</a>, now the Kariye Mosque, reopened in May 2024 after four years of restoration. Its mosaics and frescoes were commissioned by the statesman Theodore Metochites between 1315 and 1321. Beside the Bosphorus stands Dolmabahçe Palace, where Atatürk <a href='https://www.britannica.com/biography/Kemal-Ataturk'>died at 9.05 in the morning on 10 November 1938</a>. Since 30 October 1973 the <a href='https://en.wikipedia.org/wiki/Bosphorus_Bridge'>Bosphorus Bridge</a> has joined Europe and Asia across the strait, the first bridge to do so, with a main span of 1,074 metres.",
     "West of Istanbul, Edirne holds the building Sinan counted as his most important work, the <a href='https://whc.unesco.org/en/list/1366/'>Selimiye Mosque</a>, built for Selim II between 1568 and 1575. Its single dome is 31.5 metres across, its walls carry İznik tiles, and UNESCO listed the complex in 2011. Further south, on the Gallipoli peninsula beside the Dardanelles, Mustafa Kemal commanded the 19th Division against the <a href='https://www.awm.gov.au/articles/encyclopedia/ataturk'>Anzac landing</a> in April 1915. Troy lies close by, a <a href='https://whc.unesco.org/en/list/849/'>World Heritage Site</a> since 1998. The walls of Troy VI and the remains of the later cities are still visible on the mound, and finds from the excavations are shown in the nearby <a href='https://en.wikipedia.org/wiki/Troy_Museum'>Troy Museum</a>.",
-    "Down the Aegean coast, <a href='https://whc.unesco.org/en/list/1457/'>Pergamon</a> rises above today's Bergama, with temples, theatres, a gymnasium and a library set into the slopes of its hill. UNESCO inscribed it in 2014. The frieze of its Great Altar is far away in Berlin, where the <a href='https://en.wikipedia.org/wiki/Pergamon_Altar'>Pergamonmuseum</a> is closed for renovation until 2027. Inland, east of Manisa, the Lydian capital of <a href='https://whc.unesco.org/en/list/1731/'>Sardis</a> and the royal burial mounds of Bin Tepe became Türkiye's <a href='https://www.aa.com.tr/en/turkiye/ancient-city-of-sardis-and-lydian-tumuli-of-bin-tepe-in-western-turkiye-join-unesco-world-heritage-list/3629330'>22nd World Heritage Site</a> on 12 July 2025. İznik, the old Nicaea, is on the <a href='https://whc.unesco.org/en/tentativelists/5900/'>tentative list</a>, and its museum occupies the imaret that Murad I built for his mother <a href='https://www.turkishmuseums.com/museum/detail/2012-bursa-iznik-nilufer-hatun-imaret-turkish-islamic-arts-museum/2012/4'>Nilüfer Hatun</a> in 1388.",
+    "Down the Aegean coast, <a href='https://whc.unesco.org/en/list/1457/'>Pergamon</a> rises above today's Bergama, with temples, theatres, a gymnasium and a library set into the slopes of its hill. UNESCO inscribed it in 2014. Further south, <a href='https://whc.unesco.org/en/list/1018/'>Ephesus</a>, which UNESCO calls an outstanding example of a Roman port city, keeps Hadrian's Temple, the Library of Celsus of 110 CE and the Great Theatre. The frieze of its Great Altar is far away in Berlin, where the <a href='https://en.wikipedia.org/wiki/Pergamon_Altar'>Pergamonmuseum</a> is closed for renovation until 2027. Inland, east of Manisa, the Lydian capital of <a href='https://whc.unesco.org/en/list/1731/'>Sardis</a> and the royal burial mounds of Bin Tepe became Türkiye's <a href='https://www.aa.com.tr/en/turkiye/ancient-city-of-sardis-and-lydian-tumuli-of-bin-tepe-in-western-turkiye-join-unesco-world-heritage-list/3629330'>22nd World Heritage Site</a> on 12 July 2025. İznik, the old Nicaea, is on the <a href='https://whc.unesco.org/en/tentativelists/5900/'>tentative list</a>, and its museum occupies the imaret that Murad I built for his mother <a href='https://www.turkishmuseums.com/museum/detail/2012-bursa-iznik-nilufer-hatun-imaret-turkish-islamic-arts-museum/2012/4'>Nilüfer Hatun</a> in 1388.",
     "In Ankara, which the Grand National Assembly <a href='https://www.britannica.com/place/Ankara'>declared the capital</a> on 13 October 1923, two monuments tell the story of the Republic. The first building of the Assembly in Ulus, used from 23 April 1920 to 15 October 1924, is now the <a href='https://www.turkishmuseums.com/museum/detail/1945-ankara-museum-of-the-war-of-independence-the-first-building-of-the-grand-national-assembly-of-turkey/1945/4'>Museum of the War of Independence</a>. On a hill above the city stands <a href='https://en.wikipedia.org/wiki/An%C4%B1tkabir'>Anıtkabir</a>, Atatürk's mausoleum, built between 1944 and 1953 to a design by Emin Onat and Ahmet Orhan Arda. His remains were moved there on 10 November 1953. South-west of Ankara, near Polatlı, lies <a href='https://whc.unesco.org/en/list/1669/'>Gordion</a>, the Phrygian capital, inscribed as a World Heritage Site in 2023.",
     "In the Hittite heartland, <a href='https://whc.unesco.org/en/list/377/'>Hattusa</a>, beside the village of Boğazkale, keeps its Lions' Gate and King's Gate, its temples and royal residences, and more than 8 kilometres of walls. About 2 kilometres away, the open-air sanctuary of <a href='https://www.britannica.com/topic/Yazilikaya'>Yazılıkaya</a> shows two processions of gods converging on the storm god Teshub and the goddess Hebat. Also in Çorum province, <a href='https://en.wikipedia.org/wiki/Alaca_H%C3%B6y%C3%BCk'>Alacahöyük</a> gave up the Royal Tombs of about 2500 to 2000 BCE. Further south, <a href='https://www.britannica.com/place/Kultepe'>Kültepe</a>, about 20 kilometres north-east of Kayseri, is the mound of Kanesh, where Assyrian merchants kept their clay archives.",
     "The mound of <a href='https://whc.unesco.org/en/list/1405/'>Çatalhöyük</a> holds eighteen levels of Neolithic settlement from 7400 to 6200 BCE, with houses entered through their roofs. Konya became the <a href='https://en.wikipedia.org/wiki/Sultanate_of_Rum'>Seljuk capital</a> after the First Crusade. On the old road east from Konya towards Aksaray stands <a href='https://en.wikipedia.org/wiki/Sultan_Han'>Sultanhanı</a>, commissioned by Keykubad I in 1229. It covers about 4,900 square metres and is the largest medieval caravanserai in Türkiye. Beyond it lies Cappadocia, where the <a href='https://whc.unesco.org/en/list/357/'>World Heritage listing</a> covers the painted cave churches of Göreme, among them the Tokalı Church and the Dark Church, and the underground towns of Kaymaklı and Derinkuyu.",
@@ -2904,6 +3076,10 @@
     {
      "title": "UNESCO World Heritage Centre: Pergamon and its Multi-Layered Cultural Landscape",
      "url": "https://whc.unesco.org/en/list/1457/"
+    },
+    {
+     "title": "UNESCO World Heritage Centre: Ephesus",
+     "url": "https://whc.unesco.org/en/list/1018/"
     },
     {
      "title": "Wikipedia: Pergamon Altar",

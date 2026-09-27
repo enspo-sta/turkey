@@ -472,7 +472,7 @@ def page(total_words, total_min, toc, body, page_data, map_data, engine_tag):
         <div class="kicker">About this long read</div>
         <p><b>Your quiz score:</b> <span id="quiz-score"></span>. Your answers, the sections you have finished and your place in the text are kept in this browser only.</p>
         <p>The scenes and the music come from the animation <b>Türkiye Through Time</b>, which is drawn and composed entirely in code. Press <b>Play the whole film</b> to watch it from the start.</p>
-        <p>Every section lists its sources. Most were found with web searches; where the search allowance ran out, the text was written from facts already checked and from peer-reviewed papers found with the <a href="https://consensus.app/" target="_blank" rel="noopener">Consensus</a> academic search engine, which are linked individually. Where sources disagree on a date or a number, the text says so. Reading times count the main text at {WPM} words a minute.</p>
+        <p>Every section lists its sources. Most were found with web searches. Some sections also cite peer-reviewed papers, found with the <a href="https://consensus.app/" target="_blank" rel="noopener">Consensus</a> academic search engine and linked individually. Where sources disagree on a date or a number, the text says so. Reading times count the main text at {WPM} words a minute.</p>
       </footer>
     </main>
   </div>
