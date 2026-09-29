@@ -1,0 +1,12 @@
+{"width":960,"height":540,"steps":[{"wait":1500},{"eval":"__rhf.start(false)"},{"wait":6000},
+{"eval":"__rhf.press('primary'); 'cast'"},{"wait":700},{"shot":"f1-meter"},
+{"eval":"__rhf.press('primary'); 'power'"},{"wait":300},
+{"eval":"(async()=>{const f=__rhf.game.fishing; for(let i=0;i<200;i++){ if(f.state!=='meter') break; if(f.meter.phase===1 && f.meter.needle<0.09){ __rhf.press('primary'); break;} await new Promise(r=>setTimeout(r,16)); } return 'acc '+f.meter.acc+' state '+f.state})()"},
+{"wait":2500},{"shot":"f2-waiting"},
+{"eval":"(()=>{const f=__rhf.game.fishing; f.nextApproach=0.1; return f.state})()"},
+{"eval":"(async()=>{const f=__rhf.game.fishing; for(let i=0;i<600;i++){ if(f.encounter && f.encounter.phase==='bite'){ __rhf.press('primary'); return 'hooked at '+i; } await new Promise(r=>setTimeout(r,20)); } return 'no bite '+f.state+' '+JSON.stringify(f.encounter&&f.encounter.phase)})()"},
+{"wait":1500},{"eval":"__rhf.hold('primary', true); __rhf.game.fishing.state"},{"wait":2000},{"shot":"f3-fight"},
+{"eval":"(async()=>{const f=__rhf.game.fishing; for(let i=0;i<900;i++){ if(f.state!=='fight') break; const F=f.fight; const hold = F.state!=='run' && F.state!=='jump' && F.tension/f.rod().maxTension < 0.85; __rhf.hold('primary', hold); await new Promise(r=>setTimeout(r,33)); } __rhf.hold('primary', false); return 'state '+f.state})()"},
+{"wait":1500},{"shot":"f4-catch"},
+{"eval":"(()=>{const c=document.getElementById('catch'); return c.hidden?'no card':document.getElementById('catch-name').textContent+' '+document.getElementById('catch-weight').textContent})()"}
+]}

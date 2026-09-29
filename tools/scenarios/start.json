@@ -1,0 +1,2 @@
+{"width":960,"height":540,"steps":[{"wait":1500},{"eval":"__rhf.start(false)"},{"wait":9000},{"shot":"t6-start"},
+{"eval":"(()=>{const g=__rhf.game; const r=g.renderer; r.info.autoReset=false; r.info.reset(); r.render(g.scene,g.camera); const a=JSON.stringify(r.info.render); r.info.autoReset=true; return a+' fish:'+g.fishing.state+' water:'+g.fishing.aim.hasWater+' perf:'+JSON.stringify(g.perf)})()"}]}

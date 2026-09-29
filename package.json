@@ -1,0 +1,25 @@
+{
+  "name": "turkey",
+  "version": "1.0.0",
+  "description": "Turkey vacation",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enspo-sta/turkey.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/enspo-sta/turkey/issues"
+  },
+  "homepage": "https://github.com/enspo-sta/turkey#readme",
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "three": "^0.186.1"
+  },
+  "type": "module"
+}
