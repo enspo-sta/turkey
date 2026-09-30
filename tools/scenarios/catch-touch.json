@@ -1,0 +1,12 @@
+{"width":844,"height":390,"touch":true,"mobile":true,"ua":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1","steps":[{"wait":1500},
+{"eval":"__rhf.start(false)"},{"wait":3000},
+{"eval":"(()=>{const g=__rhf.game; const f=g.fishing; f.fight={fish:{species:'coho',weight:3.4,legend:null}}; f.finishCatch(); return 'card shown '+!document.getElementById('catch').hidden+' cooler '+g.state.cooler.length})()"},
+{"wait":1500},{"shot":"ct1-card"},
+{"tapSel":"#catch-keep"},{"wait":1500},
+{"eval":"(()=>{const g=__rhf.game; return 'after KEEP tap: card hidden '+document.getElementById('catch').hidden+', cooler '+g.state.cooler.length+', fishing '+g.fishing.state+', blocking '+g.hud.blocking})()"},
+{"eval":"(()=>{const g=__rhf.game; const f=g.fishing; f.fight={fish:{species:'grayling',weight:0.9,legend:null}}; f.finishCatch(); return 'second card shown '+!document.getElementById('catch').hidden})()"},
+{"wait":1500},
+{"tapSel":"#catch-release"},{"wait":1500},
+{"eval":"(()=>{const g=__rhf.game; return 'after RELEASE tap: card hidden '+document.getElementById('catch').hidden+', released '+g.state.stats.released+', fishing '+g.fishing.state})()"},
+{"shot":"ct2-after"}
+]}

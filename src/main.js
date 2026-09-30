@@ -39,6 +39,7 @@ class Session {
     g.state = new GameState();
     g.input = new Input($('app'));
     g.input.usingTouch = IS_TOUCH;
+    $('app').classList.toggle('show-keys', !IS_TOUCH);
     g.input.sensitivity = g.state.settings.sens;
     g.input.invertY = g.state.settings.invert;
     if (g.state.settings.quality) g.setQuality(g.state.settings.quality);
@@ -275,6 +276,18 @@ class Session {
     const g = this.game;
     window.addEventListener('keydown', (e) => {
       if (this.mode !== 'play') return;
+      // catch card: E or Enter keeps the fish, R lets it go
+      if (g.hud.catchChoice && !g.screens.isOpen) {
+        const keep = e.code === 'KeyE' || e.code === 'Enter' || e.code === 'NumpadEnter';
+        const release = e.code === 'KeyR';
+        if ((keep || release) && !e.repeat) {
+          // don't let the same press also enter the car or reload
+          g.input.keyEdges.delete(e.code);
+          e.preventDefault();
+          g.hud.catchChoice(keep);
+        }
+        return;
+      }
       if (e.code === 'Escape' && !g.screens.isOpen && !g.hud.blocking) {
         if (g.hunting.scoped) g.hunting.setScoped(false);
         else g.screens.open('pause');

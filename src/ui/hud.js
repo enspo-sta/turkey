@@ -108,7 +108,7 @@ export class HUD {
     $('btn-map').addEventListener('click', () => game.screens.open('map'));
     $('btn-journal').addEventListener('click', () => game.screens.open('journal'));
     $('btn-pause').addEventListener('click', () => game.screens.open('pause'));
-    for (const id of ['btn-map', 'btn-journal', 'btn-pause']) {
+    for (const id of ['btn-map', 'btn-journal', 'btn-pause', 'catch']) {
       $(id).addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
     }
   }
@@ -328,15 +328,26 @@ export class HUD {
     const rel = $('catch-release');
     keep.disabled = coolerFull;
     keep.classList.toggle('disabled', coolerFull);
-    const done = (k) => {
-      card.hidden = true;
-      this.blocking = false;
-      keep.onclick = rel.onclick = null;
+    // a mouse locked to the view would hide the cursor and send every click
+    // to the game instead of these buttons
+    this.game.input.exitPointerLock();
+    // one way out for taps, clicks and keys (E or Enter keeps, R releases)
+    this.catchChoice = (k) => {
+      if (card.hidden || (k && coolerFull)) return;
+      this.closeCatch();
       this.game.audio?.click();
       cb(k);
     };
-    keep.onclick = () => !coolerFull && done(true);
-    rel.onclick = () => done(false);
+    keep.onclick = () => this.catchChoice?.(true);
+    rel.onclick = () => this.catchChoice?.(false);
+  }
+
+  // Hide the catch card without choosing (the caller settles the fish).
+  closeCatch() {
+    this.el.catchCard.hidden = true;
+    this.blocking = false;
+    this.catchChoice = null;
+    $('catch-keep').onclick = $('catch-release').onclick = null;
   }
 
   // ---- per-frame update
@@ -345,6 +356,8 @@ export class HUD {
     const s = g.state;
     const el = this.el;
     const P = g.player;
+    // never stay blocked once the card is gone
+    if (this.blocking && el.catchCard.hidden) this.closeCatch();
     const set = (k, v, fn) => {
       if (this.cache[k] !== v) {
         this.cache[k] = v;

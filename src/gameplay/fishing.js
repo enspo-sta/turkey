@@ -162,6 +162,7 @@ export class Fishing {
 
   cancel(message) {
     const g = this.game;
+    this.settleCatch();
     this.state = 'idle';
     this.encounter = null;
     this.fight = null;
@@ -1051,6 +1052,15 @@ export class Fishing {
     }
     g.onEvent({ type: 'catch', fish: { species: fish.species, weight: fish.weight, legend: fish.legend } });
     g.hud.showCatch(this.catchInfo, g.state.coolerFull(), (keep) => this.resolveCatch(keep));
+  }
+
+  // A catch card still waiting for a choice when something else takes over
+  // (a mauling, fast travel, going back to the title): keep the fish if there
+  // is room so nothing is lost and the card never lingers.
+  settleCatch() {
+    if (!this.catchInfo) return;
+    this.game.hud.closeCatch();
+    this.resolveCatch(!this.game.state.coolerFull());
   }
 
   resolveCatch(keep) {

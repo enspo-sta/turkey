@@ -92,6 +92,7 @@ compressed).
 | Switch rod and rifle | Tool button | `Q` |
 | Reload / bear spray / first aid kit | Buttons next to **FIRE** | `R` / `G` / `X` |
 | Enter, trade, claim, sleep | Context button (**DRIVE**, **TRADE**, **CLAIM**, **SLEEP**) | `E` |
+| Keep or release a catch | **KEEP** / **RELEASE** on the catch card | `E` or `Enter` / `R` |
 | Drive | **GAS**, **BRAKE**, steer by dragging on the left half | `W` gas, `S` brake and reverse, `A` / `D` steer |
 | Car camera / horn | Camera and horn buttons | `C` / `H` |
 | Lures / map / journal / pause | Buttons at the top | `L` / `M` / `J` / `Esc` |
@@ -201,6 +202,8 @@ node tools/shot.mjs tools/scenarios/hunt.json    # stalk caribou on the tundra w
 node tools/shot.mjs tools/scenarios/bear.json    # a grizzly charge at Bear Falls
 node tools/shot.mjs tools/scenarios/eagle.json   # a bald eagle steals a small fish
 node tools/shot.mjs tools/scenarios/mobile.json  # phone-sized touch layout
+node tools/shot.mjs tools/scenarios/catch-touch.json  # real taps on KEEP and RELEASE on a phone-sized touch screen
+node tools/shot.mjs tools/scenarios/catch-mouse.json  # real clicks and keys on the catch card with the mouse locked to the view
 ```
 
 Playwright is not a project dependency; install it with `npm install --no-save playwright`

@@ -56,6 +56,22 @@ for (const s of steps) {
   if (s.wait) await page.waitForTimeout(s.wait);
   if (s.tap) await page.touchscreen.tap(s.tap[0], s.tap[1]);
   if (s.click) await page.mouse.click(s.click[0], s.click[1]);
+  // real taps and clicks on the centre of an element, found by CSS selector
+  if (s.tapSel || s.clickSel) {
+    const sel = s.tapSel || s.clickSel;
+    const box = await page.evaluate((q) => {
+      const el = document.querySelector(q);
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
+    }, sel);
+    if (!box || !box.w) console.log('no element or not visible:', sel);
+    else {
+      if (s.tapSel) await page.touchscreen.tap(box.x, box.y);
+      else await page.mouse.click(box.x, box.y);
+      console.log(`${s.tapSel ? 'tapped' : 'clicked'} ${sel} at ${Math.round(box.x)},${Math.round(box.y)}`);
+    }
+  }
   if (s.key) await page.keyboard.press(s.key);
   if (s.keydown) await page.keyboard.down(s.keydown);
   if (s.keyup) await page.keyboard.up(s.keyup);

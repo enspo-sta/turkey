@@ -42,8 +42,10 @@ export class Input {
         this.usingTouch = true;
         this.lastTouchTime = performance.now();
         if (!this.enabled) return;
+        let steering = false;
         for (const t of e.changedTouches) {
           if (t.target.closest && t.target.closest('.btn, .panel, button, .no-look')) continue;
+          steering = true;
           if (this.isLeftZone(t.clientX) && this.leftZoneMode !== 'off' && this.stick.id === null) {
             this.stick.id = t.identifier;
             this.stick.active = true;
@@ -59,7 +61,9 @@ export class Input {
             this.lookTouch.y = t.clientY;
           }
         }
-        e.preventDefault();
+        // Only swallow touches that walk or look. Cancelling a touch that
+        // starts on a button makes iOS drop its click, so those pass through.
+        if (steering) e.preventDefault();
       },
       opts
     );

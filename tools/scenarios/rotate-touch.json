@@ -1,0 +1,6 @@
+{"width":390,"height":844,"touch":true,"mobile":true,"ua":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1","steps":[{"wait":1500},
+{"eval":"__rhf.start(false)"},{"wait":2500},
+{"eval":"'rotate overlay shown '+!document.getElementById('rotate').hidden"},
+{"tapSel":"#rotate-dismiss"},{"wait":1000},
+{"eval":"'after tap: rotate overlay shown '+!document.getElementById('rotate').hidden"}
+]}
