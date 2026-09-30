@@ -176,8 +176,209 @@ function spruceDetailed() {
   g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
   const b = new ModelBuilder();
   b.cyl(0.1, 0.24, 3.2, 6, { pos: [0, 1.6, 0], color: 0x4a3322 });
+  // clusters of cones hanging among the top whorls
+  const cr = mulberry32(72);
+  for (let i = 0; i < 12; i++) {
+    const t = 0.62 + cr() * 0.3;
+    const y = 1.3 + t * 9.8 - 0.2;
+    const R = lerp(2.2, 0.3, Math.pow(t, 0.85)) * (0.45 + cr() * 0.3);
+    const a = cr() * Math.PI * 2;
+    b.add(new THREE.OctahedronGeometry(0.075, 0), { pos: [Math.cos(a) * R, y, Math.sin(a) * R], scale: [0.55, 1.5, 0.55], color: [0.2, 0.1, 0.05], jitter: 0.15 });
+  }
   const trunk = b.build();
   return mergeGeos([trunk, g]);
+}
+
+// Black spruce: the spire of the wet lowlands and cold north slopes. A thin
+// trunk with short, irregular drooping branch tufts and a dense club of
+// cones and needles at the very top.
+function blackSpruceDetailed() {
+  const b = new ModelBuilder();
+  const rand = mulberry32(407);
+  b.cyl(0.035, 0.1, 8.6, 5, { pos: [0, 4.3, 0], color: 0x3b2c20, jitter: 0.1 });
+  const tufts = 44;
+  for (let i = 0; i < tufts; i++) {
+    const t = i / tufts;
+    const y = 0.9 + t * 6.9 + (rand() - 0.5) * 0.2;
+    const len = lerp(0.8, 0.24, t) * (0.5 + rand() * 0.6);
+    const a = rand() * Math.PI * 2;
+    const droop = 0.18 + rand() * 0.2;
+    const dark = rand() < 0.5;
+    // build the tuft pointing out along +z, then swing it round the trunk
+    b.cone(len * 0.26, len, 5, {
+      pos: [0, y - droop * len * 0.5, len * 0.45],
+      rot: [Math.PI / 2 + droop, 0, 0],
+      color: dark ? 0x16291e : 0x1f3826,
+      gradient: 0.3,
+      jitter: 0.12,
+    });
+    b.parts[b.parts.length - 1].rotateY(a);
+  }
+  // the club: a dense knot of short branches and cones at the top
+  for (let k = 0; k < 4; k++) {
+    const g = jitterGeometry(new THREE.IcosahedronGeometry(0.34 - k * 0.05, 0), 0.08, mulberry32(90 + k));
+    b.add(g, { pos: [(rand() - 0.5) * 0.12, 7.6 + k * 0.28, (rand() - 0.5) * 0.12], scale: [1, 1.3, 1], color: k === 1 ? 0x3a2a1e : 0x1b3122, gradient: 0.2, jitter: 0.12 });
+  }
+  b.cone(0.08, 0.7, 4, { pos: [0, 8.9, 0], color: 0x22402a });
+  return b.build();
+}
+
+function blackSpruceNear() {
+  const b = new ModelBuilder();
+  b.cyl(0.04, 0.1, 3.5, 4, { pos: [0, 1.75, 0], color: 0x3b2c20 });
+  for (let i = 0; i < 5; i++) {
+    const t = i / 4;
+    const r = lerp(0.85, 0.3, t);
+    b.cone(r, 1.9, 6, { pos: [0, 1.2 + i * 1.35 + 0.95, 0], rot: [0, i * 1.3, 0], color: i % 2 ? 0x16291e : 0x1d3526, gradient: 0.35, jitter: 0.1 });
+  }
+  b.add(new THREE.OctahedronGeometry(0.4, 0), { pos: [0, 8.0, 0], scale: [1, 1.4, 1], color: 0x1b3122 });
+  return b.build();
+}
+
+function blackSpruceFar() {
+  const b = new ModelBuilder();
+  b.add(new THREE.ConeGeometry(0.75, 8.6, 4, 1, true), { pos: [0, 4.5, 0], color: 0x19301f, gradient: 0.3, jitter: 0.04 });
+  return b.build();
+}
+
+// Balsam poplar (cottonwood): the big tree of the river bottoms, with a
+// thick, deeply furrowed grey trunk, heavy limbs and a broad, uneven crown
+// of glossy dark leaves.
+function poplarDetailed() {
+  const b = new ModelBuilder();
+  const rand = mulberry32(611);
+  // furrowed trunk: dark grooves between pale grey ridges that wander up
+  // the bole (coloured per vertex, so built apart and merged below)
+  const seg = 18;
+  const trunk = new THREE.CylinderGeometry(0.26, 0.42, 7.2, seg, 6).toNonIndexed();
+  trunk.translate(0, 3.6, 0);
+  const tpos = trunk.attributes.position;
+  const tcol = new Float32Array(tpos.count * 3);
+  const ridge = lin(0.5, 0.49, 0.45);
+  const furrow = lin(0.2, 0.19, 0.17);
+  for (let i = 0; i < tpos.count; i++) {
+    const x = tpos.getX(i);
+    const z = tpos.getZ(i);
+    const a = Math.atan2(z, x);
+    const g = Math.sin(a * 9 + Math.sin(tpos.getY(i) * 0.9) * 0.8);
+    const k = g > 0.3 ? 0.88 : 1;
+    tpos.setX(i, x * k);
+    tpos.setZ(i, z * k);
+    const c = g > 0.3 ? furrow : ridge;
+    tcol.set(c, i * 3);
+  }
+  trunk.setAttribute('color', new THREE.BufferAttribute(tcol, 3));
+  trunk.deleteAttribute('uv');
+  trunk.computeVertexNormals();
+  // flared root buttresses
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + 0.4;
+    b.beam([0, 0.9, 0], [Math.cos(a) * 0.75, -0.1, Math.sin(a) * 0.75], 0.14, 5, { r2: 0.05, color: 0x5e5b54 });
+  }
+  const limbs = [];
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2 + rand() * 0.6;
+    const y0 = 5.6 + rand() * 1.4;
+    const reach = 2.4 + rand() * 1.8;
+    const top = [Math.cos(a) * reach, y0 + 3.4 + rand() * 2.2, Math.sin(a) * reach];
+    b.beam([0, y0, 0], top, 0.17, 6, { r2: 0.07, color: 0x66635b });
+    limbs.push(top);
+  }
+  // leaf masses round the limb ends and over the centre, darker inside
+  const blobs = [];
+  for (const [x, y, z] of limbs) {
+    for (let k = 0; k < 3; k++) blobs.push([x + (rand() - 0.5) * 2.2, y + (rand() - 0.3) * 1.8, z + (rand() - 0.5) * 2.2, 1.35 + rand() * 0.7]);
+  }
+  blobs.push([0, 13.2, 0, 2.1], [0.6, 11.6, -0.8, 1.9], [-0.9, 12.1, 0.7, 1.8]);
+  for (const [x, y, z, r] of blobs) {
+    const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.38, mulberry32((x * 17 + y * 11 + z * 5) | 0));
+    const inner = Math.hypot(x, z) < 1.2 ? 0.8 : 1;
+    b.add(g, { pos: [x, y, z], scale: [1, 0.82, 1], color: [0.13 * inner, 0.21 * inner, 0.07 * inner], gradient: 0.42, jitter: 0.18 });
+  }
+  return mergeGeos([b.build(), trunk]);
+}
+
+function poplarNear() {
+  const b = new ModelBuilder();
+  b.cyl(0.26, 0.42, 7.4, 6, { pos: [0, 3.7, 0], color: 0x6d6a62, jitter: 0.15 });
+  const blobs = [
+    [0, 12.6, 0, 2.6],
+    [2.2, 10.6, 0.6, 2.2],
+    [-2.0, 10.9, -0.9, 2.2],
+    [0.5, 10.2, 2.2, 2.0],
+    [-0.6, 10.0, -2.3, 2.0],
+    [1.3, 13.0, -1.4, 1.7],
+  ];
+  for (const [x, y, z, r] of blobs) {
+    const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.35, mulberry32((x * 19 + z * 7 + 3) | 0));
+    b.add(g, { pos: [x, y, z], scale: [1, 0.82, 1], color: [0.13, 0.21, 0.07], gradient: 0.35, jitter: 0.14 });
+  }
+  return b.build();
+}
+
+function poplarFar() {
+  const b = new ModelBuilder();
+  b.add(new THREE.CylinderGeometry(0.22, 0.38, 7.4, 3, 1, true), { pos: [0, 3.7, 0], color: 0x6d6a62 });
+  b.add(new THREE.OctahedronGeometry(3.6, 0), { pos: [0, 11.2, 0], scale: [1.1, 0.85, 1.1], color: [0.13, 0.21, 0.07], gradient: 0.3 });
+  return b.build();
+}
+
+// Quaking aspen: slim, pale green-white trunks marked with black scars and
+// a narrow crown of small round leaves high up, in groves on warm slopes.
+function aspenDetailed() {
+  const b = new ModelBuilder();
+  const rand = mulberry32(233);
+  b.cyl(0.07, 0.15, 9.4, 8, { pos: [0, 4.7, 0], color: 0xc9ccb4, jitter: 0.08 });
+  // eye-shaped branch scars and dark patches low on the trunk
+  for (let i = 0; i < 9; i++) {
+    const y = 0.6 + i * 0.85 + rand() * 0.3;
+    const a = rand() * Math.PI * 2;
+    const r = 0.15 - y * 0.009;
+    b.box(0.06, 0.035, 0.02, { pos: [Math.cos(a) * r, y, Math.sin(a) * r], rot: [0, -a + Math.PI / 2, (rand() - 0.5) * 0.4], color: 0x24211d });
+  }
+  b.cyl(0.152, 0.152, 0.35, 8, { pos: [0, 0.18, 0], color: 0x4a473f, jitter: 0.1 });
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + rand();
+    const y0 = 5.8 + i * 0.6;
+    b.beam([0, y0, 0], [Math.cos(a) * 1.1, y0 + 1.5, Math.sin(a) * 1.1], 0.035, 4, { r2: 0.015, color: 0xb9bca4 });
+  }
+  const blobs = [
+    [0, 10.4, 0, 1.25],
+    [0.8, 9.3, 0.3, 1.0],
+    [-0.7, 9.5, -0.4, 1.0],
+    [0.2, 8.6, -0.8, 0.9],
+    [-0.3, 8.4, 0.8, 0.9],
+    [0.5, 11.2, -0.3, 0.8],
+    [-0.9, 7.8, 0.1, 0.75],
+    [0.9, 7.9, -0.1, 0.75],
+  ];
+  for (const [x, y, z, r] of blobs) {
+    const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 1), r * 0.3, mulberry32((x * 23 + y * 13 + z * 3) | 0));
+    b.add(g, { pos: [x, y, z], color: [0.3, 0.42, 0.1], gradient: 0.35, jitter: 0.2 });
+  }
+  return b.build();
+}
+
+function aspenNear() {
+  const b = new ModelBuilder();
+  b.cyl(0.07, 0.15, 9, 5, { pos: [0, 4.5, 0], color: 0xc9ccb4, jitter: 0.1 });
+  const blobs = [
+    [0, 10, 0, 1.4],
+    [0.7, 8.8, 0.3, 1.15],
+    [-0.7, 8.9, -0.3, 1.15],
+  ];
+  for (const [x, y, z, r] of blobs) {
+    const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.3, mulberry32((x * 29 + y * 3) | 0));
+    b.add(g, { pos: [x, y, z], color: [0.3, 0.42, 0.1], gradient: 0.3, jitter: 0.15 });
+  }
+  return b.build();
+}
+
+function aspenFar() {
+  const b = new ModelBuilder();
+  b.add(new THREE.CylinderGeometry(0.06, 0.13, 7.6, 3, 1, true), { pos: [0, 3.8, 0], color: 0xc9ccb4 });
+  b.add(new THREE.OctahedronGeometry(1.5, 0), { pos: [0, 9.2, 0], scale: [1, 1.5, 1], color: [0.3, 0.42, 0.1], gradient: 0.25 });
+  return b.build();
 }
 
 // Detailed birch: white trunk with black marks, forked branches and a crown of
@@ -519,6 +720,8 @@ export class Scatter {
     const swayBirch = swayMaterial(sharedUniforms, 0.0022);
     const swayShrub = swayMaterial(sharedUniforms, 0.012, { base: 0.4 });
     const swayPlant = swayMaterial(sharedUniforms, 0.09, { base: 0.1, doubleSide: true });
+    const swayPoplar = swayMaterial(sharedUniforms, 0.0012);
+    const swayAspen = swayMaterial(sharedUniforms, 0.0028);
     const plain = new THREE.MeshLambertMaterial({ vertexColors: true });
     // snags have no per-instance tint, so they need their own material: one
     // material on meshes with and without instance colours switches shaders
@@ -543,6 +746,33 @@ export class Scatter {
           { geo: birchDetailed(), material: swayBirch, maxDist: 50, capacity: 500, shadow: true },
           { geo: birchNear(), material: swayBirch, maxDist: 95, capacity: 1000, shadow: true },
           { geo: birchFar(), material: leafy, maxDist: 560, capacity: 5000 },
+        ],
+        { tint: true }
+      ),
+      blackSpruce: new ScatterType(
+        'blackSpruce',
+        [
+          { geo: blackSpruceDetailed(), material: sway, maxDist: 60, capacity: 900, shadow: true },
+          { geo: blackSpruceNear(), material: sway, maxDist: 130, capacity: 1800, shadow: true },
+          { geo: blackSpruceFar(), material: leafy, maxDist: 650, capacity: 9000 },
+        ],
+        { tint: true }
+      ),
+      poplar: new ScatterType(
+        'poplar',
+        [
+          { geo: poplarDetailed(), material: swayPoplar, maxDist: 75, capacity: 400, shadow: true },
+          { geo: poplarNear(), material: swayPoplar, maxDist: 180, capacity: 900, shadow: true },
+          { geo: poplarFar(), material: leafy, maxDist: 720, capacity: 3000 },
+        ],
+        { tint: true }
+      ),
+      aspen: new ScatterType(
+        'aspen',
+        [
+          { geo: aspenDetailed(), material: swayAspen, maxDist: 55, capacity: 700, shadow: true },
+          { geo: aspenNear(), material: swayAspen, maxDist: 115, capacity: 1400, shadow: true },
+          { geo: aspenFar(), material: leafy, maxDist: 560, capacity: 5000 },
         ],
         { tint: true }
       ),
@@ -602,34 +832,90 @@ export class Scatter {
       return w && w.depth > -0.2;
     };
 
-    // trees on a jittered 5 m grid
+    const lakeSD = (x, z) => {
+      let m = 1e9;
+      for (const lake of W.lakes) m = Math.min(m, W.lakeSD(lake, x, z));
+      return m;
+    };
+    const nrm = { x: 0, y: 1, z: 0 };
+
+    // trees on a jittered 5 m grid, the species chosen by site: black spruce
+    // in the wet lowlands, round the lakes and on cold north slopes, aspen
+    // groves on warm south slopes, birch in the lower valleys and white
+    // spruce everywhere else, bigger and bluer toward the coast
     for (let gz = -HALF + 2; gz < HALF - 2; gz += 5) {
       for (let gx = -HALF + 2; gx < HALF - 2; gx += 5) {
         const x = gx + rand() * 5;
         const z = gz + rand() * 5;
         const k = W.cellIndex(x, z);
         const forest = W.forest[k] / 255;
-        const lone = W.surf[k] === SURF.GRASS ? 0.012 : 0;
+        const lone = W.surf[k] === SURF.GRASS ? 0.012 : W.surf[k] === SURF.TUNDRA ? 0.004 : 0;
         if (rand() > forest * 0.52 + lone) continue;
         if (W.roadD[k] < ROAD_HALF + 3.5) continue;
         if (water(x, z) || blocked(x, z, 3)) continue;
         const y = W.heightAt(x, z);
         const low = y < 70;
+        const slope = W.slopeAt(x, z);
+        W.normalAt(x, z, nrm);
         const birchN = W.n2.noise(x * 0.006 + 7, z * 0.006 - 3);
-        const isBirch = low && (birchN > 0.25 || rand() < 0.08);
+        const aspenN = W.n3.noise(x * 0.011 - 41, z * 0.011 + 17);
+        const wet = y < 45 && slope < 0.1 && (lakeSD(x, z) < 140 || W.n1.noise(x * 0.004 + 3, z * 0.004 - 9) > 0.2);
+        const north = nrm.z < -0.2;
+        const south = nrm.z > 0.14 && slope > 0.1;
         const rot = rand() * Math.PI * 2;
-        if (isBirch) {
+        if (south && y > 12 && y < 120 && aspenN > 0.22) {
+          const s = 0.8 + rand() * 0.4;
+          const gold = rand() < 0.1;
+          const g = 0.85 + rand() * 0.3;
+          T.aspen.add(x, y - 0.15, z, rot, s, gold ? [1.5, 1.15, 0.35] : [g, g * (1 + rand() * 0.1), g * 0.85], 0.85 + rand() * 0.3, 0.85 + rand() * 0.3);
+          this.colliders.addCircle(x, z, 0.14 * s, 'tree');
+        } else if ((wet && rand() < 0.8) || (north && rand() < 0.45) || (W.surf[k] === SURF.TUNDRA && rand() < 0.6)) {
+          const s = 0.6 + rand() * 0.55;
+          const v = 0.8 + rand() * 0.3;
+          T.blackSpruce.add(x, y - 0.1, z, rot, s, [v * 0.95, v, v * (0.95 + rand() * 0.15)], 0.7 + rand() * 0.45, 0.7 + rand() * 0.45);
+          this.colliders.addCircle(x, z, 0.1 * s, 'tree');
+        } else if (low && (birchN > 0.25 || rand() < 0.08)) {
           const s = 0.75 + rand() * 0.55;
           const autumn = rand() < 0.14;
           const tint = autumn ? [1.3, 1.0, 0.45] : [0.8 + rand() * 0.2, 0.82 + rand() * 0.2, 0.78 + rand() * 0.2];
-          T.birch.add(x, y - 0.15, z, rot, s, tint);
-          this.colliders.addCircle(x, z, 0.22 * s);
+          T.birch.add(x, y - 0.15, z, rot, s, tint, 0.8 + rand() * 0.4, 0.8 + rand() * 0.4);
+          this.colliders.addCircle(x, z, 0.22 * s, 'tree');
         } else {
-          const s = 0.5 + rand() * 0.85 + (rand() < 0.1 ? 0.35 : 0);
+          const coast = smoothstep(260, 60, W.coastD[k]);
+          const s = (0.5 + rand() * 0.85 + (rand() < 0.1 ? 0.35 : 0)) * (1 + coast * 0.35);
           const v = 0.8 + rand() * 0.35;
-          T.spruce.add(x, y - 0.2, z, rot, s, [v, v * (0.95 + rand() * 0.1), v * (0.9 + rand() * 0.15)]);
-          this.colliders.addCircle(x, z, 0.3 * s);
+          // slender to broad: width varies apart from height
+          const w = 0.8 + rand() * 0.45;
+          const tint = [v * (1 - coast * 0.12), v * (0.95 + rand() * 0.1), v * (0.9 + rand() * 0.15 + coast * 0.2)];
+          T.spruce.add(x, y - 0.2, z, rot, s, tint, w, w * (0.9 + rand() * 0.2));
+          this.colliders.addCircle(x, z, 0.3 * s, 'tree');
         }
+      }
+    }
+
+    // balsam poplars along the river and round the lakes
+    for (let gz = -HALF + 4; gz < HALF - 4; gz += 11) {
+      for (let gx = -HALF + 4; gx < HALF - 4; gx += 11) {
+        const x = gx + rand() * 11;
+        const z = gz + rand() * 11;
+        const k = W.cellIndex(x, z);
+        const st = W.surf[k];
+        if (st === SURF.ROAD || st === SURF.ROCK || st === SURF.SNOW || st === SURF.ICE || st === SURF.SAND) continue;
+        if (W.roadD[k] < ROAD_HALF + 5) continue;
+        const y = W.heightAt(x, z);
+        if (y > 75) continue;
+        const rd = W.riverD[k];
+        const rw = rd < 200 ? W.riverWidth(W.riverS[k]) : 0;
+        let p = 0;
+        if (rd > rw + 6 && rd < rw + 80) p = 0.42 * (1 - (rd - rw - 6) / 74);
+        const ls = lakeSD(x, z);
+        if (ls > 6 && ls < 50) p = Math.max(p, 0.25 * (1 - ls / 50));
+        if (rand() > p || W.slopeAt(x, z) > 0.35) continue;
+        if (water(x, z) || blocked(x, z, 4)) continue;
+        const s = 0.8 + rand() * 0.45;
+        const g = 0.85 + rand() * 0.3;
+        T.poplar.add(x, y - 0.25, z, rand() * Math.PI * 2, s, [g, g * (0.95 + rand() * 0.12), g * 0.9], 0.8 + rand() * 0.45, 0.8 + rand() * 0.45);
+        this.colliders.addCircle(x, z, 0.4 * s, 'tree');
       }
     }
 
@@ -684,15 +970,9 @@ export class Scatter {
         const g = 0.75 + rand() * 0.3;
         const tint = [g * 0.4, g * 0.4, g * 0.41];
         T.rock.add(x, y - 0.25 * s, z, rand() * 6.28, s, tint, 0.8 + rand() * 0.6, 0.8 + rand() * 0.6, 0.25);
-        if (s > 0.6) this.colliders.addCircle(x, z, s * 0.85);
+        if (s > 0.6) this.colliders.addCircle(x, z, s * 0.85, 'rock');
       }
     }
-
-    const lakeSD = (x, z) => {
-      let m = 1e9;
-      for (const lake of W.lakes) m = Math.min(m, W.lakeSD(lake, x, z));
-      return m;
-    };
 
     // ferns carpet the forest floor
     for (let gz = -HALF + 2; gz < HALF - 2; gz += 3.4) {
@@ -757,7 +1037,7 @@ export class Scatter {
         const tint = rand() < 0.4 ? [g * 0.85, g, g * 0.8] : [g, g * 1.02, g * 0.9];
         const sc = 0.8 + rand() * 0.6;
         T.willow.add(x, W.heightAt(x, z) - 0.1, z, rand() * 6.28, sc, tint);
-        this.colliders.addCircle(x, z, 0.5 * sc);
+        this.colliders.addCircle(x, z, 0.5 * sc, 'shrub');
       }
     }
 
@@ -806,7 +1086,7 @@ export class Scatter {
       const y = W.heightAt(x, z);
       const sc = 0.8 + rand() * 0.5;
       T.snag.add(x, y - 0.2, z, rand() * 6.28, sc, null);
-      this.colliders.addCircle(x, z, 0.25 * sc);
+      this.colliders.addCircle(x, z, 0.25 * sc, 'tree');
       this.snags.push({ x, y: y + 8.6 * sc, z });
     }
 
@@ -946,7 +1226,7 @@ export class Scatter {
 
   // Distant tree LODs cast shadows into the far shadow cascade.
   setFarShadows(on) {
-    for (const n of ['spruce', 'birch']) {
+    for (const n of ['spruce', 'birch', 'blackSpruce', 'poplar', 'aspen']) {
       const t = this.types[n];
       t.meshes[t.meshes.length - 1].castShadow = on;
     }

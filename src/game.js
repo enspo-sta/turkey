@@ -129,7 +129,7 @@ export class Game {
     const avoid = this.props.reserveAreas();
     this.scatter = new Scatter(this.world, this.colliders, this.sharedUniforms, this.textures.terrainDetail);
     this.scatter.generate(avoid);
-    this.scatter.enableReflections(REFLECT_LAYER, ['spruce', 'birch']);
+    this.scatter.enableReflections(REFLECT_LAYER, ['spruce', 'birch', 'blackSpruce', 'poplar', 'aspen']);
     this.scene.add(this.scatter.group);
     this.props.build();
     this.scene.add(this.props.group);
