@@ -125,6 +125,14 @@ function macroHeights(world, farGrid, size) {
   return tex;
 }
 
+// Same heights as a plain array for queries on the CPU.
+function macroArray(tex) {
+  const src = tex.image.data;
+  const out = new Float32Array(src.length);
+  for (let i = 0; i < src.length; i++) out[i] = THREE.DataUtils.fromHalfFloat(src[i]);
+  return out;
+}
+
 export class TerrainLighting {
   constructor(renderer, world, wtex, farGrid, size = 1024) {
     this.renderer = renderer;
@@ -133,6 +141,9 @@ export class TerrainLighting {
     this.band = 0;
     this.ready = false;
     const macro = macroHeights(world, farGrid, 512);
+    this.world = world;
+    this.macro = macroArray(macro);
+    this.macroSize = 512;
     const common = {
       uFine: { value: wtex.height },
       uMacro: { value: macro },
@@ -197,6 +208,44 @@ export class TerrainLighting {
       if (this.band === 0) this.ready = true;
     }
     FX.uFxShadeOn.value = this.ready ? 1 : 0;
+  }
+
+  // Height for CPU queries: the world inside the playable square, the coarse
+  // copy outside it.
+  heightAt(x, z) {
+    if (Math.abs(x) < HALF && Math.abs(z) < HALF) return this.world.heightAt(x, z);
+    const S = this.macroSize;
+    const fx = Math.min(S - 1.001, Math.max(0, ((x + DOMAIN) / (2 * DOMAIN)) * S - 0.5));
+    const fz = Math.min(S - 1.001, Math.max(0, ((z + DOMAIN) / (2 * DOMAIN)) * S - 0.5));
+    const i = Math.floor(fx);
+    const j = Math.floor(fz);
+    const tx = fx - i;
+    const tz = fz - j;
+    const m = this.macro;
+    const a = m[j * S + i];
+    const b = m[j * S + i + 1];
+    const c = m[(j + 1) * S + i];
+    const d = m[(j + 1) * S + i + 1];
+    return (a * (1 - tx) + b * tx) * (1 - tz) + (c * (1 - tx) + d * tx) * tz;
+  }
+
+  // How much of the sun reaches point (x, y, z) past the mountains: the same
+  // march as the GPU map, for things drawn outside the world (the rod and
+  // hands in the first-person view).
+  sunVisibility(x, y, z, dir) {
+    const hl = Math.hypot(dir.x, dir.z);
+    if (hl < 1e-4) return 1;
+    const dx = dir.x / hl;
+    const dz = dir.z / hl;
+    const tanL = dir.y / hl;
+    let maxT = -10;
+    let t = 11;
+    for (let i = 0; i < 40; i++) {
+      maxT = Math.max(maxT, (this.heightAt(x + dx * t, z + dz * t) - y) / t);
+      t *= 1.16;
+    }
+    const v = (tanL - maxT + 0.03) / 0.06;
+    return v <= 0 ? 0 : v >= 1 ? 1 : v * v * (3 - 2 * v);
   }
 
   // Redo the whole map now (after a jump in time of day).

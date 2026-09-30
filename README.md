@@ -266,6 +266,9 @@ node tools/shot.mjs tools/scenarios/fish-views.json   # fish schools, a fish app
 node tools/shot.mjs tools/scenarios/light-views.json  # morning, noon, evening, sunset and night lighting
 node tools/shot.mjs tools/scenarios/animals.json      # the newer animals and birds
 node tools/shot.mjs tools/scenarios/perf-breakdown.json  # draw calls and triangles per rendering pass
+node tools/shot.mjs tools/scenarios/perf-views.json   # draw calls, triangles and frame time at eight places (perf-views-medium.json for Medium)
+node tools/shot.mjs tools/scenarios/shade-debug.json  # saves the mountain shadow and sky visibility maps as an image
+node tools/shot.mjs tools/scenarios/refl-debug.json   # saves the six faces of the water reflection cube as an image
 ```
 
 Playwright is not a project dependency; install it with `npm install --no-save playwright`

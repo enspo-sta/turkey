@@ -13,6 +13,7 @@ import { Fishing } from './gameplay/fishing.js';
 import { Hunting } from './gameplay/hunting.js';
 import { Wildlife } from './entities/wildlife.js';
 import { AmbientFish } from './entities/ambientfish.js';
+import { makeFishModel } from './entities/fishmodels.js';
 import { Bears } from './gameplay/bears.js';
 import { Effects } from './world/effects.js';
 import { Calving } from './world/calving.js';
@@ -123,14 +124,23 @@ class Session {
     show(g.fishing.float);
     show(g.fishing.line);
     show(g.hotrod.group);
-    const probe = g.wildlife.jumperModels;
-    void probe;
+    // a fish in the world (under water, fog) and in the hands (no fog), so the
+    // first bite and the first catch do not stall on shader compiles
+    const fishWorld = makeFishModel('pink');
+    const fishHand = makeFishModel('pink');
+    g.scene.add(fishWorld);
+    g.viewmodel.scene.add(fishHand);
     try {
       g.renderer.compile(g.scene, g.camera);
       g.renderer.compile(g.viewmodel.scene, g.viewmodel.camera);
     } catch (e) {
       /* compile is only an optimisation */
     }
+    // keep the probes (not their place in the scenes): disposing them would
+    // release the compiled programs again
+    fishWorld.removeFromParent();
+    fishHand.removeFromParent();
+    this.fishProbes = [fishWorld, fishHand];
     for (const c of hidden) c.visible = false;
     for (const h of Object.values(g.wildlife.herds)) {
       h.mesh.count = 0;

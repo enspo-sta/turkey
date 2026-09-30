@@ -320,7 +320,15 @@ export class Viewmodel {
     this.hemi.groundColor.copy(env.hemi.groundColor);
     this.hemi.intensity = env.hemi.intensity;
     this.sun.color.copy(env.sun.color);
-    this.sun.intensity = env.sun.intensity * 0.85;
+    // the valley's mountain shade reaches the rod and hands too
+    this.shadeT = (this.shadeT || 0) - dt;
+    if (this.shadeT <= 0 && game.lighting) {
+      this.shadeT = 0.4;
+      const eye = game.camera.position;
+      this.sunVisTarget = game.lighting.sunVisibility(eye.x, eye.y - 0.3, eye.z, env.lightDir);
+    }
+    this.sunVis = (this.sunVis ?? 1) + ((this.sunVisTarget ?? 1) - (this.sunVis ?? 1)) * Math.min(1, dt * 3);
+    this.sun.intensity = env.sun.intensity * 0.85 * this.sunVis;
     const ld = env.lightDir;
     // light direction into camera space
     const inv = game.camera.quaternion.clone().invert();

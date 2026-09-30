@@ -57,10 +57,13 @@ export function makeTerrainMaterial(detailTex, matTex, surfaceTex) {
       .replace(
         '#include <map_fragment>',
         `#ifdef USE_MAP
+          // top-down variation map; it would stretch into streaks on steep
+          // faces, where the projected rock layers take over instead
           vec4 dA = texture2D( map, vMapUv );
           vec4 dB = texture2D( map, vMapUv * 0.137 + vec2(0.31, 0.71) );
           float detail = dA.r * 0.55 + dB.g * 0.45;
-          diffuseColor.rgb *= 0.7 + detail * 0.6;
+          float flatness = smoothstep( 0.55, 0.85, normalize( vTNormal ).y );
+          diffuseColor.rgb *= mix( 1.0, 0.7 + detail * 0.6, flatness );
         #endif
         {
           vec3 tn = normalize( vTNormal );
