@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { N, CS, HALF, CELLS } from './worldgen.js';
 import { smoothstep, clamp } from '../util/math.js';
+import { fxPatch } from './worldfx.js';
 
 const CHUNK = 64;
 const CHUNKS = CELLS / CHUNK;
@@ -19,6 +20,7 @@ for (let i = 0; i < 256; i++) {
 export function makeTerrainMaterial(detailTex) {
   detailTex.repeat.set(1 / 6.5, 1 / 6.5);
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true, map: detailTex });
+  mat.userData.fx = 'canopy';
   mat.onBeforeCompile = (shader) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <map_fragment>',
@@ -29,6 +31,7 @@ export function makeTerrainMaterial(detailTex) {
         diffuseColor.rgb *= 0.62 + detail * 0.76;
       #endif`
     );
+    fxPatch(shader, mat);
   };
   return mat;
 }
@@ -276,5 +279,68 @@ export function buildFarTerrain(world, material) {
   const mesh = new THREE.Mesh(g, material);
   mesh.name = 'farTerrain';
   mesh.matrixAutoUpdate = false;
+  return mesh;
+}
+
+// Coarse single-mesh copy of the playable terrain (12.5 m grid) for the water
+// reflection probe, which only renders objects on `layer`.
+export function buildReflectionTerrain(world, material, layer) {
+  const step = 4;
+  const n = Math.floor(CELLS / step) + 1;
+  const h = world.h;
+  const col = world.color;
+  const pos = new Float32Array(n * n * 3);
+  const nor = new Float32Array(n * n * 3);
+  const clr = new Float32Array(n * n * 3);
+  const uv = new Float32Array(n * n * 2);
+  for (let j = 0; j < n; j++) {
+    for (let i = 0; i < n; i++) {
+      const gi = Math.min(i * step, N - 1);
+      const gj = Math.min(j * step, N - 1);
+      const k = gj * N + gi;
+      const v = j * n + i;
+      const x = -HALF + gi * CS;
+      const z = -HALF + gj * CS;
+      pos[v * 3] = x;
+      pos[v * 3 + 1] = h[k];
+      pos[v * 3 + 2] = z;
+      const il = Math.max(gi - step, 0);
+      const ir = Math.min(gi + step, N - 1);
+      const ju = Math.max(gj - step, 0);
+      const jd = Math.min(gj + step, N - 1);
+      const dx = (h[gj * N + ir] - h[gj * N + il]) / ((ir - il) * CS);
+      const dz = (h[jd * N + gi] - h[ju * N + gi]) / ((jd - ju) * CS);
+      const l = Math.sqrt(dx * dx + 1 + dz * dz);
+      nor[v * 3] = -dx / l;
+      nor[v * 3 + 1] = 1 / l;
+      nor[v * 3 + 2] = -dz / l;
+      clr[v * 3] = LIN[col[k * 3]];
+      clr[v * 3 + 1] = LIN[col[k * 3 + 1]];
+      clr[v * 3 + 2] = LIN[col[k * 3 + 2]];
+      uv[v * 2] = x;
+      uv[v * 2 + 1] = z;
+    }
+  }
+  const idx = [];
+  for (let j = 0; j < n - 1; j++) {
+    for (let i = 0; i < n - 1; i++) {
+      const a = j * n + i;
+      const b = a + 1;
+      const c = a + n;
+      const d = c + 1;
+      idx.push(a, c, b, b, c, d);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(clr, 3));
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.setIndex(new THREE.BufferAttribute(new Uint32Array(idx), 1));
+  g.computeBoundingSphere();
+  const mesh = new THREE.Mesh(g, material);
+  mesh.name = 'reflectionTerrain';
+  mesh.matrixAutoUpdate = false;
+  mesh.layers.set(layer);
   return mesh;
 }

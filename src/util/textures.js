@@ -118,6 +118,109 @@ export function makeWaterNormalTexture() {
   return dataTexture(data, S, { anisotropy: 2 });
 }
 
+// Tileable caustics: sunlight refracted through a rippled surface and
+// gathered on the bed below. Rays through a wave heightfield are splatted
+// where they land, which draws the familiar network of bright lines.
+// Returns the raw density (mean 1) for tests plus the texture (R = density/4).
+export function makeCausticData(S = 256, seed = 17) {
+  const rand = mulberry32(seed);
+  const waves = [];
+  for (let i = 0; i < 26; i++) {
+    let n = 0;
+    let m = 0;
+    while (n === 0 && m === 0) {
+      n = Math.round((rand() - 0.5) * 12);
+      m = Math.round((rand() - 0.5) * 12);
+    }
+    const k = Math.hypot(n, m);
+    waves.push({ n, m, a: 1 / Math.pow(k, 1.6), p: rand() * Math.PI * 2 });
+  }
+  const R = S * 2; // rays per axis
+  const acc = new Float32Array(S * S);
+  const TAU = Math.PI * 2;
+  // focusing strength: displacement per unit slope, in tiles
+  const focus = 0.0065;
+  // cos(a + b) = cos a cos b - sin a sin b with a along u and b along v, so
+  // each wave needs only per-row and per-column tables
+  const NW = waves.length;
+  const cu = new Float32Array(NW * R);
+  const su = new Float32Array(NW * R);
+  const cv = new Float32Array(NW * R);
+  const sv = new Float32Array(NW * R);
+  for (let w = 0; w < NW; w++) {
+    const W = waves[w];
+    for (let t = 0; t < R; t++) {
+      const q = (t + 0.5) / R;
+      cu[w * R + t] = Math.cos(TAU * W.n * q);
+      su[w * R + t] = Math.sin(TAU * W.n * q);
+      cv[w * R + t] = Math.cos(TAU * W.m * q + W.p);
+      sv[w * R + t] = Math.sin(TAU * W.m * q + W.p);
+    }
+  }
+  const kx = new Float32Array(NW);
+  const ky = new Float32Array(NW);
+  for (let w = 0; w < NW; w++) {
+    kx[w] = waves[w].a * TAU * waves[w].n;
+    ky[w] = waves[w].a * TAU * waves[w].m;
+  }
+  for (let y = 0; y < R; y++) {
+    const v = (y + 0.5) / R;
+    for (let x = 0; x < R; x++) {
+      const u = (x + 0.5) / R;
+      let gx = 0;
+      let gy = 0;
+      for (let w = 0; w < NW; w++) {
+        const c = cu[w * R + x] * cv[w * R + y] - su[w * R + x] * sv[w * R + y];
+        gx += c * kx[w];
+        gy += c * ky[w];
+      }
+      let px = (u - gx * focus) * S - 0.5;
+      let py = (v - gy * focus) * S - 0.5;
+      px = ((px % S) + S) % S;
+      py = ((py % S) + S) % S;
+      const i0 = Math.floor(px);
+      const j0 = Math.floor(py);
+      const tx = px - i0;
+      const ty = py - j0;
+      const i1 = (i0 + 1) % S;
+      const j1 = (j0 + 1) % S;
+      acc[j0 * S + i0] += (1 - tx) * (1 - ty);
+      acc[j0 * S + i1] += tx * (1 - ty);
+      acc[j1 * S + i0] += (1 - tx) * ty;
+      acc[j1 * S + i1] += tx * ty;
+    }
+  }
+  // soften the single-texel speckle, then normalise to mean 1
+  const tmp = new Float32Array(S * S);
+  for (let j = 0; j < S; j++) {
+    for (let i = 0; i < S; i++) {
+      let s = acc[j * S + i] * 4;
+      s += acc[j * S + ((i + 1) % S)] + acc[j * S + ((i - 1 + S) % S)];
+      s += acc[((j + 1) % S) * S + i] + acc[((j - 1 + S) % S) * S + i];
+      tmp[j * S + i] = s / 8;
+    }
+  }
+  let mean = 0;
+  for (let k = 0; k < S * S; k++) mean += tmp[k];
+  mean /= S * S;
+  for (let k = 0; k < S * S; k++) tmp[k] /= mean;
+  return tmp;
+}
+
+export function makeCausticTexture() {
+  const S = 256;
+  const d = makeCausticData(S);
+  const data = new Uint8Array(S * S * 4);
+  for (let k = 0; k < S * S; k++) {
+    const v = Math.max(0, Math.min(255, (d[k] / 4) * 255));
+    data[k * 4] = v;
+    data[k * 4 + 1] = v;
+    data[k * 4 + 2] = v;
+    data[k * 4 + 3] = 255;
+  }
+  return dataTexture(data, S, { anisotropy: 2 });
+}
+
 // ---- Canvas textures (browser only) ------------------------------------------
 
 function canvas(w, h) {

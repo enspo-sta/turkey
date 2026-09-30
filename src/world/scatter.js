@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { ModelBuilder, jitterGeometry } from '../util/builder.js';
 import { mulberry32, lerp, clamp, smoothstep } from '../util/math.js';
 import { HALF, SIZE, ROAD_HALF, SURF } from './worldgen.js';
+import { fxPatch } from './worldfx.js';
 
 const CELL = 50;
 const GRID = Math.ceil(SIZE / CELL);
@@ -95,6 +96,9 @@ function snagGeo() {
 // Material with gentle wind sway for tall vegetation.
 function swayMaterial(uniforms, amount) {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  mat.userData.fx = 'foliage';
+  // the sway amount is baked into the shader text, so key programs by it
+  mat.customProgramCacheKey = () => 'sway' + amount + '|fx:foliage';
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = uniforms.uTime;
     shader.vertexShader = shader.vertexShader
@@ -112,6 +116,7 @@ function swayMaterial(uniforms, amount) {
         transformed.x += sw * ${amount.toFixed(4)} * hh * hh;
         transformed.z += sw * ${(amount * 0.6).toFixed(4)} * hh * hh;`
       );
+    fxPatch(shader, mat);
   };
   return mat;
 }
@@ -192,13 +197,15 @@ export class Scatter {
     const sway = swayMaterial(sharedUniforms, 0.0016);
     const swayBirch = swayMaterial(sharedUniforms, 0.0022);
     const plain = new THREE.MeshLambertMaterial({ vertexColors: true });
+    const leafy = new THREE.MeshLambertMaterial({ vertexColors: true });
+    leafy.userData.fx = 'foliage';
 
     this.types = {
       spruce: new ScatterType(
         'spruce',
         [
           { geo: spruceNear(), material: sway, maxDist: 115, capacity: 2000, shadow: true },
-          { geo: spruceFar(), material: plain, maxDist: 720, capacity: 12000 },
+          { geo: spruceFar(), material: leafy, maxDist: 720, capacity: 12000 },
         ],
         { tint: true }
       ),
@@ -206,11 +213,11 @@ export class Scatter {
         'birch',
         [
           { geo: birchNear(), material: swayBirch, maxDist: 95, capacity: 1000, shadow: true },
-          { geo: birchFar(), material: plain, maxDist: 560, capacity: 5000 },
+          { geo: birchFar(), material: leafy, maxDist: 560, capacity: 5000 },
         ],
         { tint: true }
       ),
-      bush: new ScatterType('bush', [{ geo: bushGeo(), material: plain, maxDist: 160, capacity: 4000, shadow: false }], {
+      bush: new ScatterType('bush', [{ geo: bushGeo(), material: leafy, maxDist: 160, capacity: 4000, shadow: false }], {
         tint: true,
       }),
       rock: new ScatterType(
@@ -466,6 +473,11 @@ export class Scatter {
       }
     }
     return true;
+  }
+
+  // Show the named types to cameras that render `layer` (the reflections).
+  enableLayer(layer, names) {
+    for (const n of names) for (const m of this.types[n].meshes) m.layers.enable(layer);
   }
 
   stats() {

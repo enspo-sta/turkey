@@ -2,6 +2,7 @@
 // Limbs: 1-4 legs (FL, FR, BL, BR), 5 head/neck, 6 tail, 7/8 left/right wing.
 // Models face +z; left is +x.
 import * as THREE from 'three';
+import { fxPatch } from '../world/worldfx.js';
 import { ModelBuilder } from '../util/builder.js';
 
 function legs(b, { h, fx, bx, zf, zb, r0, r1, color, hoof = 0x222222, hoofH = 0.07 }) {
@@ -321,6 +322,7 @@ export function animatedMaterial(opts = {}) {
       )
       .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\nobjectNormal = limbRot() * objectNormal;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed = aPivot + limbRot() * (transformed - aPivot);');
+    fxPatch(shader, mat);
   };
   return mat;
 }

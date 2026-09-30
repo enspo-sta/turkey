@@ -1,8 +1,13 @@
-// Water: ocean plane, river ribbon (with the Bear Falls drop) and lakes, all
-// sharing one shader with depth-based colour, fresnel sky reflection, sun
-// glints, flow-aligned ripples and shore foam.
+// Water: ocean plane, river ribbon (with the Bear Falls drop) and lakes.
+// The surface only adds what the eye sees ON the water: fresnel reflections of
+// the real surroundings (a cube map captured around the camera), sun glints
+// and foam. What is seen THROUGH the water (the bed, rocks, fish) is drawn by
+// the objects themselves with light absorption along the refracted ray (see
+// worldfx.js), so shallow gravel shows clearly and deep pools turn green-blue.
 import * as THREE from 'three';
-import { smoothstep, clamp } from '../util/math.js';
+import { smoothstep, clamp, mulberry32 } from '../util/math.js';
+
+export const REFLECT_LAYER = 2;
 
 const vert = /* glsl */ `
 #include <common>
@@ -26,123 +31,308 @@ const frag = /* glsl */ `
 #include <common>
 #include <fog_pars_fragment>
 uniform float uTime;
-uniform vec3 uSunDir;
-uniform vec3 uSunColor;
-uniform vec3 uZenith;
-uniform vec3 uHorizon;
-uniform vec3 uShallow;
-uniform vec3 uDeep;
-uniform vec3 uAmbient;
-uniform float uNight;
+uniform vec3 uSunLight;
+uniform vec3 uLightDir;
 uniform float uRiver;
 uniform float uOcean;
 uniform float uFlowSpeed;
 uniform float uRain;
+uniform float uNight;
 uniform sampler2D uHeight;
 uniform sampler2D uMask;
-uniform sampler2D uNormal;
+uniform sampler2D uWaves;
+uniform sampler2D uFoamTex;
+uniform samplerCube uRefl;
+uniform float uReflOn;
 uniform vec2 uWorldMin;
 uniform float uUvScale;
 uniform float uUvOffset;
+uniform float uFarEdge;
 varying vec3 vWorld;
 varying vec2 vFlow;
 varying float vFoam;
 
+vec2 waveSlope(vec2 uv) {
+  return texture2D(uWaves, uv).rg * 2.0 - 1.0;
+}
+
 void main() {
   vec2 tuv = (vWorld.xz - uWorldMin) * uUvScale + uUvOffset;
   bool inside = tuv.x > 0.0 && tuv.y > 0.0 && tuv.x < 1.0 && tuv.y < 1.0;
-  float ground = inside ? texture2D(uHeight, tuv).r : -40.0;
   if (uOcean > 0.5 && inside && texture2D(uMask, tuv).b < 0.5) discard;
+  float ground = inside ? texture2D(uHeight, tuv).r : -40.0;
   float depth = vWorld.y - ground;
+  vec3 toEye = cameraPosition - vWorld;
+  float dist = length(toEye);
+  vec3 V = toEye / dist;
 
-  vec2 uvA;
-  vec2 uvB;
+  // --- waves: the animated wave texture at three scales -------------------
+  vec2 slope;
+  float crest;
   if (uRiver > 0.5) {
-    uvA = vFlow * vec2(0.11, 0.05) - vec2(0.0, uTime * uFlowSpeed * 0.05);
-    uvB = vFlow * vec2(0.19, 0.09) - vec2(0.013, uTime * uFlowSpeed * 0.085) + 0.37;
+    // flow-aligned: vFlow = (metres across, metres along the river)
+    float sp = uFlowSpeed * (1.0 + vFoam * 1.5);
+    vec2 f1 = vec2(vFlow.x, vFlow.y - uTime * sp * 1.3) / 5.5;
+    vec2 f2 = vec2(vFlow.x * 1.3 + 0.37, vFlow.y * 0.8 - uTime * sp * 2.1) / 2.1;
+    vec2 f3 = vec2(vFlow.x + 0.71, vFlow.y - uTime * sp * 0.8) / 13.0;
+    slope = waveSlope(f1) * 0.55 + waveSlope(f2) * 0.45 + waveSlope(f3) * 0.35;
+    crest = texture2D(uWaves, f2).b;
+    // riffles over the rapids
+    slope *= 1.0 + vFoam * 1.6;
   } else {
-    uvA = vWorld.xz * 0.035 + vec2(uTime * 0.011, uTime * 0.007);
-    uvB = vWorld.xz * 0.093 - vec2(uTime * 0.009, -uTime * 0.013);
+    vec2 p = vWorld.xz;
+    vec2 q = vec2(p.x * 0.8 - p.y * 0.6, p.x * 0.6 + p.y * 0.8);
+    float big = uOcean > 0.5 ? 1.0 : 0.55;
+    slope = waveSlope(p / 7.0) * 0.5 + waveSlope(q / 2.3 + 0.37) * 0.38 + waveSlope(q.yx / 23.0 + 0.11) * 0.5 * big;
+    crest = texture2D(uWaves, q / 2.3 + 0.37).b;
+    // calm and wind-roughened patches drifting over lakes
+    float gust = texture2D(uFoamTex, p * 0.0045 + vec2(uTime * 0.004, uTime * 0.0023)).g;
+    slope *= mix(0.45, 1.25, smoothstep(0.3, 0.7, gust)) * (uOcean > 0.5 ? 1.25 : 1.0);
   }
-  vec3 tA = texture2D(uNormal, uvA).xyz;
-  vec3 tB = texture2D(uNormal, uvB).xyz;
-  vec2 nn = (tA.xy - 0.5) + (tB.xy - 0.5) * 0.8;
-  float choppy = uOcean > 0.5 ? 1.25 : 0.8;
-  choppy += uRain * 0.6 + vFoam * 1.5;
-  vec3 n = normalize(vec3(nn.x * choppy, 1.0, nn.y * choppy));
+  slope *= 1.0 + uRain * 0.9;
+  // flatten toward the far distance, where the reflection is blurred instead
+  float farK = 1.0 / (1.0 + dist * 0.004);
+  vec3 n = normalize(vec3(-slope.x * farK, 1.0, -slope.y * farK));
 
-  vec3 V = normalize(cameraPosition - vWorld);
-  float ndv = max(dot(n, V), 0.0);
+  // --- reflection -----------------------------------------------------------
+  float ndv = clamp(dot(n, V), 0.0, 1.0);
   float fres = 0.02 + 0.98 * pow(1.0 - ndv, 5.0);
   vec3 R = reflect(-V, n);
-  vec3 sky = mix(uHorizon, uZenith, pow(clamp(R.y, 0.0, 1.0), 0.5));
-  float spec = pow(max(dot(R, uSunDir), 0.0), 220.0) * 4.0 + pow(max(dot(R, uSunDir), 0.0), 24.0) * 0.12;
-  spec *= smoothstep(-0.05, 0.08, uSunDir.y);
+  R.y = max(R.y, 0.015);
+  R = normalize(R);
+  float lod = clamp(log2(1.0 + dist * 0.035) + uRain * 2.0 + vFoam * 1.5, 0.0, 6.0);
+  vec3 refl = uReflOn > 0.5 ? textureLod(uRefl, R, lod).rgb : fxSkyColor(R) * mix(1.0, 0.8, R.y);
 
-  float dd = clamp(depth, 0.0, 30.0);
-  vec3 body = mix(uShallow, uDeep, smoothstep(0.0, uOcean > 0.5 ? 14.0 : 4.5, dd));
-  float sunUp = clamp(uSunDir.y * 1.6 + 0.12, 0.05, 1.0);
-  body *= uAmbient * 0.55 + sunUp * 0.6;
+  // --- sun glints: a sharp highlight plus a glitter path toward the sun ---
+  vec2 sh = fxShade(vWorld);
+  float rs = max(dot(R, uLightDir), 0.0);
+  float sharp = pow(rs, mix(2600.0, 700.0, clamp(dist / 400.0, 0.0, 1.0))) * 90.0;
+  float sparkle = smoothstep(0.62, 0.9, crest);
+  float glitter = pow(rs, 160.0) * sparkle * 14.0 + pow(rs, 26.0) * 0.12;
+  float lit = mix(sh.r, 1.0, uNight) * smoothstep(0.0, 0.08, uLightDir.y);
+  vec3 spec = uSunLight * (sharp + glitter) * lit * (1.0 - uRain * 0.8);
 
-  vec3 col = mix(body, sky * 0.92, fres * 0.78);
-  col += uSunColor * spec;
+  // --- foam: rapids, the plunge pool and lapping at the shore --------------
+  float fn = texture2D(uFoamTex, (uRiver > 0.5 ? vFlow * vec2(0.23, 0.11) - vec2(0.0, uTime * uFlowSpeed * 0.11) : vWorld.xz * 0.19 + uTime * 0.01)).b;
+  float fn2 = texture2D(uFoamTex, (uRiver > 0.5 ? vFlow * vec2(0.51, 0.27) - vec2(0.0, uTime * uFlowSpeed * 0.2) : vWorld.xz * 0.41 - uTime * 0.013)).b;
+  // a thin, broken line of foam that creeps up and back at the waterline
+  float lap = 0.5 + 0.5 * sin(uTime * 1.1 - depth * 18.0 + fn * 6.0);
+  float shore = (1.0 - smoothstep(0.0, 0.07 + lap * 0.07, depth)) * step(0.0, depth);
+  float fnoise = fn * 0.6 + fn2 * 0.5 + crest * 0.25;
+  float foamAmt = shore * 0.55 * smoothstep(0.6, 0.82, fnoise);
+  foamAmt = max(foamAmt, vFoam * smoothstep(0.35 - vFoam * 0.3, 0.75, fnoise + vFoam * 0.3));
+  foamAmt = clamp(foamAmt, 0.0, 1.0);
+  vec3 foamCol = uFxWaterLight * vec3(0.92, 0.96, 0.98) * 0.9;
 
-  float fn = texture2D(uNormal, uvB * 1.9 + vec2(0.0, uTime * 0.02)).z;
-  float shore = 1.0 - smoothstep(0.0, 0.32, depth);
-  float foamAmt = max(shore * 0.5, vFoam);
-  foamAmt *= smoothstep(0.42 - vFoam * 0.3, 0.7, fn + vFoam * 0.35);
-  vec3 foamCol = mix(vec3(0.78, 0.84, 0.85), vec3(0.2, 0.25, 0.3), uNight * 0.8) * (0.45 + sunUp * 0.55);
-  col = mix(col, foamCol, clamp(foamAmt, 0.0, 1.0));
-
-  float alpha = smoothstep(0.0, 1.6, depth) * 0.82 + 0.1;
-  alpha = max(alpha, fres * 0.9);
-  alpha = clamp(max(alpha, foamAmt), 0.0, 1.0);
-  alpha = max(alpha, vFoam * 0.9);
-  if (!inside) alpha = 1.0;
-
-  gl_FragColor = vec4(col, alpha);
-  #include <tonemapping_fragment>
-  #include <colorspace_fragment>
-  #include <fog_fragment>
+  // --- combine (premultiplied) --------------------------------------------
+  float opaque = (!inside && max(abs(vWorld.x), abs(vWorld.z)) > uFarEdge) ? 1.0 : 0.0;
+  vec4 wl = fxWaterAt(vWorld.xz);
+  vec3 body = fxWaterDeep(wl) * uFxWaterLight;
+  // the edge fades so the waterline never draws a hard seam
+  float edge = smoothstep(0.0, 0.06, depth);
+  float a = fres * edge;
+  vec3 c = refl;
+  if (opaque > 0.5) {
+    c = mix(body, refl, fres);
+    a = 1.0;
+  }
+  c = mix(c, foamCol, foamAmt);
+  a = max(a, foamAmt * 0.92 * edge);
+  // haze toward the horizon
+  float haze = fxHaze(vWorld);
+  c = mix(c, fxSkyColor(-V), haze);
+  spec *= 1.0 - haze;
+  #ifdef TONE_MAPPING
+    c = toneMapping(c);
+    spec = toneMapping(spec);
+  #endif
+  c = linearToOutputTexel(vec4(c, 1.0)).rgb;
+  spec = linearToOutputTexel(vec4(spec, 1.0)).rgb;
+  gl_FragColor = vec4(c * a + spec, a);
 }`;
 
-const TINTS = {
-  ocean: { shallow: 0x3f8a86, deep: 0x0f3a52 },
-  river: { shallow: 0x6fa39a, deep: 0x1e5a66 },
-  lake: { shallow: 0x587f62, deep: 0x16384a },
-  glacial: { shallow: 0x8fd0cc, deep: 0x3a9ab0 },
-};
+// Animated wave slopes: a sum of travelling waves with deep-water dispersion
+// (longer waves move faster) rendered into a small tiling texture every
+// frame. RG = surface slope, B = height (crests), sampled at several scales.
+class WaveTexture {
+  constructor(size = 256) {
+    const TILE = 8; // metres per tile at scale 1
+    const rand = mulberry32(911);
+    const waves = [];
+    const wind = 0.35; // radians
+    while (waves.length < 40) {
+      const n = Math.round((rand() - 0.5) * 30);
+      const m = Math.round((rand() - 0.5) * 30);
+      const k = Math.hypot(n, m);
+      if (k < 1.5 || k > 15) continue;
+      const along = Math.cos(Math.atan2(m, n) - wind);
+      if (rand() > 0.25 + 0.75 * along * along) continue;
+      const kw = (2 * Math.PI * k) / TILE;
+      waves.push({ n, m, a: 1 / Math.pow(k, 1.9), w: Math.sqrt(9.81 * kw), p: rand() * Math.PI * 2 });
+    }
+    // normalise so the slope has an RMS of about 0.2 and heights span 0..1
+    let s2 = 0;
+    let h2 = 0;
+    for (const W of waves) {
+      const kw = 2 * Math.PI * Math.hypot(W.n, W.m);
+      s2 += (W.a * kw) ** 2 / 2;
+      h2 += W.a ** 2 / 2;
+    }
+    const sk = 0.2 / Math.sqrt(s2);
+    this.uniforms = {
+      uTime: { value: 0 },
+      uWave: { value: waves.map((W) => new THREE.Vector4(W.n * 2 * Math.PI, W.m * 2 * Math.PI, W.a * sk, W.p)) },
+      uOmega: { value: waves.map((W) => W.w) },
+      uHScale: { value: 0.5 / (2.2 * Math.sqrt(h2) * sk) },
+    };
+    this.rt = new THREE.WebGLRenderTarget(size, size, {
+      type: THREE.UnsignedByteType,
+      format: THREE.RGBAFormat,
+      wrapS: THREE.RepeatWrapping,
+      wrapT: THREE.RepeatWrapping,
+      magFilter: THREE.LinearFilter,
+      minFilter: THREE.LinearMipmapLinearFilter,
+      generateMipmaps: true,
+      depthBuffer: false,
+      stencilBuffer: false,
+    });
+    this.rt.texture.anisotropy = 4;
+    this.rt.texture.name = 'waves';
+    const count = waves.length;
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const mat = new THREE.ShaderMaterial({
+      uniforms: this.uniforms,
+      vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+      fragmentShader: /* glsl */ `
+        #define COUNT ${count}
+        uniform float uTime;
+        uniform vec4 uWave[COUNT];
+        uniform float uOmega[COUNT];
+        uniform float uHScale;
+        varying vec2 vUv;
+        void main() {
+          float h = 0.0;
+          vec2 s = vec2(0.0);
+          for (int i = 0; i < COUNT; i++) {
+            vec4 w = uWave[i];
+            float ph = dot(w.xy, vUv) - uOmega[i] * uTime + w.w;
+            h += w.z * cos(ph);
+            s -= w.z * sin(ph) * w.xy;
+          }
+          // slopes per metre of an 8 m tile
+          s *= 0.125;
+          gl_FragColor = vec4(clamp(s * 0.5 + 0.5, 0.0, 1.0), clamp(h * uHScale + 0.5, 0.0, 1.0), 1.0);
+        }`,
+      depthTest: false,
+      depthWrite: false,
+    });
+    const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat);
+    quad.frustumCulled = false;
+    this.scene.add(quad);
+    this.material = mat;
+  }
+
+  get texture() {
+    return this.rt.texture;
+  }
+
+  render(renderer, time) {
+    this.uniforms.uTime.value = time;
+    const prev = renderer.getRenderTarget();
+    renderer.setRenderTarget(this.rt);
+    renderer.render(this.scene, this.camera);
+    renderer.setRenderTarget(prev);
+  }
+}
+
+// Cube map of the surroundings captured at the camera for water reflections.
+// One face is refreshed per frame (the downward face is never needed), with
+// only the objects on REFLECT_LAYER: sky, terrain, far mountains and trees.
+class ReflectionProbe {
+  constructor(renderer, size) {
+    const hdr = renderer.extensions.has('EXT_color_buffer_half_float') || renderer.extensions.has('EXT_color_buffer_float');
+    this.rt = new THREE.WebGLCubeRenderTarget(size, {
+      type: hdr ? THREE.HalfFloatType : THREE.UnsignedByteType,
+      generateMipmaps: true,
+      minFilter: THREE.LinearMipmapLinearFilter,
+      magFilter: THREE.LinearFilter,
+    });
+    if (!hdr) this.rt.texture.colorSpace = THREE.SRGBColorSpace;
+    this.rt.texture.name = 'waterReflection';
+    this.camera = new THREE.CubeCamera(1, 9000, this.rt);
+    this.camera.layers.set(REFLECT_LAYER);
+    this.faces = [0, 1, 2, 4, 5];
+    this.next = 0;
+    this.ready = false;
+  }
+
+  dispose() {
+    this.rt.dispose();
+  }
+
+  // Render `count` faces from position `pos`.
+  update(renderer, scene, pos, count = 1) {
+    const cam = this.camera;
+    if (cam.coordinateSystem !== renderer.coordinateSystem) {
+      cam.coordinateSystem = renderer.coordinateSystem;
+      cam.updateCoordinateSystem();
+    }
+    cam.position.copy(pos);
+    cam.updateMatrixWorld(true);
+    const prevTarget = renderer.getRenderTarget();
+    const prevFace = renderer.getActiveCubeFace();
+    const prevLevel = renderer.getActiveMipmapLevel();
+    const shadows = renderer.shadowMap.enabled;
+    renderer.shadowMap.enabled = false;
+    for (let i = 0; i < count; i++) {
+      const face = this.faces[this.next];
+      this.next = (this.next + 1) % this.faces.length;
+      renderer.setRenderTarget(this.rt, face, 0);
+      renderer.clear();
+      renderer.render(scene, cam.children[face]);
+      if (this.next === 0) this.ready = true;
+    }
+    renderer.shadowMap.enabled = shadows;
+    renderer.setRenderTarget(prevTarget, prevFace, prevLevel);
+  }
+}
 
 export class WaterSystem {
-  constructor(world, wtex, normalTex, env) {
+  constructor(world, wtex, foamTex, env, renderer) {
     this.world = world;
     this.env = env;
+    this.renderer = renderer;
     this.group = new THREE.Group();
     this.group.name = 'water';
     this.materials = [];
+    this.waves = new WaveTexture(256);
+    this.probe = null;
     this.shared = {
       uTime: { value: 0 },
-      uSunDir: env.uniforms.uSunDir,
-      uSunColor: env.uniforms.uSunColor,
-      uZenith: env.uniforms.uZenith,
-      uHorizon: env.uniforms.uHorizon,
+      uSunLight: { value: new THREE.Color() },
+      uLightDir: { value: new THREE.Vector3(0, 1, 0) },
       uNight: env.uniforms.uNight,
-      uAmbient: { value: new THREE.Color(1, 1, 1) },
+      uSunColor: env.uniforms.uSunColor,
       uRain: { value: 0 },
       uHeight: { value: wtex.height },
       uMask: { value: wtex.mask },
-      uNormal: { value: normalTex },
+      uWaves: { value: this.waves.texture },
+      uFoamTex: { value: foamTex },
+      uRefl: { value: null },
+      uReflOn: { value: 0 },
       uWorldMin: { value: wtex.worldMin },
       uUvScale: { value: wtex.uvScale },
       uUvOffset: { value: wtex.uvOffset },
+      uFarEdge: { value: 6300 },
     };
 
-    this.ocean = new THREE.Mesh(this.oceanGeometry(), this.material('ocean', { ocean: true }));
+    this.ocean = new THREE.Mesh(this.oceanGeometry(), this.material({ ocean: true }));
     this.ocean.name = 'ocean';
     this.ocean.frustumCulled = false;
     this.group.add(this.ocean);
 
-    this.river = new THREE.Mesh(this.riverGeometry(), this.material('river', { river: true, flow: 1.0 }));
+    this.river = new THREE.Mesh(this.riverGeometry(), this.material({ river: true, flow: 1.0 }));
     this.river.name = 'river';
     this.group.add(this.river);
 
@@ -151,7 +341,7 @@ export class WaterSystem {
       this.group.add(this.falls);
     }
     for (const lake of world.lakes) {
-      const m = new THREE.Mesh(this.lakeGeometry(lake), this.material(lake.tint === 'glacial' ? 'glacial' : 'lake'));
+      const m = new THREE.Mesh(this.lakeGeometry(lake), this.material());
       m.name = 'lake-' + lake.id;
       this.group.add(m);
     }
@@ -161,14 +351,22 @@ export class WaterSystem {
     }
   }
 
-  material(tint, { ocean = false, river = false, flow = 0 } = {}) {
-    const t = TINTS[tint];
+  // Reflection cube size (0 turns reflections off and falls back to the sky
+  // colour).
+  setReflectionSize(size) {
+    if (this.probe && this.probe.rt.width === size) return;
+    if (this.probe) this.probe.dispose();
+    this.probe = size > 0 ? new ReflectionProbe(this.renderer, size) : null;
+    this.shared.uRefl.value = this.probe ? this.probe.rt.texture : null;
+    this.shared.uReflOn.value = 0;
+    this.primed = false;
+  }
+
+  material({ ocean = false, river = false, flow = 0 } = {}) {
     const mat = new THREE.ShaderMaterial({
       uniforms: {
         ...this.shared,
         ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
-        uShallow: { value: new THREE.Color(t.shallow) },
-        uDeep: { value: new THREE.Color(t.deep) },
         uRiver: { value: river ? 1 : 0 },
         uOcean: { value: ocean ? 1 : 0 },
         uFlowSpeed: { value: flow },
@@ -176,9 +374,11 @@ export class WaterSystem {
       vertexShader: vert,
       fragmentShader: frag,
       transparent: true,
+      premultipliedAlpha: true,
       depthWrite: true,
       fog: true,
     });
+    mat.userData.fx = 'manual';
     this.materials.push(mat);
     return mat;
   }
@@ -281,7 +481,7 @@ export class WaterSystem {
     const mat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: this.shared.uTime,
-        uNoise: { value: this.shared.uNormal.value },
+        uNoise: { value: this.shared.uFoamTex.value },
         uSunColor: this.shared.uSunColor,
         uNight: this.shared.uNight,
         ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
@@ -354,9 +554,19 @@ export class WaterSystem {
     return g;
   }
 
-  update(dt, rain, ambientColor) {
-    this.shared.uTime.value += dt;
-    this.shared.uRain.value = rain;
-    if (ambientColor) this.shared.uAmbient.value.copy(ambientColor);
+  // Per frame: the wave texture, one reflection face and the light uniforms.
+  update(dt, rain, camera, scene) {
+    const sh = this.shared;
+    sh.uTime.value += dt;
+    sh.uRain.value = rain;
+    const sun = this.env.sun;
+    sh.uSunLight.value.copy(sun.color).multiplyScalar(sun.intensity);
+    sh.uLightDir.value.copy(this.env.lightDir);
+    this.waves.render(this.renderer, sh.uTime.value);
+    if (this.probe && scene) {
+      this.probe.update(this.renderer, scene, camera.position, this.primed ? 1 : 5);
+      this.primed = true;
+      sh.uReflOn.value = this.probe.ready ? 1 : 0;
+    }
   }
 }

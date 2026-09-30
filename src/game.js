@@ -2,16 +2,17 @@
 // attach themselves here (see main.js for wiring).
 import * as THREE from 'three';
 import { generateWorld } from './world/worldgen.js';
-import { Terrain, makeTerrainMaterial, buildFarTerrain } from './world/terrain.js';
+import { Terrain, makeTerrainMaterial, buildFarTerrain, buildReflectionTerrain } from './world/terrain.js';
 import { Environment } from './world/sky.js';
-import { WaterSystem } from './world/water.js';
+import { WaterSystem, REFLECT_LAYER } from './world/water.js';
+import { FX, installWorldFx } from './world/worldfx.js';
 import { Scatter } from './world/scatter.js';
 import { GrassField } from './world/grass.js';
 import { Colliders } from './world/colliders.js';
 import { makeWorldTextures } from './world/worldtex.js';
 import { Props } from './world/props.js';
 import { buildRoads } from './world/roads.js';
-import { makeDetailTexture, makeCloudTexture, makeWaterNormalTexture } from './util/textures.js';
+import { makeDetailTexture, makeCloudTexture, makeWaterNormalTexture, makeCausticTexture } from './util/textures.js';
 
 export const IS_TOUCH =
   typeof navigator !== 'undefined' &&
@@ -20,11 +21,12 @@ export const IS_TOUCH =
     ('ontouchstart' in window && navigator.maxTouchPoints > 0));
 
 export const QUALITY = {
-  low: { dpr: 1.0, shadow: 0, grass: 0.45, scatter: 0.6, lod: 0.7 },
-  medium: { dpr: 1.5, shadow: 1024, grass: 0.75, scatter: 0.85, lod: 0.9 },
-  high: { dpr: 2.0, shadow: 2048, grass: 1.0, scatter: 1.0, lod: 1.0 },
+  low: { dpr: 1.0, shadow: 0, grass: 0.45, scatter: 0.6, lod: 0.7, reflect: 0 },
+  medium: { dpr: 1.5, shadow: 1024, grass: 0.75, scatter: 0.85, lod: 0.9, reflect: 128 },
+  high: { dpr: 2.0, shadow: 2048, grass: 1.0, scatter: 1.0, lod: 1.0, reflect: 256 },
 };
 
+const _c = new THREE.Color();
 const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
 
 export class Game {
@@ -38,6 +40,7 @@ export class Game {
   }
 
   async init(progress = () => {}) {
+    installWorldFx();
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: 'high-performance',
@@ -78,14 +81,28 @@ export class Game {
     this.sharedUniforms = { uTime: { value: 0 } };
 
     this.env = new Environment(this.scene, this.textures.cloud);
+    // world shading inputs shared by every material (see worldfx.js)
+    const wt = this.wtex;
+    FX.uFxWater.value = wt.water;
+    FX.uFxWaterMax.value = wt.waterMax;
+    FX.uFxWorld.value.set(wt.worldMin.x, wt.worldMin.y, wt.uvScale, wt.uvOffset);
+    FX.uFxMask.value = wt.mask;
+    FX.uFxCaustics.value = makeCausticTexture();
+    FX.uFxSunDir.value = this.env.sunDir;
+    FX.uFxHorizon.value = this.env.uniforms.uHorizon.value;
+    FX.uFxGlow.value = this.env.uniforms.uGlow.value;
+    this.env.sky.layers.enable(REFLECT_LAYER);
 
     this.terrainMaterial = makeTerrainMaterial(this.textures.detail);
     this.terrain = new Terrain(this.world, this.terrainMaterial);
     this.scene.add(this.terrain.group);
     this.farTerrain = buildFarTerrain(this.world, this.terrainMaterial);
+    this.farTerrain.layers.enable(REFLECT_LAYER);
     this.scene.add(this.farTerrain);
+    // coarse copy of the playable terrain, seen only by the reflection probe
+    this.scene.add(buildReflectionTerrain(this.world, this.terrainMaterial, REFLECT_LAYER));
 
-    this.water = new WaterSystem(this.world, this.wtex, this.textures.waterNormal, this.env);
+    this.water = new WaterSystem(this.world, this.wtex, this.textures.waterNormal, this.env, renderer);
     this.scene.add(this.water.group);
 
     progress(0.8, 'Planting spruce and birch');
@@ -94,6 +111,7 @@ export class Game {
     const avoid = this.props.reserveAreas();
     this.scatter = new Scatter(this.world, this.colliders, this.sharedUniforms);
     this.scatter.generate(avoid);
+    this.scatter.enableLayer(REFLECT_LAYER, ['spruce', 'birch']);
     this.scene.add(this.scatter.group);
     this.props.build();
     this.scene.add(this.props.group);
@@ -124,6 +142,7 @@ export class Game {
     this.grass.setDensity(q.grass);
     this.scatter.distScale = q.scatter;
     this.terrain.lodBias = q.lod;
+    this.water.setReflectionSize(q.reflect);
     this.resize();
     this.scatter.lastPos.set(1e9, 0, 0);
   }
@@ -217,8 +236,26 @@ export class Game {
     this.props.update(dt, this.time, this.env);
     this.effects?.update(dt);
     const rain = this.env.weather.rain;
-    this.water.update(dt, rain, this.env.hemi.color);
+    this.updateFx();
+    this.water.update(dt, rain, cam, this.scene);
     this.grass.update(dt, cam.position, this.env.sun, this.env.hemi, 0.3 + rain * 0.8);
+  }
+
+  // Light-dependent inputs of the shared world shading.
+  updateFx() {
+    const env = this.env;
+    FX.uFxTime.value = this.time;
+    const e = env.sunElevation;
+    const clear = 1 - Math.min(1, Math.max(0, (env.weather.cloud - 0.45) / 0.45));
+    FX.uFxCausticStr.value = Math.min(1, Math.max(0, e / 25)) * (0.35 + 0.65 * clear) * (1 - env.weather.rain * 0.8);
+    // light filling the water volume: sky light plus the sun from above
+    const hemi = env.hemi;
+    const sun = env.sun;
+    const up = Math.max(0, env.lightDir.y);
+    FX.uFxWaterLight.value
+      .copy(hemi.color)
+      .multiplyScalar(hemi.intensity * 0.7)
+      .add(_c.copy(sun.color).multiplyScalar(sun.intensity * up * 0.3));
   }
 
   render() {

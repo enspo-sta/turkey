@@ -2,6 +2,7 @@
 // flop/swim vertex animation. Models are built at unit length along +z (head
 // at +z) and scaled by the caller.
 import * as THREE from 'three';
+import { fxPatch } from '../world/worldfx.js';
 import { FISH } from '../gameplay/data.js';
 import { mulberry32 } from '../util/math.js';
 
@@ -283,6 +284,7 @@ function flopMaterial(params, uniforms) {
         float tailw = clamp((0.5 - position.z) / 0.95, 0.0, 1.2);
         transformed.x += sin(uFlopT * 9.0 - position.z * 6.0) * uFlop * tailw * tailw * 0.22;`
       );
+    fxPatch(shader, m);
   };
   return m;
 }

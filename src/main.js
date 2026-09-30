@@ -12,6 +12,7 @@ import { Viewmodel } from './entities/viewmodel.js';
 import { Fishing } from './gameplay/fishing.js';
 import { Hunting } from './gameplay/hunting.js';
 import { Wildlife } from './entities/wildlife.js';
+import { AmbientFish } from './entities/ambientfish.js';
 import { Bears } from './gameplay/bears.js';
 import { Effects } from './world/effects.js';
 import { Calving } from './world/calving.js';
@@ -56,6 +57,7 @@ class Session {
     g.fishing = new Fishing(g);
     g.hunting = new Hunting(g);
     g.wildlife = new Wildlife(g);
+    g.fish = new AmbientFish(g);
     g.bears = new Bears(g);
     g.hud = new HUD(g);
     g.screens = new Screens(g);
@@ -584,6 +586,7 @@ class Session {
     g.fishing.update(dt);
     g.hunting.update(dt);
     g.wildlife.update(dt);
+    g.fish.update(dt);
     g.bears.update(dt);
 
     // camera

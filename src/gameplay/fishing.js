@@ -63,16 +63,6 @@ export class Fishing {
     this.line.renderOrder = 4;
     game.scene.add(this.line);
 
-    // fish silhouette approaching the float
-    const sg = new THREE.PlaneGeometry(0.22, 0.9);
-    sg.rotateX(-Math.PI / 2);
-    this.shadow = new THREE.Mesh(
-      sg,
-      new THREE.MeshBasicMaterial({ color: 0x0a1418, transparent: true, opacity: 0, depthWrite: false })
-    );
-    this.shadow.renderOrder = 2;
-    game.scene.add(this.shadow);
-
     // hooked fish model shown when it jumps / is landed
     this.jumper = null;
     this.jumperId = null;
@@ -169,7 +159,6 @@ export class Fishing {
     this.float.visible = false;
     this.lureMesh.visible = false;
     this.line.visible = false;
-    this.shadow.material.opacity = 0;
     this.hideJumper();
     g.player.moveLocked = false;
     g.player.lookLocked = false;
@@ -352,6 +341,7 @@ export class Fishing {
         return;
       }
       g.effects.splash(this.lureEnd.x, this.water.level, this.lureEnd.z, 0.35);
+      g.fish?.scare(this.lureEnd.x, this.lureEnd.z, 2.5);
       g.audio?.plop(0.6);
       this.float.visible = true;
       this.float.position.copy(this.lureEnd);
@@ -555,6 +545,20 @@ export class Fishing {
       skipNibble: false,
       size: clamp(lengthFor(fish.species, fish.weight) / 100, 0.3, 2.2),
     };
+    this.showJumper(fish.species, fish.weight);
+    this.jumper.visible = false;
+  }
+
+  // Place the fish model under water, heading along yaw, swimming.
+  swimFish(x, z, yaw, depth, flop, dt) {
+    const j = this.jumper;
+    if (!j) return;
+    j.visible = true;
+    j.position.set(x, this.floatBase - depth, z);
+    j.rotation.set(0, yaw, 0);
+    const u = j.userData.uniforms;
+    u.uFlop.value = flop;
+    u.uFlopT.value += dt * (0.6 + flop);
   }
 
   spook() {
@@ -571,24 +575,29 @@ export class Fishing {
     const e = this.encounter;
     const fl = this.float.position;
     e.t += dt;
-    const sh = this.shadow;
-    const depthVis = 0.35;
+    const deep = 0.42 + e.size * 0.18;
     if (e.phase === 'approach') {
       const u = smoothstep(0, 1, e.t / e.dur);
-      const x = lerp(e.sx, fl.x, u * 0.92);
-      const z = lerp(e.sz, fl.z, u * 0.92);
-      sh.position.set(x, this.floatBase - 0.25, z);
-      sh.rotation.y = Math.atan2(fl.x - e.sx, fl.z - e.sz);
-      sh.scale.setScalar(e.size);
-      sh.material.opacity = Math.min(depthVis, e.t * 0.5);
+      // curve in from the side, slowing as it closes on the float
+      const x = lerp(e.sx, fl.x, u * 0.9) + Math.sin(u * Math.PI) * 0.6 * Math.cos(e.sx);
+      const z = lerp(e.sz, fl.z, u * 0.9);
+      const yaw = Math.atan2(fl.x - x, fl.z - z);
+      e.x = x;
+      e.z = z;
+      e.yaw = yaw;
+      this.swimFish(x, z, yaw, deep + (1 - u) * 0.4, 0.45 - u * 0.2, dt);
       if (e.t >= e.dur) {
         e.phase = e.skipNibble || e.nibbles === 0 ? 'strike' : 'nibble';
         e.t = 0;
         e.gap = 0.3 + Math.random() * 0.5;
       }
     } else if (e.phase === 'nibble') {
-      sh.position.x = fl.x + Math.sin(this.t * 3) * 0.1;
-      sh.position.z = fl.z + Math.cos(this.t * 2.6) * 0.1;
+      // nose up under the float, circling a little between pecks
+      const back = e.dipT > 0 ? 0.08 : 0.28 + Math.sin(this.t * 1.7) * 0.06;
+      const yaw = e.yaw + Math.sin(this.t * 0.9) * 0.25;
+      const x = fl.x - Math.sin(yaw) * (back + e.size * 0.45);
+      const z = fl.z - Math.cos(yaw) * (back + e.size * 0.45);
+      this.swimFish(x, z, yaw, deep * (e.dipT > 0 ? 0.7 : 1), 0.25, dt);
       if (e.dipT > 0) e.dipT -= dt;
       e.gap -= dt;
       if (e.gap <= 0) {
@@ -613,18 +622,22 @@ export class Fishing {
       g.haptic?.('heavy');
       g.hud.prompt('HOOK!', 'hot', e.window);
     } else if (e.phase === 'bite') {
+      // the take: the fish turns down and away with the bait
+      const yaw = (e.yaw ?? 0) + Math.min(1, e.t * 3) * 0.9;
+      this.swimFish(fl.x - Math.sin(yaw) * e.size * 0.3, fl.z - Math.cos(yaw) * e.size * 0.3, yaw, deep * 0.8, 1.1, dt);
       if (e.t > e.window) {
         g.hud.toast('Missed it! The fish spat the hook');
         g.hud.prompt(null);
         this.spook();
       }
     } else if (e.phase === 'flee') {
-      sh.position.x += Math.sin(sh.rotation.y + Math.PI) * dt * 6;
-      sh.position.z += Math.cos(sh.rotation.y + Math.PI) * dt * 6;
-      sh.material.opacity = Math.max(0, sh.material.opacity - dt * 0.8);
-      if (e.t > 0.8) {
+      const yaw = (e.yaw ?? 0) + Math.PI;
+      e.x = (e.x ?? fl.x) + Math.sin(yaw) * dt * 5;
+      e.z = (e.z ?? fl.z) + Math.cos(yaw) * dt * 5;
+      this.swimFish(e.x, e.z, yaw, deep + e.t * 0.8, 1.3, dt);
+      if (e.t > 0.9) {
         this.encounter = null;
-        sh.material.opacity = 0;
+        this.hideJumper();
       }
     }
   }
@@ -664,12 +677,11 @@ export class Fishing {
       level: this.floatBase,
     };
     this.float.visible = false;
-    this.shadow.material.opacity = 0;
     this.encounter = null;
     this.state = 'fight';
     g.effects.splash(fl.x, this.floatBase, fl.z, 0.8);
     g.hud.showFight();
-    this.showJumper(fish.species, fish.weight);
+    if (!this.jumper || this.jumperId !== fish.species) this.showJumper(fish.species, fish.weight);
     this.jumper.visible = false;
   }
 
@@ -850,6 +862,7 @@ export class Fishing {
     const L = lengthFor(id, weight) / 100;
     m.scale.setScalar(L);
     this.jumper = m;
+    this.jumperId = id;
     this.jumperLen = L;
     this.game.scene.add(m);
   }
@@ -861,6 +874,7 @@ export class Fishing {
         if (o.isMesh) o.material.dispose();
       });
       this.jumper = null;
+      this.jumperId = null;
     }
   }
 
@@ -890,7 +904,17 @@ export class Fishing {
         this.game.audio?.splash(1);
       }
     } else {
-      j.visible = false;
+      // fighting under the surface: runs deep and sideways, rolls when tired
+      const P = this.game.player.pos;
+      const away = Math.atan2(F.pos.x - P.x, F.pos.z - P.z);
+      const run = F.state === 'run' ? 1 : F.state === 'swim' ? 0.5 : 0;
+      const yaw = away + (F.dir || 1) * run * 0.9;
+      const depth = 0.3 + this.jumperLen * 0.25 + run * 0.35 + (F.state === 'tired' ? -0.12 : 0);
+      j.visible = true;
+      j.position.set(F.pos.x, F.level - depth, F.pos.z);
+      j.rotation.set(0, yaw, 0);
+      if (F.state === 'tired') j.rotateZ(Math.sin(this.t * 2.2) * 0.5 + 0.3);
+      u.uFlop.value = 0.4 + run * 0.8;
       F.splashIn = false;
       F.splashOut = false;
     }
