@@ -2,7 +2,7 @@
 {"wait": 1000},
 {"eval": "__rhf.start(false)"},
 {"wait": 2000},
-{"eval": "(()=>{window.__until=async(fn,ms=90000)=>{const t0=performance.now(); while(performance.now()-t0<ms){ const r=fn(); if(r) return r; await new Promise(q=>setTimeout(q,200)); } return null;}; window.__lead=(d)=>9.81*d/(2*72*72*__rhf.game.hunting.speedScale*__rhf.game.hunting.speedScale); const g=__rhf.game; const p=g.world.place('falls'); g.player.place(p.x,p.z,p.face); g.state.stats.caught=3; return 'at falls '+p.x.toFixed(0)+','+p.z.toFixed(0)})()"},
+{"eval": "(()=>{window.__until=async(fn,ms=240000)=>{const t0=performance.now(); while(performance.now()-t0<ms){ const r=fn(); if(r) return r; await new Promise(q=>setTimeout(q,200)); } return null;}; window.__lead=(d)=>9.81*d/(2*72*72*__rhf.game.hunting.speedScale*__rhf.game.hunting.speedScale); const g=__rhf.game; const p=g.world.place('falls'); g.player.place(p.x,p.z,p.face); g.state.stats.caught=3; return 'at falls '+p.x.toFixed(0)+','+p.z.toFixed(0)})()"},
 {"wait": 4000},
 {"shot": "b1-falls"},
 {"eval": "(()=>{const g=__rhf.game; const W=g.world; const p=W.place('landing'); g.player.place(p.x,p.z,0); const P=g.player; const hp=W.heightAt(P.pos.x,P.pos.z); let yaw=null; for(let a=0;a<48;a++){ const ang=a/48*Math.PI*2; let ok=true; for(const r of [10,20,30,36]){ const x=P.pos.x-Math.sin(ang)*r, z=P.pos.z-Math.cos(ang)*r; if(W.waterAt(x,z)||Math.abs(W.heightAt(x,z)-hp)>1.6){ok=false;break;} } if(ok){yaw=ang;break;} } if(yaw===null) return 'no flat line'; P.yaw=yaw; g.bears.stage(P.pos); const b=g.bears.bears.find(b=>b.state==='stalk'); if(!b) return 'no stalker'; b.x=P.pos.x-Math.sin(yaw)*34; b.z=P.pos.z-Math.cos(yaw)*34; window.__bear=b; return 'staged at the landing'})()"},

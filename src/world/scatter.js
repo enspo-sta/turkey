@@ -667,7 +667,7 @@ function cottonGrassGeo() {
       }
       const ox = (rand() - 0.5) * 0.024;
       const oz = (rand() - 0.5) * 0.024;
-      b.add(head, { pos: [lx + ox, h + 0.012 + k * 0.022, lz + oz], scale: [1, 1.25, 1], color: k ? 0xfafaf4 : 0xeeeee6, jitter: 0.03, smooth: true });
+      b.add(head, { pos: [lx + ox, h + 0.012 + k * 0.022, lz + oz], scale: [1, 1.25, 1], color: k ? 0xdcdcd2 : 0xcfcfc6, jitter: 0.04, smooth: true });
     }
   }
   // grassy leaves at the base

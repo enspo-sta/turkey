@@ -451,7 +451,7 @@ export class Screens {
       [
         ['sell', 'Sell'],
         ['tackle', 'Tackle'],
-        ['gear', 'Guns & gear'],
+        ['gear', 'Bow & gear'],
         ['garage', 'Garage'],
       ],
       tab

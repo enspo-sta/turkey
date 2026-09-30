@@ -5,7 +5,8 @@
 //   butterflies over flowers and meadows by day (Canadian tiger swallowtail,
 //   Arctic fritillary, margined white, mourning cloak), bumblebees on the fireweed,
 //   dragonflies darting over shallow water, mosquito swarms at dusk and moths
-//   round the lit windows, pier lamps and campfires at night.
+//   round the lit windows, pier lamps and campfires at night. Balsam poplar
+//   (cottonwood) fluff drifts on the breeze over the rivers by day.
 import * as THREE from 'three';
 import { mulberry32 } from '../util/math.js';
 
@@ -59,6 +60,15 @@ function insectGeometry(kind) {
       tri([0, 0, 0.022], [s * 0.052, 0, 0.03], [s * 0.052, 0, 0.018], s, 2, 2, 2);
       tri([0, 0, 0.01], [s * 0.048, 0, 0.012], [s * 0.048, 0, 0.0], s, 2, 2, 2);
     }
+  } else if (kind === 'fluff') {
+    // a seed tuft: three crossed wisps
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI;
+      const c = Math.cos(a) * 0.012;
+      const sn = Math.sin(a) * 0.012;
+      tri([-c, -0.008, -sn], [c, -0.008, sn], [0, 0.012, 0], 0, 0, 0, 1);
+      tri([-c, 0.008, -sn], [0, -0.012, 0], [c, 0.008, sn], 0, 0, 0, 1);
+    }
   } else {
     // mosquito or moth: a small body with a pair of wings
     const size = kind === 'moth' ? 1 : 0.35;
@@ -84,6 +94,7 @@ const KINDS = {
   dragonfly: { count: 120, radius: 26, scale: 2.2, beat: 34, habitat: 'water' },
   mosquito: { count: 240, radius: 12, scale: 2.6, beat: 70, habitat: 'swarm' },
   moth: { count: 64, radius: 0, scale: 1.4, beat: 18, habitat: 'lights' },
+  fluff: { count: 110, radius: 20, scale: 1.6, beat: 0, habitat: 'rivers' },
 };
 
 const vert = /* glsl */ `
@@ -97,7 +108,8 @@ uniform float uTime;
 uniform float uActive;
 uniform float uScale;
 uniform float uBeat;
-uniform float uKind; // 0 butterfly, 1 bee, 2 dragonfly, 3 mosquito, 4 moth
+uniform float uKind; // 0 butterfly, 1 bee, 2 dragonfly, 3 mosquito, 4 moth, 5 fluff
+uniform vec2 uWind;
 uniform sampler2D uHeight;
 uniform sampler2D uMask;
 uniform sampler2D uWater;
@@ -137,16 +149,20 @@ vec3 pathAt(float t, vec4 s) {
     // mosquito: a dancing column at head height, dark against the evening sky
     return vec3(sin(t * 3.1 + s.w * 40.0) * 0.6, 2.2 + sin(t * 2.3 + s.w * 17.0) * 0.7, cos(t * 2.7 + s.w * 29.0) * 0.6);
   }
-  // moth: circling a light
-  float a = t * 1.9 + s.w * 6.28;
-  return vec3(cos(a) * (0.5 + sin(t * 0.7) * 0.2), sin(t * 2.3 + s.w * 5.0) * 0.35, sin(a) * (0.5 + cos(t * 0.9) * 0.2));
+  if (k < 4.5) {
+    // moth: circling a light
+    float a = t * 1.9 + s.w * 6.28;
+    return vec3(cos(a) * (0.5 + sin(t * 0.7) * 0.2), sin(t * 2.3 + s.w * 5.0) * 0.35, sin(a) * (0.5 + cos(t * 0.9) * 0.2));
+  }
+  // fluff: floating at its own height, rising and sinking on the air
+  return vec3(sin(t * 0.3 + s.w * 9.0) * 0.6, 0.5 + fract(s.w * 5.3) * 2.6 + sin(t * 0.45 + s.w * 4.0) * 0.4, cos(t * 0.27 + s.w * 7.0) * 0.6);
 }
 
 void main() {
   vec2 wp;
   float show = uActive;
   float ground = 0.0;
-  if (uKind > 3.5) {
+  if (uKind > 3.5 && uKind < 4.5) {
     // moths belong to the lights, not to a patch
     vec3 L = uLights[int(aSeed.z + 0.5)];
     wp = L.xz;
@@ -154,7 +170,9 @@ void main() {
   } else {
     float size = 2.0 * uR;
     vec2 base = uCam - uR;
-    wp = base + mod(aSeed.xy - base, size);
+    // fluff rides the wind; the patch wraps it round the player
+    vec2 drift = uKind > 4.5 ? uWind * uTime : vec2(0.0);
+    wp = base + mod(aSeed.xy + drift - base, size);
     vec2 tuv = (wp - uWorldMin) * uUvScale + uUvOffset;
     vec4 m = texture2D(uMask, tuv);
     vec4 w = texture2D(uWater, tuv);
@@ -164,10 +182,11 @@ void main() {
     if (uKind < 0.5) dens = m.g * 1.2 + m.r * 0.25 - m.a * 0.4;
     else if (uKind < 1.5) dens = m.g * 1.4;
     else if (uKind < 2.5) dens = smoothstep(-0.8, 0.1, depth) * (1.0 - smoothstep(1.2, 3.5, depth)) * (1.0 - w.a) * 1.3;
-    else dens = (m.a * 0.6 + step(-2.0, depth) * 0.6) * (1.0 - w.a);
+    else if (uKind < 3.5) dens = (m.a * 0.6 + step(-2.0, depth) * 0.6) * (1.0 - w.a);
+    else dens = (smoothstep(-6.0, -1.0, depth) * 0.9 + m.a * 0.15) * (1.0 - w.a);
     show *= step(aSeed.z, dens);
     show *= 1.0 - smoothstep(uR * 0.6, uR * 0.95, length(wp - uCam));
-    ground = uKind > 1.5 && uKind < 2.5 ? max(h, w.r) : h;
+    ground = (uKind > 1.5 && uKind < 2.5) || uKind > 4.5 ? max(h, w.r) : h;
   }
   float t = uTime * (0.9 + fract(aSeed.w * 13.7) * 0.3) + aSeed.w * 97.0;
   vec3 c = pathAt(t, aSeed);
@@ -241,6 +260,12 @@ const PALETTES = {
     [0x18160f, 0x2a2822, 0x5a5a54],
     [0x18160f, 0x2a2822, 0x5a5a54],
   ],
+  fluff: [
+    [0xf4f2ea, 0xf4f2ea, 0xfbfaf6],
+    [0xeeece2, 0xeeece2, 0xf8f6ee],
+    [0xf4f2ea, 0xf4f2ea, 0xfbfaf6],
+    [0xe8e6dc, 0xe8e6dc, 0xf4f2ea],
+  ],
   moth: [
     [0xb8a888, 0xa89878, 0xe0d8c0],
     [0x9a8a6a, 0x8a7a60, 0xd0c4a8],
@@ -303,6 +328,7 @@ export class Insects {
         uScale: { value: K.scale },
         uBeat: { value: K.beat },
         uKind: { value: kindIndex },
+        uWind: { value: new THREE.Vector2(0.32, 0.17) },
         uHeight: { value: wt.height },
         uMask: { value: wt.mask },
         uWater: { value: game.wtex.water },
@@ -355,6 +381,7 @@ export class Insects {
       dragonfly: day * dry,
       mosquito: e > -8 && e < 10 ? dry : 0,
       moth: env.night > 0.5 ? 1 : 0,
+      fluff: day * dry,
     };
     for (const [kind, mesh] of Object.entries(this.layers)) {
       const a = active[kind];
