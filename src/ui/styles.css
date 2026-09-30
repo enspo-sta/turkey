@@ -324,6 +324,9 @@ svg { width: 1em; height: 1em; display: block; }
 
 .settings { display: grid; gap: 14px; max-width: 560px; }
 .pause-menu { grid-template-columns: 1fr 1fr; gap: 10px; }
+.privacy h3 { margin: 14px 0 4px; font-size: 17px; color: var(--flame-2); }
+.privacy p { margin: 0; line-height: 1.5; }
+.privacy a { color: var(--glacier); }
 .pause-menu #p-resume, .pause-menu .catch-info { grid-column: 1 / -1; }
 .setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
 .setting label { font-weight: 700; font-size: 16px; letter-spacing: .04em; }

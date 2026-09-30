@@ -538,7 +538,29 @@ export class HUD {
       const dz = b.z - pz;
       items.push({ key: 'bear', a: Math.atan2(dx, -dz), t: 'GRIZZLY', d: Math.hypot(dx, dz), cls: 'marker bear' });
     }
+    // Place labels by importance so none overlap: a charging grizzly, then
+    // the current goal, the hot rod, nearer places, and the compass letters
+    // last. Widths are estimated from the text to avoid layout reads.
+    if (refreshText || !this.stripW) this.stripW = this.el.strip.clientWidth || 360;
+    const W = this.stripW;
+    const rank = (it) => (it.key === 'bear' ? 5 : it.cls.includes('goal') ? 4 : it.key === 'car' ? 3 : it.d !== undefined ? 2 : it.cls === 'minor' ? 0 : 1);
+    const placed = [];
     const seen = new Set();
+    const order = items
+      .map((it) => ({ it, rel: wrapAngle(it.a - heading) }))
+      .filter((o) => Math.abs(o.rel) <= Math.PI / 2)
+      .sort((a, b) => rank(b.it) - rank(a.it) || (a.it.d ?? 0) - (b.it.d ?? 0));
+    const shown = new Set();
+    for (const o of order) {
+      const it = o.it;
+      const x = (0.5 + (o.rel / (Math.PI / 2)) * 0.5) * W;
+      const chars = it.d !== undefined ? Math.max(it.t.length, 6) : it.t.length;
+      const half = (chars * (it.d !== undefined ? 7.2 : it.cls === 'minor' ? 7.5 : 9.5)) / 2 + 5;
+      if (placed.some(([a, b]) => x + half > a && x - half < b)) continue;
+      placed.push([x - half, x + half]);
+      shown.add(it.key);
+      o.x = x;
+    }
     for (const it of items) {
       seen.add(it.key);
       let el = this.compassEls.get(it.key);
@@ -548,10 +570,10 @@ export class HUD {
         this.compassEls.set(it.key, el);
         el._text = null;
       }
-      const rel = wrapAngle(it.a - heading);
-      const vis = Math.abs(rel) <= Math.PI / 2;
+      const vis = shown.has(it.key);
       el.style.display = vis ? '' : 'none';
       if (!vis) continue;
+      const rel = wrapAngle(it.a - heading);
       el.style.left = (50 + (rel / (Math.PI / 2)) * 50).toFixed(2) + '%';
       if (el.className !== it.cls) el.className = it.cls;
       if (refreshText || el._text === null) {

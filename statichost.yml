@@ -1,0 +1,3 @@
+# statichost.eu: publish the ready-built game in dist/ as-is (no build step).
+# Rebuild with `npm run build` and push to update the site.
+public: dist

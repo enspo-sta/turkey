@@ -1,0 +1,8 @@
+{"width":844,"height":390,"touch":true,"mobile":true,"steps":[{"wait":2000},
+{"tapSel":"#btn-settings"},{"wait":1500},
+{"tapSel":"#s-privacy"},{"wait":1500},
+{"eval":"'screen '+__rhf.game.screens.current+', sections '+document.querySelectorAll('.privacy h3').length+', link '+(document.querySelector('.privacy a')||{}).href"},
+{"shot":"privacy-ingame"},
+{"tapSel":"#pv-back"},{"wait":1000},
+{"eval":"'after back: '+__rhf.game.screens.current"}
+]}

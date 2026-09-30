@@ -62,6 +62,8 @@ for (const s of steps) {
     const box = await page.evaluate((q) => {
       const el = document.querySelector(q);
       if (!el) return null;
+      // like a player would, scroll it into view first
+      el.scrollIntoView({ block: 'center', inline: 'center' });
       const r = el.getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
     }, sel);
@@ -79,7 +81,7 @@ for (const s of steps) {
     try {
       // a name ending in .jpg saves a compressed JPEG (for docs), anything else a PNG
       const jpg = s.shot.endsWith('.jpg');
-      await page.screenshot({ path: jpg ? `${outDir}/${s.shot}` : `${outDir}/${s.shot}.png`, type: jpg ? 'jpeg' : 'png', quality: jpg ? 84 : undefined, timeout: s.shotTimeout || 60000 });
+      await page.screenshot({ path: jpg ? `${outDir}/${s.shot}` : `${outDir}/${s.shot}.png`, type: jpg ? 'jpeg' : 'png', quality: jpg ? s.quality || 84 : undefined, timeout: s.shotTimeout || 60000 });
       console.log('shot', s.shot);
     } catch (e) {
       console.log('SHOT FAILED', s.shot, e.message.split('\n')[0]);

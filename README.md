@@ -137,7 +137,9 @@ gunshots, bear hits and catches), keeps the screen awake while you play, locks
 landscape, hides the status bar and home indicator, and keeps a native copy of
 your save game.
 
-1. On a Mac, install [Xcode](https://developer.apple.com/xcode/) 15 or newer.
+1. On a Mac, install [Xcode](https://developer.apple.com/xcode/) 26 or newer
+   (Apple requires Xcode 26 or later to upload iPhone and iPad apps to App Store
+   Connect).
 2. Open `ios/RubenHotrodFishing.xcodeproj`.
 3. Select the **RubenHotrodFishing** target, open **Signing & Capabilities**,
    and choose your team (a free Apple ID works for your own devices). If Xcode
@@ -163,6 +165,18 @@ building in Xcode whenever you change the game's source.
 
 Sound follows the iPhone's silent switch, like most games, so turn silent mode
 off to hear the river, the V8 and the music.
+
+## Publishing
+
+[docs/publishing.html](docs/publishing.html) walks through every way to get
+the game to players: sharing the claude.ai link, your own web address on the
+Swedish host [statichost.eu](https://www.statichost.eu/) (this repository
+already contains its `statichost.yml`), the European web game portals
+[CrazyGames](https://www.crazygames.com/) and [Poki](https://poki.com/), and
+the App Store step by step. Ready-made App Store screenshots for 6.9-inch
+iPhones and 13-inch iPads are in [docs/appstore](docs/appstore), and the
+privacy policy page Apple asks for is built to `dist/privacy.html` (the same
+text is in the game under Settings, Privacy).
 
 ## Build from source
 

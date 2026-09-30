@@ -4,7 +4,7 @@ import WebKit
 /// Hosts the game (the single-file web build in the bundled `dist` folder) in a
 /// full-screen WebKit view, bridges haptic feedback to the Taptic Engine and
 /// keeps a native copy of the save game.
-final class GameViewController: UIViewController, WKNavigationDelegate, WKScriptMessageHandler {
+final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
     /// Web storage keys the game writes (see src/gameplay/state.js).
     private static let storedKeys = ["rubenHotrodFishing.save.v1", "rubenHotrodFishing.settings.v1"]
 
@@ -35,6 +35,7 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKScript
         webView.allowsLinkPreview = false
         webView.allowsBackForwardNavigationGestures = false
         webView.navigationDelegate = self
+        webView.uiDelegate = self
         #if DEBUG
         if #available(iOS 16.4, *) {
             // Lets Safari's Web Inspector attach to debug builds.
@@ -118,6 +119,17 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKScript
             return
         }
         decisionHandler(.allow)
+    }
+
+    // MARK: - WKUIDelegate
+
+    func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
+                 for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+        // Links that ask for a new window (target="_blank") open in Safari.
+        if let url = navigationAction.request.url, url.scheme == "http" || url.scheme == "https" {
+            UIApplication.shared.open(url)
+        }
+        return nil
     }
 
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {

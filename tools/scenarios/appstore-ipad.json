@@ -1,0 +1,155 @@
+{
+"width": 1376,
+"height": 1032,
+"dpr": 2,
+"touch": true,
+"mobile": true,
+"ua": "Mozilla/5.0 (iPad; CPU OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1",
+"timeout": 300000,
+"steps": [
+{
+"wait": 3000
+},
+{
+"eval": "__rhf.start(false)"
+},
+{
+"wait": 4000
+},
+{
+"eval": "(()=>{const g=__rhf.game; g.setQuality('high'); g.quality={...g.quality, dpr:2}; g.dpr=2; g.renderer.setPixelRatio(2); g.resize(); g.bears.directorT=9999; g.env.weather.cloud=0.2; g.env.weather.cloudTarget=0.2; g.env.weather.timer=9999; g.state.money=1840; __rhf.god(true); g.hud.firstShown=-1000; return 'canvas '+g.renderer.domElement.width+'x'+g.renderer.domElement.height})()"
+},
+{
+"eval": "(()=>{const g=__rhf.game; const p=g.world.place('bend'); g.player.place(p.x,p.z,p.face ?? 0); g.env.setTime(16.6); return 'bend'})()"
+},
+{
+"wait": 45000
+},
+{
+"eval": "(()=>{const g=__rhf.game; const f=g.fishing; f.hotPlace={name:'Salmon Bend'}; f.fight={fish:{species:'king',weight:18.6,legend:null}}; f.finishCatch(); return 'catch card '+document.getElementById('catch-name').textContent})()"
+},
+{
+"wait": 22500
+},
+{
+"eval": "(()=>{document.querySelectorAll('.toast').forEach(e=>e.remove()); const g=__rhf.game; g.hud.hint('',0); const pt=document.getElementById('place-title'); if(pt) pt.classList.remove('show'); return 'clean'})()"
+},
+{
+"wait": 1500
+},
+{
+"shot": "ipad-13in-01-catch.jpg",
+"quality": 92,
+"shotTimeout": 180000
+},
+{
+"eval": "(()=>{__rhf.game.hud.catchChoice(true); return 'kept'})()"
+},
+{
+"eval": "(()=>{const g=__rhf.game; const p=g.world.place('landing'); g.player.place(p.x,p.z,p.face ?? 0); g.env.setTime(9.4); return 'landing'})()"
+},
+{
+"wait": 45000
+},
+{
+"eval": "(()=>{__rhf.press('primary'); return 'meter'})()"
+},
+{
+"wait": 15000
+},
+{
+"eval": "(()=>{document.querySelectorAll('.toast').forEach(e=>e.remove()); const g=__rhf.game; g.hud.hint('',0); const pt=document.getElementById('place-title'); if(pt) pt.classList.remove('show'); return 'clean'})()"
+},
+{
+"wait": 1500
+},
+{
+"shot": "ipad-13in-02-cast.jpg",
+"quality": 92,
+"shotTimeout": 180000
+},
+{
+"eval": "(()=>{__rhf.game.fishing.cancel(); return 'cancel'})()"
+},
+{
+"eval": "(()=>{const g=__rhf.game; const r=g.world.roads.find(r=>r.id==='river'); const P=r.path; const p=P.sample(P.length*0.3); const c=g.hotrod; c.place(p.x,p.z,Math.atan2(p.tx,p.tz)); const e=c.exitPoint(1); g.player.place(e.x,e.z,c.yaw); g.env.setTime(17.8); return 'car'})()"
+},
+{
+"wait": 22500
+},
+{
+"eval": "__rhf.press('interact'); 'enter'"
+},
+{
+"wait": 15000
+},
+{
+"eval": "(()=>{const g=__rhf.game; if(g.hotrod.camMode!=='chase') __rhf.press('cam'); __rhf.hold('gas', true); return 'mode '+g.player.mode})()"
+},
+{
+"wait": 45000
+},
+{
+"eval": "(()=>{document.querySelectorAll('.toast').forEach(e=>e.remove()); const g=__rhf.game; g.hud.hint('',0); const pt=document.getElementById('place-title'); if(pt) pt.classList.remove('show'); return 'clean'})()"
+},
+{
+"shot": "ipad-13in-03-drive.jpg",
+"quality": 92,
+"shotTimeout": 180000
+},
+{
+"eval": "(()=>{__rhf.hold('gas', false); __rhf.press('interact'); return 'exit'})()"
+},
+{
+"wait": 15000
+},
+{
+"eval": "(()=>{const g=__rhf.game; if(g.player.mode==='drive') __rhf.session.exitCar(true); const W=g.world; const s=W.fallsS; const f=W.river.sample(s); const d=W.river.sample(s+60); const off=W.riverWidth(s+60)+3; const x=d.x+d.tz*off, z=d.z-d.tx*off; g.player.place(x,z,0); g.player.yaw=Math.atan2(-(f.x-x),-(f.z-z)); g.player.pitch=0.1; g.env.setTime(15.4); return 'falls '+g.player.mode})()"
+},
+{
+"wait": 45000
+},
+{
+"eval": "(()=>{document.querySelectorAll('.toast').forEach(e=>e.remove()); const g=__rhf.game; g.hud.hint('',0); const pt=document.getElementById('place-title'); if(pt) pt.classList.remove('show'); return 'clean'})()"
+},
+{
+"shot": "ipad-13in-04-falls.jpg",
+"quality": 92,
+"shotTimeout": 180000
+},
+{
+"eval": "(()=>{const g=__rhf.game; const W=g.world; const c=g.calving; const L=c.level; let best=null; for(let r=70;r<=140&&!best;r+=10){ for(let a=0;a<64;a++){ const ang=a/64*Math.PI*2; if(Math.cos(ang)<0.2) continue; const x=c.center.x+c.dir.x*r*Math.cos(ang)+c.side.x*r*Math.sin(ang); const z=c.center.z+c.dir.z*r*Math.cos(ang)+c.side.z*r*Math.sin(ang); const h=W.heightAt(x,z); if(h>L+0.6&&h<L+8&&!W.waterAt(x,z)){ best={x,z}; break; } } } if(!best) return 'no vantage'; g.player.place(best.x,best.z,0); g.env.setTime(12.5); g.player.yaw=Math.atan2(-(c.center.x-best.x),-(c.center.z-best.z)); g.player.pitch=0.12; c.timer=999; return 'glacier'})()"
+},
+{
+"wait": 45000
+},
+{
+"eval": "(()=>{const c=__rhf.game.calving; for(let i=0;i<12;i++){ c.calve(); const p=c.pieces[c.pieces.length-1]; if(p.big && p.w>10) return 'slab'; c.removePiece(c.pieces.length-1);} return 'no slab'})()"
+},
+{
+"eval": "(async()=>{const c=__rhf.game.calving; for(let i=0;i<3000;i++){ const p=c.pieces[c.pieces.length-1]; if(p && p.phase==='berg') return 'impact'; await new Promise(r=>setTimeout(r,15)); } return 'no impact'})()"
+},
+{
+"eval": "(()=>{document.querySelectorAll('.toast').forEach(e=>e.remove()); const g=__rhf.game; g.hud.hint('',0); const pt=document.getElementById('place-title'); if(pt) pt.classList.remove('show'); return 'clean'})()"
+},
+{
+"shot": "ipad-13in-05-glacier.jpg",
+"quality": 92,
+"shotTimeout": 180000
+},
+{
+"eval": "(()=>{const g=__rhf.game; const p=g.world.place('landing'); g.player.place(p.x,p.z,0); g.player.pitch=0.3; g.env.setTime(0.5); g.env.weather.cloud=0.05; g.env.weather.cloudTarget=0.05; return 'aurora'})()"
+},
+{
+"wait": 45000
+},
+{
+"eval": "(()=>{document.querySelectorAll('.toast').forEach(e=>e.remove()); const g=__rhf.game; g.hud.hint('',0); const pt=document.getElementById('place-title'); if(pt) pt.classList.remove('show'); return 'clean'})()"
+},
+{
+"shot": "ipad-13in-06-northern-lights.jpg",
+"quality": 92,
+"shotTimeout": 180000
+}
+]
+}

@@ -2,6 +2,7 @@
 // Trading Post shop, lure picker, pause/settings, how-to-play and dialogs.
 import { FISH, SPECIES_IDS, LEGENDS, LURES, RODS, COOLERS, ENGINES, TIRES, PAINTS, GEAR, GAME, CHALLENGES } from '../gameplay/data.js';
 import { formatMoney, formatTime, clamp } from '../util/math.js';
+import { privacyHTML, PRIVACY_UPDATED } from './privacy.js';
 import { renderMapRGBA, worldToMap } from '../world/maprender.js';
 import { HALF, SIZE } from '../world/worldgen.js';
 
@@ -164,6 +165,7 @@ export class Screens {
     else if (n === 'pause') this.renderPause();
     else if (n === 'settings') this.renderSettings();
     else if (n === 'howto') this.renderHowto();
+    else if (n === 'privacy') this.renderPrivacy();
     else if (n === 'lure') this.renderLures();
     else if (n === 'dialog') this.renderDialog();
   }
@@ -691,8 +693,13 @@ export class Screens {
       <div class="setting"><label for="s-sens">Look sensitivity</label><input type="range" id="s-sens" min="0.4" max="2.2" step="0.05" value="${st.sens}"></div>
       <div class="setting"><label>Invert look up/down</label><div class="seg" id="s-invert"><button data-v="0" class="${st.invert ? '' : 'on'}">OFF</button><button data-v="1" class="${st.invert ? 'on' : ''}">ON</button></div></div>
       <div class="setting"><label>Start over</label><button class="btn ghost" id="s-reset">Reset progress</button></div>
+      <div class="setting"><label>Privacy</label><button class="btn ghost" id="s-privacy">Privacy policy</button></div>
       <button class="btn big hot" id="s-done">Done</button>
     </div>`;
+    $('s-privacy').addEventListener('click', () => {
+      this.current = 'privacy';
+      this.render();
+    });
     this.body.querySelectorAll('#s-quality button').forEach((b) =>
       b.addEventListener('click', () => {
         st.quality = b.dataset.q;
@@ -760,6 +767,16 @@ export class Screens {
       ${touch ? '' : '<section><h4>Keyboard</h4><p><kbd>Space</kbd> or click: cast, reel, fire. <kbd>Right click</kbd> aim. <kbd>E</kbd> interact, or keep a catch (<kbd>R</kbd> releases it). <kbd>Q</kbd> switch tool. <kbd>R</kbd> reload. <kbd>G</kbd> bear spray. <kbd>X</kbd> first aid kit. <kbd>L</kbd> lures. <kbd>M</kbd> map. <kbd>J</kbd> journal. <kbd>C</kbd> camera. <kbd>H</kbd> horn. <kbd>Esc</kbd> pause.</p></section>'}
     </div><div class="dialog-actions"><button class="btn big hot" id="h-done">Got it</button></div>`;
     $('h-done').addEventListener('click', () => (g.started ? this.open('pause') : this.close()));
+  }
+
+  renderPrivacy() {
+    this.title.textContent = 'Privacy';
+    this.setTabs([], null);
+    this.body.innerHTML = `<div class="howto privacy">${privacyHTML()}<p class="catch-info">Last updated ${PRIVACY_UPDATED}</p></div><div class="dialog-actions"><button class="btn big hot" id="pv-back">Back</button></div>`;
+    $('pv-back').addEventListener('click', () => {
+      this.current = 'settings';
+      this.render();
+    });
   }
 
   // --------------------------------------------------------------- dialogs

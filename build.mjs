@@ -3,6 +3,7 @@
 // Usage: node build.mjs [--dev]
 import * as esbuild from 'esbuild';
 import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync } from 'node:fs';
+import { privacyPage } from './src/ui/privacy.js';
 
 const dev = process.argv.includes('--dev');
 mkdirSync('dist', { recursive: true });
@@ -100,6 +101,8 @@ const manifest = {
   ],
 };
 writeFileSync('dist/manifest.webmanifest', JSON.stringify(manifest, null, 2));
+// privacy policy page for the App Store listing, hosted next to the game
+writeFileSync('dist/privacy.html', privacyPage());
 for (const s of [180, 192, 512]) {
   const f = `assets/icons/icon-${s}.png`;
   if (existsSync(f)) copyFileSync(f, `dist/icon-${s}.png`);
