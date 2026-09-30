@@ -139,7 +139,8 @@ export class PostFX {
     this.hdr = ext.has('EXT_color_buffer_float') || ext.has('EXT_color_buffer_half_float');
     const type = this.hdr ? THREE.HalfFloatType : THREE.UnsignedByteType;
     this.type = type;
-    this.scene = new THREE.WebGLRenderTarget(1, 1, { type, samples: 4, depthBuffer: true });
+    // nothing reads the depth afterwards, so only colour is resolved
+    this.scene = new THREE.WebGLRenderTarget(1, 1, { type, samples: 4, depthBuffer: true, resolveDepthBuffer: false });
     this.scene.texture.name = 'post-scene';
     const small = { type, depthBuffer: false, magFilter: THREE.LinearFilter, minFilter: THREE.LinearFilter };
     this.down = [];
@@ -177,11 +178,27 @@ export class PostFX {
     this.quadScene = new THREE.Scene();
     this.quadScene.add(this.quad);
     this.quadCam = new THREE.Camera();
-    this.size = new THREE.Vector2(1, 1);
-    this.enabled = false;
+    this.size = new THREE.Vector2(0, 0);
+    this._enabled = false;
     this._v = new THREE.Vector3();
     this._f = new THREE.Vector3();
     this._size = new THREE.Vector2();
+  }
+
+  get enabled() {
+    return this._enabled;
+  }
+
+  // Switching off gives the buffers back (about 85 MB at two pixels per
+  // point); switching on allocates them again on the next frame.
+  set enabled(on) {
+    if (on === this._enabled) return;
+    this._enabled = on;
+    if (!on) {
+      this.scene.dispose();
+      for (const t of [...this.down, ...this.up, this.rays]) t.dispose();
+      this.size.set(0, 0);
+    }
   }
 
   setSize(w, h) {
@@ -201,22 +218,29 @@ export class PostFX {
     this.rays.setSize(this.down[1].width, this.down[1].height);
   }
 
+  // The target the world is drawn into while the finish is on (shader
+  // variants differ: linear light without tone mapping).
+  get worldTarget() {
+    return this._enabled ? this.scene : null;
+  }
+
   pass(material, target) {
     this.quad.material = material;
     this.renderer.setRenderTarget(target);
     this.renderer.render(this.quadScene, this.quadCam);
   }
 
-  // Draws the frame: `drawScene` renders the world and the first-person
-  // view into the current target. `sun` is the direction to the sun, `sunK`
-  // how strong its rays should be.
-  render(drawScene, camera, sunDir, sunColor, sunK) {
+  // Draws the frame: `drawWorld` renders the world into the current target;
+  // `drawOverlay` (the first-person rod, bow and hands) goes straight onto
+  // the finished picture, so the multisampled buffer is drawn in one pass.
+  // `sunDir` is the direction to the sun, `sunK` how strong its rays should be.
+  render(drawWorld, drawOverlay, camera, sunDir, sunColor, sunK) {
     const r = this.renderer;
     r.getDrawingBufferSize(this._size);
     this.setSize(this._size.x, this._size.y);
     r.setRenderTarget(this.scene);
     r.clear();
-    drawScene();
+    drawWorld();
 
     // bright pass and the chain down
     let src = this.scene.texture;
@@ -263,6 +287,10 @@ export class PostFX {
     cu.tBloom.value = this.up[0].texture;
     cu.uRays.value.set(sunColor.r, sunColor.g, sunColor.b).multiplyScalar(rays);
     this.pass(this.composite, null);
+    if (drawOverlay) {
+      r.clearDepth();
+      drawOverlay();
+    }
   }
 
   dispose() {

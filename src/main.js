@@ -71,6 +71,9 @@ class Session {
     g.onEvent = (ev) => this.onEvent(ev);
     g.save = () => this.save();
     g.fastTravel = (id, hours) => this.fastTravel(id, hours);
+    g.onPostChanged = () => {
+      if (this.fishProbes) this.precompile();
+    };
     g.onQualityDrop = (name) => g.hud.toast(`Graphics set to ${name.toUpperCase()} to keep the game smooth. Change it in Settings.`);
     g.toTitle = () => this.toTitle();
     g.haptic = (kind) => this.haptic(kind);
@@ -146,11 +149,16 @@ class Session {
     g.scene.add(fishWorld);
     g.viewmodel.scene.add(fishHand);
     try {
+      // the world is compiled for the buffer it is drawn into (the High
+      // finish draws it in linear light), the hands for the screen
+      g.renderer.setRenderTarget(g.post.worldTarget);
       g.renderer.compile(g.scene, g.camera);
+      g.renderer.setRenderTarget(null);
       g.renderer.compile(g.viewmodel.scene, g.viewmodel.camera);
     } catch (e) {
       /* compile is only an optimisation */
     }
+    g.renderer.setRenderTarget(null);
     // keep the probes (not their place in the scenes): disposing them would
     // release the compiled programs again
     fishWorld.removeFromParent();

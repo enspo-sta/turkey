@@ -160,13 +160,14 @@ vec3 pathAt(float t, vec4 s) {
 
 void main() {
   vec2 wp;
-  float show = uActive;
+  float show = 1.0;
   float ground = 0.0;
   if (uKind > 3.5 && uKind < 4.5) {
     // moths belong to the lights, not to a patch
     vec3 L = uLights[int(aSeed.z + 0.5)];
     wp = L.xz;
     ground = L.y;
+    show = step(fract(aSeed.w * 3.7), uActive);
   } else {
     float size = 2.0 * uR;
     vec2 base = uCam - uR;
@@ -184,7 +185,8 @@ void main() {
     else if (uKind < 2.5) dens = smoothstep(-0.8, 0.1, depth) * (1.0 - smoothstep(1.2, 3.5, depth)) * (1.0 - w.a) * 1.3;
     else if (uKind < 3.5) dens = (m.a * 0.6 + step(-2.0, depth) * 0.6) * (1.0 - w.a);
     else dens = (smoothstep(-6.0, -1.0, depth) * 0.9 + m.a * 0.15) * (1.0 - w.a);
-    show *= step(aSeed.z, dens);
+    // fewer of them in cloud and light rain: activity thins the habitat
+    show *= step(aSeed.z, dens * uActive);
     show *= 1.0 - smoothstep(uR * 0.6, uR * 0.95, length(wp - uCam));
     ground = (uKind > 1.5 && uKind < 2.5) || uKind > 4.5 ? max(h, w.r) : h;
   }
@@ -286,11 +288,14 @@ export class Insects {
     // moths are lit by the window, lamp or fire they circle
     this.mothLit = { value: new THREE.Color(1, 1, 1) };
     this.layers = {};
-    // moths share out the lit windows, pier lamps and campfires
-    const found = (game.props && game.props.nightLights) || [];
+    // moths share out the eight lit windows, pier lamps and campfires
+    // nearest the player (refreshed now and then in update)
+    this.allLights = (game.props && game.props.nightLights) || [];
     const lights = [];
-    for (let i = 0; i < 8; i++) lights.push((found[i % Math.max(1, found.length)] || new THREE.Vector3(0, -500, 0)).clone());
-    const nLights = Math.max(1, Math.min(8, found.length));
+    for (let i = 0; i < 8; i++) lights.push(new THREE.Vector3(0, -500, 0));
+    this.lights = lights;
+    this.lightT = 0;
+    const nLights = 8;
     let kindIndex = 0;
     for (const [kind, K] of Object.entries(KINDS)) {
       const geo = insectGeometry(kind);
@@ -385,8 +390,17 @@ export class Insects {
     };
     for (const [kind, mesh] of Object.entries(this.layers)) {
       const a = active[kind];
-      mesh.visible = a > 0 && g.player.mode === 'foot';
-      mesh.material.uniforms.uActive.value = a > 0 ? 1 : 0;
+      mesh.visible = a > 0.01 && g.player.mode === 'foot';
+      mesh.material.uniforms.uActive.value = a;
+    }
+    // the eight lights nearest the player get the moths
+    this.lightT -= dt;
+    if (this.lightT <= 0 && this.allLights.length) {
+      this.lightT = 4;
+      const sorted = this.allLights
+        .map((L) => ({ L, d: (L.x - cam.x) ** 2 + (L.z - cam.z) ** 2 }))
+        .sort((a, b) => a.d - b.d);
+      for (let i = 0; i < 8; i++) this.lights[i].copy(sorted[i % sorted.length].L);
     }
   }
 }

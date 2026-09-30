@@ -621,9 +621,19 @@ export class Floaters {
     this.group.add(mesh);
   }
 
+  // The river surface right at (x, z): the level table is keyed by distance
+  // along the river, and waterAt only knows it to the nearest grid point.
+  riverLevelAt(x, z, s) {
+    const W = this.world;
+    const c = W.river.sample(s);
+    return W.riverLevel(s + (x - c.x) * c.tx + (z - c.z) * c.tz);
+  }
+
   // Where the river is relative to the player: distance and arc length.
   locateRiver(px, pz) {
     const r = this.world.river.nearest(px, pz);
+    // a long jump along the river (fast travel) fills it afresh around you
+    if (Math.abs(r.s - this.riverS) > 150) this.filled = false;
     this.riverS = r.s;
     this.riverD = r.d;
   }
@@ -654,7 +664,7 @@ export class Floaters {
       d.x = x;
       d.z = z;
       d.s = w.s;
-      d.level = w.level;
+      d.level = this.riverLevelAt(x, z, w.s);
       d.fx = w.flowX;
       d.fz = w.flowZ;
       d.yaw = Math.atan2(p.tx, p.tz) + (R() - 0.5) * 2.2;
@@ -681,7 +691,8 @@ export class Floaters {
     f.fade = 0;
     f.x = x;
     f.z = z;
-    f.level = w.level;
+    f.level = w.kind === 'river' ? this.riverLevelAt(x, z, w.s) : w.level;
+    f.s = w.s;
     f.fx = w.flowX;
     f.fz = w.flowZ;
     f.lake = w.kind !== 'river';
@@ -708,7 +719,8 @@ export class Floaters {
     if (!near) this.filled = false;
     const fs = W.fallsS;
     for (const K of this.driftKinds) K.dirty = false;
-    let spawns = 3;
+    // top up a few a frame, but fill the whole river at once on arrival
+    let spawns = this.filled ? 3 : 1e9;
     for (const d of this.drifters) {
       if (!near) {
         if (d.alive) {
@@ -758,6 +770,7 @@ export class Floaters {
       const k = d.K.speed;
       d.x += d.fx * k * dt;
       d.z += d.fz * k * dt;
+      d.level = this.riverLevelAt(d.x, d.z, d.s);
       if (d.shallow) {
         d.x += d.nx * 0.35 * dt;
         d.z += d.nz * 0.35 * dt;
@@ -801,6 +814,7 @@ export class Floaters {
         if (!w || w.kind === 'ocean' || w.depth < 0.03) f.dying = true;
         else {
           f.level = w.level;
+          f.s = w.s;
           f.fx = w.flowX;
           f.fz = w.flowZ;
           f.lake = w.kind !== 'river';
@@ -820,6 +834,7 @@ export class Floaters {
       } else {
         f.x += f.fx * 0.97 * dt;
         f.z += f.fz * 0.97 * dt;
+        f.level = this.riverLevelAt(f.x, f.z, f.s);
       }
       f.yaw += f.spin * dt;
       _e.set(Math.sin(t * 1.7 + f.ph) * 0.06, f.yaw, Math.sin(t * 1.4 + f.ph) * 0.06, 'YXZ');

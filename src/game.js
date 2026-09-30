@@ -176,7 +176,11 @@ export class Game {
     this.terrain.lodBias = q.lod;
     this.water.setReflectionSize(q.reflect);
     this.fish?.setDensity(q.fish);
+    const postWas = this.post.enabled;
     this.post.enabled = !!q.post;
+    // the world's shaders differ with and without the finish: compile them
+    // again now rather than one by one as things come into view
+    if (postWas !== this.post.enabled) this.onPostChanged?.();
     this.resize();
     this.scatter.lastPos.set(1e9, 0, 0);
   }
@@ -319,21 +323,24 @@ export class Game {
 
   render() {
     const r = this.renderer;
-    const draw = this.drawScene || (this.drawScene = () => {
-      r.render(this.scene, this.camera);
-      if (this.overlay && this.overlay.enabled) {
-        r.clearDepth();
-        r.render(this.overlay.scene, this.overlay.camera);
-      }
-    });
+    const world = this.drawWorld || (this.drawWorld = () => r.render(this.scene, this.camera));
+    const overlay =
+      this.drawOverlay ||
+      (this.drawOverlay = () => {
+        if (this.overlay && this.overlay.enabled) r.render(this.overlay.scene, this.overlay.camera);
+      });
     if (this.post.enabled) {
       const env = this.env;
-      this.post.render(draw, this.camera, env.sunDir, env.sun.color, this.sunRays());
+      this.post.render(world, overlay, this.camera, env.sunDir, env.sun.color, this.sunRays());
       return;
     }
     r.setRenderTarget(null);
     r.clear();
-    draw();
+    world();
+    if (this.overlay && this.overlay.enabled) {
+      r.clearDepth();
+      overlay();
+    }
   }
 
   // How strongly the sun streams through gaps: most at a low sun, little
