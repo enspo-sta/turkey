@@ -136,7 +136,7 @@ export class Colliders {
     return { x, z, hit };
   }
 
-  // Nearby circle colliders (for AI avoidance and bullets)
+  // Nearby circle colliders (for animal avoidance and arrows)
   circlesNear(x, z, r) {
     const out = [];
     const i0 = Math.floor((x - r) / CELL);

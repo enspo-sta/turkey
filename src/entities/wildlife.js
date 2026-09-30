@@ -412,7 +412,7 @@ export class Wildlife {
     return { x: g.player.pos.x, z: g.player.pos.z, loud: run };
   }
 
-  // Scare everything within radius (gunshots, horn).
+  // Scare everything within radius (a loosed arrow, the horn).
   scare(x, z, radius) {
     for (const a of this.animals) {
       if (a.dead) continue;

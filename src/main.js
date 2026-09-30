@@ -313,7 +313,7 @@ class Session {
         const keep = e.code === 'KeyE' || e.code === 'Enter' || e.code === 'NumpadEnter';
         const release = e.code === 'KeyR';
         if ((keep || release) && !e.repeat) {
-          // don't let the same press also enter the car or reload
+          // don't let the same press also enter the car
           g.input.keyEdges.delete(e.code);
           e.preventDefault();
           g.hud.catchChoice(keep);

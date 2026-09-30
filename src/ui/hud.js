@@ -29,8 +29,8 @@ export class HUD {
       health: $('hud-health'),
       cooler: $('hud-cooler'),
       chipCooler: $('chip-cooler'),
-      ammo: $('hud-ammo'),
-      chipAmmo: $('chip-ammo'),
+      arrows: $('hud-arrows'),
+      chipArrows: $('chip-arrows'),
       lure: $('hud-lure'),
       chipLure: $('chip-lure'),
       time: $('hud-time'),
@@ -71,7 +71,6 @@ export class HUD {
       primary: $('btn-primary'),
       secondary: $('btn-secondary'),
       tool: $('btn-tool'),
-      reload: $('btn-reload'),
       spray: $('btn-spray'),
       sprayCount: $('spray-count'),
       med: $('btn-med'),
@@ -96,7 +95,6 @@ export class HUD {
     input.bindButton(this.el.primary, 'primary');
     input.bindButton(this.el.secondary, 'secondary');
     input.bindButton(this.el.tool, 'tool');
-    input.bindButton(this.el.reload, 'reload');
     input.bindButton(this.el.spray, 'spray');
     input.bindButton(this.el.med, 'med');
     input.bindButton(this.el.horn, 'horn');
@@ -410,9 +408,9 @@ export class HUD {
     const fishing = g.fishing;
     const hunting = g.hunting;
     const onFoot = mode === 'foot';
-    el.chipAmmo.hidden = !(onFoot && tool === 'bow');
+    el.chipArrows.hidden = !(onFoot && tool === 'bow');
     el.chipLure.hidden = !(onFoot && tool === 'rod');
-    if (!el.chipAmmo.hidden) set('ammo', String(s.gear.arrows), (v) => (el.ammo.textContent = v));
+    if (!el.chipArrows.hidden) set('arrows', String(s.gear.arrows), (v) => (el.arrows.textContent = v));
 
     // objective
     const ch = s.currentChallenge();
@@ -430,7 +428,6 @@ export class HUD {
     el.speedo.hidden = !driving;
     el.primary.hidden = driving || catchOpen || tool === 'none';
     el.tool.hidden = driving || catchOpen || (fishing && fishing.state !== 'idle');
-    el.reload.hidden = true;
     el.spray.hidden = !onFoot || s.gear.spray <= 0 || catchOpen || !g.bears?.threat;
     el.med.hidden = !onFoot || s.gear.medkit <= 0 || P.health > 70 || catchOpen;
     set('spray', s.gear.spray, (v) => (el.sprayCount.textContent = v));

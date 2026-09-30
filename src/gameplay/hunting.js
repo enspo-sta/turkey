@@ -201,7 +201,7 @@ export class Hunting {
       const i = this.arrows.findIndex((a) => a.stuck);
       this.arrows.splice(i >= 0 ? i : 0, 1);
     }
-    this.arrows.push({ pos, vel, damage, stuck: false, life: 0, sink: 0, dir: vel.clone().normalize() });
+    this.arrows.push({ pos, vel, damage, stuck: false, life: 0, sink: 0, flown: 0, dir: vel.clone().normalize() });
   }
 
   updateArrows(dt) {
@@ -257,8 +257,12 @@ export class Hunting {
     const len = step.length();
     const dir = step.clone().divideScalar(len || 1);
     a.dir.copy(dir);
-    // game and bears
-    const hit = g.wildlife.raycast(p0.x, p0.y, p0.z, dir.x, dir.y, dir.z, len);
+    // game and bears; the test reaches back over the end of the last step,
+    // so an animal running at the arrow cannot slip past it between frames
+    const back = Math.min(1.2, a.flown);
+    const hit = g.wildlife.raycast(p0.x - dir.x * back, p0.y - dir.y * back, p0.z - dir.z * back, dir.x, dir.y, dir.z, len + back);
+    if (hit) hit.dist = Math.max(0, hit.dist - back);
+    a.flown += len;
     // trunks and rocks
     const solid = this.solidHit(p0, dir, len);
     // ground and water

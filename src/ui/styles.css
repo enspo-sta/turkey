@@ -228,7 +228,6 @@ svg { width: 1em; height: 1em; display: block; }
 .btn.tool { width: 62px; height: 62px; right: calc(var(--sar) + 38px); bottom: calc(var(--sab) + 136px); }
 .btn.tool.pulse { animation: alertPulse .45s ease-in-out infinite alternate; border-color: #ff6a4a; }
 .btn.small { width: 52px; height: 52px; }
-#btn-reload { right: calc(var(--sar) + 118px); bottom: calc(var(--sab) + 108px); }
 #btn-spray { right: calc(var(--sar) + 176px); bottom: calc(var(--sab) + 100px); }
 #btn-med { right: calc(var(--sar) + 110px); bottom: calc(var(--sab) + 164px); }
 #btn-horn { right: calc(var(--sar) + 40px); bottom: calc(var(--sab) + 150px); }
@@ -357,7 +356,6 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
   .btn.primary { width: 84px; height: 84px; }
   .btn.secondary { width: 62px; height: 62px; right: calc(var(--sar) + 116px); }
   .btn.tool { bottom: calc(var(--sab) + 120px); width: 56px; height: 56px; }
-  #btn-reload { bottom: calc(var(--sab) + 98px); right: calc(var(--sar) + 104px); }
   #btn-spray { right: calc(var(--sar) + 160px); bottom: calc(var(--sab) + 90px); }
   #btn-med { right: calc(var(--sar) + 100px); bottom: calc(var(--sab) + 150px); }
   #btn-horn { bottom: calc(var(--sab) + 130px); }
