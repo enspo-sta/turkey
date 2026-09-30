@@ -23,6 +23,11 @@
   --sal: env(safe-area-inset-left, 0px);
   color-scheme: dark;
 }
+/* The game is dark by design in both colour schemes. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) { --night: #0d1a1f; --panel-solid: #11232a; --ink: #f4ead6; }
+}
+:root[data-theme='dark'] { --night: #0d1a1f; --panel-solid: #11232a; --ink: #f4ead6; }
 [hidden] { display: none !important; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body {

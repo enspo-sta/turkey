@@ -1,0 +1,8 @@
+{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":2500},
+{"eval":"(()=>{const g=__rhf.game; document.getElementById('hud').hidden=true; g.env.setTime(11); g.player.lookLocked=true; g.viewmodel.showFish('king', 92); return 'king'})()"},
+{"wait":2500},{"shot":"hands-king"},
+{"eval":"(()=>{const g=__rhf.game; g.viewmodel.showFish('grayling', 38); return 'grayling'})()"},
+{"wait":2500},{"shot":"hands-grayling"},
+{"eval":"(()=>{const g=__rhf.game; g.viewmodel.showFish('halibut', 120); return 'halibut'})()"},
+{"wait":2500},{"shot":"hands-halibut"}
+]}

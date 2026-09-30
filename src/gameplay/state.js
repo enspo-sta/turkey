@@ -17,6 +17,17 @@ function storage() {
   }
 }
 
+// Inside the iOS app, saves are also handed to the native side, which keeps
+// its own copy and restores it into web storage on launch.
+function mirror(key, value) {
+  try {
+    const h = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.store;
+    if (h) h.postMessage({ key, value });
+  } catch (e) {
+    /* not running inside the app */
+  }
+}
+
 export class GameState {
   constructor() {
     this.listeners = [];
@@ -188,7 +199,9 @@ export class GameState {
     const s = storage();
     if (!s) return false;
     try {
-      s.setItem(SAVE_KEY, JSON.stringify(this.toJSON()));
+      const json = JSON.stringify(this.toJSON());
+      s.setItem(SAVE_KEY, json);
+      mirror(SAVE_KEY, json);
       return true;
     } catch (e) {
       return false;
@@ -250,6 +263,7 @@ export class GameState {
         /* ignore */
       }
     }
+    mirror(SAVE_KEY, null);
     this.reset();
   }
 
@@ -257,7 +271,9 @@ export class GameState {
     const s = storage();
     if (!s) return;
     try {
-      s.setItem(SETTINGS_KEY, JSON.stringify(this.settings));
+      const json = JSON.stringify(this.settings);
+      s.setItem(SETTINGS_KEY, json);
+      mirror(SETTINGS_KEY, json);
     } catch (e) {
       /* ignore */
     }

@@ -5,3 +5,4 @@ tools/out/
 ios/build/
 ios/DerivedData/
 xcuserdata/
+build/

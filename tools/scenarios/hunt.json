@@ -4,7 +4,7 @@
 {"eval":"__rhf.press('secondary'); 'scope'"},{"wait":2500},{"eval":"'dist '+__aimAt(__cari).toFixed(1)+' scoped '+__rhf.game.hunting.scoped"},{"wait":2500},{"shot":"h2-scope"},
 {"eval":"(()=>{__aimAt(__cari); __rhf.game.player.lookSway.x=0; __rhf.game.player.lookSway.y=0; __rhf.game.hunting.stillT=5; __rhf.press('primary'); return 'fire'})()"},
 {"wait":2500},{"eval":"(()=>{const a=__cari; return 'dead '+a.dead+' hp '+a.hp+' state '+a.state})()"},
-{"eval":"(()=>{const g=__rhf.game; const a=__cari; if(!a.dead){ a.hp=1; __aimAt(a); g.player.lookSway.x=0; g.player.lookSway.y=0; __rhf.press('primary'); } return 'retry'})()"},
+{"eval":"(()=>{const g=__rhf.game; const a=__cari; if(!a.dead){ a.hp=1; a.state='graze'; a.t=60; a.speed=0; g.hunting.boltT=0; __aimAt(a); g.player.lookSway.x=0; g.player.lookSway.y=0; __rhf.press('primary'); } return 'retry'})()"},
 {"wait":3000},{"eval":"(()=>{const a=__cari; return 'dead '+a.dead+' state '+a.state})()"},
 {"eval":"__rhf.press('secondary'); (()=>{const g=__rhf.game; const a=__cari; g.player.place(a.x+2.5,a.z,0); return 'walk to it'})()"},
 {"wait":3000},{"shot":"h3-claim"},

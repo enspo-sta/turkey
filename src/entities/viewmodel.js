@@ -94,11 +94,37 @@ function buildHand(color = 0x6a4a2e) {
   return b.build();
 }
 
-function buildGlove(color = 0x6a4a2e) {
+// Bare hand and flannel sleeve for holding up a catch. Built in the fish
+// rig's frame (x right, y up, z toward the camera) with the grip point at the
+// origin: side 1 grips the tail wrist, side -1 cradles the belly.
+function buildFishArm(side) {
   const b = new ModelBuilder();
-  b.box(0.075, 0.085, 0.1, { pos: [0, 0, 0], color });
-  b.box(0.03, 0.03, 0.06, { pos: [-0.04, 0.02, -0.04], rot: [0, 0.3, 0], color });
-  b.cyl(0.045, 0.05, 0.08, 8, { pos: [0, -0.02, 0.08], rot: [Math.PI / 2, 0, 0], color: 0xb2261e });
+  const skin = 0xd9a27c;
+  const crease = 0xbf8662;
+  if (side > 0) {
+    // fist closed around the tail wrist, knuckles toward the camera
+    b.box(0.068, 0.084, 0.07, { pos: [0, 0, 0], color: skin });
+    for (let i = 0; i < 4; i++) b.box(0.064, 0.019, 0.024, { pos: [-0.004, 0.031 - i * 0.021, 0.04], color: i % 2 ? skin : crease });
+    // thumb hooked over the top
+    b.box(0.052, 0.022, 0.028, { pos: [-0.026, 0.05, 0.016], rot: [0, 0, 0.22], color: skin });
+  } else {
+    // flat palm under the belly, fingers reaching round the far side
+    b.box(0.1, 0.03, 0.085, { pos: [0, -0.004, 0], color: skin });
+    for (let i = 0; i < 4; i++) b.box(0.02, 0.052, 0.02, { pos: [-0.036 + i * 0.024, 0.02, -0.042], color: i % 2 ? crease : skin });
+    // thumb along the near side
+    b.box(0.022, 0.046, 0.022, { pos: [0.046, 0.018, 0.036], rot: [0, 0, -0.3], color: skin });
+  }
+  // forearm running down and out of view toward the camera
+  const dir = side > 0 ? [0.3, -0.62, 0.72] : [-0.36, -0.58, 0.72];
+  const n = Math.hypot(dir[0], dir[1], dir[2]);
+  const at = (t) => [(dir[0] / n) * t, (dir[1] / n) * t, (dir[2] / n) * t];
+  b.beam(at(0.02), at(0.1), 0.03, 12, { r2: 0.034, color: skin, smooth: true });
+  b.beam(at(0.09), at(0.13), 0.049, 14, { r2: 0.05, color: 0x3a1a14, smooth: true });
+  // flannel sleeve with dark check bands
+  for (let i = 0; i < 7; i++) {
+    const t0 = 0.13 + i * 0.07;
+    b.beam(at(t0), at(t0 + 0.07), 0.051 + i * 0.004, 14, { r2: 0.055 + i * 0.004, color: i % 2 ? 0x7a1812 : 0xb2261e, smooth: true });
+  }
   return b.build();
 }
 
@@ -188,7 +214,7 @@ export class Viewmodel {
     this.fishRig = new THREE.Group();
     this.root.add(this.fishRig);
     this.fishModel = null;
-    this.fishHands = [new THREE.Mesh(buildGlove(), handMat), new THREE.Mesh(buildGlove(), handMat)];
+    this.fishHands = [new THREE.Mesh(buildFishArm(1), handMat), new THREE.Mesh(buildFishArm(-1), handMat)];
     for (const h of this.fishHands) this.fishRig.add(h);
 
     this.tool = 'rod';
@@ -251,9 +277,7 @@ export class Viewmodel {
     this.fishRig.visible = true;
     this.fishT = 0;
     this.fishLen = vis;
-    // hands grip near head and tail
-    this.fishHands[0].position.set(0.02, -0.04, 0);
-    this.fishHands[1].position.set(0.02, -0.04, 0);
+
   }
 
   hideFish() {
@@ -388,12 +412,13 @@ export class Viewmodel {
       this.fishRig.rotation.set(0.1, 0, 0);
       this.fishModel.rotation.set(0, -Math.PI / 2, this.fishModel.userData.flat ? -1.2 : 0);
       this.fishModel.position.set(0, 0, 0);
-      // one hand grips the tail wrist, the other supports the belly
+      // one hand grips the tail wrist, the other cradles the belly; a small
+      // fish only needs the one hand
       const L = this.fishLen;
-      this.fishHands[0].position.set(L * 0.36, -0.01, 0.02);
-      this.fishHands[0].rotation.set(0.2, 0, -0.5);
-      this.fishHands[1].position.set(-L * 0.1, -0.035 - L * 0.07, 0.02);
-      this.fishHands[1].rotation.set(0.6, 0, 0.1);
+      const small = L < 0.45;
+      this.fishHands[0].position.set(L * (small ? 0.28 : 0.36), -0.004, 0);
+      this.fishHands[1].visible = !small;
+      this.fishHands[1].position.set(-L * 0.1, -0.02 - L * 0.1, 0.01);
     }
   }
 }

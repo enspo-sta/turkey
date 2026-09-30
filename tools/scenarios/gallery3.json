@@ -1,0 +1,11 @@
+{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":1500},
+{"eval":"(()=>{const g=__rhf.game; document.getElementById('hud').hidden=true; g.bears.directorT=9999; const p=g.world.place('landing'); g.player.place(p.x,p.z,0); g.player.pitch=0.3; g.env.setTime(0.5); g.env.weather.cloud=0.1; g.env.weather.cloudTarget=0.1; g.env.weather.timer=9999; return 'aurora'})()"},
+{"wait":6000},{"shot":"aurora.jpg"},
+{"eval":"(()=>{const g=__rhf.game; const p=g.world.place('falls'); g.player.place(p.x,p.z,p.face); g.player.pitch=0.06; g.env.setTime(16.5); g.player.tool='rod'; g.viewmodel.setTool('rod'); return 'falls'})()"},
+{"wait":6000},{"shot":"falls.jpg"},
+{"eval":"(()=>{const g=__rhf.game; const W=g.world; const c=g.calving; const L=c.level; let best=null; for(let r=70;r<=140&&!best;r+=10){ for(let a=0;a<64;a++){ const ang=a/64*Math.PI*2; const x=c.center.x+c.dir.x*r*Math.cos(ang)+c.side.x*r*Math.sin(ang); const z=c.center.z+c.dir.z*r*Math.cos(ang)+c.side.z*r*Math.sin(ang); if(Math.cos(ang)<0.2) continue; const h=W.heightAt(x,z); if(h>L+0.6&&h<L+8&&!W.waterAt(x,z)){ best={x,z}; break; } } } if(!best) return 'no vantage'; g.player.place(best.x,best.z,0); g.env.setTime(12.5); g.player.yaw=Math.atan2(-(c.center.x-best.x),-(c.center.z-best.z)); g.player.pitch=0.12; g.overlay.enabled=false; return 'vantage '+Math.hypot(best.x-c.center.x,best.z-c.center.z).toFixed(0)+' m'})()"},
+{"wait":4000},
+{"eval":"(()=>{const c=__rhf.game.calving; c.timer=999; for(let i=0;i<12;i++){ c.calve(); const p=c.pieces[c.pieces.length-1]; if(p.big && p.w>10) return 'slab'; c.removePiece(c.pieces.length-1);} return 'no big slab'})()"},
+{"eval":"(async()=>{const c=__rhf.game.calving; for(let i=0;i<1500;i++){ const p=c.pieces[c.pieces.length-1]; if(p && p.phase==='berg') return 'impact'; await new Promise(r=>setTimeout(r,15)); } return 'no impact'})()"},
+{"wait":300},{"shot":"calving.jpg"}
+]}

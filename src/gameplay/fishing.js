@@ -596,6 +596,7 @@ export class Fishing {
           e.dipT = 0.35;
           g.effects.ripples.add(fl.x, this.floatBase, fl.z, 0.7, 0.8);
           g.audio?.plop(0.25);
+          g.haptic?.('light');
           e.gap = 0.6 + Math.random() * 1.0;
         } else {
           e.phase = 'strike';
@@ -1042,6 +1043,7 @@ export class Fishing {
     g.viewmodel.showFish(fish.species, len);
     g.player.lookLocked = true;
     g.audio?.fanfare(!!fish.legend || flags.isNew);
+    g.haptic?.('success');
     if (fish.legend) {
       const p = g.camera.position;
       g.effects.sparkle(p.x - Math.sin(g.player.yaw) * 1.5, p.y, p.z - Math.cos(g.player.yaw) * 1.5, 60);

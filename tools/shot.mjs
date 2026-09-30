@@ -61,7 +61,9 @@ for (const s of steps) {
   if (s.keyup) await page.keyboard.up(s.keyup);
   if (s.shot) {
     try {
-      await page.screenshot({ path: `${outDir}/${s.shot}.png`, timeout: s.shotTimeout || 60000 });
+      // a name ending in .jpg saves a compressed JPEG (for docs), anything else a PNG
+      const jpg = s.shot.endsWith('.jpg');
+      await page.screenshot({ path: jpg ? `${outDir}/${s.shot}` : `${outDir}/${s.shot}.png`, type: jpg ? 'jpeg' : 'png', quality: jpg ? 84 : undefined, timeout: s.shotTimeout || 60000 });
       console.log('shot', s.shot);
     } catch (e) {
       console.log('SHOT FAILED', s.shot, e.message.split('\n')[0]);

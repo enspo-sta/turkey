@@ -78,6 +78,14 @@ export class AudioEngine {
     this.ready = true;
   }
 
+  suspend() {
+    if (this.ctx && this.ctx.state === 'running') this.ctx.suspend().catch(() => {});
+  }
+
+  resume() {
+    if (this.ctx && this.ctx.state !== 'running' && this.ctx.state !== 'closed') this.ctx.resume().catch(() => {});
+  }
+
   setVolumes(v, m) {
     this.volume = v;
     this.musicVolume = m;
@@ -626,6 +634,31 @@ export class AudioEngine {
   }
 
   // ---------------------------------------------------------------- car
+  // Glacier calving: a sharp crack rolling into thunder, heard with the delay
+  // of the distance.
+  iceCrack(x, z) {
+    if (!this.ready) return;
+    const s = this.spatial(x, z, 1400);
+    if (s.vol < 0.01) return;
+    const when = Math.min(2.5, s.d / 343);
+    const v = s.vol;
+    this.noise(0.22, 0.9 * v, { type: 'highpass', freq: 1800, q: 0.7, pan: s.pan, when });
+    this.noise(0.7, 0.7 * v, { freq: 700, f2: 160, q: 0.8, pan: s.pan, when: when + 0.04 });
+    this.noise(3.0, 0.6 * v, { type: 'lowpass', freq: 340, f2: 60, q: 0.6, buf: this.brown, pan: s.pan, attack: 0.2, when: when + 0.1 });
+  }
+
+  // The slab hitting the lake: a deep boom, rumble and the crash of water.
+  iceBoom(x, z, size = 1) {
+    if (!this.ready) return;
+    const s = this.spatial(x, z, 1600);
+    if (s.vol < 0.01) return;
+    const when = Math.min(3, s.d / 343);
+    const v = s.vol * Math.min(1.3, 0.6 + size * 0.5);
+    this.tone('sine', 55, 1.8, 0.9 * v, { f2: 24, attack: 0.01, pan: s.pan, when });
+    this.noise(3.8, 0.8 * v, { type: 'lowpass', freq: 520, f2: 70, q: 0.5, buf: this.brown, pan: s.pan, attack: 0.05, when });
+    this.noise(1.8, 0.65 * v, { type: 'lowpass', freq: 4200, f2: 450, q: 0.7, pan: s.pan, attack: 0.02, when: when + 0.05 });
+  }
+
   thud(v) {
     this.tone('sine', 70, 0.35, 0.6 * v, { f2: 35 });
     this.noise(0.2, 0.4 * v, { type: 'lowpass', freq: 900 });

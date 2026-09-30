@@ -14,6 +14,7 @@ import { Hunting } from './gameplay/hunting.js';
 import { Wildlife } from './entities/wildlife.js';
 import { Bears } from './gameplay/bears.js';
 import { Effects } from './world/effects.js';
+import { Calving } from './world/calving.js';
 import { AudioEngine } from './audio/audio.js';
 import { LURES, CHALLENGES } from './gameplay/data.js';
 import { formatMoney, clamp, damp, wrapAngle } from './util/math.js';
@@ -64,6 +65,7 @@ class Session {
     g.haptic = (kind) => this.haptic(kind);
     g.events = { emit: (type, data) => this.onPlayerEvent(type, data) };
     g.addSystem(this);
+    g.calving = g.addSystem(new Calving(g));
     // Bear Falls mist emitter
     const W = g.world;
     const fp = W.river.sample(W.fallsS + 3);
@@ -89,6 +91,7 @@ class Session {
     resize();
     this.bindTitle();
     this.bindKeys();
+    this.bindLifecycle();
     // place the car at the cabin for the title shot
     this.placeAtStart(true);
     this.precompile();
@@ -286,6 +289,24 @@ class Session {
     });
   }
 
+  // Pause and go quiet when the app is sent to the background (home
+  // gesture, incoming call), and bring interrupted audio back on the next tap.
+  bindLifecycle() {
+    const g = this.game;
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (this.mode === 'play' && !g.screens.isOpen && !g.hud.blocking) g.screens.open('pause');
+        g.audio.suspend();
+        this.save();
+      } else g.audio.resume();
+    });
+    const wake = () => {
+      if (!document.hidden) g.audio.resume();
+    };
+    window.addEventListener('touchend', wake, { passive: true });
+    window.addEventListener('mousedown', wake);
+  }
+
   // ---------------------------------------------------------------- events
   onEvent(ev) {
     const g = this.game;
@@ -314,7 +335,7 @@ class Session {
       if (!this.game.state.settings.haptics) return;
       const h = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.haptic;
       if (h) h.postMessage(kind);
-      else if (navigator.vibrate) navigator.vibrate(kind === 'heavy' ? 40 : 12);
+      else if (navigator.vibrate) navigator.vibrate(kind === 'heavy' ? 40 : kind === 'success' ? [20, 60, 30] : 12);
     } catch (e) {
       /* no haptics available */
     }

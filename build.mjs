@@ -81,7 +81,8 @@ ${body}
 ${js}
 </script>
 `;
-writeFileSync('dist/artifact.html', fragment);
+mkdirSync('build', { recursive: true });
+writeFileSync('build/artifact.html', fragment);
 
 const manifest = {
   name: 'Ruben Hotrod Fishing',

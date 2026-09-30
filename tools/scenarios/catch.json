@@ -10,7 +10,7 @@
 {"eval":"(async()=>{const f=__rhf.game.fishing; for(let i=0;i<1500;i++){ if(f.state!=='fight') break; const F=f.fight; F.stamina=0.2; F.dist=Math.min(F.dist,3); F.state='tired'; F.stateT=5; __rhf.hold('primary', true); await new Promise(r=>setTimeout(r,60)); } __rhf.hold('primary', false); return 'state '+f.state})()"},
 {"wait":12000},{"shot":"f5-catch"},
 {"eval":"(()=>{const c=document.getElementById('catch'); return c.hidden?'no card':document.getElementById('catch-name').textContent})()"},
-{"click":[860,470]},{"wait":3000},
+{"eval":"document.getElementById('catch-keep').click(); 'keep'"},{"wait":3000},
 {"eval":"(()=>{const g=__rhf.game; return 'cooler '+g.state.cooler.length+' money '+g.state.money+' state '+g.fishing.state})()"},
 {"eval":"__rhf.game.screens.open('journal'); 'journal'"},{"wait":2500},{"shot":"s1-journal"},
 {"eval":"__rhf.game.screens.close(); __rhf.game.screens.open('map'); 'map'"},{"wait":3000},{"shot":"s2-map"},
