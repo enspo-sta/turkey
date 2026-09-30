@@ -268,6 +268,17 @@ export function fxPatch(shader, material) {
   Object.assign(shader.uniforms, FX);
 }
 
+// A copy of a material for the reflection probe only: same shader, same
+// uniforms, its own instance. The probe draws linear light without tone
+// mapping into its cube map, so a material shared with the main view would
+// switch shader variants twice every frame.
+export function reflectionMaterial(mat) {
+  const m = mat.clone();
+  m.onBeforeCompile = mat.onBeforeCompile;
+  if (mat.isShaderMaterial) m.uniforms = mat.uniforms;
+  return m;
+}
+
 let installed = false;
 
 // Make fxPatch the default for every material and key programs by the flags.
@@ -282,4 +293,19 @@ export function installWorldFx() {
   proto.customProgramCacheKey = function () {
     return baseKey.call(this) + '|fx:' + ((this.userData && this.userData.fx) || '');
   };
+  // Instanced shadow casters get their own depth materials (one for meshes
+  // with per-instance colours, one without). With the one default depth
+  // material for everything, the shadow pass would switch its shader between
+  // these kinds of mesh several times a frame.
+  const depthPlain = new THREE.MeshDepthMaterial();
+  const depthTinted = new THREE.MeshDepthMaterial();
+  Object.defineProperty(THREE.InstancedMesh.prototype, 'customDepthMaterial', {
+    configurable: true,
+    get() {
+      return this._customDepth ?? (this.instanceColor ? depthTinted : depthPlain);
+    },
+    set(v) {
+      this._customDepth = v;
+    },
+  });
 }

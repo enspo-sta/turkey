@@ -5,7 +5,7 @@ import { generateWorld } from './world/worldgen.js';
 import { Terrain, makeTerrainMaterial, buildFarTerrain, buildReflectionTerrain } from './world/terrain.js';
 import { Environment } from './world/sky.js';
 import { WaterSystem, REFLECT_LAYER } from './world/water.js';
-import { FX, installWorldFx } from './world/worldfx.js';
+import { FX, installWorldFx, reflectionMaterial } from './world/worldfx.js';
 import { TerrainLighting } from './world/lighting.js';
 import { Scatter } from './world/scatter.js';
 import { GrassField } from './world/grass.js';
@@ -93,16 +93,28 @@ export class Game {
     FX.uFxSunDir.value = this.env.sunDir;
     FX.uFxHorizon.value = this.env.uniforms.uHorizon.value;
     FX.uFxGlow.value = this.env.uniforms.uGlow.value;
-    this.env.sky.layers.enable(REFLECT_LAYER);
+    // The reflection probe draws its own copies of the sky and the terrain
+    // (same shaders and uniforms, separate material instances; see
+    // reflectionMaterial), so no material switches shaders every frame. The
+    // lights join the probe's layer once the scene is complete (main.js).
+    const skyReflect = new THREE.Mesh(this.env.sky.geometry, reflectionMaterial(this.env.sky.material));
+    skyReflect.renderOrder = this.env.sky.renderOrder;
+    skyReflect.frustumCulled = false;
+    skyReflect.layers.set(REFLECT_LAYER);
+    this.env.sky.add(skyReflect);
 
     this.terrainMaterial = makeTerrainMaterial(this.textures.detail, this.textures.terrainDetail, this.wtex.surface);
+    const terrainReflect = reflectionMaterial(this.terrainMaterial);
     this.terrain = new Terrain(this.world, this.terrainMaterial);
     this.scene.add(this.terrain.group);
     this.farTerrain = buildFarTerrain(this.world, this.terrainMaterial);
-    this.farTerrain.layers.enable(REFLECT_LAYER);
     this.scene.add(this.farTerrain);
+    const farReflect = new THREE.Mesh(this.farTerrain.geometry, terrainReflect);
+    farReflect.frustumCulled = false;
+    farReflect.layers.set(REFLECT_LAYER);
+    this.farTerrain.add(farReflect);
     // coarse copy of the playable terrain, seen only by the reflection probe
-    this.scene.add(buildReflectionTerrain(this.world, this.terrainMaterial, REFLECT_LAYER));
+    this.scene.add(buildReflectionTerrain(this.world, terrainReflect, REFLECT_LAYER));
     // mountain shadows and sky occlusion maps
     this.lighting = new TerrainLighting(renderer, this.world, this.wtex, this.farTerrain.userData.grid, IS_TOUCH ? 768 : 1024);
     this.lastLight = new THREE.Vector3(0, -1, 0);

@@ -941,7 +941,16 @@ export class Wildlife {
             }
             targetY = b.lake.level;
           } else {
-            b.landSpot = b.landSpot || { x: b.x + Math.sin(b.yaw) * 30, z: b.z + Math.cos(b.yaw) * 30 };
+            if (!b.landSpot) {
+              // dry ground about 30 m ahead, turning a little either way if needed
+              for (let k = 0; k < 9 && !b.landSpot; k++) {
+                const a = b.yaw + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 0.45;
+                const x = b.x + Math.sin(a) * 30;
+                const z = b.z + Math.cos(a) * 30;
+                if (W.inBounds(x, z, 10) && !W.waterAt(x, z)) b.landSpot = { x, z };
+              }
+              b.landSpot = b.landSpot || { x: b.x + Math.sin(b.yaw) * 30, z: b.z + Math.cos(b.yaw) * 30 };
+            }
             targetY = W.heightAt(b.landSpot.x, b.landSpot.z);
           }
           const tx = b.landSpot.x - b.x;

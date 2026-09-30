@@ -521,14 +521,24 @@ export class Fishing {
   startEncounter() {
     const fish = this.pickFish();
     const fl = this.float.position;
-    const a = Math.random() * Math.PI * 2;
-    const d = 5 + Math.random() * 3;
-    let sx = fl.x + Math.cos(a) * d;
-    let sz = fl.z + Math.sin(a) * d;
-    const w = this.game.world.waterAt(sx, sz);
-    if (!w || w.depth < 0.5) {
-      sx = fl.x + Math.cos(a) * 2;
-      sz = fl.z + Math.sin(a) * 2;
+    const W = this.game.world;
+    // come in from somewhere with water all the way to the float
+    const deepAt = (x, z) => {
+      const w = W.waterAt(x, z);
+      return w && w.depth >= 0.5;
+    };
+    let sx = fl.x;
+    let sz = fl.z;
+    for (let k = 0; k < 10; k++) {
+      const a = Math.random() * Math.PI * 2;
+      const d = k < 6 ? 5 + Math.random() * 3 : 2 + Math.random() * 1.5;
+      const x = fl.x + Math.cos(a) * d;
+      const z = fl.z + Math.sin(a) * d;
+      if (deepAt(x, z) && deepAt((x + fl.x) / 2, (z + fl.z) / 2)) {
+        sx = x;
+        sz = z;
+        break;
+      }
     }
     const big = fish.weight / (FISH[fish.species].max || 10);
     this.encounter = {
@@ -597,6 +607,8 @@ export class Fishing {
       const yaw = e.yaw + Math.sin(this.t * 0.9) * 0.25;
       const x = fl.x - Math.sin(yaw) * (back + e.size * 0.45);
       const z = fl.z - Math.cos(yaw) * (back + e.size * 0.45);
+      e.x = x;
+      e.z = z;
       this.swimFish(x, z, yaw, deep * (e.dipT > 0 ? 0.7 : 1), 0.25, dt);
       if (e.dipT > 0) e.dipT -= dt;
       e.gap -= dt;
@@ -624,7 +636,9 @@ export class Fishing {
     } else if (e.phase === 'bite') {
       // the take: the fish turns down and away with the bait
       const yaw = (e.yaw ?? 0) + Math.min(1, e.t * 3) * 0.9;
-      this.swimFish(fl.x - Math.sin(yaw) * e.size * 0.3, fl.z - Math.cos(yaw) * e.size * 0.3, yaw, deep * 0.8, 1.1, dt);
+      e.x = fl.x - Math.sin(yaw) * e.size * 0.3;
+      e.z = fl.z - Math.cos(yaw) * e.size * 0.3;
+      this.swimFish(e.x, e.z, yaw, deep * 0.8, 1.1, dt);
       if (e.t > e.window) {
         g.hud.toast('Missed it! The fish spat the hook');
         g.hud.prompt(null);

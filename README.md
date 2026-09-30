@@ -269,6 +269,7 @@ node tools/shot.mjs tools/scenarios/animals.json      # poses each of the newer 
 node tools/shot.mjs tools/scenarios/perf-breakdown.json  # draw calls and triangles per rendering pass
 node tools/shot.mjs tools/scenarios/perf-views.json   # draw calls, triangles and frame time at eight places (perf-views-medium.json for Medium)
 node tools/shot.mjs tools/scenarios/fps-readout.json  # the frame rate readout, the automatic step-down and its switch
+node tools/shot.mjs tools/scenarios/shader-switches.json  # counts shader variant switches per frame (0 when nothing flips back and forth)
 node tools/shot.mjs tools/scenarios/shade-debug.json  # saves the mountain shadow and sky visibility maps as an image
 node tools/shot.mjs tools/scenarios/refl-debug.json   # saves the six faces of the water reflection cube as an image
 ```

@@ -21,6 +21,8 @@ import { AudioEngine } from './audio/audio.js';
 import { LURES, CHALLENGES } from './gameplay/data.js';
 import { formatMoney, clamp, damp, wrapAngle } from './util/math.js';
 import { ROAD_HALF } from './world/worldgen.js';
+import { REFLECT_LAYER } from './world/water.js';
+import { reflectionMaterial } from './world/worldfx.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -81,7 +83,9 @@ class Session {
     // environment map for chrome and paint
     this.pmrem = new THREE.PMREMGenerator(g.renderer);
     this.envScene = new THREE.Scene();
-    const skyClone = new THREE.Mesh(g.env.sky.geometry, g.env.skyMaterial);
+    // its own copy of the sky material (like the water reflections), so
+    // refreshing the map never switches the main sky's shader
+    const skyClone = new THREE.Mesh(g.env.sky.geometry, reflectionMaterial(g.env.skyMaterial));
     this.envScene.add(skyClone);
     this.updateEnvMap();
     // resize hooks
@@ -100,6 +104,11 @@ class Session {
     this.bindLifecycle();
     // place the car at the cabin for the title shot
     this.placeAtStart(true);
+    // every light (the hot rod's headlight too) also shines in the water
+    // reflections, so the probe and the main view share one light setup
+    g.scene.traverse((o) => {
+      if (o.isLight) o.layers.enable(REFLECT_LAYER);
+    });
     this.precompile();
   }
 

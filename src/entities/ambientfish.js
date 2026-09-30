@@ -105,15 +105,13 @@ function fishGeometry() {
   return g;
 }
 
-function fishMaterial(time) {
+function fishMaterial() {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
   mat.onBeforeCompile = (shader) => {
-    shader.uniforms.uTime = time;
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
         `#include <common>
-        uniform float uTime;
         attribute vec3 aRegion;
         attribute vec3 iBack;
         attribute vec3 iSide;
@@ -129,7 +127,7 @@ function fishMaterial(time) {
         '#include <begin_vertex>',
         `#include <begin_vertex>
         float bend = aRegion.z;
-        float ph = iSwim.x + uTime * iSwim.z;
+        float ph = iSwim.x;
         transformed.x += sin( ph - position.z * 6.0 ) * iSwim.y * bend * bend * 0.16;`
       );
     fxPatch(shader, mat);
@@ -147,7 +145,6 @@ const _c = new THREE.Color();
 export class AmbientFish {
   constructor(game) {
     this.game = game;
-    this.time = { value: 0 };
     const geo = fishGeometry();
     const attr = (n) => {
       const a = new THREE.InstancedBufferAttribute(new Float32Array(CAP * 3), 3);
@@ -159,7 +156,7 @@ export class AmbientFish {
     this.aSide = attr('iSide');
     this.aHead = attr('iHead');
     this.aSwim = attr('iSwim');
-    this.mesh = new THREE.InstancedMesh(geo, fishMaterial(this.time), CAP);
+    this.mesh = new THREE.InstancedMesh(geo, fishMaterial(), CAP);
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.mesh.frustumCulled = false;
     this.mesh.castShadow = false;
@@ -295,7 +292,6 @@ export class AmbientFish {
   update(dt) {
     const g = this.game;
     if (g.paused && g.started) return;
-    this.time.value += dt;
     this.scanT -= dt;
     if (this.scanT <= 0) {
       this.scanT = 1.5;
@@ -364,6 +360,9 @@ export class AmbientFish {
         f.yaw += Math.PI * 0.6;
         f.flee = 0;
       }
+      // tail beat: the phase advances with the swimming speed (kept small so
+      // the shader's sine stays precise however long the game runs)
+      f.swimPh = ((f.swimPh ?? f.phase) + dt * f.freq * (1 + f.speed * 0.8)) % 6283.185307;
       const level = f.level ?? s.level;
       const depth = f.depth ?? 1;
       const sink = clamp(depth * f.depthK, 0.45, Math.max(0.45, depth - 0.18));
@@ -381,9 +380,9 @@ export class AmbientFish {
       back.set(f.back, n * 3);
       side.set(f.side, n * 3);
       head.set(f.head, n * 3);
-      swim[n * 3] = f.phase;
+      swim[n * 3] = f.swimPh;
       swim[n * 3 + 1] = 0.35 + clamp(f.speed, 0, 3) * 0.35 + (f.flee > 0 ? 0.4 : 0);
-      swim[n * 3 + 2] = f.freq * (1 + f.speed * 0.8);
+      swim[n * 3 + 2] = 0;
       n++;
     }
     this.mesh.count = n;

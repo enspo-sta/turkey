@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { ModelBuilder, jitterGeometry } from '../util/builder.js';
 import { mulberry32, lerp, clamp, smoothstep } from '../util/math.js';
 import { HALF, SIZE, ROAD_HALF, SURF } from './worldgen.js';
-import { fxPatch } from './worldfx.js';
+import { fxPatch, reflectionMaterial } from './worldfx.js';
 
 const CELL = 50;
 const GRID = Math.ceil(SIZE / CELL);
@@ -520,6 +520,9 @@ export class Scatter {
     const swayShrub = swayMaterial(sharedUniforms, 0.012, { base: 0.4 });
     const swayPlant = swayMaterial(sharedUniforms, 0.09, { base: 0.1, doubleSide: true });
     const plain = new THREE.MeshLambertMaterial({ vertexColors: true });
+    // snags have no per-instance tint, so they need their own material: one
+    // material on meshes with and without instance colours switches shaders
+    const plainSnag = new THREE.MeshLambertMaterial({ vertexColors: true });
     const leafy = new THREE.MeshLambertMaterial({ vertexColors: true });
     leafy.userData.fx = 'foliage';
     const rocky = rockMaterial(matTex);
@@ -568,7 +571,7 @@ export class Scatter {
         ],
         { tint: true }
       ),
-      snag: new ScatterType('snag', [{ geo: snagGeo(), material: plain, maxDist: 500, capacity: 400, shadow: true }], {
+      snag: new ScatterType('snag', [{ geo: snagGeo(), material: plainSnag, maxDist: 500, capacity: 400, shadow: true }], {
         tint: false,
       }),
     };
@@ -957,7 +960,7 @@ export class Scatter {
       const t = this.types[n];
       const last = t.lods[t.lods.length - 1];
       const cap = t.lods.reduce((a, l) => a + l.capacity, 0);
-      const m = new THREE.InstancedMesh(last.geo, last.material, cap);
+      const m = new THREE.InstancedMesh(last.geo, reflectionMaterial(last.material), cap);
       m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       m.count = 0;
       m.frustumCulled = false;
