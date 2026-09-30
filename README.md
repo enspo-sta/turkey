@@ -3,23 +3,26 @@
 A first-person fishing and hunting adventure in Alaska, made for iPhone and iPad.
 Drive Ruben's flame-painted hot rod between nine places on a wild Alaskan
 peninsula, cast with a timing meter, fight salmon and halibut, hunt caribou and
-moose on the tundra, and keep your rifle ready: grizzlies smell the fish in your
-cooler.
+moose on the tundra with a longbow, and keep it close: grizzlies smell the fish
+in your cooler.
 
 ![Title screen](docs/screenshots/title.jpg)
 
 Everything you see and hear is generated in code at start-up: the terrain,
 rivers, glacier, forests, animals, the hot rod, the fish, the sky, the weather,
 the sound effects and the music. There are no downloaded models, textures or
-audio files, so the whole game is a single 1.2 MB HTML file (about 390 KB
+audio files, so the whole game is a single 1.2 MB HTML file (about 410 KB
 compressed).
 
 | | |
 |---|---|
 | ![Casting meter](docs/screenshots/cast.jpg) | ![Fighting a fish](docs/screenshots/fight.jpg) |
 | ![Driving the hot rod](docs/screenshots/drive.jpg) | ![Grizzly charge](docs/screenshots/grizzly.jpg) |
-| ![Rifle scope on the tundra](docs/screenshots/scope.jpg) | ![Glacier calving into Glacier Lake](docs/screenshots/calving.jpg) |
+| ![Drawing the longbow on the tundra](docs/screenshots/bow.jpg) | ![Glacier calving into Glacier Lake](docs/screenshots/calving.jpg) |
 | ![Bear Falls](docs/screenshots/falls.jpg) | ![Northern lights](docs/screenshots/aurora.jpg) |
+| ![The steaming volcano across the inlet](docs/screenshots/volcano.jpg) | ![Snow on the high peaks](docs/screenshots/peaks.jpg) |
+| ![Butterflies over a fireweed meadow](docs/screenshots/meadow.jpg) | ![Yellow pond lilies on Moose Lake](docs/screenshots/lilies.jpg) |
+| ![Driftwood riding the river](docs/screenshots/driftwood.jpg) | ![A cascade down the cliffs](docs/screenshots/cascade.jpg) |
 
 ## What is in the game
 
@@ -59,14 +62,19 @@ compressed).
 
 **Hunting and wildlife**
 
-- A bolt-action rifle with a four-round magazine, a scope with breathing sway
-  (hold still to steady it), head and vital-zone hits, and an optional 8x scope.
+- A longbow: hold to draw, release to loose. Arrows fly in an arc, so aim a
+  little high for distance, and a full draw held too long starts to shake.
+  Head and vital-zone hits, arrows you can walk over to pick up again, and at
+  the Trading Post more cedar arrows, a bow sight with a stabiliser and a
+  faster yew longbow.
+- Put the rod away when you are not fishing: the tool button cycles the rod,
+  the longbow and empty hands.
 - Game to hunt: caribou, moose, Sitka black-tailed deer, Dall sheep, black
   bears in the forests and mountain goats on the cliffs of Mount Ruben. Walk up
   and **CLAIM** what you shoot, then sell it at the Trading Post.
 - Grizzly bears that fish at Bear Falls, wander the river, follow the smell of
-  your catch, bluff and charge. Shoot, use bear spray up close, or get knocked
-  down and wake up at the cabin.
+  your catch, bluff and charge. Loose arrows, use bear spray up close, or get
+  knocked down and wake up at the cabin.
 - Around you: wolves, red foxes, snowshoe hares, musk oxen on the tundra,
   porcupines, a lynx, colonies of arctic ground squirrels that sit up and
   whistle, beavers with their lodge on Moose Lake, bald eagles, ravens, gulls,
@@ -94,9 +102,25 @@ compressed).
 - Ground detail by surface: pebbles on gravel bars and river beds, layered rock
   on cliffs, sand and snow ripples and needles on the forest floor, with bump
   lighting. Curved grass blades in shades from lush green to dry straw,
-  detailed spruce and birch up close, willow and alder along the water, ferns,
-  fireweed and lupine, fallen logs, stumps, bleached driftwood and mossy
-  boulders.
+  willow and alder along the water, ferns, fireweed and lupine, fallen logs,
+  stumps, bleached driftwood and mossy boulders.
+- Five kinds of tree, each in several shapes and sizes and detailed up close:
+  white spruce, black spruce in the muskeg and on north slopes, paper birch,
+  quaking aspen groves on sunny south slopes and balsam poplars along the
+  rivers.
+- Native ground plants: devil's club in the wet forest, blueberry and Labrador
+  tea, cotton grass on the tundra, horsetail on the banks, skunk cabbage in the
+  swamps and mushrooms on the forest floor.
+- Mountains with rock bands and snow on the high peaks (lower on the north
+  faces), a steaming volcano across the inlet, a great snow massif to the
+  north, clouds clinging to the summits and cascades pouring down the cliffs.
+- Insects: butterflies over the meadows, bumblebees on the fireweed,
+  dragonflies over the shallows, mosquito swarms at dusk, moths round the lights
+  at night, and cottonwood fluff drifting over the rivers.
+- Things float: driftwood, spruce branches, leafy twigs and fallen fireweed ride
+  the river current, petals and leaves float on the rivers and lakes, yellow
+  pond lilies and pondweed cover the shallows of Moose Lake, and small ice floes
+  drift on Glacier Lake.
 - Day and night with sunrise and sunset, stars, the moon and the northern
   lights, rain showers, a waterfall with mist, a glacier that calves slabs of
   ice into Glacier Lake with a boom and a wave, a lighthouse beam at night, and
@@ -104,7 +128,10 @@ compressed).
 - 16 challenges with cash rewards guide you through the game, from "Catch your
   first fish at Hotrod Landing" to "Complete the Fish Journal".
 - Progress saves automatically.
-- Graphics presets (Low, Medium, High) in Settings. The game lowers its
+- Graphics presets in Settings. High is the default (the game is made for
+  iPhone 13 and newer) and adds a soft bloom on bright light, sun rays through
+  the trees and ridges, a colour grade, the longest shadows and the densest
+  forests. Medium and Low run cooler on older devices. The game lowers its
   resolution when frames run long and, unless you turn it off, steps the preset
   down if that is not enough. Settings can also show the frame rate.
 
@@ -114,11 +141,12 @@ compressed).
 |---|---|---|
 | Walk | Drag on the left half of the screen | `W` `A` `S` `D`, hold `Shift` to jog |
 | Look | Drag on the right half | Drag the mouse (click the view to lock the pointer) |
-| Cast, hook, reel, fire | Big orange button (**CAST** / **HOOK!** / **REEL** / **FIRE**) | `Space` or left click |
+| Cast, hook, reel | Big orange button (**CAST** / **HOOK!** / **REEL**) | `Space` or left click |
+| Draw and loose the longbow | Hold the big orange button (**DRAW**), let go to loose | Hold `Space` or the left mouse button, let go to loose |
 | Steer the rod in a fight | Drag left or right on the left half | `A` / `D` |
-| Aim the rifle scope | **AIM** | Right click |
-| Switch rod and rifle | Tool button | `Q` |
-| Reload / bear spray / first aid kit | Buttons next to **FIRE** | `R` / `G` / `X` |
+| Aim the longbow (a closer view) | **AIM** | Right click |
+| Switch tool: rod, longbow, empty hands | Tool button | `Q`, or `1` `2` `3` |
+| Bear spray / first aid kit | Buttons next to **DRAW** | `G` / `X` |
 | Enter, trade, claim, sleep | Context button (**DRIVE**, **TRADE**, **CLAIM**, **SLEEP**) | `E` |
 | Keep or release a catch | **KEEP** / **RELEASE** on the catch card | `E` or `Enter` / `R` |
 | Drive | **GAS**, **BRAKE**, steer by dragging on the left half | `W` gas, `S` brake and reverse, `A` / `D` steer |
@@ -161,7 +189,7 @@ self-contained and also works straight from disk.
 
 The `ios/` folder holds an Xcode project that wraps the game in a full-screen
 WebKit view. The native side adds Taptic Engine haptics (bites, hook sets,
-gunshots, bear hits and catches), keeps the screen awake while you play, locks
+loosed arrows, bear hits and catches), keeps the screen awake while you play, locks
 landscape, hides the status bar and home indicator, and keeps a native copy of
 your save game.
 
@@ -235,11 +263,15 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/world/lighting.js` | The mountain shadow and sky visibility maps, computed on the graphics processor |
 | `src/world/sky.js` | Sky dome with sun, moon, stars, clouds and northern lights, the cascaded sun shadows, and the day and night cycle |
 | `src/world/water.js`, `effects.js`, `calving.js` | River, lake and sea surfaces with animated waves and reflections, the waterfall, splashes, ripples, rain, mist and dust, and the calving glacier |
-| `src/world/scatter.js`, `grass.js`, `props.js`, `roads.js`, `colliders.js` | Forests and rocks, wind-blown grass, buildings, bridges, the pier and lighthouse, gravel roads and collision |
-| `src/entities/player.js`, `hotrod.js`, `viewmodel.js` | Walking, the drivable hot rod, and the first-person rod, rifle and hands |
+| `src/world/scatter.js`, `grass.js`, `props.js`, `roads.js`, `colliders.js` | Forests, ground plants and rocks, wind-blown grass, buildings, bridges, the pier and lighthouse, gravel roads and collision |
+| `src/world/scenery.js` | Volcano steam, clouds on the peaks and the cascades down the cliffs |
+| `src/world/floaters.js` | Driftwood, branches, petals and leaves on the water, pond lilies, pondweed and ice floes |
+| `src/world/post.js` | Bloom, sun rays and the colour grade of the High preset |
+| `src/entities/insects.js` | Butterflies, bumblebees, dragonflies, mosquitoes, moths and cottonwood fluff |
+| `src/entities/player.js`, `hotrod.js`, `viewmodel.js` | Walking, the drivable hot rod, and the first-person rod, longbow and hands |
 | `src/entities/wildlife.js`, `animalmodels.js`, `fishmodels.js`, `ambientfish.js` | Animal and bird behaviour and their low-poly models, the 16 fish models, and the fish schools you can see in the water |
 | `src/gameplay/fishing.js` | Casting meter, float and bites, the fight, landing, the eagle, and catches |
-| `src/gameplay/hunting.js`, `bears.js` | Rifle, scope and hit zones, and the grizzly encounters |
+| `src/gameplay/hunting.js`, `bears.js` | The longbow, arrows in flight and hit zones, and the grizzly encounters |
 | `src/gameplay/data.js`, `state.js` | Fish, lures, rods, gear, places and challenges, and the save game |
 | `src/audio/audio.js` | All sound and music, synthesised with the Web Audio interface |
 | `src/ui/` | HUD, menus, the Trading Post, garage, map and journal, touch and keyboard input, and styles |
@@ -256,8 +288,9 @@ debug interface (`start`, `press`, `hold`, `tp`, `time`, `god`), for example:
 
 ```sh
 node tools/shot.mjs tools/scenarios/catch.json   # cast, hook, fight and land a fish, then open the journal, map and shop
-node tools/shot.mjs tools/scenarios/hunt.json    # stalk caribou on the tundra with the scope
-node tools/shot.mjs tools/scenarios/bear.json    # a grizzly charge at Bear Falls
+node tools/shot.mjs tools/scenarios/hunt.json    # stalk caribou on the tundra with the longbow, then claim it
+node tools/shot.mjs tools/scenarios/bear.json    # a grizzly charge, stopped with the longbow
+node tools/shot.mjs tools/scenarios/bow.json     # draw, loose, a vital hit, picking up an arrow and switching tools
 node tools/shot.mjs tools/scenarios/eagle.json   # a bald eagle steals a small fish
 node tools/shot.mjs tools/scenarios/mobile.json  # phone-sized touch layout
 node tools/shot.mjs tools/scenarios/catch-touch.json  # real taps on KEEP and RELEASE on a phone-sized touch screen
@@ -266,6 +299,12 @@ node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishi
 node tools/shot.mjs tools/scenarios/fish-views.json   # fish schools, a fish approaching the float and the fight
 node tools/shot.mjs tools/scenarios/light-views.json  # morning, noon, evening, sunset and night lighting
 node tools/shot.mjs tools/scenarios/animals.json      # poses each of the newer animals and birds in front of the camera
+node tools/shot.mjs tools/scenarios/trees.json        # balsam poplar, quaking aspen, black spruce and coastal spruce up close
+node tools/shot.mjs tools/scenarios/plants.json       # the native ground plants up close
+node tools/shot.mjs tools/scenarios/vistas.json       # the volcano, the snow massif, the glacier and a cascade
+node tools/shot.mjs tools/scenarios/insects.json      # butterflies, bees and dragonflies by day, mosquitoes at dusk, moths at night
+node tools/shot.mjs tools/scenarios/floaters.json     # driftwood and branches on the river, pond lilies, ice floes
+node tools/shot.mjs tools/scenarios/post.json         # bloom, sun rays and the colour grade, with and without
 node tools/shot.mjs tools/scenarios/perf-breakdown.json  # draw calls and triangles per rendering pass
 node tools/shot.mjs tools/scenarios/perf-views.json   # draw calls, triangles and frame time at eight places (perf-views-medium.json for Medium)
 node tools/shot.mjs tools/scenarios/fps-readout.json  # the frame rate readout, the automatic step-down and its switch
