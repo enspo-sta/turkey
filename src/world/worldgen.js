@@ -379,7 +379,7 @@ export class World {
     const land = smoothstep(-30, 80, csd);
     if (edge > HALF) {
       const r = this.n2.ridged(x * 0.0011 + 7.7, z * 0.0011 + 2.2, 5);
-      e += land * smoothstep(HALF, HALF + 900, edge) * (120 + 700 * r);
+      e += land * smoothstep(HALF + 150, HALF + 1100, edge) * (120 + 700 * r);
     }
     // far shore across the bay (south-west)
     const across = (-x + z) * 0.7071;

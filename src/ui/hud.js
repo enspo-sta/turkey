@@ -443,6 +443,7 @@ export class HUD {
     });
     if (catchOpen) el.interact.hidden = true;
     else el.interact.hidden = !ia;
+    el.interact.classList.toggle('driving', driving);
 
     // crosshair / scope
     const scoped = !!(hunting && hunting.scoped && onFoot && tool === 'rifle');

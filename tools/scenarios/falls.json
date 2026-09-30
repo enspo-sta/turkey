@@ -1,0 +1,4 @@
+{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":1500},
+{"eval":"(()=>{const g=__rhf.game; const W=g.world; const p=W.river.sample(W.fallsS+30); const f=W.river.sample(W.fallsS); const x=p.x+p.tz*8, z=p.z-p.tx*8; g.player.place(x,z,Math.atan2(-(f.x-x),-(f.z-z))); g.player.pitch=0.15; g.bears.bears.forEach(b=>{if(b.mode!=='fish'){b.state='gone'; b.t=9999;}}); return 'placed'})()"},
+{"wait":5000},{"shot":"b5-waterfall"}
+]}

@@ -1,0 +1,8 @@
+{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":1500},
+{"eval":"(()=>{const g=__rhf.game; document.getElementById('hud').hidden=true; g.bears.directorT=9999; const p=g.world.place('landing'); g.player.place(p.x,p.z,0); g.player.pitch=0.3; g.env.setTime(0.5); g.env.weather.cloud=0.1; g.env.weather.cloudTarget=0.1; g.env.weather.timer=9999; return 'aurora'})()"},
+{"wait":6000},{"shot":"v6-aurora"},
+{"eval":"(()=>{const g=__rhf.game; const L=g.props.lighthousePos; const x=L.x-45, z=L.z-50; g.player.place(x,z,Math.atan2(-(L.x-x),-(L.z-z))); g.player.pitch=0.12; g.env.setTime(11); return 'lighthouse'})()"},
+{"wait":5000},{"shot":"v7-lighthouse"},
+{"eval":"(()=>{const g=__rhf.game; g.env.setTime(23.2); return 'lighthouse night'})()"},
+{"wait":5000},{"shot":"v8-lighthouse-night"}
+]}

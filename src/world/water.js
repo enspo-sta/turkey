@@ -84,7 +84,7 @@ void main() {
   float sunUp = clamp(uSunDir.y * 1.6 + 0.12, 0.05, 1.0);
   body *= uAmbient * 0.55 + sunUp * 0.6;
 
-  vec3 col = mix(body, sky, fres * 0.9);
+  vec3 col = mix(body, sky * 0.92, fres * 0.78);
   col += uSunColor * spec;
 
   float fn = texture2D(uNormal, uvB * 1.9 + vec2(0.0, uTime * 0.02)).z;
@@ -146,6 +146,10 @@ export class WaterSystem {
     this.river.name = 'river';
     this.group.add(this.river);
 
+    if (world.fallsS > 0) {
+      this.falls = this.buildWaterfall();
+      this.group.add(this.falls);
+    }
     for (const lake of world.lakes) {
       const m = new THREE.Mesh(this.lakeGeometry(lake), this.material(lake.tint === 'glacial' ? 'glacial' : 'lake'));
       m.name = 'lake-' + lake.id;
@@ -235,7 +239,8 @@ export class WaterSystem {
         uv.push(a * w, s);
         foam.push(clamp(f * (0.75 + 0.25 * Math.abs(a)), 0, 1));
       }
-      if (r > 0) {
+      const crossesFalls = W.fallsS > 0 && r > 0 && samples[r - 1] < W.fallsS && s > W.fallsS;
+      if (r > 0 && !crossesFalls) {
         const b0 = (r - 1) * cols;
         const b1 = r * cols;
         for (let c = 0; c < cols - 1; c++) {
@@ -250,6 +255,83 @@ export class WaterSystem {
     g.setIndex(idx);
     g.computeBoundingSphere();
     return g;
+  }
+
+  // Animated curtain of falling water at Bear Falls.
+  buildWaterfall() {
+    const W = this.world;
+    const s0 = W.fallsS;
+    const top = W.riverLevel(s0 - 0.01);
+    const bot = W.riverLevel(s0 + 0.01);
+    const p = W.river.sample(s0);
+    const width = (W.riverWidth(s0) + 3.2) * 2;
+    const height = top - bot + 1.2;
+    const geo = new THREE.PlaneGeometry(width, height, 20, 10);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      const v = (y + height / 2) / height; // 0 bottom, 1 top
+      // lip curls outward near the top, water bows out slightly mid-drop
+      const bulge = Math.sin(v * Math.PI) * 0.9 + Math.pow(v, 6) * 1.4;
+      const edge = 1 - Math.pow(Math.abs(x) / (width / 2), 4);
+      pos.setZ(i, bulge * (0.4 + 0.6 * edge));
+    }
+    geo.computeVertexNormals();
+    const mat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: this.shared.uTime,
+        uNoise: { value: this.shared.uNormal.value },
+        uSunColor: this.shared.uSunColor,
+        uNight: this.shared.uNight,
+        ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
+      },
+      vertexShader: /* glsl */ `
+        #include <common>
+        #include <fog_pars_vertex>
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+          #include <fog_vertex>
+        }`,
+      fragmentShader: /* glsl */ `
+        #include <common>
+        #include <fog_pars_fragment>
+        uniform float uTime;
+        uniform sampler2D uNoise;
+        uniform vec3 uSunColor;
+        uniform float uNight;
+        varying vec2 vUv;
+        void main() {
+          vec2 uv = vec2(vUv.x * 3.0, vUv.y * 0.6 + uTime * 0.9);
+          float n1 = texture2D(uNoise, uv).b;
+          float n2 = texture2D(uNoise, vec2(vUv.x * 7.0 + 0.3, vUv.y * 1.3 + uTime * 1.6)).b;
+          float streak = smoothstep(0.35, 0.8, n1 * 0.6 + n2 * 0.5);
+          vec3 deep = vec3(0.32, 0.55, 0.55);
+          vec3 foam = vec3(0.93, 0.96, 0.97);
+          vec3 col = mix(deep, foam, 0.35 + streak * 0.65);
+          col *= mix(1.0, 0.25, uNight) * (0.75 + 0.35 * clamp(length(uSunColor), 0.0, 1.5));
+          float edge = smoothstep(0.0, 0.06, vUv.x) * smoothstep(1.0, 0.94, vUv.x);
+          float alpha = (0.72 + streak * 0.28) * edge * smoothstep(0.0, 0.05, vUv.y);
+          gl_FragColor = vec4(col, alpha);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+          #include <fog_fragment>
+        }`,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      fog: true,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(p.x, (top + bot) / 2 - 0.3, p.z);
+    // face downstream: plane normal +z -> flow direction
+    mesh.rotation.y = Math.atan2(p.tx, p.tz);
+    mesh.renderOrder = 2;
+    mesh.name = 'waterfall';
+    return mesh;
   }
 
   lakeGeometry(lake) {

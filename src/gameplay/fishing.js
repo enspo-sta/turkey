@@ -1082,7 +1082,7 @@ export class Fishing {
       let clash = false;
       for (const h of this.hotspots) if (Math.hypot(h.x - x, h.z - z) < 9) clash = true;
       if (clash) continue;
-      return { x, z, y: w.level, r: 4 + Math.random() * 2, life: 70 + Math.random() * 90, rip: Math.random(), jump: 2 + Math.random() * 6, kind: w.kind };
+      return { x, z, y: w.level, r: 3 + Math.random() * 1.6, life: 70 + Math.random() * 90, rip: Math.random(), jump: 2 + Math.random() * 6, kind: w.kind };
     }
     return null;
   }

@@ -1,0 +1,12 @@
+{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":1500},
+{"eval":"(()=>{const g=__rhf.game; document.getElementById('hud').hidden=true; g.bears.directorT=9999; const p=g.world.place('glacier'); g.player.place(p.x,p.z,p.face); g.player.pitch=0.08; g.env.setTime(14); return 'glacier'})()"},
+{"wait":5000},{"shot":"v1-glacier"},
+{"eval":"(()=>{const g=__rhf.game; const p=g.world.place('pier'); g.player.place(p.x,p.z,p.face); g.player.pitch=0.02; g.env.setTime(19.5); return 'pier'})()"},
+{"wait":5000},{"shot":"v2-pier"},
+{"eval":"(()=>{const g=__rhf.game; const p=g.world.place('landing'); g.player.place(p.x,p.z,p.face+Math.PI*0.8); g.player.pitch=0.35; g.env.setTime(0.7); g.env.weather.cloud=0.15; g.env.weather.cloudTarget=0.15; return 'night'})()"},
+{"wait":5000},{"shot":"v3-night"},
+{"eval":"(()=>{const g=__rhf.game; const p=g.world.place('moose'); g.player.place(p.x,p.z,p.face); g.player.pitch=0.0; g.env.setTime(21.2); return 'moose sunset'})()"},
+{"wait":5000},{"shot":"v4-moose-sunset"},
+{"eval":"(()=>{const g=__rhf.game; const L=g.props.lighthousePos; g.player.place(L.x-30,L.z-40,Math.atan2(30,40)); g.player.pitch=0.1; g.env.setTime(11); return 'lighthouse'})()"},
+{"wait":5000},{"shot":"v5-lighthouse"}
+]}

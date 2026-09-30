@@ -37,6 +37,7 @@ class Session {
     const g = this.game;
     g.state = new GameState();
     g.input = new Input($('app'));
+    g.input.usingTouch = IS_TOUCH;
     g.input.sensitivity = g.state.settings.sens;
     g.input.invertY = g.state.settings.invert;
     if (g.state.settings.quality) g.setQuality(g.state.settings.quality);
@@ -509,6 +510,9 @@ class Session {
 
     if (P.mode === 'foot') {
       P.update(dt, input);
+      // place the camera now so fishing and hunting use this frame's view
+      P.applyCamera(g.camera);
+      g.camera.updateMatrixWorld();
     } else {
       // driving controls
       if (input.pressed('cam') || input.keyPressed('KeyC')) car.camMode = car.camMode === 'cockpit' ? 'chase' : 'cockpit';

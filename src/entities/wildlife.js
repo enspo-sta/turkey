@@ -117,14 +117,14 @@ export class Wildlife {
         const nearRiver = W.riverD[k] < 110 && h(x, z) < 40;
         return (nearLake || nearRiver) && dry(x, z) && W.slopeAt(x, z) < 0.35;
       },
-      caribou: (x, z) => surf(x, z) === SURF.TUNDRA && x > 250 && W.slopeAt(x, z) < 0.35 && dry(x, z),
+      caribou: (x, z) => surf(x, z) === SURF.TUNDRA && x > 300 && z < -150 && z > -1000 && W.slopeAt(x, z) < 0.35 && dry(x, z),
       deer: (x, z) => {
         const k = W.cellIndex(x, z);
         const f = W.forest[k] / 255;
         return f > 0.15 && f < 0.75 && h(x, z) < 90 && dry(x, z) && W.slopeAt(x, z) < 0.5;
       },
       sheep: (x, z) => h(x, z) > 150 && W.slopeAt(x, z) > 0.5 && W.slopeAt(x, z) < 1.4 && surf(x, z) !== SURF.ICE && Math.hypot(x - 650, z + 520) < 700,
-      wolf: (x, z) => surf(x, z) === SURF.TUNDRA && x > 350 && dry(x, z),
+      wolf: (x, z) => surf(x, z) === SURF.TUNDRA && x > 350 && z < -150 && dry(x, z),
       fox: (x, z) => surf(x, z) === SURF.GRASS && dry(x, z) && h(x, z) < 60,
       hare: (x, z) => (surf(x, z) === SURF.GRASS || surf(x, z) === SURF.FOREST) && dry(x, z) && h(x, z) < 80,
     };

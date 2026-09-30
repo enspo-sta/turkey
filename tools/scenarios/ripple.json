@@ -1,0 +1,5 @@
+{"width":800,"height":450,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":1500},
+{"eval":"(()=>{const g=__rhf.game; const P=g.player; const fx=-Math.sin(P.yaw), fz=-Math.cos(P.yaw); const w=g.world.waterAt(P.pos.x+fx*10,P.pos.z+fz*10); window.__rp=()=>{for(let i=0;i<4;i++) g.effects.ripples.add(P.pos.x+fx*(8+i*3),w.level,P.pos.z+fz*(8+i*3),3,3);}; __rp(); P.pitch=-0.3; return 'water level '+(w&&w.level.toFixed(2))+' items '+g.effects.ripples.items.filter(Boolean).length})()"},
+{"wait":1200},{"eval":"__rp(); 'more'"},{"wait":1500},{"shot":"r1-ripples"},
+{"eval":"(()=>{const g=__rhf.game; const r=g.effects.ripples; return 'mesh visible '+r.mesh.visible+' parent '+(r.mesh.parent&&r.mesh.parent.name)+' inst '+r.mesh.geometry.instanceCount+' sample '+JSON.stringify(Array.from(r.aRip.array.slice(0,8)))})()"}
+]}

@@ -1,0 +1,5 @@
+{"width":640,"height":360,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":2000},
+{"eval":"(()=>{const g=__rhf.game; const cs=g.wildlife.animals.filter(a=>a.species==='caribou'); const a=cs[0]; g.player.place(a.x-30,a.z+10,0); g.player.tool='rifle'; g.viewmodel.setTool('rifle'); window.__cari=a; for(const c of cs){c.state='graze'; c.t=999;} g.wildlife.startFlee=()=>{}; return 'caribou at '+a.x.toFixed(0)+','+a.z.toFixed(0)})()"},
+{"wait":2000},
+{"eval":"(()=>{const g=__rhf.game; const a=__cari; const P=g.player; const dx=a.x-P.pos.x, dz=a.z-P.pos.z; const d=Math.hypot(dx,dz); P.yaw=Math.atan2(-dx,-dz); P.pitch=Math.atan2(a.y+a.cfg.height*0.72*a.scale-(P.pos.y+P.eye), d); P.applyCamera(g.camera); g.camera.updateMatrixWorld(); const dir=g.camera.getWorldDirection(new g.camera.position.constructor()); const o=g.camera.position; const hit=g.wildlife.raycast(o.x,o.y,o.z,dir.x,dir.y,dir.z,700); const th=g.hunting.terrainHit(o,dir,700); return JSON.stringify({d, visible:a.visible, ay:a.y, eye:o.y, hit: hit&&{zone:hit.zone,dist:hit.dist}, terrain: th})})()"}
+]}

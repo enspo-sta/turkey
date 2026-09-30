@@ -230,6 +230,7 @@ svg { width: 1em; height: 1em; display: block; }
 .btn.pedal { width: 100px; height: 100px; font-size: 17px; font-weight: 800; }
 #btn-gas { right: calc(var(--sar) + 22px); bottom: calc(var(--sab) + 26px); background: radial-gradient(circle at 35% 30%, #9ae07a, #3a8a2a 55%, #1a4a12); border-color: #c8f0b0; }
 #btn-brake { right: calc(var(--sar) + 136px); bottom: calc(var(--sab) + 18px); width: 84px; height: 84px; background: radial-gradient(circle at 35% 30%, #ff8a7a, var(--candy) 55%, #5a0806); border-color: #ffb0a0; }
+.btn.pill.driving { right: calc(var(--sar) + 12px); bottom: auto; top: calc(var(--sat) + 66px); }
 .btn.pill { position: absolute; right: calc(var(--sar) + 150px); bottom: calc(var(--sab) + 190px); border-radius: 30px; padding: 12px 18px; font-size: 17px; font-weight: 800;
   background: linear-gradient(180deg, rgba(40,58,62,.95), rgba(14,26,30,.95)); border: 2px solid var(--flame-2); color: var(--flame-2); box-shadow: var(--shadow); }
 .btn.pill svg { width: 24px; height: 24px; }
@@ -256,7 +257,7 @@ svg { width: 1em; height: 1em; display: block; }
 .catch-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 /* ---------- overlay sheets ---------- */
-.overlay { z-index: 25; background: rgba(5, 10, 12, 0.55); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); padding: calc(var(--sat) + 10px) calc(var(--sar) + 12px) calc(var(--sab) + 10px) calc(var(--sal) + 12px); }
+.overlay { z-index: 35; background: rgba(5, 10, 12, 0.55); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); padding: calc(var(--sat) + 10px) calc(var(--sar) + 12px) calc(var(--sab) + 10px) calc(var(--sal) + 12px); }
 .sheet { width: min(980px, 100%); height: min(640px, 100%); display: flex; flex-direction: column; overflow: hidden; }
 .sheet-head { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 18px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
 .sheet-head h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 28px; color: var(--flame-2); }
@@ -349,6 +350,7 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
   #btn-horn { bottom: calc(var(--sab) + 130px); }
   #btn-cam { bottom: calc(var(--sab) + 146px); right: calc(var(--sar) + 96px); }
   .btn.pill { bottom: calc(var(--sab) + 164px); right: calc(var(--sar) + 130px); padding: 9px 14px; }
+  .btn.pill.driving { right: calc(var(--sar) + 12px); bottom: auto; top: calc(var(--sat) + 60px); }
   .btn.pedal { width: 88px; height: 88px; }
   #btn-brake { width: 74px; height: 74px; right: calc(var(--sar) + 120px); }
   .stat.money { font-size: 22px; }

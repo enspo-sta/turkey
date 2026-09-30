@@ -1,0 +1,8 @@
+{"width":800,"height":450,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":1500},
+{"eval":"(()=>{const g=__rhf.game; const w=g.env.weather; w.rain=0.9; w.rainTarget=0.9; w.cloud=0.9; w.cloudTarget=0.9; w.timer=9999; g.env.setTime(15); return 'rain'})()"},
+{"wait":5000},{"shot":"w1-rain"},
+{"eval":"(()=>{const g=__rhf.game; const f=g.fishing; return JSON.stringify(f.hotspots.map(h=>({x:h.x.toFixed(0),z:h.z.toFixed(0),r:h.r.toFixed(1)})))+' place '+(f.hotPlace&&f.hotPlace.id)})()"},
+{"eval":"(()=>{const g=__rhf.game; const w=g.env.weather; w.rain=0; w.rainTarget=0; w.cloud=0.3; w.cloudTarget=0.3; const h=g.fishing.hotspots[0]; const P=g.player; P.yaw=Math.atan2(-(h.x-P.pos.x),-(h.z-P.pos.z)); P.pitch=-0.25; return 'look at hotspot'})()"},
+{"wait":5000},{"shot":"w2-hotspot"},
+{"eval":"__rhf.press('primary'); 'cast'"},{"wait":2500},{"shot":"w3-meter-hot"}
+]}

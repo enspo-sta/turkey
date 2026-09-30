@@ -1,0 +1,14 @@
+{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":2000},
+{"eval":"(()=>{const g=__rhf.game; const cs=g.wildlife.animals.filter(a=>a.species==='caribou'); const a=cs[0]; const px=a.x-45, pz=a.z+15; for(const c of cs){c.state='graze'; c.t=60;} g.player.place(px,pz,0); g.player.tool='rifle'; g.viewmodel.setTool('rifle'); window.__aimAt=(a)=>{const P=g.player; const dx=a.x-P.pos.x, dz=a.z-P.pos.z; const d=Math.hypot(dx,dz); P.yaw=Math.atan2(-dx,-dz); P.pitch=Math.atan2(a.y+a.cfg.height*0.72*a.scale-(P.pos.y+P.eye), d); return d;}; window.__cari=a; return 'caribou at '+a.x.toFixed(0)+','+a.z.toFixed(0)+' count '+cs.length})()"},
+{"wait":2000},{"eval":"'dist '+__aimAt(__cari).toFixed(1)"},{"wait":2500},{"shot":"h1-rifle"},
+{"eval":"__rhf.press('secondary'); 'scope'"},{"wait":2500},{"eval":"'dist '+__aimAt(__cari).toFixed(1)+' scoped '+__rhf.game.hunting.scoped"},{"wait":2500},{"shot":"h2-scope"},
+{"eval":"(()=>{__aimAt(__cari); __rhf.game.player.lookSway.x=0; __rhf.game.player.lookSway.y=0; __rhf.game.hunting.stillT=5; __rhf.press('primary'); return 'fire'})()"},
+{"wait":2500},{"eval":"(()=>{const a=__cari; return 'dead '+a.dead+' hp '+a.hp+' state '+a.state})()"},
+{"eval":"(()=>{const g=__rhf.game; const a=__cari; if(!a.dead){ a.hp=1; __aimAt(a); g.player.lookSway.x=0; g.player.lookSway.y=0; __rhf.press('primary'); } return 'retry'})()"},
+{"wait":3000},{"eval":"(()=>{const a=__cari; return 'dead '+a.dead+' state '+a.state})()"},
+{"eval":"__rhf.press('secondary'); (()=>{const g=__rhf.game; const a=__cari; g.player.place(a.x+2.5,a.z,0); return 'walk to it'})()"},
+{"wait":3000},{"shot":"h3-claim"},
+{"eval":"(()=>{const g=__rhf.game; return 'interaction '+(g.interaction&&g.interaction.label)})()"},
+{"eval":"__rhf.press('interact'); 'claim'"},{"wait":2000},
+{"eval":"(()=>{const g=__rhf.game; return 'trophies '+g.state.trophies.length+' money '+g.state.money})()"}
+]}

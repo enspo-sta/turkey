@@ -201,9 +201,13 @@ export class Terrain {
 
 // Distant mountains and far shore beyond the playable square.
 export function buildFarTerrain(world, material) {
+  // denser near the playable square so nearby slopes stay smooth
   const coords = [];
   const R = 6400;
-  for (let v = -R; v <= R; v += 200) coords.push(v);
+  const NEAR = HALF + 700;
+  for (let v = -R; v < -NEAR; v += 200) coords.push(v);
+  for (let v = -NEAR; v <= NEAR; v += 50) coords.push(v);
+  for (let v = NEAR + 200; v <= R; v += 200) coords.push(v);
   // make sure the square edge lines exist exactly
   const n = coords.length;
   const pos = [];

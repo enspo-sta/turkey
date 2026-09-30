@@ -171,7 +171,7 @@ void main() {
   vAge = aRip.w;
   vUv = uv;
   float s = aScale * (0.25 + aRip.w * 1.0);
-  vec3 p = vec3(position.x * s, 0.0, position.y * s) + aRip.xyz;
+  vec3 p = vec3(position.x * s, 0.0, -position.y * s) + aRip.xyz;
   if (aRip.w < 0.0) p = vec3(0.0, -9999.0, 0.0);
   vec4 mvPosition = viewMatrix * vec4(p, 1.0);
   gl_Position = projectionMatrix * mvPosition;
@@ -186,8 +186,8 @@ varying float vAge;
 varying vec2 vUv;
 void main() {
   float r = length(vUv - 0.5) * 2.0;
-  float ring = smoothstep(0.62, 0.8, r) * (1.0 - smoothstep(0.84, 1.0, r));
-  float a = ring * (1.0 - vAge) * 0.55;
+  float ring = smoothstep(0.55, 0.78, r) * (1.0 - smoothstep(0.82, 1.0, r));
+  float a = ring * (1.0 - vAge) * 0.7;
   if (a < 0.01) discard;
   gl_FragColor = vec4(uColor, a);
   #include <tonemapping_fragment>

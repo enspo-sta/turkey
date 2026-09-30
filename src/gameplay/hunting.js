@@ -137,7 +137,7 @@ export class Hunting {
     if (hit && (!ground || hit.dist < ground.dist)) {
       const a = hit.animal;
       const mult = hit.zone === 'head' ? 3 : hit.zone === 'vital' ? 1.6 : 1;
-      const dmg = 62 * mult;
+      const dmg = 75 * mult;
       const px = _o.x + _dir.x * hit.dist;
       const py = _o.y + _dir.y * hit.dist;
       const pz = _o.z + _dir.z * hit.dist;

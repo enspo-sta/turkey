@@ -1,0 +1,15 @@
+{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":2000},
+{"eval":"(()=>{const g=__rhf.game; const p=g.world.place('falls'); g.player.place(p.x,p.z,p.face); g.state.stats.caught=3; return 'at falls '+p.x.toFixed(0)+','+p.z.toFixed(0)})()"},
+{"wait":4000},{"shot":"b1-falls"},
+{"eval":"(()=>{const g=__rhf.game; const P=g.player; g.bears.stage(P.pos); const b=g.bears.bears.find(b=>b.state==='stalk'); if(!b) return 'no stalker'; b.x=P.pos.x - Math.sin(P.yaw)*30; b.z=P.pos.z - Math.cos(P.yaw)*30; window.__bear=b; return 'staged '+b.state})()"},
+{"wait":4000},{"eval":"(()=>{const b=__bear; const g=__rhf.game; return 'bear '+b.state+' dist '+Math.hypot(b.x-g.player.pos.x,b.z-g.player.pos.z).toFixed(1)+' threat '+(!!g.bears.threat)})()"},
+{"shot":"b2-alert"},
+{"eval":"(()=>{const g=__rhf.game; g.player.tool='rifle'; g.viewmodel.setTool('rifle'); const b=__bear; b.state='charge'; b.t=10; return 'charge'})()"},
+{"wait":3000},{"shot":"b3-charge"},
+{"eval":"(()=>{const g=__rhf.game; const b=__bear; const P=g.player; const dx=b.x-P.pos.x, dz=b.z-P.pos.z; P.yaw=Math.atan2(-dx,-dz); P.pitch=Math.atan2(b.y+0.9-(P.pos.y+P.eye), Math.hypot(dx,dz)); __rhf.press('primary'); return 'fire at bear, dist '+Math.hypot(dx,dz).toFixed(1)})()"},
+{"wait":2500},{"eval":"(()=>{const b=__bear; return 'bear hp '+b.hp+' state '+b.state+' dead '+b.dead})()"},
+{"wait":7000},
+{"eval":"(()=>{const g=__rhf.game; const b=__bear; if(b.dead) return 'already dead'; const P=g.player; const dx=b.x-P.pos.x, dz=b.z-P.pos.z; P.yaw=Math.atan2(-dx,-dz); P.pitch=Math.atan2(b.y+0.9-(P.pos.y+P.eye), Math.hypot(dx,dz)); __rhf.press('primary'); return 'fire again'})()"},
+{"wait":4000},{"eval":"(()=>{const b=__bear; const g=__rhf.game; return 'bear hp '+b.hp+' state '+b.state+' dead '+b.dead+' health '+g.player.health.toFixed(0)+' survived '+g.state.stats.bearsSurvived})()"},
+{"shot":"b4-after"}
+]}
