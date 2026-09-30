@@ -1,0 +1,11 @@
+{"width":844,"height":390,"touch":true,"mobile":true,"ua":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1","steps":[{"wait":1500},
+{"eval":"__rhf.start(false)"},{"wait":2500},
+{"eval":"(()=>{const g=__rhf.game; g.state.money=1234; __rhf.game.hud.savedFlash(); return 'saved note shown'})()"},
+{"wait":800},{"shot":"svt0-note"},
+
+{"tapSel":"#btn-pause"},{"wait":1500},
+{"eval":"'pause open '+__rhf.game.screens.isOpen"},
+{"tapSel":"#p-save"},{"wait":800},
+{"eval":"(()=>{const d=JSON.parse(localStorage.getItem('rubenHotrodFishing.save.v1')); return 'note: '+document.getElementById('p-note').textContent+' | stored money '+d.money})()"},
+{"shot":"svt1-pause"}
+]}

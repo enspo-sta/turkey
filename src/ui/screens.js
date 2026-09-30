@@ -1,7 +1,7 @@
 // Menu sheets: map with fast travel, journal (fish, trophies, challenges),
 // Trading Post shop, lure picker, pause/settings, how-to-play and dialogs.
 import { FISH, SPECIES_IDS, LEGENDS, LURES, RODS, COOLERS, ENGINES, TIRES, PAINTS, GEAR, GAME, CHALLENGES } from '../gameplay/data.js';
-import { formatMoney, clamp } from '../util/math.js';
+import { formatMoney, formatTime, clamp } from '../util/math.js';
 import { renderMapRGBA, worldToMap } from '../world/maprender.js';
 import { HALF, SIZE } from '../world/worldgen.js';
 
@@ -645,14 +645,22 @@ export class Screens {
     const g = this.game;
     this.title.textContent = 'Paused';
     this.setTabs([], null);
-    this.body.innerHTML = `<div class="settings">
+    this.body.innerHTML = `<div class="settings pause-menu">
       <button class="btn big hot" id="p-resume">Resume</button>
+      <button class="btn big" id="p-save">Save game</button>
       <button class="btn big" id="p-settings">Settings</button>
       <button class="btn big" id="p-howto">How to play</button>
       <button class="btn big ghost" id="p-quit">Save and return to title</button>
-      <p class="catch-info">Progress saves automatically when you sell, sleep, catch a fish or travel.</p>
+      <p class="catch-info" id="p-note">The game also saves by itself every 45 seconds and whenever you keep a fish, trade, sleep or travel. Pick up where you left off with Continue on the title screen.</p>
     </div>`;
     $('p-resume').addEventListener('click', () => this.close());
+    $('p-save').addEventListener('click', () => {
+      const ok = g.save();
+      $('p-note').textContent = ok
+        ? `Game saved: day ${g.env.day}, ${formatTime(g.env.time)}. Choose Continue on the title screen to pick it up.`
+        : "Couldn't save. This browser is blocking website data for this page (for example in private browsing).";
+      g.audio?.click();
+    });
     $('p-settings').addEventListener('click', () => {
       this.current = 'settings';
       this.render();
@@ -748,6 +756,7 @@ export class Screens {
       <section><h4>Driving</h4><p>${touch ? 'Hold <b>GAS</b> and <b>BRAKE</b>, steer by dragging on the left side.' : '<kbd>W</kbd> gas, <kbd>S</kbd> brake and reverse, <kbd>A</kbd>/<kbd>D</kbd> steer.'} Tap the camera button to see the hot rod from behind, and the horn to say hello. Street tires slide on gravel and tundra.</p></section>
       <section><h4>Hunting and grizzlies</h4><p>Switch to the rifle with the tool button. <b>AIM</b> raises the scope, <b>FIRE</b> shoots. Walk up to downed game and tap <b>CLAIM</b>.</p><p>Grizzlies smell fish in your cooler. When one charges, the screen edge turns red: switch to the rifle and shoot, or use bear spray up close.</p></section>
       <section><h4>Money and upgrades</h4><p>Sell fish and trophies at the Kenai Trading Post. Buy rods that can handle kings and halibut, new lures, a bigger cooler, a better engine and new paint.</p><p>Sleep at Ruben's cabin to skip the night. Watch for the northern lights first.</p></section>
+      <section><h4>Saving</h4><p>The game saves by itself every 45 seconds and whenever you keep a fish, trade, sleep or travel. A <b>SAVED</b> note flashes under the clock. To save right now, open the pause menu${touch ? ' (top right)' : ' (<kbd>Esc</kbd>)'} and choose <b>Save game</b>. Next time, choose <b>Continue</b> on the title screen.</p></section>
       ${touch ? '' : '<section><h4>Keyboard</h4><p><kbd>Space</kbd> or click: cast, reel, fire. <kbd>Right click</kbd> aim. <kbd>E</kbd> interact, or keep a catch (<kbd>R</kbd> releases it). <kbd>Q</kbd> switch tool. <kbd>R</kbd> reload. <kbd>G</kbd> bear spray. <kbd>X</kbd> first aid kit. <kbd>L</kbd> lures. <kbd>M</kbd> map. <kbd>J</kbd> journal. <kbd>C</kbd> camera. <kbd>H</kbd> horn. <kbd>Esc</kbd> pause.</p></section>'}
     </div><div class="dialog-actions"><button class="btn big hot" id="h-done">Got it</button></div>`;
     $('h-done').addEventListener('click', () => (g.started ? this.open('pause') : this.close()));

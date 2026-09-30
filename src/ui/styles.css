@@ -103,6 +103,9 @@ svg { width: 1em; height: 1em; display: block; }
 .top-right { position: absolute; top: calc(var(--sat) + 10px); right: calc(var(--sar) + 12px); display: flex; gap: 8px; align-items: center; }
 .clock { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 6px 10px; font-variant-numeric: tabular-nums; }
 .clock svg { width: 16px; height: 16px; color: var(--flame-2); }
+.clock { position: relative; }
+.saved-note { position: absolute; top: calc(100% + 6px); right: 0; padding: 2px 9px; border-radius: 9px; background: var(--panel); border: 1px solid var(--line); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--moss); opacity: 0; transition: opacity .25s ease; pointer-events: none; }
+.saved-note.show { opacity: 1; }
 #hud-day { color: var(--ink-dim); font-weight: 600; font-size: 13px; }
 
 #compass { position: absolute; top: calc(var(--sat) + 10px); left: 50%; width: min(420px, 38vw); height: 30px; transform: translateX(-50%); overflow: hidden;
@@ -320,6 +323,8 @@ svg { width: 1em; height: 1em; display: block; }
 .place-info p { margin: 0; font-size: 14px; line-height: 1.35; color: var(--ink-dim); }
 
 .settings { display: grid; gap: 14px; max-width: 560px; }
+.pause-menu { grid-template-columns: 1fr 1fr; gap: 10px; }
+.pause-menu #p-resume, .pause-menu .catch-info { grid-column: 1 / -1; }
 .setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
 .setting label { font-weight: 700; font-size: 16px; letter-spacing: .04em; }
 .seg { display: flex; gap: 4px; }
@@ -362,7 +367,7 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
   #btn-brake { width: 74px; height: 74px; right: calc(var(--sar) + 120px); }
   .stat.money { font-size: 22px; }
   #meter, #fight { width: min(480px, 50vw); bottom: calc(var(--sab) + 12px); }
-  .title-buttons .btn.big { min-height: 44px; font-size: 16px; }
+  .title-buttons .btn.big, .pause-menu .btn.big { min-height: 44px; font-size: 16px; }
   .logo-hotrod { font-size: clamp(54px, 11vw, 110px); }
   .sheet-head h2 { font-size: 22px; }
   #catch { width: min(310px, 44vw); padding: 12px 14px; }

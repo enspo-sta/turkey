@@ -95,7 +95,21 @@ compressed).
 | Keep or release a catch | **KEEP** / **RELEASE** on the catch card | `E` or `Enter` / `R` |
 | Drive | **GAS**, **BRAKE**, steer by dragging on the left half | `W` gas, `S` brake and reverse, `A` / `D` steer |
 | Car camera / horn | Camera and horn buttons | `C` / `H` |
-| Lures / map / journal / pause | Buttons at the top | `L` / `M` / `J` / `Esc` |
+| Lures / map / journal / pause and save | **LURE** next to **CAST**; map, journal and pause at the top | `L` / `M` / `J` / `Esc` |
+
+## Saving
+
+The game saves by itself every 45 seconds and whenever you keep or release a
+fish, trade at the Trading Post, sleep or rest at the cabin, travel, claim game
+or find a new place. A **SAVED** note flashes under the clock each time. To
+save right now, open the pause menu (the pause button at the top right, or `Esc`
+on a keyboard) and choose **Save game**; **Save and return to title** saves and
+leaves. Next time, choose **Continue** on the title screen.
+
+Saves are stored on the device, in the browser you play in (or inside the iOS
+app), so they don't carry over to another device or browser. Private browsing
+or clearing the browser's website data removes them, and the game shows a
+warning if the browser blocks saving.
 
 ## Play it
 

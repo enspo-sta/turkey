@@ -313,6 +313,21 @@ class Session {
         this.save();
       } else g.audio.resume();
     });
+    // In a browser the first Esc only frees a locked mouse; treat losing the
+    // lock as a pause, like most first-person games, so one press opens the menu
+    document.addEventListener('pointerlockchange', () => {
+      if (document.pointerLockElement) {
+        g.input.selfRelease = false;
+        return;
+      }
+      // the game freed the mouse itself (a menu or the catch card opened)
+      if (g.input.selfRelease) {
+        g.input.selfRelease = false;
+        return;
+      }
+      if (document.hidden) return;
+      if (this.mode === 'play' && !g.menuOpen && !g.hud.blocking) g.screens.open('pause');
+    });
     const wake = () => {
       if (!document.hidden) g.audio.resume();
     };
@@ -357,14 +372,21 @@ class Session {
   save() {
     const g = this.game;
     const s = g.state;
-    if (!g.started) return;
+    if (!g.started) return false;
     s.time = g.env.time;
     s.day = g.env.day;
     s.health = Math.max(30, Math.round(g.player.health));
     const P = g.player.mode === 'drive' ? g.hotrod.exitPoint(1) : g.player.pos;
     s.player = { x: P.x, z: P.z, yaw: g.player.yaw };
     s.car = { x: g.hotrod.pos.x, z: g.hotrod.pos.z, yaw: g.hotrod.yaw };
-    s.save();
+    const ok = s.save();
+    if (ok) g.hud.savedFlash();
+    else if (!this.saveWarned) {
+      // private browsing or blocked website data: say so instead of losing progress silently
+      this.saveWarned = true;
+      g.hud.toast("Can't save: this browser is blocking website data for this page", 'bad');
+    }
+    return ok;
   }
 
   // ------------------------------------------------------------- transitions

@@ -185,7 +185,11 @@ export class Input {
   }
 
   exitPointerLock() {
-    if (document.pointerLockElement) document.exitPointerLock?.();
+    if (document.pointerLockElement) {
+      // remembered so the game can tell this apart from the player pressing Esc
+      this.selfRelease = true;
+      document.exitPointerLock?.();
+    }
   }
 
   showStick(x, y) {

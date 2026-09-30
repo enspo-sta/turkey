@@ -136,6 +136,15 @@ export class HUD {
   }
 
   // ---- messages
+  // Brief "Saved" under the clock whenever progress is written.
+  savedFlash() {
+    const el = $('hud-saved');
+    if (!el) return;
+    el.classList.add('show');
+    clearTimeout(this.savedT);
+    this.savedT = setTimeout(() => el.classList.remove('show'), 1600);
+  }
+
   toast(text, kind = '') {
     const el = document.createElement('div');
     el.className = 'toast ' + kind;
