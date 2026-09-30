@@ -192,7 +192,8 @@ export class Screens {
   // ------------------------------------------------------------------ map
   ensureMapImage() {
     if (this.mapImage) return this.mapImage;
-    const size = 640;
+    // sharp enough for the minimap's close view (about 0.43 px per metre)
+    const size = 1024;
     const c = document.createElement('canvas');
     c.width = c.height = size;
     const ctx = c.getContext('2d');

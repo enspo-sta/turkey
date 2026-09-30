@@ -1,0 +1,9 @@
+{"width":844,"height":390,"touch":true,"mobile":true,"dpr":2,"timeout":200000,"ua":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1","steps":[{"wait":1500},
+{"eval":"__rhf.start(false)"},{"wait":6000},
+{"eval":"(()=>{const g=__rhf.game; g.state.settings.autoQuality=false; g.setQuality('medium'); g.dpr=1; g.renderer.setPixelRatio(1); g.resize(); g.bears.directorT=9999; __rhf.god(true); g.env.setTime(11); g.env.timeScale=0; for(const p of g.world.places) g.state.discovered[p.id]=true; const t0=performance.now(); const img=g.screens.ensureMapImage(); return 'map image '+img.width+' px, minimap canvas '+document.getElementById('minimap-canvas').width+' px, '+(performance.now()-t0).toFixed(0)+' ms (already built)'})()"},
+{"wait":4000},{"shot":"mm-landing"},
+{"eval":"(async()=>{const g=__rhf.game; const p=g.world.place('falls'); g.player.place(p.x,p.z,p.face||0); await new Promise(r=>setTimeout(r,4000)); return 'at Bear Falls'})()"},{"shot":"mm-falls"},
+{"eval":"(async()=>{const g=__rhf.game; g.player.yaw+=1.2; await new Promise(r=>setTimeout(r,3000)); return 'turned'})()"},{"shot":"mm-falls-turned"},
+{"eval":"(async()=>{const g=__rhf.game; const c=g.hotrod; const e=c.exitPoint(1); g.player.place(e.x,e.z,c.yaw); await new Promise(r=>setTimeout(r,1500)); __rhf.press('interact'); await new Promise(r=>setTimeout(r,5000)); return 'mode '+g.player.mode})()"},{"shot":"mm-drive"},
+{"eval":"(async()=>{document.getElementById('minimap').click(); await new Promise(r=>setTimeout(r,2000)); return 'map open '+(!!document.querySelector('#overlay:not([hidden])'))})()"},{"shot":"mm-map-open"}
+]}

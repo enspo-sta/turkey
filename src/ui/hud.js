@@ -2,6 +2,7 @@
 // fight meters, speedometer, toasts, banners, prompts and the catch card.
 import { formatMoney, formatTime, clamp, wrapAngle } from '../util/math.js';
 import { LURES, FISH, CHALLENGES, RARITY } from '../gameplay/data.js';
+import { Minimap } from './minimap.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -18,6 +19,8 @@ const OBJECTIVE_PLACE = {
   char: 'glacier',
   halibut: 'pier',
   moose: 'moose',
+  rare: 'falls',
+  epic: 'pier',
 };
 
 export class HUD {
@@ -104,9 +107,15 @@ export class HUD {
     input.bindButton(this.el.interact, 'interact');
     input.setStickElements($('stick'), $('stick-knob'));
     $('btn-map').addEventListener('click', () => game.screens.open('map'));
+    // the always-on minimap; tapping it opens the full map
+    this.minimap = new Minimap(game, $('minimap'), $('minimap-canvas'), $('minimap-n'), () => {
+      const ch = game.state.currentChallenge();
+      return ch ? OBJECTIVE_PLACE[ch.id] : null;
+    });
+    $('minimap').addEventListener('click', () => game.screens.open('map'));
     $('btn-journal').addEventListener('click', () => game.screens.open('journal'));
     $('btn-pause').addEventListener('click', () => game.screens.open('pause'));
-    for (const id of ['btn-map', 'btn-journal', 'btn-pause', 'catch']) {
+    for (const id of ['btn-map', 'btn-journal', 'btn-pause', 'catch', 'minimap']) {
       $(id).addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
     }
   }
@@ -527,6 +536,8 @@ export class HUD {
     }
 
     this.updateCompass(dt);
+    if (!this.minimap.image && g.screens.mapImage) this.minimap.setImage(g.screens.mapImage);
+    this.minimap.update(dt, this.heading || 0);
   }
 
   updateCompass(dt) {
@@ -534,6 +545,7 @@ export class HUD {
     const cam = g.camera;
     const dir = cam.getWorldDirection(this._dir || (this._dir = cam.position.clone()));
     const heading = Math.atan2(dir.x, -dir.z);
+    this.heading = heading;
     if (!this.compassEls) {
       this.compassEls = new Map();
       this.compassTextT = 0;

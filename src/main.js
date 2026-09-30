@@ -101,10 +101,13 @@ class Session {
       g.effects.resize(w, h, g.dpr);
       g.fishing.resize(w * g.dpr, h * g.dpr);
       g.viewmodel.resize(w, h);
+      g.hud.minimap?.resize();
       this.checkOrientation();
     };
     g.systems.push({ resize });
     resize();
+    // the map image for the map screen and the minimap, made while loading
+    g.screens.ensureMapImage();
     this.bindTitle();
     this.bindKeys();
     this.bindLifecycle();
