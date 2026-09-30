@@ -1,5 +1,5 @@
 {"width":960,"height":540,"steps":[{"wait":3500},{"shot":"title.jpg"},
-{"eval":"__rhf.start(false)"},{"wait":4000},
+{"eval":"__rhf.start(false)"}, {"eval": "(()=>{__rhf.game.state.settings.autoQuality=false; return 'automatic step-down off'})()"},{"wait":4000},
 {"eval":"(()=>{const g=__rhf.game; g.bears.directorT=9999; g.env.setTime(9.5); g.env.weather.cloud=0.25; g.env.weather.cloudTarget=0.25; g.env.weather.timer=9999; g.hud.hint && g.hud.hint('',0); __rhf.press('primary'); return 'cast'})()"},
 {"wait":900},{"shot":"cast.jpg"},
 {"eval":"(()=>{const f=__rhf.game.fishing; f.meter.t = Math.pow(0.6,1/1.3)*1.15 - 0.1; __rhf.press('primary'); return 'power press'})()"},

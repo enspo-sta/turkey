@@ -11,7 +11,7 @@ cooler.
 Everything you see and hear is generated in code at start-up: the terrain,
 rivers, glacier, forests, animals, the hot rod, the fish, the sky, the weather,
 the sound effects and the music. There are no downloaded models, textures or
-audio files, so the whole game is a single 1 MB HTML file (about 350 KB
+audio files, so the whole game is a single 1.2 MB HTML file (about 390 KB
 compressed).
 
 | | |
@@ -93,9 +93,10 @@ compressed).
   when the sun is behind them.
 - Ground detail by surface: pebbles on gravel bars and river beds, layered rock
   on cliffs, sand and snow ripples and needles on the forest floor, with bump
-  lighting. Detailed spruce and birch up close, willow and alder along the
-  water, ferns, fireweed and lupine, fallen logs, stumps, bleached driftwood
-  and mossy boulders.
+  lighting. Curved grass blades in shades from lush green to dry straw,
+  detailed spruce and birch up close, willow and alder along the water, ferns,
+  fireweed and lupine, fallen logs, stumps, bleached driftwood and mossy
+  boulders.
 - Day and night with sunrise and sunset, stars, the moon and the northern
   lights, rain showers, a waterfall with mist, a glacier that calves slabs of
   ice into Glacier Lake with a boom and a wave, a lighthouse beam at night, and
@@ -264,9 +265,10 @@ node tools/shot.mjs tools/scenarios/catch-mouse.json  # real clicks and keys on 
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot
 node tools/shot.mjs tools/scenarios/fish-views.json   # fish schools, a fish approaching the float and the fight
 node tools/shot.mjs tools/scenarios/light-views.json  # morning, noon, evening, sunset and night lighting
-node tools/shot.mjs tools/scenarios/animals.json      # the newer animals and birds
+node tools/shot.mjs tools/scenarios/animals.json      # poses each of the newer animals and birds in front of the camera
 node tools/shot.mjs tools/scenarios/perf-breakdown.json  # draw calls and triangles per rendering pass
 node tools/shot.mjs tools/scenarios/perf-views.json   # draw calls, triangles and frame time at eight places (perf-views-medium.json for Medium)
+node tools/shot.mjs tools/scenarios/fps-readout.json  # the frame rate readout, the automatic step-down and its switch
 node tools/shot.mjs tools/scenarios/shade-debug.json  # saves the mountain shadow and sky visibility maps as an image
 node tools/shot.mjs tools/scenarios/refl-debug.json   # saves the six faces of the water reflection cube as an image
 ```

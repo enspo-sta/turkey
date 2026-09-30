@@ -78,7 +78,9 @@ export function makeTerrainMaterial(detailTex, matTex, surfaceTex) {
           #endif
           float steep = 1.0 - smoothstep( 0.62, 0.86, tn.y );
           float wR = clamp( max( sw.r, steep ), 0.0, 1.0 );
-          float wG = sw.g * ( 1.0 - wR );
+          // pebbles only where there is real gravel, not where the blurred
+          // map bleeds a little of it into the meadow beside a path
+          float wG = smoothstep( 0.2, 0.55, sw.g ) * ( 1.0 - wR );
           float wB = sw.b * ( 1.0 - wR * 0.6 );
           float wA = sw.a * ( 1.0 - wR ) * ( 1.0 - wG );
           // rock layers projected onto the cliff faces

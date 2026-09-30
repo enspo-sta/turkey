@@ -1,4 +1,4 @@
-{"width":960,"height":540,"steps":[{"wait":1500},{"eval":"__rhf.start(false)"},{"wait":2500},
+{"width":960,"height":540,"steps":[{"wait":1500},{"eval":"__rhf.start(false)"}, {"eval": "(()=>{__rhf.game.state.settings.autoQuality=false; return 'automatic step-down off'})()"},{"wait":2500},
 {"eval":"(()=>{const g=__rhf.game; g.setQuality('high'); g.dpr=1; g.renderer.setPixelRatio(1); g.resize(); g.bears.directorT=9999; g.env.setTime(11); g.env.weather.cloud=0.2; g.env.weather.cloudTarget=0.2; g.env.weather.rain=0; g.env.weather.rainTarget=0; g.env.weather.timer=9999; g.hud.firstShown=-1000; g.hud.hint('',0); __rhf.god(true); g.state.salmonRun={place:'landing'}; const p=g.world.place('landing'); g.player.place(p.x,p.z,p.face); g.player.pitch=-0.42; return 'ok'})()"},
 {"wait":4000},
 {"eval":"(()=>{const g=__rhf.game; return 'schools '+g.fish.schools.map(s=>s.species+':'+s.fish.length).join(',')+' hotspots '+g.fishing.hotspots.length})()"},

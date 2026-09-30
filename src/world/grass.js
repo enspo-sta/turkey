@@ -46,7 +46,8 @@ void main() {
   vec3 p = position;
   float tall = uChannel > 0.5 ? (0.75 + fract(r * 17.0) * 0.6) : (0.55 + fract(r * 13.0) * 0.7) * (0.6 + density * 0.6);
   p.y *= tall * show;
-  p.xz *= show;
+  // thin blades would shimmer far away: widen them with distance
+  p.xz *= show * (1.0 + smoothstep(6.0, 24.0, dist) * 0.9);
   p = vec3(c * p.x - s * p.z, p.y, s * p.x + c * p.z);
   float wave = sin(uTime * 1.9 + wp.x * 0.35 + wp.y * 0.21) + 0.5 * sin(uTime * 3.7 + wp.x * 0.9);
   float bend = p.y * p.y * (0.12 + 0.1 * uWind) * wave;
@@ -63,6 +64,8 @@ void main() {
     col = color.r > 0.2 ? bloom : stem;
   } else {
     col = g * (0.62 + tip * 0.75) * vec3(0.95, 1.08, 0.88);
+    // blades vary from lush green to dry straw
+    col *= mix(vec3(0.84, 0.97, 0.9), vec3(1.16, 1.04, 0.8), color.g);
   }
   float diff = clamp(uSunDir.y, 0.0, 1.0) * 0.85 + 0.15;
   // mountain shadow and open sky from the terrain lighting maps
@@ -101,40 +104,63 @@ void main() {
 function tuftGeometry(blades, flower) {
   const pos = [];
   const col = [];
+  const index = [];
   const rand = mulberry32(flower ? 5 : 9);
   for (let b = 0; b < blades; b++) {
     const a = (b / blades) * Math.PI * 2 + rand() * 0.6;
-    const r = flower ? 0 : 0.05 + rand() * 0.12;
-    const cx = Math.cos(a) * r;
-    const cz = Math.sin(a) * r;
-    const w = flower ? 0.025 : 0.035 + rand() * 0.02;
-    const h = flower ? 0.9 : 0.5 + rand() * 0.45;
-    const lean = flower ? 0 : 0.12 + rand() * 0.15;
+    if (!flower) {
+      // a blade in two segments, upright at the base and bending outward
+      // toward a point, so the tuft arches like real grass
+      const r = 0.04 + rand() * 0.12;
+      const cx = Math.cos(a) * r;
+      const cz = Math.sin(a) * r;
+      const dx = Math.cos(a);
+      const dz = Math.sin(a);
+      const w0 = 0.021 + rand() * 0.013;
+      const w1 = w0 * 0.62;
+      const h = 0.48 + rand() * 0.45;
+      const lean = 0.1 + rand() * 0.22;
+      const tint = rand();
+      const m = 0.55;
+      const mx = cx + dx * lean * m * m;
+      const mz = cz + dz * lean * m * m;
+      const v = pos.length / 3;
+      pos.push(cx + dz * w0, 0, cz - dx * w0, cx - dz * w0, 0, cz + dx * w0);
+      pos.push(mx + dz * w1, h * m, mz - dx * w1, mx - dz * w1, h * m, mz + dx * w1);
+      pos.push(cx + dx * lean, h, cz + dz * lean);
+      index.push(v, v + 1, v + 3, v, v + 3, v + 2, v + 2, v + 3, v + 4);
+      // green channel: from lush to dry, per blade
+      for (let k = 0; k < 5; k++) col.push(0, tint, 0);
+      continue;
+    }
+    const w = 0.025;
+    const h = 0.9;
     const px = Math.cos(a + 1.57) * w;
     const pz = Math.sin(a + 1.57) * w;
-    const tx = cx + Math.cos(a) * lean;
-    const tz = cz + Math.sin(a) * lean;
-    pos.push(cx - px, 0, cz - pz, cx + px, 0, cz + pz, tx, h, tz);
+    let v = pos.length / 3;
+    pos.push(-px, 0, -pz, px, 0, pz, 0, h, 0);
     col.push(0, 0, 0, 0, 0, 0, 0, 0, 0);
-    if (flower) {
-      // fireweed raceme: small blossoms spiralling up the top half of the stalk
-      for (let k = 0; k < 7; k++) {
-        const t = k / 6;
-        const y = h * (0.5 + t * 0.55);
-        const ang = k * 2.4;
-        const rr = 0.055 * (1 - t * 0.6);
-        const dx = Math.cos(ang) * rr;
-        const dz = Math.sin(ang) * rr;
-        const s = 0.05 * (1 - t * 0.5);
-        pos.push(dx - s * 0.5, y, dz, dx + s * 0.5, y, dz, dx, y + s * 1.6, dz + s * 0.3);
-        const c = 1 - t * 0.5;
-        col.push(c, c, c, c, c, c, c, c, c);
-      }
+    index.push(v, v + 1, v + 2);
+    // fireweed raceme: small blossoms spiralling up the top half of the stalk
+    for (let k = 0; k < 7; k++) {
+      const t = k / 6;
+      const y = h * (0.5 + t * 0.55);
+      const ang = k * 2.4;
+      const rr = 0.055 * (1 - t * 0.6);
+      const dx = Math.cos(ang) * rr;
+      const dz = Math.sin(ang) * rr;
+      const s = 0.05 * (1 - t * 0.5);
+      v = pos.length / 3;
+      pos.push(dx - s * 0.5, y, dz, dx + s * 0.5, y, dz, dx, y + s * 1.6, dz + s * 0.3);
+      const c = 1 - t * 0.5;
+      col.push(c, c, c, c, c, c, c, c, c);
+      index.push(v, v + 1, v + 2);
     }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(index);
   g.computeBoundingSphere();
   return g;
 }
@@ -160,7 +186,7 @@ export class GrassField {
       uGroundCol: { value: new THREE.Color() },
       uWind: { value: 0.3 },
     };
-    this.grass = this.makeLayer(tuftGeometry(4, false), count, radius, 0);
+    this.grass = this.makeLayer(tuftGeometry(5, false), count, radius, 0);
     this.flowers = this.makeLayer(tuftGeometry(1, true), flowers, radius * 1.3, 1);
     this.group.add(this.grass, this.flowers);
     this.env = env;

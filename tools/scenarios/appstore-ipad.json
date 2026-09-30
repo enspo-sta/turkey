@@ -12,7 +12,7 @@
 },
 {
 "eval": "__rhf.start(false)"
-},
+}, {"eval": "(()=>{__rhf.game.state.settings.autoQuality=false; return 'automatic step-down off'})()"},
 {
 "wait": 4000
 },

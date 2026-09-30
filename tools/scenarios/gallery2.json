@@ -1,4 +1,4 @@
-{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":2000},
+{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"}, {"eval": "(()=>{__rhf.game.state.settings.autoQuality=false; return 'automatic step-down off'})()"},{"wait":2000},
 {"eval":"(()=>{const g=__rhf.game; __rhf.god(true); g.env.setTime(15); const p=g.world.place('falls'); g.player.place(p.x,p.z,p.face); g.state.stats.caught=3; return 'at falls'})()"},
 {"wait":3000},
 {"eval":"(()=>{const g=__rhf.game; const P=g.player; g.bears.stage(P.pos); const b=g.bears.bears.find(b=>b.state==='stalk'); if(!b) return 'no stalker'; b.x=P.pos.x - Math.sin(P.yaw)*34; b.z=P.pos.z - Math.cos(P.yaw)*34; window.__bear=b; g.player.tool='rifle'; g.viewmodel.setTool('rifle'); return 'staged'})()"},

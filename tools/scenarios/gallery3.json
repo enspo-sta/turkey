@@ -1,4 +1,4 @@
-{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":1500},
+{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"}, {"eval": "(()=>{__rhf.game.state.settings.autoQuality=false; return 'automatic step-down off'})()"},{"wait":1500},
 {"eval":"(()=>{const g=__rhf.game; document.getElementById('hud').hidden=true; g.bears.directorT=9999; const p=g.world.place('landing'); g.player.place(p.x,p.z,0); g.player.pitch=0.3; g.env.setTime(0.5); g.env.weather.cloud=0.1; g.env.weather.cloudTarget=0.1; g.env.weather.timer=9999; return 'aurora'})()"},
 {"wait":6000},{"shot":"aurora.jpg"},
 {"eval":"(()=>{const g=__rhf.game; const p=g.world.place('falls'); g.player.place(p.x,p.z,p.face); g.player.pitch=0.06; g.env.setTime(16.5); g.player.tool='rod'; g.viewmodel.setTool('rod'); return 'falls'})()"},
