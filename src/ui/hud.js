@@ -64,7 +64,6 @@ export class HUD {
       speedoGear: $('speedo-gear'),
       crosshair: $('crosshair'),
       hitmark: $('hitmark'),
-      scope: $('scope'),
       dmg: $('dmg'),
       dangerL: $('danger-left'),
       dangerR: $('danger-right'),
@@ -411,9 +410,9 @@ export class HUD {
     const fishing = g.fishing;
     const hunting = g.hunting;
     const onFoot = mode === 'foot';
-    el.chipAmmo.hidden = !(onFoot && tool === 'rifle');
+    el.chipAmmo.hidden = !(onFoot && tool === 'bow');
     el.chipLure.hidden = !(onFoot && tool === 'rod');
-    if (!el.chipAmmo.hidden) set('ammo', `${s.gear.mag} | ${s.gear.ammo}`, (v) => (el.ammo.textContent = v));
+    if (!el.chipAmmo.hidden) set('ammo', String(s.gear.arrows), (v) => (el.ammo.textContent = v));
 
     // objective
     const ch = s.currentChallenge();
@@ -429,15 +428,16 @@ export class HUD {
     el.horn.hidden = !driving;
     el.cam.hidden = !driving;
     el.speedo.hidden = !driving;
-    el.primary.hidden = driving || catchOpen;
+    el.primary.hidden = driving || catchOpen || tool === 'none';
     el.tool.hidden = driving || catchOpen || (fishing && fishing.state !== 'idle');
-    el.reload.hidden = !(onFoot && tool === 'rifle') || catchOpen;
+    el.reload.hidden = true;
     el.spray.hidden = !onFoot || s.gear.spray <= 0 || catchOpen || !g.bears?.threat;
     el.med.hidden = !onFoot || s.gear.medkit <= 0 || P.health > 70 || catchOpen;
     set('spray', s.gear.spray, (v) => (el.sprayCount.textContent = v));
     set('med', s.gear.medkit, (v) => (el.medCount.textContent = v));
-    set('toolIcon', tool, (v) => (el.tool.innerHTML = `<svg><use href="#i-${v === 'rod' ? 'rifle' : 'rod'}"/></svg>`));
-    el.tool.classList.toggle('pulse', !!(g.bears?.threat && tool === 'rod'));
+    // the button shows the tool it switches to: rod, longbow, empty hands
+    set('toolIcon', tool, (v) => (el.tool.innerHTML = `<svg><use href="#i-${v === 'rod' ? 'bow' : v === 'bow' ? 'hand' : 'rod'}"/></svg>`));
+    el.tool.classList.toggle('pulse', !!(g.bears?.threat && tool !== 'bow'));
 
     let pLabel = '';
     let pClass = 'btn round primary';
@@ -467,16 +467,21 @@ export class HUD {
         default:
           pLabel = 'REEL';
       }
-    } else if (onFoot && tool === 'rifle') {
-      pLabel = hunting && hunting.reloading ? 'LOAD' : 'FIRE';
+    } else if (onFoot && tool === 'bow' && hunting) {
+      pLabel = hunting.drawing ? (hunting.draw >= 1 ? 'LOOSE' : 'DRAW') : hunting.nockT > 0 ? '...' : s.gear.arrows > 0 ? 'DRAW' : 'EMPTY';
       pClass += ' fire';
-      sLabel = hunting && hunting.scoped ? 'BACK' : 'AIM';
+      if (hunting.drawing && hunting.draw >= 1) pClass += ' alert';
+      if (!hunting.drawing && s.gear.arrows <= 0) pClass += ' off';
+      sLabel = hunting.aiming ? 'BACK' : 'AIM';
     }
+    // how far the string is drawn, as a ring around the button
+    const drawAmt = onFoot && tool === 'bow' && hunting ? hunting.draw : 0;
+    set('drawRing', Math.round(drawAmt * 40), (v) => el.primary.style.setProperty('--draw', String(v / 40)));
     set('pLabel', pLabel, (v) => (el.primary.innerHTML = `<span>${v}</span>`));
     set('pClass', pClass, (v) => (el.primary.className = v));
     el.secondary.hidden = driving || catchOpen || !sLabel || (fishing && fishing.state !== 'idle' && tool === 'rod');
     if (sLabel) set('sLabel', sLabel, (v) => (el.secondary.innerHTML = `<span>${v}</span>`));
-    el.secondary.classList.toggle('on', !!(hunting && hunting.scoped));
+    el.secondary.classList.toggle('on', !!(hunting && hunting.aiming && tool === 'bow'));
 
     // interact pill
     const ia = g.interaction;
@@ -489,11 +494,9 @@ export class HUD {
     else el.interact.hidden = !ia;
     el.interact.classList.toggle('driving', driving);
 
-    // crosshair / scope
-    const scoped = !!(hunting && hunting.scoped && onFoot && tool === 'rifle');
-    el.scope.hidden = !scoped;
-    el.crosshair.hidden = scoped || driving || catchOpen;
-    set('xhair', tool === 'rifle' && onFoot ? 'rifle' : '', (v) => (el.crosshair.className = v));
+    // crosshair: a ring for the bow, a dot for the rod, none with empty hands
+    el.crosshair.hidden = driving || catchOpen || tool === 'none';
+    set('xhair', tool === 'bow' && onFoot ? 'bow' : '', (v) => (el.crosshair.className = v));
 
     // left hint text when idle
     if (!fishing || fishing.state !== 'fight') {

@@ -112,7 +112,7 @@ class Session {
     this.precompile();
   }
 
-  // Compile every shader up front so the first rifle shot, fish or bear
+  // Compile every shader up front so the first arrow, fish or bear
   // does not stall a frame.
   precompile() {
     const g = this.game;
@@ -128,6 +128,8 @@ class Session {
     for (const h of Object.values(g.wildlife.herds)) {
       h.mesh.count = Math.max(1, h.mesh.count);
     }
+    const arrowCount = g.hunting.mesh.count;
+    g.hunting.mesh.count = Math.max(1, arrowCount);
     show(g.wildlife.group);
     show(g.viewmodel.scene);
     show(g.fishing.float);
@@ -155,6 +157,7 @@ class Session {
       h.mesh.count = 0;
       h.mesh.visible = false;
     }
+    g.hunting.mesh.count = arrowCount;
   }
 
   updateEnvMap() {
@@ -176,6 +179,7 @@ class Session {
     const pk = L.parking.landing;
     g.hotrod.place(pk.x, pk.z, pk.yaw + Math.PI);
     g.hotrod.setPaint(g.state.gear.paint);
+    g.viewmodel.setBowWood(g.state.gear.yew);
     const landing = g.world.place('landing');
     const ex = g.hotrod.exitPoint(1);
     g.player.place(ex.x, ex.z, landing.face);
@@ -266,6 +270,7 @@ class Session {
     g.player.tool = 'rod';
     g.viewmodel.setTool('rod');
     g.hotrod.setPaint(s.gear.paint);
+    g.viewmodel.setBowWood(s.gear.yew);
     if (continueSave && s.car) g.hotrod.place(s.car.x, s.car.z, s.car.yaw);
     else this.placeAtStart();
     if (continueSave && s.player) g.player.place(s.player.x, s.player.z, s.player.yaw);
@@ -312,7 +317,7 @@ class Session {
         return;
       }
       if (e.code === 'Escape' && !g.screens.isOpen && !g.hud.blocking) {
-        if (g.hunting.scoped) g.hunting.setScoped(false);
+        if (g.hunting.aiming) g.hunting.setAiming(false);
         else g.screens.open('pause');
       }
       if (g.screens.isOpen || g.hud.blocking) return;
@@ -449,7 +454,7 @@ class Session {
     const pk = g.props.layout.parking[id];
     if (!p || !pk) return;
     g.fishing.cancel();
-    g.hunting.setScoped(false);
+    g.hunting.reset();
     this.withFade(`Driving to ${p.name}…`, () => {
       const wasDriving = g.player.mode === 'drive';
       g.hotrod.place(pk.x, pk.z, pk.yaw);
@@ -472,7 +477,7 @@ class Session {
     if (this.koBusy) return;
     this.koBusy = true;
     g.fishing.cancel();
-    g.hunting.setScoped(false);
+    g.hunting.reset();
     const s = g.state;
     const lost = s.cooler.length;
     const fee = Math.min(s.money, Math.round(s.money * 0.1));
@@ -493,7 +498,7 @@ class Session {
   enterCar() {
     const g = this.game;
     g.fishing.cancel();
-    g.hunting.setScoped(false);
+    g.hunting.reset();
     g.player.mode = 'drive';
     g.hotrod.occupied = true;
     g.hotrod.camYaw = 0;
@@ -566,12 +571,19 @@ class Session {
     const P = g.player;
     const car = g.hotrod;
 
-    // tool switch
-    if ((input.pressed('tool') || input.keyPressed('KeyQ')) && P.mode === 'foot' && g.fishing.state === 'idle' && !g.hud.blocking) {
-      P.tool = P.tool === 'rod' ? 'rifle' : 'rod';
-      g.viewmodel.setTool(P.tool);
-      g.hunting.setScoped(false);
-      g.audio.tick(1);
+    // tool switch: rod, longbow, empty hands (Q cycles, 1 2 3 pick directly)
+    if (P.mode === 'foot' && g.fishing.state === 'idle' && !g.hud.blocking) {
+      let next = null;
+      if (input.pressed('tool') || input.keyPressed('KeyQ')) next = P.tool === 'rod' ? 'bow' : P.tool === 'bow' ? 'none' : 'rod';
+      else if (input.keyPressed('Digit1')) next = 'rod';
+      else if (input.keyPressed('Digit2')) next = 'bow';
+      else if (input.keyPressed('Digit3')) next = 'none';
+      if (next && next !== P.tool) {
+        P.tool = next;
+        g.viewmodel.setTool(next);
+        g.hunting.reset();
+        g.audio.tick(1);
+      }
     }
     if (input.pressed('secondary') && P.mode === 'foot' && P.tool === 'rod' && g.fishing.state === 'idle') g.screens.open('lure');
     if (input.pressed('med') || input.keyPressed('KeyX')) {
@@ -616,8 +628,8 @@ class Session {
     g.camera.updateMatrixWorld();
     g.focus = P.mode === 'drive' ? car.pos : P.pos;
 
-    // zoom for the scope
-    const zoom = g.hunting.scoped ? (g.state.gear.scope ? 0.125 : 0.25) : 1;
+    // aiming the bow narrows the view, more with the bow sight
+    const zoom = g.hunting.aiming ? (g.state.gear.sight ? 0.5 : 0.66) : 1;
     g.zoom = damp(g.zoom || 1, zoom, 14, dt);
     const fov = g.baseFov * g.zoom;
     if (Math.abs(g.camera.fov - fov) > 0.01) {

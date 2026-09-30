@@ -369,9 +369,13 @@ export const PAINTS = [
   { id: 'orange', name: 'Ruben Orange', price: 400, base: '#d2561a', a: '#fff0a0', b: '#ffd23a' },
 ];
 
+// arrows the quiver holds
+export const QUIVER = 36;
+
 export const GEAR = {
-  scope: { name: '8x hunting scope', price: 450, desc: 'Doubles rifle zoom for long tundra shots.' },
-  ammo: { name: '.30-06 cartridges (20)', price: 45, desc: 'Rifle ammunition.' },
+  arrows: { name: 'Cedar arrows (12)', price: 40, desc: 'Broadhead arrows for the longbow. Walk over the ones that miss to pick them up.' },
+  sight: { name: 'Bow sight and stabiliser', price: 450, desc: 'A steadier hold at full draw and a closer look when you AIM.' },
+  yew: { name: 'Yew longbow', price: 700, desc: 'A heavier draw: faster, flatter arrows that hit harder.' },
   spray: { name: 'Bear spray', price: 80, desc: 'Stops a charging grizzly at close range. Carry up to 2.' },
   medkit: { name: 'First aid kit', price: 60, desc: 'Restores full health instantly. Carry up to 3.' },
 };

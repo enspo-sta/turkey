@@ -201,7 +201,7 @@ export const PLACES = [
     kind: 'service',
     x: -60,
     z: 440,
-    blurb: 'Sell your catch and trophies. Buy rods, lures, ammo and hot rod parts.',
+    blurb: 'Sell your catch and trophies. Buy rods, lures, arrows and hot rod parts.',
   },
   {
     id: 'bend',
@@ -220,7 +220,7 @@ export const PLACES = [
     x: -20,
     z: -410,
     water: 'river',
-    blurb: 'Kings leap the falls here. So do the bears. Keep your rifle close.',
+    blurb: 'Kings leap the falls here. So do the bears. Keep your bow close.',
     bearRisk: 0.95,
   },
   {

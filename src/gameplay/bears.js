@@ -397,7 +397,7 @@ export class Bears {
     this.threatStartHp = b.hp;
     g.audio?.growl(b.x, b.z, 0.8);
     g.hud?.banner('GRIZZLY!', 'danger');
-    g.hud?.toast(g.player.tool === 'rod' ? 'Switch to your rifle!' : 'Aim for the head or chest!', 'bad');
+    g.hud?.toast(g.player.tool !== 'bow' ? 'Switch to your bow!' : 'Draw and aim for the chest!', 'bad');
     g.haptic?.('heavy');
     if (g.fishing.state === 'fight' || g.fishing.state === 'waiting') g.fishing.cancel('You drop the line');
   }

@@ -1,5 +1,5 @@
 // Particle effects (splashes, mist, dust, exhaust, chimney smoke, campfire
-// sparks, muzzle flash), expanding water ripples and rain.
+// sparks), expanding water ripples and rain.
 import * as THREE from 'three';
 import { makeSoftDotTexture } from '../util/textures.js';
 
@@ -386,15 +386,6 @@ export class Effects {
 
   exhaust(x, y, z, dx, dz) {
     this.soft.emit(x, y, z, dx * 2 + (Math.random() - 0.5), 0.4 + Math.random() * 0.4, dz * 2 + (Math.random() - 0.5), 1.1, 0.18, 1.0, 0.55, 0.56, 0.58, 0.32, -0.3, 1.5);
-  }
-
-  muzzle(x, y, z, dx, dy, dz) {
-    for (let i = 0; i < 6; i++) {
-      this.glow.emit(x, y, z, dx * (4 + i * 2), dy * (4 + i * 2), dz * (4 + i * 2), 0.07, 0.5 - i * 0.05, 0.1, 1.0, 0.75, 0.35, 1.0);
-    }
-    for (let i = 0; i < 6; i++) {
-      this.soft.emit(x, y, z, dx * 3 + (Math.random() - 0.5), dy * 3 + Math.random() * 0.5, dz * 3 + (Math.random() - 0.5), 1.4, 0.2, 1.4, 0.7, 0.7, 0.7, 0.35, -0.2, 2);
-    }
   }
 
   puff(x, y, z, r, g, b, n = 10) {

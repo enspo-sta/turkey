@@ -1,6 +1,6 @@
 // Menu sheets: map with fast travel, journal (fish, trophies, challenges),
 // Trading Post shop, lure picker, pause/settings, how-to-play and dialogs.
-import { FISH, SPECIES_IDS, LEGENDS, LURES, RODS, COOLERS, ENGINES, TIRES, PAINTS, GEAR, GAME, CHALLENGES } from '../gameplay/data.js';
+import { FISH, SPECIES_IDS, LEGENDS, LURES, RODS, COOLERS, ENGINES, TIRES, PAINTS, GEAR, GAME, CHALLENGES, QUIVER } from '../gameplay/data.js';
 import { formatMoney, formatTime, clamp } from '../util/math.js';
 import { privacyHTML, PRIVACY_UPDATED } from './privacy.js';
 import { renderMapRGBA, worldToMap } from '../world/maprender.js';
@@ -504,10 +504,11 @@ export class Screens {
           }</span><button class="btn ${can ? 'hot' : ''}" data-act="buy-item" data-id="${id}" ${can ? '' : 'disabled'}>Buy</button></div></div>`
         );
       };
-      consumable('ammo', GEAR.ammo.name, GEAR.ammo.desc, GEAR.ammo.price, s.gear.ammo, 200);
+      consumable('arrows', GEAR.arrows.name, GEAR.arrows.desc, GEAR.arrows.price, s.gear.arrows, QUIVER);
       consumable('spray', GEAR.spray.name, GEAR.spray.desc, GEAR.spray.price, s.gear.spray, 2);
       consumable('medkit', GEAR.medkit.name, GEAR.medkit.desc, GEAR.medkit.price, s.gear.medkit, 3);
-      card('scope', GEAR.scope.name, GEAR.scope.desc, GEAR.scope.price, s.gear.scope, s.gear.scope, 'scope');
+      card('yew', GEAR.yew.name, GEAR.yew.desc, GEAR.yew.price, s.gear.yew, s.gear.yew, 'yew');
+      card('sight', GEAR.sight.name, GEAR.sight.desc, GEAR.sight.price, s.gear.sight, s.gear.sight, 'sight');
       COOLERS.forEach((c, i) => {
         if (i === 0) return;
         card(String(i), c.name, `Holds ${c.cap} fish.`, c.price, s.gear.cooler >= i, s.gear.cooler === i, 'cooler');
@@ -564,14 +565,24 @@ export class Screens {
       case 'buy-item': {
         const item = GEAR[id];
         if (pay(item.price)) {
-          if (id === 'ammo') s.gear.ammo += 20;
+          if (id === 'arrows') s.gear.arrows = Math.min(QUIVER, s.gear.arrows + 12);
           if (id === 'spray') s.gear.spray = Math.min(2, s.gear.spray + 1);
           if (id === 'medkit') s.gear.medkit = Math.min(3, s.gear.medkit + 1);
         }
         break;
       }
-      case 'buy-scope':
-        if (pay(GEAR.scope.price)) s.gear.scope = true;
+      case 'buy-sight':
+        if (pay(GEAR.sight.price)) {
+          s.gear.sight = true;
+          g.hud.toast('Bow sight fitted', 'good');
+        }
+        break;
+      case 'buy-yew':
+        if (pay(GEAR.yew.price)) {
+          s.gear.yew = true;
+          g.viewmodel.setBowWood?.(true);
+          g.hud.toast('Yew longbow strung', 'good');
+        }
         break;
       case 'buy-cooler': {
         const i = Number(id);
@@ -777,10 +788,11 @@ export class Screens {
       <section><h4>Bites</h4><p>Watch the float. Small twitches are nibbles, so wait. When it plunges under, tap <b>HOOK!</b> fast.</p><p>Tap <b>REEL</b> while waiting to twitch the lure, hold it to retrieve.</p></section>
       <section><h4>The fight</h4><ul><li>Hold <b>REEL</b> to bring the fish in. Keep the needle in the green.</li><li>When it runs, let go before the line snaps, then reel again.</li><li>Steer the rod against the run: ${touch ? 'drag left or right on the left side' : 'press <kbd>A</kbd> or <kbd>D</kbd>'}.</li><li>When it jumps, release REEL or it throws the hook.</li></ul></section>
       <section><h4>Driving</h4><p>${touch ? 'Hold <b>GAS</b> and <b>BRAKE</b>, steer by dragging on the left side.' : '<kbd>W</kbd> gas, <kbd>S</kbd> brake and reverse, <kbd>A</kbd>/<kbd>D</kbd> steer.'} Tap the camera button to see the hot rod from behind, and the horn to say hello. Street tires slide on gravel and tundra.</p></section>
-      <section><h4>Hunting and grizzlies</h4><p>Switch to the rifle with the tool button. <b>AIM</b> raises the scope, <b>FIRE</b> shoots. Walk up to downed game and tap <b>CLAIM</b>.</p><p>Grizzlies smell fish in your cooler. When one charges, the screen edge turns red: switch to the rifle and shoot, or use bear spray up close.</p></section>
-      <section><h4>Money and upgrades</h4><p>Sell fish and trophies at the Kenai Trading Post. Buy rods that can handle kings and halibut, new lures, a bigger cooler, a better engine and new paint.</p><p>Sleep at Ruben's cabin to skip the night. Watch for the northern lights first.</p></section>
+      <section><h4>The tool button</h4><p>It switches between the fishing rod, the longbow and empty hands, so you can put the rod away when you are not fishing.</p></section>
+      <section><h4>Hunting with the longbow</h4><p>Hold <b>DRAW</b> to pull the string back and let go to shoot. A full draw flies fastest and flattest; arrows drop over distance, so aim a little high far away. <b>AIM</b> narrows your view. Holding a full draw for long makes your arms shake.</p><p>Walk over arrows that missed to pick them up. Walk up to downed game and tap <b>CLAIM</b>.</p><p>Grizzlies smell fish in your cooler. When one charges, the screen edge turns red: switch to the bow and shoot, or use bear spray up close.</p></section>
+      <section><h4>Money and upgrades</h4><p>Sell fish and trophies at the Kenai Trading Post. Buy rods that can handle kings and halibut, new lures, arrows, a yew longbow and a bow sight, a bigger cooler, a better engine and new paint.</p><p>Sleep at Ruben's cabin to skip the night. Watch for the northern lights first.</p></section>
       <section><h4>Saving</h4><p>The game saves by itself every 45 seconds and whenever you keep a fish, trade, sleep or travel. A <b>SAVED</b> note flashes under the clock. To save right now, open the pause menu${touch ? ' (top right)' : ' (<kbd>Esc</kbd>)'} and choose <b>Save game</b>. Next time, choose <b>Continue</b> on the title screen.</p></section>
-      ${touch ? '' : '<section><h4>Keyboard</h4><p><kbd>Space</kbd> or click: cast, reel, fire. <kbd>Right click</kbd> aim. <kbd>E</kbd> interact, or keep a catch (<kbd>R</kbd> releases it). <kbd>Q</kbd> switch tool. <kbd>R</kbd> reload. <kbd>G</kbd> bear spray. <kbd>X</kbd> first aid kit. <kbd>L</kbd> lures. <kbd>M</kbd> map. <kbd>J</kbd> journal. <kbd>C</kbd> camera. <kbd>H</kbd> horn. <kbd>Esc</kbd> pause.</p></section>'}
+      ${touch ? '' : '<section><h4>Keyboard</h4><p><kbd>Space</kbd> or click: cast and reel; hold and let go to shoot the bow. <kbd>Right click</kbd> aim. <kbd>E</kbd> interact, or keep a catch (<kbd>R</kbd> releases it). <kbd>Q</kbd> next tool, or <kbd>1</kbd> rod, <kbd>2</kbd> longbow, <kbd>3</kbd> empty hands. <kbd>G</kbd> bear spray. <kbd>X</kbd> first aid kit. <kbd>L</kbd> lures. <kbd>M</kbd> map. <kbd>J</kbd> journal. <kbd>C</kbd> camera. <kbd>H</kbd> horn. <kbd>Esc</kbd> pause.</p></section>'}
     </div><div class="dialog-actions"><button class="btn big hot" id="h-done">Got it</button></div>`;
     $('h-done').addEventListener('click', () => (g.started ? this.open('pause') : this.close()));
   }

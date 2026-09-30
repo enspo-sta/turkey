@@ -1,5 +1,5 @@
 // Procedural Web Audio: ambience (wind, river, ocean, rain), wildlife calls,
-// fishing and rifle sound effects, the hot rod's V8 and a plucked-guitar
+// fishing and longbow sound effects, the hot rod's V8 and a plucked-guitar
 // folk soundtrack. Everything is synthesised; no audio files.
 
 const PENTA = [0, 2, 4, 7, 9];
@@ -57,7 +57,7 @@ export class AudioEngine {
     this.white = this.makeNoise(2, 'white');
     this.brown = this.makeNoise(3, 'brown');
     this.pink = this.makeNoise(3, 'pink');
-    // echo for gunshots (mountain slapback)
+    // mountain slapback echo for loud sounds (the horn, wolves howling)
     this.echo = ctx.createDelay(2);
     this.echo.delayTime.value = 0.42;
     this.echoFb = ctx.createGain();
@@ -374,52 +374,28 @@ export class AudioEngine {
     this.creakAmt = amount;
   }
 
-  // ----------------------------------------------------------- rifle & hunting
-  gunshot(x, z) {
+  // ------------------------------------------------------------- longbow
+  // The string's twang: a low plucked tone, a click of the release and the
+  // hiss of the arrow leaving.
+  twang(power = 1) {
     if (!this.ready) return;
-    const ctx = this.ctx;
-    const t = ctx.currentTime;
-    const s = this.noiseSource(this.white, false);
-    const f = ctx.createBiquadFilter();
-    f.type = 'lowpass';
-    f.frequency.setValueAtTime(6000, t);
-    f.frequency.exponentialRampToValueAtTime(300, t + 0.35);
-    const g = ctx.createGain();
-    this.env(g, t, 0.002, 1.1, 0.4);
-    s.connect(f);
-    f.connect(g);
-    g.connect(this.sfx);
-    g.connect(this.echo);
-    s.start(t);
-    s.stop(t + 0.5);
-    const o = ctx.createOscillator();
-    o.type = 'sine';
-    o.frequency.setValueAtTime(90, t);
-    o.frequency.exponentialRampToValueAtTime(35, t + 0.3);
-    const og = ctx.createGain();
-    this.env(og, t, 0.002, 0.9, 0.35);
-    o.connect(og);
-    og.connect(this.sfx);
-    o.start(t);
-    o.stop(t + 0.45);
-    void x;
-    void z;
+    this.tone('triangle', 92 + power * 30, 0.32, 0.34 + power * 0.2, { f2: 70 });
+    this.tone('sine', 180 + power * 50, 0.12, 0.12, { f2: 140 });
+    this.noise(0.03, 0.28, { freq: 2600, q: 2 });
+    this.noise(0.34, 0.12 + power * 0.1, { type: 'bandpass', freq: 1500, f2: 520, q: 1.4, when: 0.02 });
   }
-  bolt() {
-    this.noise(0.05, 0.25, { freq: 3000, q: 4, when: 0.05 });
-    this.noise(0.05, 0.22, { freq: 2200, q: 4, when: 0.22 });
-    this.noise(0.05, 0.25, { freq: 2600, q: 4, when: 0.42 });
-  }
-  reloadSound() {
-    for (let i = 0; i < 4; i++) this.noise(0.04, 0.2, { freq: 2800 + i * 200, q: 5, when: 0.3 + i * 0.3 });
-    this.noise(0.06, 0.25, { freq: 2000, q: 3, when: 1.6 });
-  }
-  dryFire() {
-    this.noise(0.03, 0.25, { freq: 3500, q: 6 });
-  }
-  hit(x, z) {
-    const s = this.spatial(x, z, 400);
-    this.noise(0.15, 0.4 * Math.max(0.2, s.vol), { type: 'lowpass', freq: 600, pan: s.pan, when: Math.min(0.5, s.d / 340) });
+  // An arrow landing: a wet thump in game, a knock in wood, a click on
+  // stone, a soft thud in the ground.
+  arrowHit(x, z, kind = 'ground') {
+    const s = this.spatial(x, z, 180);
+    if (s.vol < 0.02) return;
+    const when = Math.min(0.5, s.d / 340);
+    if (kind === 'game') this.noise(0.14, 0.45 * s.vol, { type: 'lowpass', freq: 520, pan: s.pan, when });
+    else if (kind === 'wood') {
+      this.tone('square', 210, 0.07, 0.12 * s.vol, { f2: 130, pan: s.pan, when });
+      this.noise(0.06, 0.3 * s.vol, { freq: 900, q: 3, pan: s.pan, when });
+    } else if (kind === 'rock') this.noise(0.05, 0.3 * s.vol, { freq: 3200, q: 4, pan: s.pan, when });
+    else this.noise(0.1, 0.26 * s.vol, { type: 'lowpass', freq: 380, pan: s.pan, when });
   }
   spray() {
     this.noise(1.4, 0.45, { type: 'highpass', freq: 1800, q: 0.4, attack: 0.05 });

@@ -1,8 +1,10 @@
 // First-person held items rendered in an overlay scene: the fishing rod (with
-// shader bend and spinning reel), the bolt-action rifle, and the catch pose.
+// shader bend and spinning reel), the longbow (limbs that bend with the draw,
+// a string, a nocked arrow and both hands), and the catch pose.
 import * as THREE from 'three';
 import { ModelBuilder } from '../util/builder.js';
 import { makeFishModel } from './fishmodels.js';
+import { arrowGeometry } from '../gameplay/hunting.js';
 import { clamp, damp, lerp } from '../util/math.js';
 
 const ROD_LEN = 2.3;
@@ -128,38 +130,124 @@ function buildFishArm(side) {
   return b.build();
 }
 
-function buildRifle() {
+// Longbow along +y with the grip at the origin, the belly (facing the
+// archer) toward +z. Yew shows its pale sapwood back and orange heartwood
+// belly; ash is one pale colour. The limbs are split into short sections so
+// the vertex shader can bend them smoothly.
+const BOW_HALF = 0.86;
+const GRIP = 0.075;
+function buildBow(yew) {
   const b = new ModelBuilder();
-  const wood = 0x6e3f1f;
-  const steel = 0x2a2c30;
-  // stock
-  b.box(0.045, 0.1, 0.3, { pos: [0, -0.045, 0.3], color: wood });
-  b.box(0.045, 0.05, 0.12, { pos: [0, 0.0, 0.14], rot: [0.25, 0, 0], color: wood });
-  b.box(0.05, 0.13, 0.03, { pos: [0, -0.05, 0.455], color: 0x1a1a1a });
-  // forearm
-  b.box(0.05, 0.045, 0.42, { pos: [0, -0.005, -0.2], color: wood });
-  // receiver & barrel
-  b.box(0.038, 0.04, 0.22, { pos: [0, 0.03, 0.03], color: steel });
-  b.cyl(0.011, 0.012, 0.62, 8, { pos: [0, 0.035, -0.4], rot: [Math.PI / 2, 0, 0], color: steel });
-  b.cyl(0.014, 0.014, 0.03, 8, { pos: [0, 0.035, -0.71], rot: [Math.PI / 2, 0, 0], color: 0x151515 });
-  // scope
-  b.cyl(0.018, 0.018, 0.26, 12, { pos: [0, 0.09, -0.02], rot: [Math.PI / 2, 0, 0], color: 0x151515 });
-  b.cyl(0.026, 0.02, 0.07, 12, { pos: [0, 0.09, -0.17], rot: [Math.PI / 2, 0, 0], color: 0x151515 });
-  b.cyl(0.02, 0.024, 0.06, 12, { pos: [0, 0.09, 0.13], rot: [Math.PI / 2, 0, 0], color: 0x151515 });
-  b.box(0.012, 0.03, 0.02, { pos: [0, 0.062, -0.06], color: 0x151515 });
-  b.box(0.012, 0.03, 0.02, { pos: [0, 0.062, 0.06], color: 0x151515 });
-  b.cyl(0.008, 0.008, 0.025, 8, { pos: [0.024, 0.09, -0.02], rot: [0, 0, Math.PI / 2], color: 0x151515 });
-  // trigger guard
-  b.torus(0.025, 0.004, 4, 10, { pos: [0, -0.03, 0.1], rot: [0, Math.PI / 2, 0], arc: Math.PI, color: steel });
-  // sling swivel
-  b.torus(0.012, 0.003, 4, 8, { pos: [0, -0.05, -0.3], rot: [0, Math.PI / 2, 0], color: steel });
-  const rifle = new THREE.Mesh(b.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.45, metalness: 0.35 }));
-  const bolt = new ModelBuilder();
-  bolt.beam([0, 0, 0], [0.05, -0.02, 0.01], 0.005, 5, { color: 0xb0b0b0 });
-  bolt.sphere(0.012, 8, 6, { pos: [0.05, -0.02, 0.01], color: 0x1a1a1a });
-  const boltMesh = new THREE.Mesh(bolt.build(), rifle.material);
-  boltMesh.position.set(0.02, 0.04, 0.08);
-  return { rifle, bolt: boltMesh };
+  const back = yew ? 0xdcc9a0 : 0xcdb38a;
+  const belly = yew ? 0xb0612e : 0xc2a070;
+  const n = 14;
+  for (const side of [1, -1]) {
+    for (let i = 0; i < n; i++) {
+      const t0 = i / n;
+      const t1 = (i + 1) / n;
+      const y0 = GRIP + (BOW_HALF - GRIP) * t0;
+      const y1 = GRIP + (BOW_HALF - GRIP) * t1;
+      const tm = (t0 + t1) / 2;
+      const w = 0.031 * (1 - tm) + 0.012 * tm;
+      const th = 0.031 * (1 - tm) + 0.011 * tm;
+      const yc = (side * (y0 + y1)) / 2;
+      const h = y1 - y0 + 0.0005;
+      b.box(w, h, th * 0.36, { pos: [0, yc, -th * 0.32], color: back, jitter: 0.03 });
+      b.cyl(w * 0.5, w * 0.5, h, 6, { pos: [0, yc, th * 0.14], scale: [1, 1, (th * 0.64) / w], color: belly, jitter: 0.03 });
+    }
+    // horn nock at the tip
+    b.cone(0.0085, 0.05, 6, { pos: [0, side * (BOW_HALF + 0.018), 0.002], rot: [side > 0 ? 0 : Math.PI, 0, 0], color: 0xe9ddc2, jitter: 0.02 });
+    b.cyl(0.0075, 0.0085, 0.012, 6, { pos: [0, side * (BOW_HALF - 0.012), 0.002], color: 0x2b2118, jitter: 0 });
+  }
+  // leather grip with a bound edge, and the arrow pass on the left
+  b.cyl(0.02, 0.02, GRIP * 2, 10, { pos: [0, 0, 0.004], scale: [1, 1, 1.18], color: 0x3a2618, jitter: 0.05 });
+  b.cyl(0.0205, 0.0205, 0.008, 10, { pos: [0, GRIP, 0.004], scale: [1, 1, 1.18], color: 0x1d130c, jitter: 0 });
+  b.cyl(0.0205, 0.0205, 0.008, 10, { pos: [0, -GRIP, 0.004], scale: [1, 1, 1.18], color: 0x1d130c, jitter: 0 });
+  b.box(0.014, 0.012, 0.034, { pos: [-0.024, GRIP + 0.006, 0.002], color: 0x5a3a22, jitter: 0.03 });
+  return b.build();
+}
+
+function bowMaterial(uniforms) {
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0 });
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uBend = uniforms.uBend;
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform float uBend;')
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        float t = clamp((abs(position.y) - ${GRIP.toFixed(3)}) / ${(BOW_HALF - GRIP).toFixed(3)}, 0.0, 1.0);
+        float k = t * t;
+        transformed.z += uBend * k;
+        transformed.y *= 1.0 - 0.07 * uBend * k;`
+      );
+  };
+  return m;
+}
+
+// Where a bent limb's tip is, matching the shader above.
+function bowTip(bend, side, out) {
+  return out.set(0, side * (BOW_HALF - 0.015) * (1 - 0.07 * bend), bend + 0.002);
+}
+
+// Left hand closed round the grip, forearm and flannel sleeve running back
+// toward the shoulder.
+function buildBowArm() {
+  const b = new ModelBuilder();
+  const skin = 0xd9a27c;
+  const crease = 0xbf8662;
+  b.box(0.05, 0.09, 0.05, { pos: [-0.008, -0.004, 0.024], color: skin });
+  for (let i = 0; i < 4; i++) b.box(0.056, 0.02, 0.022, { pos: [-0.006, 0.03 - i * 0.021, -0.024], color: i % 2 ? crease : skin });
+  b.box(0.022, 0.05, 0.024, { pos: [0.024, 0.02, 0.02], rot: [0, 0, -0.35], color: skin });
+  const dir = [-0.42, -0.46, 0.78];
+  const n = Math.hypot(dir[0], dir[1], dir[2]);
+  const at = (t, o = [0, 0, 0]) => [o[0] + (dir[0] / n) * t, o[1] + (dir[1] / n) * t, o[2] + (dir[2] / n) * t];
+  const w = [-0.01, -0.02, 0.04];
+  b.beam(at(0, w), at(0.12, w), 0.026, 12, { r2: 0.029, color: skin, smooth: true });
+  b.beam(at(0.11, w), at(0.15, w), 0.042, 12, { r2: 0.043, color: 0x3a1a14, smooth: true });
+  for (let i = 0; i < 7; i++) {
+    const t0 = 0.15 + i * 0.07;
+    b.beam(at(t0, w), at(t0 + 0.07, w), 0.045 + i * 0.004, 12, { r2: 0.049 + i * 0.004, color: i % 2 ? 0x7a1812 : 0xb2261e, smooth: true });
+  }
+  return b.build();
+}
+
+// Right hand hooking the string with three fingers, forearm back past the
+// cheek toward the raised elbow.
+function buildDrawArm() {
+  const b = new ModelBuilder();
+  const skin = 0xd9a27c;
+  const crease = 0xbf8662;
+  for (let i = 0; i < 3; i++) b.box(0.02, 0.018, 0.05, { pos: [-0.004, 0.022 - i * 0.022, -0.004], color: i % 2 ? crease : skin });
+  b.box(0.05, 0.07, 0.06, { pos: [0.022, 0.0, 0.036], color: skin });
+  b.box(0.02, 0.02, 0.05, { pos: [0.036, 0.034, 0.012], rot: [0.3, 0, 0], color: skin });
+  const dir = [0.42, -0.1, 0.9];
+  const n = Math.hypot(dir[0], dir[1], dir[2]);
+  const at = (t, o) => [o[0] + (dir[0] / n) * t, o[1] + (dir[1] / n) * t, o[2] + (dir[2] / n) * t];
+  const w = [0.03, -0.006, 0.06];
+  b.beam(at(0, w), at(0.11, w), 0.025, 12, { r2: 0.028, color: skin, smooth: true });
+  b.beam(at(0.1, w), at(0.14, w), 0.041, 12, { r2: 0.042, color: 0x3a1a14, smooth: true });
+  for (let i = 0; i < 6; i++) {
+    const t0 = 0.14 + i * 0.07;
+    b.beam(at(t0, w), at(t0 + 0.07, w), 0.044 + i * 0.004, 12, { r2: 0.048 + i * 0.004, color: i % 2 ? 0x7a1812 : 0xb2261e, smooth: true });
+  }
+  return b.build();
+}
+
+const _ta = new THREE.Vector3();
+const _tb = new THREE.Vector3();
+const _nk = new THREE.Vector3();
+const _up = new THREE.Vector3(0, 1, 0);
+const _sq = new THREE.Quaternion();
+
+// Place a unit-height cylinder (along +y from its base) between a and b.
+function stretch(mesh, a, b) {
+  _tb.subVectors(b, a);
+  const len = _tb.length();
+  mesh.position.copy(a);
+  _sq.setFromUnitVectors(_up, _tb.divideScalar(len || 1));
+  mesh.quaternion.copy(_sq);
+  mesh.scale.set(1, len, 1);
 }
 
 export class Viewmodel {
@@ -192,23 +280,27 @@ export class Viewmodel {
     this.root.add(this.rodRig);
     this.rodBase = new THREE.Vector3(0.24, -0.3, -0.46);
 
-    // rifle rig
-    const r = buildRifle();
-    this.rifleRig = new THREE.Group();
-    this.rifleRig.add(r.rifle, r.bolt);
-    this.bolt = r.bolt;
-    const lh = new THREE.Mesh(buildHand(), handMat);
-    lh.position.set(-0.01, -0.05, -0.28);
-    lh.rotation.set(0, 0.2, 0.3);
-    lh.scale.set(0.9, 0.9, 0.9);
-    this.rifleRig.add(lh);
-    const rh = new THREE.Mesh(buildHand(), handMat);
-    rh.position.set(0.02, -0.06, 0.16);
-    rh.scale.set(0.9, 0.9, 0.9);
-    this.rifleRig.add(rh);
-    this.root.add(this.rifleRig);
-    this.rifleBase = new THREE.Vector3(0.2, -0.25, -0.42);
-    this.muzzleLocal = new THREE.Vector3(0, 0.035, -0.73);
+    // longbow rig: bow, both hands, string halves and the nocked arrow
+    this.bowUniforms = { uBend: { value: 0.16 } };
+    const bowMat = bowMaterial(this.bowUniforms);
+    this.bowRig = new THREE.Group();
+    this.bowAsh = new THREE.Mesh(buildBow(false), bowMat);
+    this.bowYew = new THREE.Mesh(buildBow(true), bowMat);
+    this.bowYew.visible = false;
+    this.bowArm = new THREE.Mesh(buildBowArm(), handMat);
+    this.drawArm = new THREE.Mesh(buildDrawArm(), handMat);
+    const stringMat = new THREE.MeshStandardMaterial({ color: 0xe6dfcc, roughness: 0.9 });
+    const stringGeo = new THREE.CylinderGeometry(0.0013, 0.0013, 1, 4, 1, true);
+    stringGeo.translate(0, 0.5, 0);
+    this.stringTop = new THREE.Mesh(stringGeo, stringMat);
+    this.stringBottom = new THREE.Mesh(stringGeo, stringMat);
+    this.bowArrow = new THREE.Mesh(arrowGeometry(1), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6 }));
+    this.bowRig.add(this.bowAsh, this.bowYew, this.bowArm, this.drawArm, this.stringTop, this.stringBottom, this.bowArrow);
+    this.root.add(this.bowRig);
+    this.drawPose = 0; // 0 lowered and canted, 1 raised to the eye
+    this.stringDraw = 0; // how far the string is back, 0..1
+    this.looseT = 1; // time since the last loose (1 = settled)
+    this.stringWobble = 0;
 
     // held fish
     this.fishRig = new THREE.Group();
@@ -222,18 +314,14 @@ export class Viewmodel {
     this.switchT = 1;
     this.raise = 1;
     this.visible = true;
-    this.scoped = false;
     this.swayX = 0;
     this.swayY = 0;
-    this.recoilT = 1;
-    this.boltT = 1;
-    this.reloadT = 1;
     this.castT = -1;
     this.reelSpin = 0;
     this.rodPose = { pitch: 0.34, side: 0, bendX: 0, bendY: 0, reeling: 0, shake: 0 };
     this.rodPoseTarget = { ...this.rodPose };
     this.fishT = 0;
-    this.rifleRig.visible = false;
+    this.bowRig.visible = false;
     this.fishRig.visible = false;
   }
 
@@ -248,8 +336,9 @@ export class Viewmodel {
     this.switchT = 0;
   }
 
-  setScoped(on) {
-    this.scoped = on;
+  setBowWood(yew) {
+    this.bowYew.visible = !!yew;
+    this.bowAsh.visible = !yew;
   }
 
   // Cast animation: starts the wind-up and whip.
@@ -257,13 +346,10 @@ export class Viewmodel {
     this.castT = 0;
   }
 
-  recoil() {
-    this.recoilT = 0;
-    this.boltT = -0.25;
-  }
-
-  reload() {
-    this.reloadT = 0;
+  // The string snaps home and the bow jumps in the hand.
+  loose(power) {
+    this.looseT = 0;
+    this.stringWobble = 0.02 + power * 0.03;
   }
 
   showFish(id, lengthCm) {
@@ -300,12 +386,6 @@ export class Viewmodel {
     out.applyMatrix4(this.rod.matrixWorld);
     // overlay camera sits at the origin with identity rotation; map to world
     out.applyMatrix4(this.game.camera.matrixWorld);
-    return out;
-  }
-
-  muzzleWorld(out = new THREE.Vector3()) {
-    this.rifleRig.updateWorldMatrix(true, false);
-    out.copy(this.muzzleLocal).applyMatrix4(this.rifleRig.matrixWorld).applyMatrix4(this.game.camera.matrixWorld);
     return out;
   }
 
@@ -353,7 +433,7 @@ export class Viewmodel {
 
     const showFish = !!this.fishModel;
     this.rodRig.visible = this.shown === 'rod' && !showFish && this.visible;
-    this.rifleRig.visible = this.shown === 'rifle' && !this.scoped && !showFish && this.visible;
+    this.bowRig.visible = this.shown === 'bow' && !showFish && this.visible;
 
     // ---- rod
     if (this.rodRig.visible) {
@@ -383,30 +463,47 @@ export class Viewmodel {
       this.reel.userData.handle.rotation.x = this.reelSpin;
     }
 
-    // ---- rifle
-    if (this.rifleRig.visible || this.shown === 'rifle') {
-      this.recoilT = Math.min(1, this.recoilT + dt * 5);
-      this.boltT = Math.min(1, this.boltT + dt * 1.6);
-      this.reloadT = Math.min(1, this.reloadT + dt * 0.5);
-      const rk = this.recoilT < 1 ? Math.sin(this.recoilT * Math.PI) * (1 - this.recoilT) : 0;
-      const rl = this.reloadT < 1 ? Math.sin(this.reloadT * Math.PI) : 0;
-      this.rifleRig.position.set(
-        this.rifleBase.x + this.swayX + bobX,
-        this.rifleBase.y + bob + this.swayY - lowered + breathe - rl * 0.18,
-        this.rifleBase.z + rk * 0.12
+    // ---- longbow
+    if (this.bowRig.visible) {
+      const H = game.hunting;
+      const drawing = !!(H && H.drawing);
+      const nocking = H ? H.nockT : 0;
+      const hasArrow = game.state.gear.arrows > 0;
+      this.drawPose = damp(this.drawPose, drawing || (H && H.aiming) ? 1 : 0, drawing ? 9 : 5, dt);
+      // the string follows the draw and snaps home on the loose with a buzz
+      this.looseT = Math.min(1, this.looseT + dt * 2.5);
+      if (drawing) this.stringDraw = H.draw;
+      else this.stringDraw = Math.max(0, this.stringDraw - dt * 14);
+      this.stringWobble *= Math.exp(-dt * 9);
+      const buzz = Math.sin(this.looseT * 90) * this.stringWobble;
+      const bend = 0.16 + 0.15 * this.stringDraw;
+      this.bowUniforms.uBend.value = bend;
+      // lowered and canted when idle, raised to the eye to draw; the bow
+      // jumps forward a little on the loose, and trembles when a full draw is
+      // held too long
+      const u = this.drawPose;
+      const kick = this.looseT < 1 ? Math.sin(this.looseT * Math.PI) * (1 - this.looseT) : 0;
+      const tremble = H && H.fullT > 3 ? Math.sin(game.time * 23) * 0.0025 * Math.min(1, (H.fullT - 3) * 0.6) : 0;
+      // at full draw the arrow lies right under the eye, the string at the
+      // chin, the bow at arm's length a little to the right of the arrow
+      this.bowRig.position.set(
+        lerp(-0.02, 0.03, u) + this.swayX + bobX * (1 - u) + tremble,
+        lerp(-0.3, -0.105, u) + bob * (1 - u * 0.7) + this.swayY - lowered + breathe * (1 - u * 0.5) + tremble * 0.7,
+        lerp(-0.52, -0.66, u) - kick * 0.03
       );
-      this.rifleRig.rotation.set(rk * 0.35 - rl * 0.5, 0.04, rl * 0.6);
-      // bolt: lift and pull back
-      const bt = this.boltT;
-      if (bt > 0 && bt < 1) {
-        const lift = Math.sin(Math.min(1, bt * 2) * Math.PI) * 1.2;
-        const pull = Math.sin(bt * Math.PI) * 0.06;
-        this.bolt.rotation.z = lift;
-        this.bolt.position.z = 0.08 + pull;
-      } else {
-        this.bolt.rotation.z = 0;
-        this.bolt.position.z = 0.08;
-      }
+      this.bowRig.rotation.set(lerp(0.25, 0, u) - kick * 0.12, lerp(0.3, 0, u), lerp(-0.75, -0.2, u) + kick * 0.05);
+      // string from the tips to the nocking point
+      const braceZ = bowTip(0.16, 1, _ta).z;
+      _nk.set(0, 0.035, braceZ + (0.8 - braceZ) * this.stringDraw + buzz);
+      stretch(this.stringTop, _nk, bowTip(bend, 1, _ta));
+      stretch(this.stringBottom, _nk, bowTip(bend, -1, _ta));
+      // after a loose the right hand fetches the next arrow from the quiver
+      const p = nocking > 0 ? 1 - nocking / 0.75 : 1;
+      const fetch = nocking > 0 ? Math.sin(p * Math.PI) : 0;
+      this.bowArrow.visible = hasArrow && (nocking <= 0 || p > 0.55);
+      this.bowArrow.position.set(-0.03, _nk.y - fetch * 0.25, _nk.z - 0.75 + fetch * 0.1);
+      this.bowArrow.rotation.set(0, Math.PI, 0);
+      this.drawArm.position.set(_nk.x + 0.004 + fetch * 0.12, _nk.y - 0.012 - fetch * 0.3, _nk.z + 0.01 + fetch * 0.05);
     }
 
     // ---- held fish

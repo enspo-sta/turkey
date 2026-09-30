@@ -98,7 +98,8 @@ export class Player {
     else if (mag < 0.5) this.sprintTime = 0;
     const sprint = (input.key('ShiftLeft') || input.key('ShiftRight') || this.sprintTime > 0.45) && my < -0.3;
     let speed = sprint ? 7.2 : 4.3;
-    if (game.hunting && game.hunting.scoped) speed = 1.8;
+    // slow, careful steps while aiming or holding a draw
+    if (game.hunting && (game.hunting.aiming || game.hunting.drawing)) speed = 1.8;
 
     const water = this.onDeck ? null : W.waterAt(this.pos.x, this.pos.z);
     this.water = water;

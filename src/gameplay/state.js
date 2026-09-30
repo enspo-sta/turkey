@@ -48,9 +48,9 @@ export class GameState {
       rods: ['classic'],
       lure: 'spinner',
       lures: ['spinner'],
-      scope: false,
-      ammo: 20,
-      mag: 4,
+      sight: false,
+      yew: false,
+      arrows: 18,
       spray: 1,
       medkit: 1,
       cooler: 0,
@@ -248,6 +248,15 @@ export class GameState {
         started: !!d.started,
       });
       this.gear = { ...this.gear, ...(d.gear || {}) };
+      // saves from the rifle days: the scope becomes the bow sight and the
+      // quiver starts full
+      if (d.gear && d.gear.arrows === undefined) {
+        this.gear.sight = !!d.gear.scope;
+        this.gear.arrows = 18;
+      }
+      delete this.gear.scope;
+      delete this.gear.ammo;
+      delete this.gear.mag;
       return true;
     } catch (e) {
       return false;
