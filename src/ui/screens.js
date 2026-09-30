@@ -699,6 +699,7 @@ export class Screens {
       <div class="setting"><label>Graphics</label><div class="seg" id="s-quality">${['low', 'medium', 'high']
         .map((k) => `<button data-q="${k}" class="${q === k ? 'on' : ''}">${k.toUpperCase()}</button>`)
         .join('')}</div></div>
+      <p class="setting-note">High adds bloom, sun rays, the longest shadows and the densest forests. Medium and Low run cooler on older devices.</p>
       <div class="setting"><label>Adjust graphics automatically</label><div class="seg" id="s-auto"><button data-v="0" class="${st.autoQuality === false ? 'on' : ''}">OFF</button><button data-v="1" class="${st.autoQuality === false ? '' : 'on'}">ON</button></div></div>
       <div class="setting"><label>Show frame rate</label><div class="seg" id="s-fps"><button data-v="0" class="${st.showFps ? '' : 'on'}">OFF</button><button data-v="1" class="${st.showFps ? 'on' : ''}">ON</button></div></div>
       <div class="setting"><label for="s-vol">Sound volume</label><input type="range" id="s-vol" min="0" max="1" step="0.05" value="${st.volume}"></div>

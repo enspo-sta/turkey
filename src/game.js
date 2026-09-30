@@ -15,6 +15,7 @@ import { Props } from './world/props.js';
 import { buildRoads } from './world/roads.js';
 import { Scenery } from './world/scenery.js';
 import { Floaters } from './world/floaters.js';
+import { PostFX } from './world/post.js';
 import { makeDetailTexture, makeCloudTexture, makeWaterNormalTexture, makeCausticTexture, makeTerrainDetailTexture } from './util/textures.js';
 
 export const IS_TOUCH =
@@ -23,10 +24,12 @@ export const IS_TOUCH =
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
     ('ontouchstart' in window && navigator.maxTouchPoints > 0));
 
+// High is the default: the game targets iPhone 13 and newer. Medium and Low
+// remain for older devices and as steps down when a device runs hot.
 export const QUALITY = {
-  low: { dpr: 1.0, shadow: 0, shadowDist: 0, grass: 0.45, scatter: 0.6, lod: 0.7, reflect: 0, farShadows: false, fish: 0.5 },
-  medium: { dpr: 1.5, shadow: 1024, shadowDist: 190, grass: 0.75, scatter: 0.85, lod: 0.9, reflect: 128, farShadows: false, fish: 0.8 },
-  high: { dpr: 2.0, shadow: 2048, shadowDist: 260, grass: 1.0, scatter: 1.0, lod: 1.0, reflect: 256, farShadows: true, fish: 1.0 },
+  low: { dpr: 1.0, shadow: 0, shadowDist: 0, grass: 0.45, scatter: 0.6, lod: 0.7, reflect: 0, farShadows: false, fish: 0.5, post: false },
+  medium: { dpr: 1.5, shadow: 1024, shadowDist: 190, grass: 0.75, scatter: 0.85, lod: 0.9, reflect: 128, farShadows: false, fish: 0.8, post: false },
+  high: { dpr: 2.0, shadow: 2048, shadowDist: 260, grass: 1.0, scatter: 1.0, lod: 1.0, reflect: 256, farShadows: true, fish: 1.0, post: true },
 };
 
 const _c = new THREE.Color();
@@ -39,7 +42,7 @@ export class Game {
     this.timer = new THREE.Timer();
     this.time = 0;
     this.paused = false;
-    this.qualityName = IS_TOUCH ? 'medium' : 'high';
+    this.qualityName = 'high';
   }
 
   async init(progress = () => {}) {
@@ -56,6 +59,8 @@ export class Game {
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.autoClear = false;
     this.renderer = renderer;
+    // bloom, sun rays and the colour grade (High preset)
+    this.post = new PostFX(renderer);
     this.container.appendChild(renderer.domElement);
     renderer.domElement.setAttribute('aria-label', 'Ruben Hotrod Fishing game view');
 
@@ -171,6 +176,7 @@ export class Game {
     this.terrain.lodBias = q.lod;
     this.water.setReflectionSize(q.reflect);
     this.fish?.setDensity(q.fish);
+    this.post.enabled = !!q.post;
     this.resize();
     this.scatter.lastPos.set(1e9, 0, 0);
   }
@@ -313,11 +319,34 @@ export class Game {
 
   render() {
     const r = this.renderer;
-    r.clear();
-    r.render(this.scene, this.camera);
-    if (this.overlay && this.overlay.enabled) {
-      r.clearDepth();
-      r.render(this.overlay.scene, this.overlay.camera);
+    const draw = this.drawScene || (this.drawScene = () => {
+      r.render(this.scene, this.camera);
+      if (this.overlay && this.overlay.enabled) {
+        r.clearDepth();
+        r.render(this.overlay.scene, this.overlay.camera);
+      }
+    });
+    if (this.post.enabled) {
+      const env = this.env;
+      this.post.render(draw, this.camera, env.sunDir, env.sun.color, this.sunRays());
+      return;
     }
+    r.setRenderTarget(null);
+    r.clear();
+    draw();
+  }
+
+  // How strongly the sun streams through gaps: most at a low sun, little
+  // under cloud or rain, none at night or under water.
+  sunRays() {
+    const env = this.env;
+    const e = env.sunElevation;
+    const w = env.weather;
+    const low = 1 - THREE.MathUtils.smoothstep(e, 10, 42);
+    let k = THREE.MathUtils.smoothstep(e, -3, 3) * (0.3 + 0.7 * low);
+    k *= 1 - 0.8 * THREE.MathUtils.smoothstep(w.cloud, 0.5, 0.95);
+    k *= 1 - Math.min(1, w.rain * 1.5);
+    if (this.water.viewLevel != null && this.camera.position.y < this.water.viewLevel) k = 0;
+    return k * 0.55;
   }
 }

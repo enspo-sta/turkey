@@ -327,6 +327,7 @@ svg { width: 1em; height: 1em; display: block; }
 .pause-menu #p-resume, .pause-menu .catch-info { grid-column: 1 / -1; }
 .setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
 .setting label { font-weight: 700; font-size: 16px; letter-spacing: .04em; }
+.setting-note { margin: -8px 4px 0; font-size: 13px; line-height: 1.45; color: var(--muted, #b9c2cf); }
 .seg { display: flex; gap: 4px; }
 .seg button { padding: 7px 12px; border-radius: 9px; border: 1px solid var(--line); background: rgba(255,255,255,.05); font-weight: 800; font-size: 14px; letter-spacing: .08em; cursor: pointer; }
 .seg button.on { background: var(--flame); border-color: #ffb36b; color: #fff; }
