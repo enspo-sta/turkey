@@ -918,7 +918,8 @@ export class Fishing {
       F.eagleRolled = true;
       const fish = F.fish;
       const chance = g.debugEagle ? 1 : 0.07;
-      if (fish.weight < 3.2 && !fish.legend && g.env.night < 0.5 && Math.random() < chance) {
+      const veteran = g.state.stats.caught >= 3 || g.debugEagle;
+      if (veteran && fish.weight < 3.2 && !fish.legend && g.env.night < 0.5 && Math.random() < chance) {
         const ok = g.wildlife.swoopSteal(
           () => (this.jumper ? this.jumper.position : F.pos),
           (bird) => this.stolen(bird)

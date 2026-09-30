@@ -138,9 +138,9 @@ With a free Apple ID the installed app runs for seven days before it has to be
 installed again from Xcode. To keep it longer, share it with TestFlight or
 publish on the App Store you need the
 [Apple Developer Program](https://developer.apple.com/programs/): 99 USD per
-membership year, which Apple charges in local currency during enrollment
-(roughly 1 000 to 1 200 kronor in Sweden depending on the exchange rate). See
-Apple's
+membership year, roughly 950 to 1 050 kr or 85 to 92 € depending on the
+exchange rate. Apple shows the exact amount in your local currency when you
+[enroll](https://developer.apple.com/programs/enroll/). See Apple's
 [distribution guide](https://developer.apple.com/documentation/xcode/distributing-your-app-for-beta-testing-and-releases).
 
 The app bundles the `dist` folder as it is, so run `npm run build` before
