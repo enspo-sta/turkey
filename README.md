@@ -38,16 +38,24 @@ compressed).
 - The fight: hold **REEL** while keeping the tension needle in the green, let
   go when the fish runs, steer the rod against its runs, and stop reeling when
   it jumps or it throws the hook. Lines snap, go slack and get spooled.
-- 16 species: Pink, Sockeye, Coho, King and Chum Salmon, Rainbow Trout, Dolly
-  Varden, Arctic Grayling, Arctic Char, Lake Trout, Northern Pike, Burbot (at
-  night), Pacific Halibut, Lingcod, Yelloweye Rockfish and Pacific Cod. Each has
-  its own waters, lure preferences and fighting style.
+- 28 species in four tiers of rarity. Common: Pink and Sockeye Salmon, Dolly
+  Varden, Arctic Grayling, Northern Pike, Pacific Cod, Round Whitefish, Black
+  Rockfish, Kelp Greenling and Pacific Staghorn Sculpin. Uncommon: Coho and Chum
+  Salmon, Rainbow Trout, Arctic Char, Lake Trout, Burbot (at night), Pacific
+  Halibut, Lingcod, Coastal Cutthroat Trout, Kokanee, Starry Flounder and Spiny
+  Dogfish. Rare: King Salmon, Steelhead, and Yelloweye and Quillback Rockfish.
+  Epic: Big Skate and Salmon Shark, both off Halibut Pier. Each has its own
+  waters, lure preferences and fighting style. Rarer fish bite less often and
+  are worth more, and a cast to a hotspot or a perfect cast raises the odds.
 - Six legendary fish, each at its own spot and only on the right lure: Miss
   Dolly, Rusty the Leopard, Old Chrome, The Ice Ghost, Big Bertha and Barn Door.
-- Five lures (Hotrod Spinner, Egg-Sucking Leech, Flash Spoon, Diving Plug,
-  Herring Jig) and three rods (Hotrod Classic, Hotrod Pro, Hotrod Big Block).
-- A Fish Journal with personal records, and a bald eagle that sometimes dives in
-  and steals a small fish right as you land it.
+- Twelve lures: Hotrod Spinner, Glo Bead, Mosquito Dry Fly, Egg-Sucking Leech,
+  Woolly Bugger, Flash Spoon, Paddle-tail Swimbait, Pike Popper, Octopus
+  Hoochie, Circle Hook and Squid, Diving Plug and Herring Jig. Three rods:
+  Hotrod Classic, Hotrod Pro and Hotrod Big Block (you need the Big Block, and
+  a light touch on **REEL** while it runs, for a salmon shark).
+- A Fish Journal sorted by rarity with personal records, and a bald eagle that
+  sometimes dives in and steals a small fish right as you land it.
 
 **The hot rod and the places**
 
@@ -57,6 +65,9 @@ compressed).
 - Arcade driving with cockpit and chase cameras, a horn, engine sound that
   follows the revs, and upgrades: Flathead V8, Small-block 350 and a blown
   big-block, all-terrain tires, and four paint jobs.
+- A small map in the top left corner that turns as you do and shows the land
+  around you, the places you know, the hot rod, your next goal and a charging
+  grizzly. It zooms out while you drive, and a tap opens the full map.
 - Fast travel from the map to any place you have already discovered (the trip
   costs in-game time), and sleep at the cabin to skip the night.
 
@@ -111,9 +122,18 @@ compressed).
 - Native ground plants: devil's club in the wet forest, blueberry and Labrador
   tea, cotton grass on the tundra, horsetail on the banks, skunk cabbage in the
   swamps and mushrooms on the forest floor.
-- Mountains with rock bands and snow on the high peaks (lower on the north
-  faces), a steaming volcano across the inlet, a great snow massif to the
-  north, clouds clinging to the summits and cascades pouring down the cliffs.
+- Mountains with rounded summits and rock bands, forest climbing their flanks
+  to about 150 metres and snow on the high peaks (lower on the north faces), a
+  steaming volcano across the inlet, a great snow massif to the north, clouds
+  clinging to the summits and cascades pouring down the cliffs.
+- Weather you can see on the land: cloud shadows drift over the meadows, the
+  forest, the water and the far mountains (and when one covers you, a cloud
+  hides the sun); gusts of wind roll across the grass in paler waves, bend the
+  trees and ruffle the lakes; mist lies in the valleys and over the water at
+  dawn, in the evening and after rain, with the peaks clear above it; after a
+  shower the ground is dark and glossy, puddles on the roads and gravel bars
+  mirror the sky and the trees, the low sun glints off the wet ground, and a
+  rainbow can stand opposite the sun while the last rain falls.
 - Insects: butterflies over the meadows, bumblebees on the fireweed,
   dragonflies over the shallows, mosquito swarms at dusk, moths round the lights
   at night, and cottonwood fluff drifting over the rivers.
@@ -125,7 +145,7 @@ compressed).
   lights, rain showers, a waterfall with mist, a glacier that calves slabs of
   ice into Glacier Lake with a boom and a wave, a lighthouse beam at night, and
   animals that react to where you are.
-- 16 challenges with cash rewards guide you through the game, from "Catch your
+- 19 challenges with cash rewards guide you through the game, from "Catch your
   first fish at Hotrod Landing" to "Complete the Fish Journal".
 - Progress saves automatically.
 - Graphics presets in Settings. High is the default (the game is made for
@@ -151,7 +171,7 @@ compressed).
 | Keep or release a catch | **KEEP** / **RELEASE** on the catch card | `E` or `Enter` / `R` |
 | Drive | **GAS**, **BRAKE**, steer by dragging on the left half | `W` gas, `S` brake and reverse, `A` / `D` steer |
 | Car camera / horn | Camera and horn buttons | `C` / `H` |
-| Lures / map / journal / pause and save | **LURE** next to **CAST**; map, journal and pause at the top | `L` / `M` / `J` / `Esc` |
+| Lures / map / journal / pause and save | **LURE** next to **CAST**; map, journal and pause at the top (or tap the small map) | `L` / `M` / `J` / `Esc` |
 
 ## Saving
 
@@ -259,9 +279,9 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/world/layout.js` | The peninsula: coastline, river, lakes, glacier, roads and the nine places |
 | `src/world/worldgen.js` | Height field, river and lake carving, road grading, surface types and water queries |
 | `src/world/terrain.js`, `worldtex.js` | Chunked terrain with levels of detail, the ground material with per-surface detail, and the world textures (height, colour, surfaces, water levels) |
-| `src/world/worldfx.js` | Shading shared by every material: haze, light under water with caustics, mountain shadows and sky occlusion |
+| `src/world/worldfx.js` | Shading shared by every material: haze and valley mist, light under water with caustics, mountain and cloud shadows, sky occlusion, gusts of wind, and wet ground with puddles |
 | `src/world/lighting.js` | The mountain shadow and sky visibility maps, computed on the graphics processor |
-| `src/world/sky.js` | Sky dome with sun, moon, stars, clouds and northern lights, the cascaded sun shadows, and the day and night cycle |
+| `src/world/sky.js` | Sky dome with sun, moon, stars, clouds, rainbows and northern lights, the cascaded sun shadows, the weather, and the day and night cycle |
 | `src/world/water.js`, `effects.js`, `calving.js` | River, lake and sea surfaces with animated waves and reflections, the waterfall, splashes, ripples, rain, mist and dust, and the calving glacier |
 | `src/world/scatter.js`, `grass.js`, `props.js`, `roads.js`, `colliders.js` | Forests, ground plants and rocks, wind-blown grass, buildings, bridges, the pier and lighthouse, gravel roads and collision |
 | `src/world/scenery.js` | Volcano steam, clouds on the peaks and the cascades down the cliffs |
@@ -269,12 +289,12 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/world/post.js` | Bloom, sun rays and the colour grade of the High preset |
 | `src/entities/insects.js` | Butterflies, bumblebees, dragonflies, mosquitoes, moths and cottonwood fluff |
 | `src/entities/player.js`, `hotrod.js`, `viewmodel.js` | Walking, the drivable hot rod, and the first-person rod, longbow and hands |
-| `src/entities/wildlife.js`, `animalmodels.js`, `fishmodels.js`, `ambientfish.js` | Animal and bird behaviour and their low-poly models, the 16 fish models, and the fish schools you can see in the water |
+| `src/entities/wildlife.js`, `animalmodels.js`, `fishmodels.js`, `ambientfish.js` | Animal and bird behaviour and their low-poly models, the 28 fish models, and the fish schools you can see in the water |
 | `src/gameplay/fishing.js` | Casting meter, float and bites, the fight, landing, the eagle, and catches |
 | `src/gameplay/hunting.js`, `bears.js` | The longbow, arrows in flight and hit zones, and the grizzly encounters |
 | `src/gameplay/data.js`, `state.js` | Fish, lures, rods, gear, places and challenges, and the save game |
 | `src/audio/audio.js` | All sound and music, synthesised with the Web Audio interface |
-| `src/ui/` | HUD, menus, the Trading Post, garage, map and journal, touch and keyboard input, and styles |
+| `src/ui/` | HUD, the small map, menus, the Trading Post, garage, map and journal, touch and keyboard input, and styles |
 | `ios/` | The Xcode project for the native iOS app |
 | `tools/shot.mjs`, `tools/scenarios/` | Headless screenshot and gameplay test harness with scripted scenarios |
 | `tools/make-icons.mjs`, `tools/serve.mjs`, `tools/preview-map.mjs` | Icon drawing, the local network server, and a top-down map preview of the world |
@@ -295,6 +315,9 @@ node tools/shot.mjs tools/scenarios/eagle.json   # a bald eagle steals a small f
 node tools/shot.mjs tools/scenarios/mobile.json  # phone-sized touch layout
 node tools/shot.mjs tools/scenarios/catch-touch.json  # real taps on KEEP and RELEASE on a phone-sized touch screen
 node tools/shot.mjs tools/scenarios/catch-mouse.json  # real clicks and keys on the catch card with the mouse locked to the view
+node tools/shot.mjs tools/scenarios/reel-stuck.json   # a held REEL button always lets go, and nothing reels unless you press
+node tools/shot.mjs tools/scenarios/fish-species.json # lands each of the twelve newer fish, then shows the journal by rarity and the tackle box
+node tools/shot.mjs tools/scenarios/minimap.json      # the small map on foot and driving, its goal marker, and a tap to the full map
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot
 node tools/shot.mjs tools/scenarios/fish-views.json   # fish schools, a fish approaching the float and the fight
 node tools/shot.mjs tools/scenarios/light-views.json  # morning, noon, evening, sunset and night lighting
@@ -305,6 +328,8 @@ node tools/shot.mjs tools/scenarios/vistas.json       # the volcano, the snow ma
 node tools/shot.mjs tools/scenarios/insects.json      # butterflies, bees and dragonflies by day, mosquitoes at dusk, moths at night
 node tools/shot.mjs tools/scenarios/floaters.json     # driftwood and branches on the river, pond lilies, ice floes
 node tools/shot.mjs tools/scenarios/post.json         # bloom, sun rays and the colour grade, with and without
+node tools/shot.mjs tools/scenarios/mountains.json    # Mount Ruben, the tundra and Sawtooth Ridge: gentler slopes and the higher tree line
+node tools/shot.mjs tools/scenarios/tricks.json       # cloud shadows, valley mist, wet ground and puddles, a rainbow and gusts of wind
 node tools/shot.mjs tools/scenarios/perf-breakdown.json  # draw calls and triangles per rendering pass
 node tools/shot.mjs tools/scenarios/perf-views.json   # draw calls, triangles and frame time at eight places (perf-views-medium.json for Medium)
 node tools/shot.mjs tools/scenarios/fps-readout.json  # the frame rate readout, the automatic step-down and its switch

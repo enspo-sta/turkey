@@ -408,7 +408,8 @@ export class Viewmodel {
       this.sunVisTarget = game.lighting.sunVisibility(eye.x, eye.y - 0.3, eye.z, env.lightDir);
     }
     this.sunVis = (this.sunVis ?? 1) + ((this.sunVisTarget ?? 1) - (this.sunVis ?? 1)) * Math.min(1, dt * 3);
-    this.sun.intensity = env.sun.intensity * 0.85 * this.sunVis;
+    // and so does the shadow of a passing cloud
+    this.sun.intensity = env.sun.intensity * 0.85 * this.sunVis * (1 - env.uniforms.uSunVeil.value);
     const ld = env.lightDir;
     // light direction into camera space
     const inv = game.camera.quaternion.clone().invert();

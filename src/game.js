@@ -33,6 +33,12 @@ export const QUALITY = {
 };
 
 const _c = new THREE.Color();
+// cloud shadows: wind speed (m/s) and the size of one repeat of the cloud
+// texture on the ground (m, as in fxCloudShadow in worldfx.js); valley mist
+// density at sea level (per m)
+const CLOUD_SPEED = 9;
+const CLOUD_SCALE = 1800;
+const MIST_DENSITY = 0.0032;
 const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
 
 export class Game {
@@ -100,6 +106,8 @@ export class Game {
     FX.uFxSunDir.value = this.env.sunDir;
     FX.uFxHorizon.value = this.env.uniforms.uHorizon.value;
     FX.uFxGlow.value = this.env.uniforms.uGlow.value;
+    FX.uFxCloudTex.value = this.textures.cloud;
+    this.fx = FX; // for tests and tuning
     // The reflection probe draws its own copies of the sky and the terrain
     // (same shaders and uniforms, separate material instances; see
     // reflectionMaterial), so no material switches shaders every frame. The
@@ -307,10 +315,37 @@ export class Game {
   // Light-dependent inputs of the shared world shading.
   updateFx() {
     const env = this.env;
+    const w = env.weather;
     FX.uFxTime.value = this.time;
     const e = env.sunElevation;
-    const clear = 1 - Math.min(1, Math.max(0, (env.weather.cloud - 0.45) / 0.45));
-    FX.uFxCausticStr.value = Math.min(1, Math.max(0, e / 25)) * (0.35 + 0.65 * clear) * (1 - env.weather.rain * 0.8);
+    const clear = 1 - Math.min(1, Math.max(0, (w.cloud - 0.45) / 0.45));
+    FX.uFxCausticStr.value = Math.min(1, Math.max(0, e / 25)) * (0.35 + 0.65 * clear) * (1 - w.rain * 0.8);
+    // cloud shadows drift with the wind; under a full overcast the sun is
+    // dimmed as a whole instead, and there are none at night
+    const wind = FX.uFxWind.value;
+    const cl = FX.uFxClouds.value;
+    const drift = (this.time * CLOUD_SPEED) / CLOUD_SCALE;
+    cl.x = -((drift * wind.x) % 1);
+    cl.y = -((drift * wind.y) % 1);
+    cl.z = 0.66 - w.cloud * 0.42;
+    cl.w = 0.8 * (1 - THREE.MathUtils.smoothstep(w.cloud, 0.62, 0.95)) * THREE.MathUtils.smoothstep(e, -2, 8);
+    wind.z = 1 + w.rain * 0.45;
+    // the sun disc and its rays hide while a cloud's shadow covers the player
+    const veil = 1 - this.cloudShadowAt(this.camera.position);
+    env.uniforms.uSunVeil.value += (veil - env.uniforms.uSunVeil.value) * Math.min(1, this.dt * 3);
+    // valley mist: thick at dawn, gone by late morning, back in the evening
+    // and after rain; always a trace of haze in the low ground
+    const h = env.time;
+    let m = 0.06;
+    if (h < 7.5) m = 0.75 + 0.25 * THREE.MathUtils.smoothstep(h, 4.5, 6);
+    else if (h < 10.5) m = THREE.MathUtils.lerp(1, 0.06, THREE.MathUtils.smoothstep(h, 7.5, 10.5));
+    else if (h > 19.5) m = THREE.MathUtils.lerp(0.06, 0.75, THREE.MathUtils.smoothstep(h, 19.5, 23.5));
+    m = Math.max(m, 0.06 + 0.35 * w.wet * (1 - w.rain * 0.6));
+    FX.uFxMist.value.x = MIST_DENSITY * m;
+    FX.uFxWet.value = w.wet;
+    // puddles mirror the water's reflection cube
+    FX.uFxRefl.value = this.water.shared.uRefl.value;
+    FX.uFxReflOn.value = this.water.shared.uReflOn.value;
     // light filling the water volume: sky light plus the sun from above
     const hemi = env.hemi;
     const sun = env.sun;
@@ -343,6 +378,26 @@ export class Game {
     }
   }
 
+  // Direct sunlight left under the clouds at a point (as fxCloudShadow in
+  // worldfx.js, read from the same texture on the CPU).
+  cloudShadowAt(p) {
+    const cl = FX.uFxClouds.value;
+    if (cl.w <= 0) return 1;
+    const s = this.env.sunDir;
+    const k = (1400 - p.y) / Math.max(s.y, 0.25);
+    const img = this.textures.cloud.image;
+    const S = img.width;
+    const fx = ((p.x + s.x * k) / CLOUD_SCALE + cl.x) * S - 0.5;
+    const fz = ((p.z + s.z * k) / CLOUD_SCALE + cl.y) * S - 0.5;
+    const i0 = Math.floor(fx);
+    const j0 = Math.floor(fz);
+    const tx = fx - i0;
+    const tz = fz - j0;
+    const at = (i, j) => img.data[((((j % S) + S) % S) * S + (((i % S) + S) % S)) * 4] / 255;
+    const n = (at(i0, j0) * (1 - tx) + at(i0 + 1, j0) * tx) * (1 - tz) + (at(i0, j0 + 1) * (1 - tx) + at(i0 + 1, j0 + 1) * tx) * tz;
+    return 1 - cl.w * THREE.MathUtils.smoothstep(n, cl.z, cl.z + 0.1);
+  }
+
   // How strongly the sun streams through gaps: most at a low sun, little
   // under cloud or rain, none at night or under water.
   sunRays() {
@@ -353,6 +408,7 @@ export class Game {
     let k = THREE.MathUtils.smoothstep(e, -3, 3) * (0.3 + 0.7 * low);
     k *= 1 - 0.8 * THREE.MathUtils.smoothstep(w.cloud, 0.5, 0.95);
     k *= 1 - Math.min(1, w.rain * 1.5);
+    k *= 1 - 0.85 * env.uniforms.uSunVeil.value;
     if (this.water.viewLevel != null && this.camera.position.y < this.water.viewLevel) k = 0;
     return k * 0.55;
   }

@@ -120,9 +120,10 @@ void main() {
     float big = uOcean > 0.5 ? 1.0 : 0.55;
     slope = waveSlope(p / 7.0) * 0.5 + waveSlope(q / 2.3 + 0.37) * 0.38 + waveSlope(q.yx / 23.0 + 0.11) * 0.5 * big;
     crest = texture2D(uWaves, q / 2.3 + 0.37).b;
-    // calm and wind-roughened patches drifting over lakes
+    // calm and wind-roughened patches drifting over lakes, and dark cat's
+    // paws running across the water as a gust comes through
     float gust = texture2D(uFoamTex, p * 0.0045 + vec2(uTime * 0.004, uTime * 0.0023)).g;
-    slope *= mix(0.45, 1.25, smoothstep(0.3, 0.7, gust)) * (uOcean > 0.5 ? 1.25 : 1.0);
+    slope *= mix(0.45, 1.25, smoothstep(0.3, 0.7, gust)) * (uOcean > 0.5 ? 1.25 : 1.0) * (0.85 + 0.8 * fxGust(p));
   }
   slope *= 1.0 + uRain * 0.9;
   // flatten toward the far distance, where the reflection is blurred instead
@@ -144,7 +145,7 @@ void main() {
   float sharp = pow(rs, mix(2600.0, 700.0, clamp(dist / 400.0, 0.0, 1.0))) * 90.0;
   float sparkle = smoothstep(0.62, 0.9, crest);
   float glitter = pow(rs, 160.0) * sparkle * 14.0 + pow(rs, 26.0) * 0.12;
-  float lit = mix(sh.r, 1.0, uNight) * smoothstep(0.0, 0.08, uLightDir.y);
+  float lit = mix(sh.r * fxCloudShadow(vWorld), 1.0, uNight) * smoothstep(0.0, 0.08, uLightDir.y);
   vec3 spec = uSunLight * (sharp + glitter) * lit * (1.0 - uRain * 0.8);
 
   // --- foam: rapids, the plunge pool and lapping at the shore --------------
@@ -173,10 +174,12 @@ void main() {
   }
   c = mix(c, foamCol, foamAmt);
   a = max(a, foamAmt * 0.92 * edge);
-  // haze toward the horizon
+  // mist lying on the water, then haze toward the horizon
+  float mist = fxMist(vWorld);
+  c = mix(c, fxMistColor(-V), mist);
   float haze = fxHaze(vWorld);
   c = mix(c, fxSkyColor(-V), haze);
-  spec *= 1.0 - haze;
+  spec *= (1.0 - haze) * (1.0 - mist);
   #ifdef TONE_MAPPING
     c = toneMapping(c);
     spec = toneMapping(spec);

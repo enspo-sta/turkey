@@ -25,9 +25,11 @@ for (let i = 0; i < 256; i++) {
 export function makeTerrainMaterial(detailTex, matTex, surfaceTex) {
   detailTex.repeat.set(1 / 6.5, 1 / 6.5);
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true, map: detailTex });
-  mat.userData.fx = 'canopy';
+  mat.userData.fx = 'canopy puddles';
   const extra = { uMat: { value: matTex }, uSurf: { value: surfaceTex }, uSnowLine: { value: 300 } };
-  mat.onBeforeCompile = (shader) => {
+  // a plain function: the reflection copy (reflectionMaterial) shares it and
+  // must be patched with its own flags
+  mat.onBeforeCompile = function (shader) {
     Object.assign(shader.uniforms, extra);
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vTWorld;\nvarying vec3 vTNormal;')
@@ -118,10 +120,25 @@ export function makeTerrainMaterial(detailTex, matTex, surfaceTex) {
           float fade = 1.0 - smoothstep( 35.0, 110.0, length( vViewPosition ) );
           fade *= smoothstep( 0.06, 0.3, abs( dot( tn, normalize( cameraPosition - vTWorld ) ) ) );
           tHeight = ( rk * wR * 0.09 + pb * wG * 0.035 + sd * wB * 0.012 + ff * wA * 0.018 ) * fade * ( 1.0 - snow * 0.85 );
+          #if defined( USE_FOG ) && defined( FX_PUDDLES )
+            // puddles after rain in the flat hollows of tracks, gravel and
+            // bare ground, growing the longer it rains; bare ground shines
+            // when wet, grass and tundra stay matte
+            if ( uFxWet > 0.02 ) {
+              fxWetGloss = clamp( wR + wG + wB * 0.6 + wA * 0.3 + snow, 0.0, 1.0 );
+              float pn = texture2D( uFxCloudTex, p * 0.09 + vec2( 0.37, 0.61 ) ).g;
+              float site = clamp( wG * 1.3 + ( 1.0 - wR - wB - wA ) * 0.5, 0.0, 1.0 ) * smoothstep( 0.965, 0.992, tn.y ) * ( 1.0 - snow );
+              // fewer (but still whole) puddles in the meadows than on roads
+              float lvl = 0.66 - 0.12 * uFxWet + ( 1.0 - site ) * 0.14;
+              fxPuddle = smoothstep( lvl, lvl + 0.03, pn ) * smoothstep( 0.1, 0.3, site ) * smoothstep( 0.05, 0.4, uFxWet ) * ( 1.0 - smoothstep( 120.0, 260.0, length( vViewPosition ) ) );
+              diffuseColor.rgb *= 1.0 - 0.25 * fxPuddle;
+              tHeight *= 1.0 - fxPuddle;
+            }
+          #endif
         }`
       )
       .replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\nnormal = tBump( - vViewPosition, normal, tHeight );');
-    fxPatch(shader, mat);
+    fxPatch(shader, this);
   };
   return mat;
 }

@@ -26,8 +26,16 @@ uniform float uCloudCover;
 uniform float uNight;
 uniform float uAurora;
 uniform float uTime;
+uniform float uRainbow;
+uniform float uSunVeil;
 uniform sampler2D uCloudTex;
 varying vec3 vDir;
+
+// Hue from violet (0) to red (1).
+vec3 spectrum(float x) {
+  float hue = (1.0 - x) * 0.78;
+  return clamp(abs(fract(hue + vec3(0.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0) - 1.0, 0.0, 1.0);
+}
 
 float hash13(vec3 p3) {
   p3 = fract(p3 * 0.1031);
@@ -47,7 +55,7 @@ void main() {
   float horizonBoost = 1.0 + 1.5 * (1.0 - smoothstep(0.0, 0.35, abs(h)));
   col += uGlow * (pow(sdc, 5.0) * 0.45 + pow(sdc, 48.0) * 0.8) * horizonBoost;
   float disc = smoothstep(0.99925, 0.99965, sd);
-  col += uSunColor * disc * 7.0 * smoothstep(-0.03, 0.02, uSunDir.y);
+  col += uSunColor * disc * 7.0 * smoothstep(-0.03, 0.02, uSunDir.y) * (1.0 - 0.6 * uSunVeil);
 
   // stars
   if (uNight > 0.01 && h > -0.02) {
@@ -90,14 +98,32 @@ void main() {
     col += acc * uAurora * north * 0.9;
   }
 
+  // a rainbow opposite the sun as a shower passes: the primary bow at 42
+  // degrees (red outside), a fainter secondary at 51 with the colours
+  // reversed, brighter sky inside the bow and a darker band between them
+  if (uRainbow > 0.001 && h > -0.02) {
+    float ang = degrees(acos(clamp(dot(d, -uSunDir), -1.0, 1.0)));
+    float p1 = (ang - 40.3) / 2.2;
+    float p2 = (54.0 - ang) / 3.4;
+    vec3 bow = spectrum(clamp(p1, 0.0, 1.0)) * smoothstep(-0.25, 0.15, p1) * (1.0 - smoothstep(0.85, 1.25, p1));
+    bow += spectrum(clamp(p2, 0.0, 1.0)) * smoothstep(-0.25, 0.15, p2) * (1.0 - smoothstep(0.85, 1.25, p2)) * 0.4;
+    float inside = 1.0 - smoothstep(38.0, 41.0, ang);
+    float band = smoothstep(42.0, 43.5, ang) * (1.0 - smoothstep(49.0, 50.5, ang));
+    float k = uRainbow * smoothstep(-0.02, 0.06, h);
+    vec3 light = uSunColor * 0.12;
+    col = col * (1.0 + k * (0.08 * inside - 0.06 * band)) + bow * light * k;
+  }
+
   // clouds
   if (h > 0.0) {
     vec2 uv = d.xz / (h + 0.09);
-    float n1 = texture2D(uCloudTex, uv * 0.11 + vec2(uTime * 0.0012, uTime * 0.0006)).r;
-    float n2 = texture2D(uCloudTex, uv * 0.31 - vec2(uTime * 0.002, 0.0)).g;
+    float n1 = texture2D(uCloudTex, uv * 0.11 - vec2(uTime * 0.0012, uTime * 0.0006)).r;
+    float n2 = texture2D(uCloudTex, uv * 0.31 - vec2(uTime * 0.002, uTime * 0.001)).g;
     float n = n1 * 0.7 + n2 * 0.3;
     float thr = 0.72 - uCloudCover * 0.46;
     float cov = smoothstep(thr, thr + 0.16, n);
+    // the cloud whose shadow the player stands in, over the sun
+    cov = max(cov, uSunVeil * smoothstep(0.985 + 0.012 * (1.0 - n), 0.9985, sd));
     cov *= smoothstep(0.0, 0.1, h);
     float lit = 0.5 + 0.5 * pow(sdc, 3.0);
     vec3 cc = mix(uCloudShade, uCloudLit, lit * (0.6 + 0.4 * n));
@@ -234,7 +260,8 @@ export class Environment {
     this.time = 7.0; // hours
     this.day = 1;
     this.timeScale = 1 / 60; // game hours per real second (1 real minute = 1 hour)
-    this.weather = { rain: 0, rainTarget: 0, cloud: 0.35, cloudTarget: 0.35, timer: 120 };
+    this.weather = { rain: 0, rainTarget: 0, cloud: 0.35, cloudTarget: 0.35, timer: 120, wet: 0 };
+    this.rainbow = 0;
     this.sunDir = new THREE.Vector3();
     this.moonDir = new THREE.Vector3();
     this.lightDir = new THREE.Vector3();
@@ -255,6 +282,8 @@ export class Environment {
       uNight: { value: 0 },
       uAurora: { value: 0 },
       uTime: { value: 0 },
+      uRainbow: { value: 0 },
+      uSunVeil: { value: 0 },
       uCloudTex: { value: cloudTex },
     };
     const mat = new THREE.ShaderMaterial({
@@ -383,6 +412,16 @@ export class Environment {
     w.rain += (w.rainTarget - w.rain) * Math.min(1, dt * 0.05);
     w.cloud += (w.cloudTarget - w.cloud) * Math.min(1, dt * 0.04);
     u.uCloudCover.value = w.cloud;
+    // the ground soaks up a shower in half a minute and dries over a few
+    // minutes, faster in the sun
+    if (!(w.wet >= 0)) w.wet = 0;
+    if (w.rain > 0.15) w.wet = Math.min(1, w.wet + dt * 0.035 * w.rain);
+    else w.wet = Math.max(0, w.wet - dt * (0.0035 + 0.004 * (1 - smoothstep(0.5, 0.95, w.cloud))));
+    // a rainbow needs light rain in the air and the sun out behind you
+    const showers = smoothstep(0.02, 0.1, w.rain) * (1 - smoothstep(0.3, 0.55, w.rain));
+    const target = showers * (1 - smoothstep(0.62, 0.8, w.cloud)) * smoothstep(1, 6, e) * (1 - smoothstep(34, 41, e));
+    this.rainbow += (target - this.rainbow) * Math.min(1, dt * 0.5);
+    u.uRainbow.value = this.rainbow;
 
     const overcast = smoothstep(0.5, 0.95, w.cloud);
     // darken & desaturate under rain

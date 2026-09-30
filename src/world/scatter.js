@@ -892,15 +892,19 @@ function swayMaterial(uniforms, amount, { base = 1.0, doubleSide = false } = {})
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
+        // the wind's direction in the plant's own frame
         #ifdef USE_INSTANCING
           vec2 ip = vec2(instanceMatrix[3].x, instanceMatrix[3].z);
+          vec3 wl = normalize((vec4(uFxWind.x, 0.0, uFxWind.y, 0.0) * instanceMatrix).xyz + vec3(1e-5, 0.0, 0.0));
         #else
           vec2 ip = vec2(0.0);
+          vec3 wl = vec3(uFxWind.x, 0.0, uFxWind.y);
         #endif
-        float sw = sin(uTime * 1.2 + ip.x * 0.05 + ip.y * 0.07) + 0.35 * sin(uTime * 2.7 + ip.x * 0.3);
+        // steady sway, stronger in a gust, which also bends the plant downwind
+        float gust = fxGust(ip);
+        float sw = (sin(uTime * 1.2 + ip.x * 0.05 + ip.y * 0.07) + 0.35 * sin(uTime * 2.7 + ip.x * 0.3)) * (0.75 + 0.45 * gust) + 0.55 * gust;
         float hh = max(position.y - ${base.toFixed(2)}, 0.0);
-        transformed.x += sw * ${amount.toFixed(4)} * hh * hh;
-        transformed.z += sw * ${(amount * 0.6).toFixed(4)} * hh * hh;`
+        transformed.xz += wl.xz * sw * ${(amount * 1.1).toFixed(5)} * hh * hh;`
       );
     fxPatch(shader, mat);
   };

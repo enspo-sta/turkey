@@ -50,9 +50,10 @@ void main() {
   p.xz *= show * (1.0 + smoothstep(6.0, 24.0, dist) * 0.9);
   p = vec3(c * p.x - s * p.z, p.y, s * p.x + c * p.z);
   float wave = sin(uTime * 1.9 + wp.x * 0.35 + wp.y * 0.21) + 0.5 * sin(uTime * 3.7 + wp.x * 0.9);
-  float bend = p.y * p.y * (0.12 + 0.1 * uWind) * wave;
-  p.x += bend;
-  p.z += bend * 0.5;
+  // a passing gust lays the blades over downwind and sets them tossing
+  float gust = fxGust(wp);
+  float bend = p.y * p.y * ((0.12 + 0.1 * uWind) * wave * (0.65 + 0.6 * gust) + (0.08 + 0.15 * uWind) * gust);
+  p.xz += uFxWind.xy * bend * 1.1;
   vec3 world = vec3(wp.x, h - 0.03, wp.y) + p;
   vec3 g = texture2D(uGround, tuv).rgb;
   float tip = clamp(position.y / 0.9, 0.0, 1.0);
@@ -73,8 +74,11 @@ void main() {
   vec2 suv = (wp - uFxShadeTf.xy) * uFxShadeTf.z;
   if (uFxShadeOn > 0.5) shade = texture2D(uFxShade, suv).rg;
   float shadeTip = 0.7 + tip * 0.35;
+  // blades laid over by a gust catch more light: waves of paler green roll
+  // across the meadow; wet grass is darker
+  shadeTip *= (1.0 + 0.35 * gust * tip) * (1.0 - 0.2 * uFxWet);
   vColor = col * uSkyCol * 0.9 * mix(0.42, 1.0, shade.g) * shadeTip;
-  vSun = col * uSunCol * diff * 0.65 * shade.r * shadeTip;
+  vSun = col * uSunCol * diff * 0.65 * shade.r * fxCloudShadow(vec3(wp.x, h, wp.y)) * shadeTip;
   vec4 worldPosition = vec4(world, 1.0);
   vec4 mvPosition = viewMatrix * worldPosition;
   gl_Position = projectionMatrix * mvPosition;
