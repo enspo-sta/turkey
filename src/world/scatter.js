@@ -77,6 +77,27 @@ function bushGeo() {
   return b.build();
 }
 
+// Close-range shrub: twigs spreading from the base, each carrying small
+// clumps of leaves (white here: the per-instance tint colours it as dwarf
+// birch on the tundra, alder or willow elsewhere).
+function bushDetailed() {
+  const b = new ModelBuilder();
+  const rand = mulberry32(88);
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2 + rand() * 0.5;
+    const len = 0.7 + rand() * 0.5;
+    const top = [Math.cos(a) * len * 0.75, 0.55 + rand() * 0.6, Math.sin(a) * len * 0.75];
+    b.beam([Math.cos(a) * 0.05, 0, Math.sin(a) * 0.05], top, 0.025, 4, { r2: 0.012, color: 0x5a5048 });
+    for (let k = 0; k < 5; k++) {
+      const t = 0.35 + k * 0.16;
+      const r = 0.16 + rand() * 0.12;
+      const p = [top[0] * t + (rand() - 0.5) * 0.25, top[1] * t + 0.12 + rand() * 0.15, top[2] * t + (rand() - 0.5) * 0.25];
+      b.add(jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.35, mulberry32(i * 13 + k)), { pos: p, scale: [1, 0.8, 1], color: 0xffffff, gradient: 0.35, jitter: 0.16 });
+    }
+  }
+  return b.build();
+}
+
 function rockGeo(seed, detail = 1) {
   const b = new ModelBuilder();
   const g = jitterGeometry(new THREE.DodecahedronGeometry(1, detail), detail ? 0.45 : 0.3, mulberry32(seed));
@@ -497,6 +518,237 @@ function flowerSpikes(kind) {
   return b.build();
 }
 
+// ---- native ground plants, detailed for close range
+
+// A flat leaf outline (lobes > 0 gives a palmate, maple-like leaf) as a fan
+// of triangles, cupped a little, coloured from a pale centre to the edge.
+function leafFan(pos, col, cx, cy, cz, R, lobes, yaw, tilt, cIn, cOut, steps = 24) {
+  const ca = Math.cos(yaw);
+  const sa = Math.sin(yaw);
+  const pt = (r, a) => {
+    const lx = Math.cos(a) * r;
+    const lz = Math.sin(a) * r;
+    // tilt about the leaf's own x axis, droop at the rim
+    const ly = -lz * tilt - (r / R) * (r / R) * R * 0.18;
+    return [cx + lx * ca - lz * sa, cy + ly, cz + lx * sa + lz * ca];
+  };
+  const c0 = [cx, cy + R * 0.04, cz];
+  for (let i = 0; i < steps; i++) {
+    const a0 = (i / steps) * Math.PI * 2;
+    const a1 = ((i + 1) / steps) * Math.PI * 2;
+    const r = (a) => (lobes ? R * (0.58 + 0.42 * Math.pow(Math.abs(Math.sin(a * lobes * 0.5)), 0.55)) : R * (1 - 0.35 * Math.abs(Math.sin(a))));
+    pos.push(...c0, ...pt(r(a1), a1), ...pt(r(a0), a0));
+    col.push(...cIn, ...cOut, ...cOut);
+  }
+}
+
+function geoFrom(pos, col) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
+// Devil's club: spiny stems crowned with huge palmate leaves and, in late
+// summer, a cone of scarlet berries.
+function devilsClubGeo() {
+  const rand = mulberry32(151);
+  const b = new ModelBuilder();
+  const pos = [];
+  const col = [];
+  const leafIn = lin(0.3, 0.46, 0.14);
+  const leafOut = lin(0.13, 0.3, 0.07);
+  const stems = 4;
+  for (let i = 0; i < stems; i++) {
+    const a = rand() * Math.PI * 2;
+    const r = 0.1 + rand() * 0.35;
+    const h = 1.1 + rand() * 0.8;
+    const lean = 0.15 + rand() * 0.2;
+    const x = Math.cos(a) * r;
+    const z = Math.sin(a) * r;
+    const tx = x + Math.cos(a) * lean;
+    const tz = z + Math.sin(a) * lean;
+    b.beam([x, 0, z], [tx, h, tz], 0.03, 5, { r2: 0.022, color: 0x7a6440 });
+    // spines: pale flecks up the stem
+    for (let k = 0; k < 6; k++) {
+      const t = 0.15 + k * 0.14;
+      b.box(0.012, 0.03, 0.012, { pos: [x + (tx - x) * t + 0.025, h * t, z + (tz - z) * t], rot: [0, k, 0.6], color: 0xd8c890, jitter: 0 });
+    }
+    const leaves = 3 + Math.floor(rand() * 2);
+    for (let k = 0; k < leaves; k++) {
+      const la = rand() * Math.PI * 2;
+      const R = 0.28 + rand() * 0.14;
+      leafFan(pos, col, tx + Math.cos(la) * R * 0.7, h - 0.05 - k * 0.08, tz + Math.sin(la) * R * 0.7, R, 7, la, 0.15 + rand() * 0.2, leafIn, leafOut);
+    }
+    // berry cone on the tallest stems
+    if (i < 2) {
+      for (let k = 0; k < 14; k++) {
+        const t = k / 14;
+        const ba = k * 2.3;
+        const br = 0.07 * (1 - t);
+        b.add(new THREE.OctahedronGeometry(0.02, 0), { pos: [tx + Math.cos(ba) * br, h + 0.04 + t * 0.2, tz + Math.sin(ba) * br], color: 0xc81e14, jitter: 0.12 });
+      }
+    }
+  }
+  return mergeGeos([b.build(), geoFrom(pos, col)]);
+}
+
+// Bog blueberry: a low tangle of twigs with small leaves and blue berries.
+function blueberryGeo() {
+  const rand = mulberry32(257);
+  const b = new ModelBuilder();
+  for (let i = 0; i < 7; i++) {
+    const a = rand() * Math.PI * 2;
+    const len = 0.25 + rand() * 0.25;
+    const top = [Math.cos(a) * len * 0.8, 0.2 + rand() * 0.22, Math.sin(a) * len * 0.8];
+    b.beam([0, 0, 0], top, 0.01, 3, { color: 0x6a3a28 });
+    for (let k = 0; k < 4; k++) {
+      const t = 0.45 + k * 0.17;
+      const p = [top[0] * t + (rand() - 0.5) * 0.06, top[1] * t + 0.03, top[2] * t + (rand() - 0.5) * 0.06];
+      b.add(jitterGeometry(new THREE.IcosahedronGeometry(0.06, 0), 0.02, mulberry32(i * 9 + k)), { pos: p, scale: [1, 0.55, 1], color: 0x3e6a2c, jitter: 0.15 });
+    }
+    for (let k = 0; k < 3; k++) {
+      const t = 0.5 + rand() * 0.45;
+      b.add(new THREE.IcosahedronGeometry(0.018, 0), { pos: [top[0] * t + (rand() - 0.5) * 0.08, top[1] * t - 0.02, top[2] * t + (rand() - 0.5) * 0.08], color: 0x2c3f8a, jitter: 0.1 });
+    }
+  }
+  return b.build();
+}
+
+// Labrador tea: a dark evergreen mound topped with domes of white flowers.
+function labradorTeaGeo() {
+  const rand = mulberry32(331);
+  const b = new ModelBuilder();
+  for (let i = 0; i < 5; i++) {
+    const a = rand() * Math.PI * 2;
+    const r = rand() * 0.18;
+    const x = Math.cos(a) * r;
+    const z = Math.sin(a) * r;
+    const h = 0.28 + rand() * 0.2;
+    b.beam([x, 0, z], [x * 1.2, h, z * 1.2], 0.01, 3, { color: 0x4a3a2a });
+    b.add(jitterGeometry(new THREE.IcosahedronGeometry(0.11, 0), 0.03, mulberry32(i + 40)), { pos: [x * 1.2, h - 0.06, z * 1.2], scale: [1.2, 0.7, 1.2], color: 0x2a4a22, jitter: 0.12 });
+    // flower dome
+    for (let k = 0; k < 7; k++) {
+      const fa = rand() * Math.PI * 2;
+      const fr = rand() * 0.05;
+      b.add(new THREE.OctahedronGeometry(0.022, 0), { pos: [x * 1.2 + Math.cos(fa) * fr, h + 0.02 + (0.05 - fr) * 0.6, z * 1.2 + Math.sin(fa) * fr], color: 0xf2efe2, jitter: 0.06 });
+    }
+  }
+  return b.build();
+}
+
+// Cotton grass: slender stems each carrying a white tuft of seed fluff.
+function cottonGrassGeo() {
+  const rand = mulberry32(419);
+  const pos = [];
+  const col = [];
+  const stemC = lin(0.36, 0.42, 0.2);
+  const b = new ModelBuilder();
+  for (let i = 0; i < 13; i++) {
+    const a = rand() * Math.PI * 2;
+    const r = rand() * 0.16;
+    const x = Math.cos(a) * r;
+    const z = Math.sin(a) * r;
+    const h = 0.36 + rand() * 0.28;
+    const lx = x + Math.cos(a) * 0.06;
+    const lz = z + Math.sin(a) * 0.06;
+    // a thin blade of a stem
+    pos.push(x - 0.004, 0, z, x + 0.004, 0, z, lx, h, lz);
+    col.push(...stemC, ...stemC, ...stemC);
+    b.add(jitterGeometry(new THREE.IcosahedronGeometry(0.035, 0), 0.012, mulberry32(i * 3 + 1)), { pos: [lx, h + 0.02, lz], scale: [1, 1.25, 1], color: 0xf6f6f0, jitter: 0.05 });
+  }
+  // grassy leaves at the base
+  for (let i = 0; i < 6; i++) {
+    const a = rand() * Math.PI * 2;
+    const tx = Math.cos(a) * 0.14;
+    const tz = Math.sin(a) * 0.14;
+    pos.push(-0.01, 0, 0, 0.01, 0, 0, tx, 0.18 + rand() * 0.1, tz);
+    col.push(...stemC, ...stemC, ...stemC);
+  }
+  return mergeGeos([b.build(), geoFrom(pos, col)]);
+}
+
+// Horsetail: jointed green stems with whorls of fine branches.
+function horsetailGeo() {
+  const rand = mulberry32(503);
+  const b = new ModelBuilder();
+  for (let i = 0; i < 6; i++) {
+    const a = rand() * Math.PI * 2;
+    const r = rand() * 0.16;
+    const x = Math.cos(a) * r;
+    const z = Math.sin(a) * r;
+    const h = 0.35 + rand() * 0.3;
+    b.cyl(0.006, 0.01, h, 4, { pos: [x, h / 2, z], color: 0x4e7a34 });
+    for (let k = 1; k < 5; k++) {
+      const y = (h * k) / 5;
+      b.cyl(0.011, 0.011, 0.008, 4, { pos: [x, y, z], color: 0x1e2a18, jitter: 0 });
+      for (let q = 0; q < 6; q++) {
+        const qa = (q / 6) * Math.PI * 2 + k;
+        const L = 0.07 * (1 - k * 0.12);
+        b.beam([x, y, z], [x + Math.cos(qa) * L, y - 0.025, z + Math.sin(qa) * L], 0.0025, 3, { color: 0x5a8a3c, jitter: 0.1 });
+      }
+    }
+  }
+  return b.build();
+}
+
+// Skunk cabbage: big paddle leaves round a yellow hooded spathe.
+function skunkCabbageGeo() {
+  const rand = mulberry32(601);
+  const pos = [];
+  const col = [];
+  const cIn = lin(0.34, 0.5, 0.14);
+  const cOut = lin(0.16, 0.36, 0.08);
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2 + rand() * 0.4;
+    const L = 0.55 + rand() * 0.35;
+    const W2 = 0.2 + rand() * 0.06;
+    // a paddle rising from the centre and arching out
+    const steps = 6;
+    let prev = null;
+    for (let k = 0; k <= steps; k++) {
+      const t = k / steps;
+      const d = t * L;
+      const y = Math.sin(t * Math.PI * 0.6) * L * 0.8;
+      const w = W2 * Math.sin(Math.min(1, t * 1.2) * Math.PI) + 0.01;
+      const cx = Math.cos(a) * d;
+      const cz = Math.sin(a) * d;
+      const l = [cx - Math.sin(a) * w, y, cz + Math.cos(a) * w];
+      const r = [cx + Math.sin(a) * w, y, cz - Math.cos(a) * w];
+      if (prev) {
+        pos.push(...prev[0], ...prev[1], ...r, ...prev[0], ...r, ...l);
+        const c = t < 0.4 ? cIn : cOut;
+        for (let q = 0; q < 6; q++) col.push(...c);
+      }
+      prev = [l, r];
+    }
+  }
+  const b = new ModelBuilder();
+  b.cone(0.07, 0.3, 6, { pos: [0.04, 0.15, 0.02], scale: [1, 1, 0.6], color: 0xe8c81c, jitter: 0.06 });
+  b.cyl(0.02, 0.02, 0.12, 5, { pos: [0.04, 0.06, 0.02], color: 0xb8a038 });
+  return mergeGeos([b.build(), geoFrom(pos, col)]);
+}
+
+// Mushrooms: a fly agaric with its white-spotted red cap and a couple of
+// brown boletes.
+function mushroomGeo() {
+  const b = new ModelBuilder();
+  b.cyl(0.018, 0.024, 0.12, 6, { pos: [0, 0.06, 0], color: 0xf0ece0 });
+  b.sphere(0.07, 8, 4, { pos: [0, 0.12, 0], scale: [1, 0.55, 1], color: 0xc4201a, jitter: 0.05 });
+  const rand = mulberry32(7);
+  for (let i = 0; i < 6; i++) {
+    const a = rand() * Math.PI * 2;
+    const r = 0.02 + rand() * 0.035;
+    b.box(0.012, 0.006, 0.012, { pos: [Math.cos(a) * r, 0.15 + (0.05 - r) * 0.3, Math.sin(a) * r], color: 0xf8f4ea, jitter: 0 });
+  }
+  b.cyl(0.02, 0.028, 0.07, 6, { pos: [0.14, 0.035, 0.05], color: 0xd8c8a0 });
+  b.sphere(0.05, 7, 4, { pos: [0.14, 0.07, 0.05], scale: [1, 0.6, 1], color: 0x7a4a24, jitter: 0.06 });
+  b.cyl(0.014, 0.02, 0.05, 6, { pos: [-0.1, 0.025, 0.08], color: 0xd8c8a0 });
+  b.sphere(0.035, 7, 4, { pos: [-0.1, 0.05, 0.08], scale: [1, 0.6, 1], color: 0x6a3e1e, jitter: 0.06 });
+  return b.build();
+}
+
 // Willow and alder thicket along the water: several stems with narrow,
 // grey-green leaf masses.
 function willowGeo() {
@@ -720,6 +972,8 @@ export class Scatter {
     const swayBirch = swayMaterial(sharedUniforms, 0.0022);
     const swayShrub = swayMaterial(sharedUniforms, 0.012, { base: 0.4 });
     const swayPlant = swayMaterial(sharedUniforms, 0.09, { base: 0.1, doubleSide: true });
+    const swayClub = swayMaterial(sharedUniforms, 0.06, { base: 0.5, doubleSide: true });
+    const swayGrass = swayMaterial(sharedUniforms, 0.3, { base: 0.05, doubleSide: true });
     const swayPoplar = swayMaterial(sharedUniforms, 0.0012);
     const swayAspen = swayMaterial(sharedUniforms, 0.0028);
     const plain = new THREE.MeshLambertMaterial({ vertexColors: true });
@@ -776,9 +1030,14 @@ export class Scatter {
         ],
         { tint: true }
       ),
-      bush: new ScatterType('bush', [{ geo: bushGeo(), material: leafy, maxDist: 160, capacity: 4000, shadow: false }], {
-        tint: true,
-      }),
+      bush: new ScatterType(
+        'bush',
+        [
+          { geo: bushDetailed(), material: leafy, maxDist: 40, capacity: 900, shadow: false },
+          { geo: bushGeo(), material: leafy, maxDist: 160, capacity: 4000, shadow: false },
+        ],
+        { tint: true }
+      ),
       willow: new ScatterType('willow', [{ geo: willowGeo(), material: swayShrub, maxDist: 230, capacity: 1600, shadow: true }], {
         tint: true,
       }),
@@ -801,6 +1060,13 @@ export class Scatter {
         ],
         { tint: true }
       ),
+      devilsClub: new ScatterType('devilsClub', [{ geo: devilsClubGeo(), material: swayClub, maxDist: 70, capacity: 1500, shadow: true }], { tint: true }),
+      blueberry: new ScatterType('blueberry', [{ geo: blueberryGeo(), material: swayPlant, maxDist: 55, capacity: 3000 }], { tint: true }),
+      labradorTea: new ScatterType('labradorTea', [{ geo: labradorTeaGeo(), material: swayPlant, maxDist: 55, capacity: 2500 }], { tint: true }),
+      cottonGrass: new ScatterType('cottonGrass', [{ geo: cottonGrassGeo(), material: swayGrass, maxDist: 60, capacity: 4000 }], { tint: true }),
+      horsetail: new ScatterType('horsetail', [{ geo: horsetailGeo(), material: swayPlant, maxDist: 45, capacity: 2500 }], { tint: true }),
+      skunkCabbage: new ScatterType('skunkCabbage', [{ geo: skunkCabbageGeo(), material: swayPlant, maxDist: 55, capacity: 1000 }], { tint: true }),
+      mushroom: new ScatterType('mushroom', [{ geo: mushroomGeo(), material: plain, maxDist: 30, capacity: 1500 }], { tint: true }),
       snag: new ScatterType('snag', [{ geo: snagGeo(), material: plainSnag, maxDist: 500, capacity: 400, shadow: true }], {
         tint: false,
       }),
@@ -1012,6 +1278,48 @@ export class Scatter {
           const v = 0.85 + rand() * 0.3;
           T.lupine.add(x, W.heightAt(x, z) - 0.03, z, rand() * 6.28, 0.8 + rand() * 0.5, [v * (0.9 + rand() * 0.2), v, v]);
         }
+      }
+    }
+
+    // native ground plants by habitat: horsetail on the banks, devil's club
+    // and skunk cabbage in wet forest near water, cotton grass on wet flats
+    // and tundra, blueberry and Labrador tea on the tundra and forest edges,
+    // mushrooms on the forest floor
+    for (let gz = -HALF + 2; gz < HALF - 2; gz += 2.6) {
+      for (let gx = -HALF + 2; gx < HALF - 2; gx += 2.6) {
+        const x = gx + rand() * 2.6;
+        const z = gz + rand() * 2.6;
+        const k = W.cellIndex(x, z);
+        const st = W.surf[k];
+        if (st === SURF.ROAD || st === SURF.ROCK || st === SURF.SNOW || st === SURF.ICE || st === SURF.MUD || st === SURF.SAND) continue;
+        if (W.roadD[k] < ROAD_HALF + 1.5) continue;
+        const r = rand();
+        if (r > 0.25) continue;
+        const forest = W.forest[k] / 255;
+        const y = W.heightAt(x, z);
+        const rd = W.riverD[k];
+        const rw = rd < 200 ? W.riverWidth(W.riverS[k]) : 0;
+        const ls = lakeSD(x, z);
+        const bank = (rd > rw + 0.5 && rd < rw + 12) || (ls > 0.5 && ls < 12);
+        const flat = W.slopeAt(x, z) < 0.08;
+        const wetFlat = y < 50 && flat;
+        const tundra = st === SURF.TUNDRA;
+        const nearWater = rd < rw + 120 || ls < 150;
+        let type = null;
+        if (bank && r < 0.25) type = 'horsetail';
+        else if (forest > 0.45 && nearWater && y < 90 && r < 0.055) type = 'devilsClub';
+        else if (forest > 0.3 && wetFlat && nearWater && r < 0.085) type = 'skunkCabbage';
+        else if ((tundra || wetFlat) && r < (wetFlat ? 0.25 : 0.12) && W.n3.noise(x * 0.03 + 5, z * 0.03 - 2) > 0.0) type = 'cottonGrass';
+        else if ((tundra || (forest > 0.1 && forest < 0.55)) && r < 0.12) type = 'blueberry';
+        else if ((tundra || (wetFlat && forest > 0.2)) && r < 0.2) type = 'labradorTea';
+        else if (forest > 0.5 && r < 0.012) type = 'mushroom';
+        if (!type) continue;
+        if (water(x, z) || blocked(x, z, 1)) continue;
+        const v = 0.85 + rand() * 0.3;
+        let tint = [v, v, v];
+        if (type === 'blueberry' && tundra && rand() < 0.3) tint = [1.35, 0.72, 0.5];
+        const sc = { devilsClub: 0.85 + rand() * 0.5, mushroom: 0.9 + rand() * 0.7, skunkCabbage: 1.2 + rand() * 0.6, cottonGrass: 1.0 + rand() * 0.6, horsetail: 1.1 + rand() * 0.6, labradorTea: 1.1 + rand() * 0.5 }[type] || 0.9 + rand() * 0.45;
+        T[type].add(x, y - 0.02, z, rand() * Math.PI * 2, sc, tint);
       }
     }
 
