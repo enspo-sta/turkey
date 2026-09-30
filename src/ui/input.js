@@ -111,6 +111,26 @@ export class Input {
     };
     root.addEventListener('touchend', end, opts);
     root.addEventListener('touchcancel', end, opts);
+    // Safety net: a button whose finger is no longer on the screen is let go,
+    // even if its own touchend never arrived.
+    const sweep = (e) => {
+      const live = new Set();
+      for (const t of e.touches) live.add(t.identifier);
+      for (const b of this.buttons.values()) {
+        if (b.down && typeof b.touchId === 'number' && !live.has(b.touchId)) this.releaseButton(b);
+      }
+      if (this.stick.id !== null && !live.has(this.stick.id)) {
+        this.stick.id = null;
+        this.stick.active = false;
+        this.stick.x = 0;
+        this.stick.y = 0;
+        this.hideStick();
+      }
+      if (this.lookTouch.id !== null && !live.has(this.lookTouch.id)) this.lookTouch.id = null;
+    };
+    document.addEventListener('touchstart', sweep, { capture: true, passive: true });
+    document.addEventListener('touchend', sweep, { capture: true, passive: true });
+    document.addEventListener('touchcancel', sweep, { capture: true, passive: true });
     // block iOS pinch-zoom and double-tap zoom gestures
     document.addEventListener('gesturestart', (e) => e.preventDefault(), opts);
     document.addEventListener('dblclick', (e) => e.preventDefault(), opts);
@@ -145,6 +165,11 @@ export class Input {
     root.addEventListener('contextmenu', (e) => e.preventDefault());
     document.addEventListener('pointerlockchange', () => {
       this.pointerLocked = document.pointerLockElement === root;
+      if (!this.pointerLocked) {
+        this.mouseDown = false;
+        this.releaseKey('Mouse0');
+        this.releaseKey('Mouse2');
+      }
     });
 
     // keyboard
@@ -154,10 +179,34 @@ export class Input {
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code)) e.preventDefault();
     });
     window.addEventListener('keyup', (e) => this.releaseKey(e.code));
-    window.addEventListener('blur', () => {
+    // let go of everything when the game loses focus or is hidden, so no key,
+    // mouse button or touch button stays held while nobody holds it
+    const letGo = () => {
       this.keys.clear();
-      for (const b of this.buttons.values()) b.down = false;
+      this.mouseDown = false;
+      for (const b of this.buttons.values()) this.releaseButton(b);
+    };
+    window.addEventListener('blur', letGo);
+    window.addEventListener('pagehide', letGo);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) letGo();
     });
+  }
+
+  releaseButton(b) {
+    if (b.down) b.released = true;
+    b.down = false;
+    b.touchId = null;
+    if (b.el) b.el.classList.remove('down');
+  }
+
+  // The left mouse button counts as the action button only while the pointer
+  // is locked to the view; without the lock a left drag is for looking round.
+  mouseAction() {
+    return this.pointerLocked && this.keys.has('Mouse0');
+  }
+  mouseActionPressed() {
+    return this.pointerLocked && this.keyEdges.has('Mouse0');
   }
 
   pressKey(code) {
@@ -214,6 +263,7 @@ export class Input {
   // Register a DOM element as a named button.
   bindButton(el, name) {
     const state = this.button(name);
+    state.el = el;
     const down = (e) => {
       e.preventDefault();
       e.stopPropagation();

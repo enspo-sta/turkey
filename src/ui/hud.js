@@ -474,7 +474,16 @@ export class HUD {
     // how far the string is drawn, as a ring around the button
     const drawAmt = onFoot && tool === 'bow' && hunting ? hunting.draw : 0;
     set('drawRing', Math.round(drawAmt * 40), (v) => el.primary.style.setProperty('--draw', String(v / 40)));
-    set('pLabel', pLabel, (v) => (el.primary.innerHTML = `<span>${v}</span>`));
+    set('pLabel', pLabel, (v) => {
+      // change the text in place: replacing the label under a finger loses the touch
+      let span = el.primary.firstElementChild;
+      if (!span || span.tagName !== 'SPAN') {
+        el.primary.textContent = '';
+        span = document.createElement('span');
+        el.primary.appendChild(span);
+      }
+      span.textContent = v;
+    });
     set('pClass', pClass, (v) => (el.primary.className = v));
     el.secondary.hidden = driving || catchOpen || !sLabel || (fishing && fishing.state !== 'idle' && tool === 'rod');
     if (sLabel) set('sLabel', sLabel, (v) => (el.secondary.innerHTML = `<span>${v}</span>`));

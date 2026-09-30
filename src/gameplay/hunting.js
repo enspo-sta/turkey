@@ -107,7 +107,7 @@ export class Hunting {
     if (this.nockT > 0) this.nockT = Math.max(0, this.nockT - dt);
     const ready = this.nockT <= 0 && gear.arrows > 0;
 
-    const held = input.held('primary') || input.key('Space') || (input.key('Mouse0') && (input.pointerLocked || !input.usingTouch));
+    const held = input.held('primary') || input.key('Space') || input.mouseAction();
     if (held && !this.wasHeld && !ready && gear.arrows <= 0) g.hud.toast('Quiver empty. Pick up your arrows or buy more at the Trading Post', 'bad');
     if (held && ready) {
       if (!this.drawing) {

@@ -187,8 +187,8 @@ export class Fishing {
       const b = this.watchBird;
       if (b && b.mode === 'carry' && this.state === 'idle' && input.lookTouch.id === null && !input.mouseDown) this.lookToward(b.x, b.y, b.z, dt, 2.5);
     }
-    const primaryPressed = input.pressed('primary') || input.keyPressed('Space') || input.keyPressed('Mouse0');
-    const primaryHeld = input.held('primary') || input.key('Space') || input.key('Mouse0');
+    const primaryPressed = input.pressed('primary') || input.keyPressed('Space') || input.mouseActionPressed();
+    const primaryHeld = input.held('primary') || input.key('Space') || input.mouseAction();
     const primaryReleased = input.released('primary');
 
     switch (this.state) {
@@ -347,6 +347,9 @@ export class Fishing {
       this.float.position.copy(this.lureEnd);
       this.floatBase = this.water.level;
       this.state = 'waiting';
+      // a hold that began before the float landed does not reel it back in;
+      // retrieving needs a fresh press on the water
+      this.pressTime = Infinity;
       this.waitT = 0;
       this.encounter = null;
       this.nextApproach = this.approachDelay();
