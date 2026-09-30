@@ -1,0 +1,15 @@
+{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":3000},
+{"eval":"(()=>{const g=__rhf.game; const c=g.hotrod; const e=c.exitPoint(1); g.player.place(e.x,e.z,c.yaw); return 'near car '+Math.hypot(c.pos.x-e.x,c.pos.z-e.z).toFixed(1)})()"},
+{"wait":2500},{"shot":"d0-nearcar"},
+{"eval":"__rhf.press('interact'); 'enter'"},{"wait":2500},
+{"eval":"__rhf.game.player.mode"},
+{"shot":"d1-cockpit"},
+{"eval":"__rhf.hold('gas', true); 'gas'"},{"wait":9000},
+{"eval":"(()=>{const c=__rhf.game.hotrod; return 'speed '+(c.speed*3.6).toFixed(0)+' km/h pos '+c.pos.x.toFixed(0)+','+c.pos.z.toFixed(0)})()"},
+{"shot":"d2-driving"},
+{"eval":"__rhf.press('cam'); 'cam'"},{"wait":3000},{"shot":"d3-chase"},
+{"eval":"__rhf.hold('gas', false); __rhf.hold('brake', true); 'brake'"},{"wait":4000},
+{"eval":"__rhf.hold('brake', false); (()=>{const c=__rhf.game.hotrod; return 'speed '+(c.speed*3.6).toFixed(0)})()"},
+{"eval":"(()=>{const g=__rhf.game; const c=g.hotrod; const b=g.world.bridges[0]; c.place((b.x0+b.x1)/2 - (b.x1-b.x0)*0.9, (b.z0+b.z1)/2-(b.z1-b.z0)*0.9, Math.atan2(b.x1-b.x0,b.z1-b.z0)); return 'bridge approach'})()"},
+{"wait":3000},{"shot":"d4-bridge"}
+]}

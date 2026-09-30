@@ -1,0 +1,4 @@
+{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":2500},
+{"eval":"(()=>{const g=__rhf.game; const c=g.hotrod; const r=g.world.roads[0]; const p=r.path.sample(r.path.length*0.55); c.place(p.x,p.z,Math.atan2(p.tx,p.tz)); const e=c.exitPoint(1); g.player.place(e.x,e.z,c.yaw); return 'placed'})()"},
+{"wait":1500},{"eval":"__rhf.press('interact'); 'enter'"},{"wait":3500},{"shot":"d5-cockpit-road"}
+]}

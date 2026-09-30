@@ -94,6 +94,14 @@ function buildHand(color = 0x6a4a2e) {
   return b.build();
 }
 
+function buildGlove(color = 0x6a4a2e) {
+  const b = new ModelBuilder();
+  b.box(0.075, 0.085, 0.1, { pos: [0, 0, 0], color });
+  b.box(0.03, 0.03, 0.06, { pos: [-0.04, 0.02, -0.04], rot: [0, 0.3, 0], color });
+  b.cyl(0.045, 0.05, 0.08, 8, { pos: [0, -0.02, 0.08], rot: [Math.PI / 2, 0, 0], color: 0xb2261e });
+  return b.build();
+}
+
 function buildRifle() {
   const b = new ModelBuilder();
   const wood = 0x6e3f1f;
@@ -180,7 +188,7 @@ export class Viewmodel {
     this.fishRig = new THREE.Group();
     this.root.add(this.fishRig);
     this.fishModel = null;
-    this.fishHands = [new THREE.Mesh(buildHand(), handMat), new THREE.Mesh(buildHand(), handMat)];
+    this.fishHands = [new THREE.Mesh(buildGlove(), handMat), new THREE.Mesh(buildGlove(), handMat)];
     for (const h of this.fishHands) this.fishRig.add(h);
 
     this.tool = 'rod';
@@ -380,11 +388,12 @@ export class Viewmodel {
       this.fishRig.rotation.set(0.1, 0, 0);
       this.fishModel.rotation.set(0, -Math.PI / 2, this.fishModel.userData.flat ? -1.2 : 0);
       this.fishModel.position.set(0, 0, 0);
-      const half = this.fishLen * 0.36;
-      this.fishHands[0].position.set(-half, -0.02 - this.fishLen * 0.06, 0.03);
-      this.fishHands[0].rotation.set(0, 0.2, -0.3);
-      this.fishHands[1].position.set(half, -0.02 - this.fishLen * 0.06, 0.03);
-      this.fishHands[1].rotation.set(0, -0.2, 0.3);
+      // one hand grips the tail wrist, the other supports the belly
+      const L = this.fishLen;
+      this.fishHands[0].position.set(L * 0.36, -0.01, 0.02);
+      this.fishHands[0].rotation.set(0.2, 0, -0.5);
+      this.fishHands[1].position.set(-L * 0.1, -0.035 - L * 0.07, 0.02);
+      this.fishHands[1].rotation.set(0.6, 0, 0.1);
     }
   }
 }

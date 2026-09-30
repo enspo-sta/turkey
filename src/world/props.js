@@ -138,8 +138,8 @@ export class Props {
       sx /= l;
       sz /= l;
       L.parking[p.id] = {
-        x: n.x + sx * (ROAD_HALF + 3.2),
-        z: n.z + sz * (ROAD_HALF + 3.2),
+        x: n.x + sx * (ROAD_HALF + 2.0),
+        z: n.z + sz * (ROAD_HALF + 2.0),
         yaw: Math.atan2(n.tx, n.tz),
         roadX: n.x,
         roadZ: n.z,
@@ -444,7 +444,7 @@ export class Props {
       const ox = side * (hw + 0.1);
       this.colliders.addBox(cx + ox * c, cz - ox * s, 0.25, len / 2, yaw, deck - 1, deck + 6);
     }
-    this.colliders.addDeck(cx, cz, hw, len / 2 + 0.5, yaw, deck + 0.02, { bridge: true });
+    this.colliders.addDeck(cx, cz, hw, len / 2 + 0.5, yaw, deck + 0.08, { bridge: true });
   }
 
   // ------------------------------------------------------------ docks
@@ -767,8 +767,8 @@ export class Props {
       const pk = L.parking[id];
       if (!pk) continue;
       // stand the sign just past the parking bay
-      const x = pk.x + pk.side.x * 3.2;
-      const z = pk.z + pk.side.z * 3.2;
+      const x = pk.x + pk.side.x * 4.4;
+      const z = pk.z + pk.side.z * 4.4;
       const y = W.heightAt(x, z);
       const yaw = Math.atan2(-pk.side.x, -pk.side.z);
       const post = new ModelBuilder();

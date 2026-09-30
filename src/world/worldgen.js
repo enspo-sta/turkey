@@ -905,7 +905,7 @@ export class World {
     if (!best && this.inBounds(x, z)) {
       const k = this.cellIndex(x, z);
       const rd = this.riverD[k];
-      if (rd < 60) {
+      if (rd < 60 && this.coastD[k] > -6) {
         const s = this.riverS[k];
         const w = this.riverWidth(s);
         const lvl = this.riverLevel(s);

@@ -1,0 +1,6 @@
+{"width":960,"height":540,"steps":[{"wait":1500},
+{"eval":"(()=>{const g=__rhf.game; const s=__rhf.session; s.updateTitle=()=>{}; document.getElementById('title').hidden=true; g.grass.group.visible=false; const c=g.hotrod; c.place(-60, 470, 0.9); g.env.setTime(15); window.__view=(a,d,h)=>{const x=c.pos.x+Math.sin(c.yaw+a)*d, z=c.pos.z+Math.cos(c.yaw+a)*d; g.camera.position.set(x,c.pos.y+h,z); g.camera.lookAt(c.pos.x,c.pos.y+0.9,c.pos.z); g.camera.updateMatrixWorld(); g.focus=g.camera.position;}; __view(0.9,6,1.6); return 'ok'})()"},
+{"wait":3000},{"shot":"c1-front34"},
+{"eval":"__view(Math.PI/2,6,1.2); 'side'"},{"wait":3000},{"shot":"c2-side"},
+{"eval":"__view(2.4,6,2.2); 'rear34'"},{"wait":3000},{"shot":"c3-rear34"}
+]}

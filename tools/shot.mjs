@@ -21,7 +21,7 @@ mkdirSync(outDir, { recursive: true });
 const width = scenario.width || 1280;
 const height = scenario.height || 720;
 const browser = await chromium.launch({
-  args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'],
+  args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required', ...(process.env.SHOT_FLAGS ? process.env.SHOT_FLAGS.split(' ') : [])],
 });
 const context = await browser.newContext({
   viewport: { width, height },

@@ -136,47 +136,66 @@ export class HotRod {
     this.body = body;
     this.group.add(body);
 
-    // ---- painted body panels
+    // ---- painted body: extruded '32 roadster side profile with rounded edges
+    const shape = new THREE.Shape();
+    shape.moveTo(0.86, 0.58);
+    shape.lineTo(0.86, 1.06);
+    shape.quadraticCurveTo(0.8, 1.13, 0.5, 1.14);
+    shape.lineTo(-0.95, 1.12);
+    shape.quadraticCurveTo(-1.45, 1.1, -1.62, 0.9);
+    shape.quadraticCurveTo(-1.74, 0.74, -1.72, 0.6);
+    shape.lineTo(-1.66, 0.56);
+    shape.lineTo(0.8, 0.56);
+    shape.closePath();
+    const bodyWidth = 1.1;
+    const tub = new THREE.ExtrudeGeometry(shape, {
+      depth: bodyWidth,
+      bevelEnabled: true,
+      bevelThickness: 0.05,
+      bevelSize: 0.05,
+      bevelSegments: 2,
+      curveSegments: 8,
+    });
+    tub.rotateY(-Math.PI / 2);
+    tub.translate(bodyWidth / 2, 0, 0);
     const pb = new ModelBuilder();
-    // cab / roadster tub
-    pb.box(1.34, 0.62, 1.55, { pos: [0, 0.93, -0.35], color: 0xffffff, jitter: 0 });
-    // rounded tail
-    pb.cyl(0.67, 0.67, 1.34, 14, { pos: [0, 0.93, -1.12], rot: [0, 0, Math.PI / 2], scale: [1, 1, 0.55], color: 0xffffff, jitter: 0 });
-    // cowl in front of the windshield
-    pb.box(1.14, 0.5, 0.42, { pos: [0, 0.98, 0.62], color: 0xffffff, jitter: 0 });
-    // grille shell
-    pb.box(0.56, 0.78, 0.16, { pos: [0, 0.86, 1.86], color: 0xffffff, jitter: 0 });
-    // side sills
-    pb.box(0.1, 0.12, 1.7, { pos: [0.66, 0.6, -0.35], color: 0xffffff, jitter: 0 });
-    pb.box(0.1, 0.12, 1.7, { pos: [-0.66, 0.6, -0.35], color: 0xffffff, jitter: 0 });
+    pb.add(tub, { color: 0xffffff, jitter: 0, smooth: true });
+    // grille shell with a rounded top
+    pb.box(0.5, 0.56, 0.16, { pos: [0, 0.8, 1.86], color: 0xffffff, jitter: 0 });
+    pb.cyl(0.25, 0.25, 0.16, 14, { pos: [0, 1.08, 1.86], rot: [Math.PI / 2, 0, 0], scale: [1, 1, 0.55], color: 0xffffff, jitter: 0, smooth: true });
+    // frame horns and front crossmember in body colour
+    for (const s of [-1, 1]) pb.box(0.08, 0.12, 0.5, { pos: [s * 0.36, 0.5, 1.75], color: 0xffffff, jitter: 0 });
     const paintMesh = new THREE.Mesh(pb.build(), paint);
     paintMesh.castShadow = true;
     body.add(paintMesh);
+    this.bodyHalfWidth = bodyWidth / 2 + 0.05;
 
     // ---- chrome: grille surround, headlights, blower, valve covers, headers, bumpers
     const cb = new ModelBuilder();
-    cb.box(0.6, 0.84, 0.06, { pos: [0, 0.86, 1.95], color: 0xffffff, jitter: 0 });
+    cb.box(0.56, 0.6, 0.05, { pos: [0, 0.8, 1.95], color: 0xffffff, jitter: 0 });
+    cb.torus(0.27, 0.03, 5, 14, { pos: [0, 1.08, 1.95], arc: Math.PI, color: 0xffffff, jitter: 0 });
     for (const s of [-1, 1]) {
       cb.cyl(0.14, 0.12, 0.2, 12, { pos: [s * 0.48, 1.02, 1.88], rot: [Math.PI / 2, 0, 0], color: 0xffffff, jitter: 0 });
       cb.beam([s * 0.3, 0.72, 1.86], [s * 0.48, 0.96, 1.86], 0.025, 5, { color: 0xffffff, jitter: 0 });
       // valve covers on the V8
-      cb.box(0.12, 0.1, 0.7, { pos: [s * 0.2, 1.2, 1.12], rot: [0, 0, s * 0.45], color: 0xffffff, jitter: 0 });
+      cb.box(0.12, 0.1, 0.7, { pos: [s * 0.2, 1.1, 1.12], rot: [0, 0, s * 0.45], color: 0xffffff, jitter: 0 });
       // exhaust headers sweeping down to side pipes
       for (let i = 0; i < 4; i++) {
         const z = 0.86 + i * 0.16;
-        cb.beam([s * 0.3, 1.02, z], [s * 0.56, 0.84, z - 0.05], 0.035, 5, { color: 0xffffff, jitter: 0 });
-        cb.beam([s * 0.56, 0.84, z - 0.05], [s * 0.72, 0.5, 0.75], 0.035, 5, { color: 0xffffff, jitter: 0 });
+        cb.beam([s * 0.3, 0.94, z], [s * 0.56, 0.8, z - 0.05], 0.035, 5, { color: 0xffffff, jitter: 0 });
+        cb.beam([s * 0.56, 0.8, z - 0.05], [s * 0.72, 0.5, 0.75], 0.035, 5, { color: 0xffffff, jitter: 0 });
       }
       cb.beam([s * 0.72, 0.5, 0.75], [s * 0.74, 0.47, -1.35], 0.06, 8, { color: 0xffffff, jitter: 0 });
       cb.cyl(0.075, 0.07, 0.18, 8, { pos: [s * 0.74, 0.47, -1.44], rot: [Math.PI / 2, 0, 0], color: 0xffffff, jitter: 0 });
     }
     // supercharger, carbs and scoop
-    cb.box(0.34, 0.26, 0.54, { pos: [0, 1.38, 1.1], color: 0xffffff, jitter: 0 });
-    for (const z of [0.98, 1.22]) cb.cyl(0.08, 0.09, 0.14, 10, { pos: [0, 1.58, z], color: 0xffffff, jitter: 0 });
-    cb.box(0.3, 0.2, 0.52, { pos: [0, 1.74, 1.14], rot: [0.08, 0, 0], color: 0xffffff, jitter: 0 });
+    cb.box(0.34, 0.18, 0.54, { pos: [0, 1.3, 1.1], color: 0xffffff, jitter: 0 });
+    for (const z of [0.98, 1.22]) cb.cyl(0.075, 0.085, 0.08, 10, { pos: [0, 1.43, z], color: 0xffffff, jitter: 0 });
+    cb.box(0.28, 0.12, 0.5, { pos: [0, 1.53, 1.14], rot: [0.08, 0, 0], color: 0xffffff, jitter: 0 });
+    cb.box(0.26, 0.1, 0.03, { pos: [0, 1.54, 1.39], color: 0x222222, jitter: 0 });
     // windshield frame
-    cb.box(1.1, 0.05, 0.05, { pos: [0, 1.62, 0.5], color: 0xffffff, jitter: 0 });
-    for (const s of [-1, 1]) cb.beam([s * 0.55, 1.2, 0.52], [s * 0.55, 1.62, 0.48], 0.022, 5, { color: 0xffffff, jitter: 0 });
+    cb.box(1.08, 0.05, 0.05, { pos: [0, 1.58, 0.47], color: 0xffffff, jitter: 0 });
+    for (const s of [-1, 1]) cb.beam([s * 0.54, 1.16, 0.5], [s * 0.54, 1.58, 0.46], 0.022, 5, { color: 0xffffff, jitter: 0 });
     // nerf bars / rear bumper
     cb.box(1.3, 0.06, 0.06, { pos: [0, 0.55, -1.76], color: 0xffffff, jitter: 0 });
     // front axle springs and shocks
@@ -189,8 +208,8 @@ export class HotRod {
     const db = new ModelBuilder();
     for (const s of [-1, 1]) db.box(0.1, 0.16, 3.7, { pos: [s * 0.42, 0.5, 0.05], color: 0x1c1c1c });
     db.box(1.3, 0.09, 0.14, { pos: [0, 0.34, 1.62], color: 0x222222 }); // dropped axle
-    db.box(0.54, 0.46, 0.8, { pos: [0, 0.98, 1.12], color: 0xc2321e }); // V8 block
-    db.box(0.3, 0.12, 0.66, { pos: [0, 1.26, 1.1], color: 0x2a2a2a }); // intake
+    db.box(0.54, 0.46, 0.8, { pos: [0, 0.9, 1.12], color: 0xc2321e }); // V8 block
+    db.box(0.3, 0.1, 0.66, { pos: [0, 1.17, 1.1], color: 0x2a2a2a }); // intake
     db.box(0.48, 0.66, 0.08, { pos: [0, 0.86, 1.94], color: 0x0c0c0c }); // grille
     for (let i = -3; i <= 3; i++) db.box(0.03, 0.62, 0.03, { pos: [i * 0.06, 0.86, 1.99], color: 0x8a8a8a });
     db.box(0.5, 0.5, 0.14, { pos: [0, 0.82, 1.7], color: 0x333333 }); // radiator
@@ -232,10 +251,10 @@ export class HotRod {
       polygonOffsetFactor: -2,
     });
     for (const s of [-1, 1]) {
-      const g = new THREE.PlaneGeometry(2.05, 0.5);
+      const g = new THREE.PlaneGeometry(2.2, 0.46);
       const m = new THREE.Mesh(g, this.flameMat);
       // +x side faces +x; flames start at the front (+z) and lick backwards
-      m.position.set(s * 0.676, 0.96, 0.02);
+      m.position.set(s * (this.bodyHalfWidth + 0.004), 0.86, -0.3);
       m.rotation.y = s > 0 ? Math.PI / 2 : -Math.PI / 2;
       m.scale.x = s > 0 ? 1 : -1;
       body.add(m);
@@ -243,7 +262,7 @@ export class HotRod {
 
     // windshield glass
     const ws = new THREE.Mesh(new THREE.PlaneGeometry(1.06, 0.4), glass);
-    ws.position.set(0, 1.42, 0.5);
+    ws.position.set(0, 1.37, 0.47);
     ws.rotation.x = -0.08;
     body.add(ws);
 
@@ -658,11 +677,11 @@ export class HotRod {
     this.group.updateMatrixWorld(true);
     if (this.camMode === 'cockpit') {
       this.driver.visible = false;
-      const p = _v.set(0.3, 1.54, -0.46).applyMatrix4(this.body.matrixWorld);
+      const p = _v.set(0.3, 1.66, -0.5).applyMatrix4(this.body.matrixWorld);
       cam.position.copy(p);
-      this.body.getWorldQuaternion(_q);
-      _qLook.setFromEuler(_e.set(this.camPitch + shy, this.camYaw + shx, 0, 'YXZ'));
-      cam.quaternion.copy(_q).multiply(_qFlip).multiply(_qLook);
+      // heads keep the horizon steadier than the chassis: damp pitch and roll
+      _e.set(this.pitch * 0.8 + this.camPitch + shy, this.yaw + Math.PI + this.camYaw + shx, -this.roll * 0.35, 'YXZ');
+      cam.quaternion.setFromEuler(_e);
     } else {
       this.driver.visible = true;
       const dist = 7.2;

@@ -10,6 +10,7 @@ import { GrassField } from './world/grass.js';
 import { Colliders } from './world/colliders.js';
 import { makeWorldTextures } from './world/worldtex.js';
 import { Props } from './world/props.js';
+import { buildRoads } from './world/roads.js';
 import { makeDetailTexture, makeCloudTexture, makeWaterNormalTexture } from './util/textures.js';
 
 export const IS_TOUCH =
@@ -96,6 +97,8 @@ export class Game {
     this.scene.add(this.scatter.group);
     this.props.build();
     this.scene.add(this.props.group);
+    this.roads = buildRoads(this.world);
+    this.scene.add(this.roads);
 
     this.grass = new GrassField(this.wtex, this.env);
     this.scene.add(this.grass.group);
@@ -156,6 +159,7 @@ export class Game {
 
   frame() {
     let dt = this.timer.getDelta();
+    this.adaptResolution(dt);
     if (dt > 0.1) dt = 0.1;
     this.dt = dt;
     this.time += dt;
@@ -165,13 +169,41 @@ export class Game {
     const t1 = performance.now();
     this.updateWorld(dt);
     const t2 = performance.now();
-    this.render();
+    this.menuFrame = (this.menuFrame || 0) + 1;
+    if (!this.menuOpen || this.menuFrame % 3 === 0) this.render();
     const t3 = performance.now();
     for (const s of this.systems) s.postRender?.(dt, this);
     const st = this.perf || (this.perf = { game: 0, world: 0, render: 0 });
     st.game = st.game * 0.9 + (t1 - t0) * 0.1;
     st.world = st.world * 0.9 + (t2 - t1) * 0.1;
     st.render = st.render * 0.9 + (t3 - t2) * 0.1;
+  }
+
+  // Dynamic resolution: drop the pixel ratio when frames run long, raise it
+  // again (up to the quality preset) when there is headroom.
+  adaptResolution(rawDt) {
+    if (!this.quality || rawDt <= 0 || rawDt > 0.5) return;
+    const a = this.adapt || (this.adapt = { avg: 1 / 60, t: 0, good: 0 });
+    a.avg = a.avg * 0.95 + rawDt * 0.05;
+    a.t += rawDt;
+    if (a.t < 2.5) return;
+    a.t = 0;
+    const maxDpr = Math.min(window.devicePixelRatio || 1, this.quality.dpr);
+    const minDpr = Math.min(1, maxDpr);
+    if (a.avg > 1 / 40 && this.dpr > minDpr + 0.01) {
+      this.dpr = Math.max(minDpr, this.dpr - 0.25);
+      this.renderer.setPixelRatio(this.dpr);
+      this.resize();
+      a.good = 0;
+    } else if (a.avg < 1 / 55 && this.dpr < maxDpr - 0.01) {
+      a.good++;
+      if (a.good >= 4) {
+        this.dpr = Math.min(maxDpr, this.dpr + 0.25);
+        this.renderer.setPixelRatio(this.dpr);
+        this.resize();
+        a.good = 0;
+      }
+    } else a.good = 0;
   }
 
   updateWorld(dt) {

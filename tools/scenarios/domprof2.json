@@ -1,0 +1,13 @@
+{"width":640,"height":360,"steps":[{"wait":1000},{"eval":"__rhf.game.setQuality('low'); __rhf.start(false)"},{"wait":6000},
+{"eval":"window.__meas = async (label)=>{const t0=performance.now(); let n=0; await new Promise(r=>{const f=()=>{n++; if(performance.now()-t0<3000) requestAnimationFrame(f); else r();}; requestAnimationFrame(f);}); return label+': '+((performance.now()-t0)/n).toFixed(0)+'ms n='+n}; 'ok'"},
+{"eval":"__meas('baseline1')"},
+{"eval":"__meas('baseline2')"},
+{"eval":"(()=>{document.getElementById('compass').style.webkitMaskImage='none'; document.getElementById('compass').style.maskImage='none'; return 'nomask'})()"},
+{"eval":"__meas('no compass mask')"},
+{"eval":"(()=>{document.getElementById('vignette').hidden=true; return 'novig'})()"},
+{"eval":"__meas('no vignette')"},
+{"eval":"(()=>{for(const id of ['dmg','danger-left','danger-right','danger-back']) document.getElementById(id).hidden=true; return 'nodanger'})()"},
+{"eval":"__meas('no danger layers')"},
+{"eval":"(()=>{document.getElementById('hud').hidden=true; return 'nohud'})()"},
+{"eval":"__meas('no hud')"}
+]}
