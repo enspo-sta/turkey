@@ -26,7 +26,7 @@ export function makeTerrainMaterial(detailTex, matTex, surfaceTex) {
   detailTex.repeat.set(1 / 6.5, 1 / 6.5);
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true, map: detailTex });
   mat.userData.fx = 'canopy';
-  const extra = { uMat: { value: matTex }, uSurf: { value: surfaceTex } };
+  const extra = { uMat: { value: matTex }, uSurf: { value: surfaceTex }, uSnowLine: { value: 300 } };
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, extra);
     shader.vertexShader = shader.vertexShader
@@ -38,6 +38,7 @@ export function makeTerrainMaterial(detailTex, matTex, surfaceTex) {
         `#include <common>
         uniform sampler2D uMat;
         uniform sampler2D uSurf;
+        uniform float uSnowLine;
         varying vec3 vTWorld;
         varying vec3 vTNormal;
         float tHeight = 0.0;
@@ -98,11 +99,25 @@ export function makeTerrainMaterial(detailTex, matTex, surfaceTex) {
           diffuseColor.rgb *= tone;
           // stones vary a little in colour, warm to cool
           diffuseColor.rgb *= mix( vec3( 1.0 ), mix( vec3( 1.06, 1.0, 0.92 ), vec3( 0.92, 0.98, 1.06 ), fract( pb * 7.3 ) ), wG * step( 0.2, pb ) );
+          // bands of paler and darker rock across the big mountain faces
+          float band = sin( vTWorld.y * 0.075 + texture2D( uMat, vTWorld.xz * 0.0031 ).r * 5.0 );
+          diffuseColor.rgb *= mix( 1.0, 0.84 + 0.22 * smoothstep( -0.4, 0.6, band ), wR * smoothstep( 90.0, 180.0, vTWorld.y ) );
+          // snow on the high ground: lower on north faces, shed by cliffs,
+          // with a ragged edge where rock pokes through
+          float sBig = texture2D( map, vTWorld.xz * 0.0019 + vec2( 0.13, 0.57 ) ).g * 2.0 - 1.0;
+          float sRag = texture2D( uMat, vTWorld.xz * 0.021 ).r - 0.5;
+          float snowLine = uSnowLine + sBig * 70.0 + sRag * 26.0 + tn.z * 45.0;
+          float snow = smoothstep( snowLine - 10.0, snowLine + 14.0, vTWorld.y );
+          // high up, glaciers and snowfields cling to steeper ground
+          float high = smoothstep( 600.0, 1300.0, vTWorld.y );
+          snow *= smoothstep( 0.4 - high * 0.2, 0.62 - high * 0.25, tn.y + rk * 0.08 );
+          snow = clamp( snow - rk * wR * 0.35 * ( 1.0 - snow ), 0.0, 1.0 );
+          diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.86, 0.9, 0.95 ) * ( 0.93 + sRag * 0.14 ), snow );
           // fade the bumps with distance and at grazing views, where screen
           // derivatives of the pattern blow up
           float fade = 1.0 - smoothstep( 35.0, 110.0, length( vViewPosition ) );
           fade *= smoothstep( 0.06, 0.3, abs( dot( tn, normalize( cameraPosition - vTWorld ) ) ) );
-          tHeight = ( rk * wR * 0.09 + pb * wG * 0.035 + sd * wB * 0.012 + ff * wA * 0.018 ) * fade;
+          tHeight = ( rk * wR * 0.09 + pb * wG * 0.035 + sd * wB * 0.012 + ff * wA * 0.018 ) * fade * ( 1.0 - snow * 0.85 );
         }`
       )
       .replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\nnormal = tBump( - vViewPosition, normal, tHeight );');
@@ -283,9 +298,9 @@ export function buildFarTerrain(world, material) {
   const coords = [];
   const R = 6400;
   const NEAR = HALF + 700;
-  for (let v = -R; v < -NEAR; v += 200) coords.push(v);
-  for (let v = -NEAR; v <= NEAR; v += 50) coords.push(v);
-  for (let v = NEAR + 200; v <= R; v += 200) coords.push(v);
+  for (let v = -R; v < -NEAR; v += 100) coords.push(v);
+  for (let v = -NEAR; v <= NEAR; v += 40) coords.push(v);
+  for (let v = NEAR + 100; v <= R; v += 100) coords.push(v);
   // make sure the square edge lines exist exactly
   const n = coords.length;
   const pos = [];
@@ -327,7 +342,7 @@ export function buildFarTerrain(world, material) {
         const mixc = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
         c = mixc(c, tundra, smoothstep(140, 240, e + nz * 40));
         c = mixc(c, rock, smoothstep(0.5, 0.9, slope));
-        c = mixc(c, snow, smoothstep(330, 420, e + nz * 60) * (1 - smoothstep(1.1, 1.8, slope)));
+        c = mixc(c, snow, smoothstep(390, 470, e + nz * 60) * (1 - smoothstep(1.1, 1.8, slope)));
       }
       col.push(LIN[Math.round(c[0] * 255)], LIN[Math.round(c[1] * 255)], LIN[Math.round(c[2] * 255)]);
       uv.push(x, z);

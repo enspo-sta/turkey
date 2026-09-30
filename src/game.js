@@ -13,6 +13,7 @@ import { Colliders } from './world/colliders.js';
 import { makeWorldTextures } from './world/worldtex.js';
 import { Props } from './world/props.js';
 import { buildRoads } from './world/roads.js';
+import { Scenery } from './world/scenery.js';
 import { makeDetailTexture, makeCloudTexture, makeWaterNormalTexture, makeCausticTexture, makeTerrainDetailTexture } from './util/textures.js';
 
 export const IS_TOUCH =
@@ -122,6 +123,9 @@ export class Game {
     this.water = new WaterSystem(this.world, this.wtex, this.textures.waterNormal, this.env, renderer);
     this.scene.add(this.water.group);
     FX.uFxWaves.value = this.water.waves.texture;
+    // volcano steam, clouds on the peaks and cascades down the cliffs
+    this.scenery = new Scenery(this);
+    this.scene.add(this.scenery.group);
 
     progress(0.8, 'Planting spruce and birch');
     await nextFrame();
@@ -281,6 +285,7 @@ export class Game {
     const rain = this.env.weather.rain;
     this.updateFx();
     this.water.update(dt, rain, cam, this.scene);
+    this.scenery.update(dt);
     this.grass.update(dt, cam.position, this.env.sun, this.env.hemi, 0.3 + rain * 0.8);
   }
 

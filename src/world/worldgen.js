@@ -23,6 +23,10 @@ export const CS = SIZE / CELLS; // 3.125 m
 export const N = CELLS + 1;
 export const ROAD_HALF = 3.6;
 
+// hero landforms beyond the playable square (metres)
+export const VOLCANO = { x: -3600, z: 3600, r: 2800, h: 2100, crater: 260 };
+export const MASSIF = { x: 600, z: -4200, r: 2200, h: 2600 };
+
 export const SURF = {
   GRASS: 0,
   FOREST: 1,
@@ -378,16 +382,41 @@ export class World {
     const edge = Math.max(Math.abs(x), Math.abs(z));
     const land = smoothstep(-30, 80, csd);
     if (edge > HALF) {
-      const r = this.n2.ridged(x * 0.0011 + 7.7, z * 0.0011 + 2.2, 5);
-      e += land * smoothstep(HALF + 150, HALF + 1100, edge) * (120 + 700 * r);
+      // ridged ranges, less busy in the fine detail, grouped into higher and
+      // lower massifs so the skyline has a rhythm instead of even teeth
+      const r = this.n2.ridged(x * 0.00095 + 7.7, z * 0.00095 + 2.2, 5, 2.05, 0.42);
+      const big = 0.55 + 0.8 * (this.n3.noise(x * 0.00035 + 3.3, z * 0.00035 - 8.1) * 0.5 + 0.5);
+      e += land * smoothstep(HALF + 150, HALF + 1100, edge) * (100 + 720 * r * big);
     }
     // far shore across the bay (south-west)
     const across = (-x + z) * 0.7071;
     if (across > 2300) {
       const f = smoothstep(2300, 3300, across);
-      const r = this.n1.ridged(x * 0.0009 - 3.1, z * 0.0009 + 5.2, 5);
+      const r = this.n1.ridged(x * 0.0009 - 3.1, z * 0.0009 + 5.2, 5, 2.05, 0.42);
       const mtn = -8 + 180 * f + 820 * r * f;
       e = Math.max(e, lerp(e, mtn, f));
+    }
+    // a volcano across the bay: a broad cone scored by gullies, with a
+    // crater at the summit
+    const V = VOLCANO;
+    const vd = Math.hypot(x - V.x, z - V.z);
+    if (vd < V.r) {
+      const u = 1 - vd / V.r;
+      const ang = Math.atan2(z - V.z, x - V.x);
+      const gully = 1 - 0.1 * Math.abs(Math.sin(ang * 9 + this.n1.noise(x * 0.0017, z * 0.0017) * 2.5)) * smoothstep(0.05, 0.6, 1 - u);
+      let h = V.h * Math.pow(u, 1.55) * gully;
+      // inside the rim the ground drops into the crater
+      if (vd < V.crater) h = V.h * Math.pow(1 - V.crater / V.r, 1.55) - Math.pow(1 - vd / V.crater, 1.5) * 110;
+      e = Math.max(e, h + this.n2.noise(x * 0.004, z * 0.004) * 18 * u);
+    }
+    // the great glaciated massif on the northern skyline
+    const M = MASSIF;
+    const md = Math.hypot(x - M.x, z - M.z);
+    if (md < M.r) {
+      const u = 1 - md / M.r;
+      const r = this.n2.ridged(x * 0.0011 + 31, z * 0.0011 - 17, 5, 2.05, 0.45);
+      // broad shoulders and a summit dome that hold snow, steep in between
+      e = Math.max(e, M.h * u * u * (3 - 2 * u) * (0.86 + 0.2 * r));
     }
     return e;
   }
