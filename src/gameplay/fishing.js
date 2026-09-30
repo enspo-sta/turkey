@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
-import { FISH, LURES, LEGENDS, speciesPool } from './data.js';
+import { FISH, LURES, LEGENDS, RARITY, speciesPool } from './data.js';
 import { lengthFor, makeFishModel } from '../entities/fishmodels.js';
 import { clamp, lerp, damp, weightedPick, randRange, angleDiff, smoothstep } from '../util/math.js';
 
@@ -146,6 +146,9 @@ export class Fishing {
     }
     this.state = 'meter';
     this.meter = { phase: 0, t: 0, needle: 0, power: 0, acc: 0 };
+    // the lure on the line in the colour of the one tied on
+    const lure = LURES[g.state.gear.lure];
+    if (lure) this.lureMesh.material.color.setHex(lure.color);
     g.player.moveLocked = true;
     g.audio?.click();
   }
@@ -406,7 +409,10 @@ export class Fishing {
     const pool = this.pool();
     const lure = LURES[g.state.gear.lure];
     const night = g.env.night > 0.5;
-    const choice = weightedPick(pool, (p) => p.w * (lure.likes[p.id] ?? 0.5) * (FISH[p.id].night && !night ? 0.1 : 1));
+    // a gold hotspot and a perfect cast tempt the rarer fish
+    const skill = (this.castHot ? 1.5 : 1) * (this.perfect ? 1.3 : 1);
+    const rareK = { common: 1, uncommon: 1 + (skill - 1) * 0.4, rare: skill, epic: skill * skill };
+    const choice = weightedPick(pool, (p) => p.w * (lure.likes[p.id] ?? 0.5) * (FISH[p.id].night && !night ? 0.1 : 1) * rareK[FISH[p.id].rarity]);
     const id = choice ? choice.id : 'dolly';
     const f = FISH[id];
     // legendary?
@@ -1068,7 +1074,7 @@ export class Fishing {
     this.hideJumper();
     this.line.visible = false;
     const len = lengthFor(fish.species, fish.weight);
-    let value = Math.round(fish.weight * f.perKg);
+    let value = Math.round(fish.weight * f.perKg * RARITY[f.rarity].value);
     if (fish.legend) value += LEGENDS[fish.legend].bonus;
     const flags = g.state.recordCatch({ species: fish.species, weight: fish.weight, length: len, legend: fish.legend });
     this.catchInfo = {
@@ -1079,6 +1085,7 @@ export class Fishing {
       length: len,
       value,
       legend: fish.legend,
+      rarity: fish.legend ? 'legendary' : f.rarity,
       ...flags,
       place: this.hotPlace ? this.hotPlace.name : null,
     };

@@ -1,6 +1,6 @@
 // Persistent game state (money, gear, cooler, journal, challenges) with
 // localStorage save/load and challenge evaluation.
-import { CHALLENGES, SPECIES_IDS, COOLERS, RODS } from './data.js';
+import { CHALLENGES, SPECIES_IDS, COOLERS, RODS, FISH } from './data.js';
 
 const SAVE_KEY = 'rubenHotrodFishing.save.v1';
 const SETTINGS_KEY = 'rubenHotrodFishing.settings.v1';
@@ -137,8 +137,12 @@ export class GameState {
         if (f.species === 'char') complete('char');
         if (f.species === 'halibut' && f.weight >= 40) complete('halibut');
         if (f.legend) complete('legend');
+        const r = FISH[f.species] && FISH[f.species].rarity;
+        if (r === 'rare' || r === 'epic') complete('rare');
+        if (r === 'epic') complete('epic');
         const n = this.speciesCaughtCount();
         if (n >= 10) complete('ten');
+        if (n >= 20) complete('twenty');
         if (n >= SPECIES_IDS.length) complete('journal');
         break;
       }

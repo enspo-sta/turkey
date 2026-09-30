@@ -30,6 +30,18 @@ const LOOK = {
   lingcod: { back: 0x4a4a30, side: 0x74744a, head: 0x4a4a30 },
   yelloweye: { back: 0xb04014, side: 0xd06a26, head: 0xb04014 },
   cod: { back: 0x5a5444, side: 0x888066, head: 0x5a5444 },
+  steelhead: { back: 0x34505e, side: 0xa8aeb2, head: 0x34505e },
+  cutthroat: { back: 0x4a5832, side: 0x9a8e66, head: 0x4a5832 },
+  whitefish: { back: 0x3e4c4c, side: 0x9a9e9a, head: 0x3e4c4c },
+  kokanee: { back: 0x22406a, side: 0xa4acb0, head: 0x22406a },
+  blackrock: { back: 0x202428, side: 0x3c4148, head: 0x202428 },
+  quillback: { back: 0x5a3e22, side: 0x94662e, head: 0x5a3e22 },
+  greenling: { back: 0x4c3e2e, side: 0x745e42, head: 0x4c3e2e },
+  flounder: { back: 0x3e3828, side: 0x4a4234, head: 0x3e3828 },
+  sculpin: { back: 0x4a4e3a, side: 0x727256, head: 0x4a4e3a },
+  dogfish: { back: 0x4a4e52, side: 0x686c70, head: 0x4a4e52 },
+  skate: { back: 0x584a38, side: 0x4a3e30, head: 0x584a38 },
+  salmonshark: { back: 0x222c36, side: 0x3e4852, head: 0x222c36 },
 };
 
 // How many swim together, and how wide the body is (width, height per length).
@@ -50,6 +62,18 @@ const HABIT = {
   lingcod: { school: [1, 2], w: 0.16, h: 0.17 },
   yelloweye: { school: [2, 4], w: 0.2, h: 0.3 },
   cod: { school: [2, 4], w: 0.17, h: 0.2 },
+  steelhead: { school: [1, 3], w: 0.15, h: 0.2 },
+  cutthroat: { school: [2, 4], w: 0.14, h: 0.19 },
+  whitefish: { school: [4, 8], w: 0.13, h: 0.19 },
+  kokanee: { school: [6, 12], w: 0.13, h: 0.2 },
+  blackrock: { school: [5, 10], w: 0.18, h: 0.28 },
+  quillback: { school: [1, 1], w: 0.2, h: 0.32 },
+  greenling: { school: [1, 3], w: 0.15, h: 0.18 },
+  flounder: { school: [1, 2], w: 0.46, h: 0.1 },
+  sculpin: { school: [1, 3], w: 0.22, h: 0.2 },
+  dogfish: { school: [3, 6], w: 0.14, h: 0.14 },
+  skate: { school: [1, 1], w: 0.9, h: 0.08 },
+  salmonshark: { school: [1, 1], w: 0.16, h: 0.17 },
 };
 
 // Unit fish along +z (head at +0.5, tail at -0.5). aRegion: x back (0 belly
@@ -240,7 +264,7 @@ export class AmbientFish {
         head: _c.set(look.head).toArray(),
         w: hab.w,
         h: hab.h,
-        flat: species === 'halibut',
+        flat: species === 'halibut' || species === 'flounder' || species === 'skate',
       };
       school.fish.push(fish);
       this.fish.push(fish);

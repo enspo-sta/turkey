@@ -1,6 +1,6 @@
 // Menu sheets: map with fast travel, journal (fish, trophies, challenges),
 // Trading Post shop, lure picker, pause/settings, how-to-play and dialogs.
-import { FISH, SPECIES_IDS, LEGENDS, LURES, RODS, COOLERS, ENGINES, TIRES, PAINTS, GEAR, GAME, CHALLENGES, QUIVER } from '../gameplay/data.js';
+import { FISH, SPECIES_IDS, LEGENDS, LURES, RODS, COOLERS, ENGINES, TIRES, PAINTS, GEAR, GAME, CHALLENGES, QUIVER, RARITY, RARITY_ORDER } from '../gameplay/data.js';
 import { formatMoney, formatTime, clamp } from '../util/math.js';
 import { privacyHTML, PRIVACY_UPDATED } from './privacy.js';
 import { renderMapRGBA, worldToMap } from '../world/maprender.js';
@@ -25,18 +25,37 @@ export function drawFish2D(canvas, id, known = true) {
   const L = w * 0.8;
   const x0 = w * 0.08;
   const cy = h * 0.52;
-  const H = { salmon: 0.26, trout: 0.24, grayling: 0.22, pike: 0.16, eel: 0.14, flat: 0.42, ling: 0.2, rockfish: 0.36, cod: 0.24 }[shape] * L;
+  const H = { salmon: 0.26, trout: 0.24, grayling: 0.22, pike: 0.16, eel: 0.14, flat: 0.42, ling: 0.2, rockfish: 0.36, cod: 0.24, whitefish: 0.22, quillback: 0.38, greenling: 0.2, sculpin: 0.3, shark: 0.18, skate: 0.62 }[shape] * L;
   const grad = g.createLinearGradient(0, cy - H / 2, 0, cy + H / 2);
   grad.addColorStop(0, hex(f.col.back));
   grad.addColorStop(0.45, hex(f.col.side));
   grad.addColorStop(1, hex(f.col.belly));
   g.fillStyle = known ? grad : '#000';
+  if (shape === 'skate') {
+    // seen from above: a diamond with a long thin tail
+    g.beginPath();
+    g.moveTo(x0 + L * 1.0, cy);
+    g.lineTo(x0 + L * 0.62, cy - H * 0.5);
+    g.lineTo(x0 + L * 0.42, cy);
+    g.lineTo(x0 + L * 0.62, cy + H * 0.5);
+    g.closePath();
+    g.fill();
+    g.fillRect(x0, cy - H * 0.03, L * 0.46, H * 0.06);
+    if (!known) return;
+    g.fillStyle = hex(f.col.eyespot || 0x2a2620);
+    for (const s2 of [-1, 1]) {
+      g.beginPath();
+      g.arc(x0 + L * 0.66, cy + s2 * H * 0.22, Math.max(1.5, H * 0.07), 0, Math.PI * 2);
+      g.fill();
+    }
+    return;
+  }
   // tail
   g.beginPath();
   g.moveTo(x0 + L * 0.12, cy);
-  g.lineTo(x0, cy - H * 0.5);
+  g.lineTo(x0 - (shape === 'shark' ? L * 0.05 : 0), cy - H * (shape === 'shark' ? 0.85 : 0.5));
   g.lineTo(x0 + L * 0.04, cy);
-  g.lineTo(x0, cy + H * 0.5);
+  g.lineTo(x0, cy + H * (shape === 'shark' ? 0.3 : 0.5));
   g.closePath();
   g.fill();
   // body
@@ -50,7 +69,7 @@ export function drawFish2D(canvas, id, known = true) {
   g.fillStyle = hex(f.col.fin || f.col.back);
   g.beginPath();
   const dx = shape === 'pike' ? 0.25 : 0.5;
-  const dh = shape === 'grayling' ? 0.7 : 0.3;
+  const dh = shape === 'grayling' ? 0.7 : shape === 'quillback' ? 0.6 : 0.3;
   g.moveTo(x0 + L * dx, cy - H * 0.45);
   g.lineTo(x0 + L * (dx + 0.08), cy - H * (0.45 + dh));
   g.lineTo(x0 + L * (dx + (shape === 'grayling' ? 0.3 : 0.16)), cy - H * 0.42);
@@ -392,16 +411,19 @@ export class Screens {
       tab
     );
     if (tab === 'fish') {
-      this.body.innerHTML = `<div class="grid">${SPECIES_IDS.map((id) => {
+      // commonest first, rarest last
+      const order = SPECIES_IDS.slice().sort((a, b) => RARITY_ORDER.indexOf(FISH[a].rarity) - RARITY_ORDER.indexOf(FISH[b].rarity));
+      this.body.innerHTML = `<div class="grid">${order.map((id) => {
         const j = s.journal[id];
         const f = FISH[id];
-        return `<div class="fishcard ${j ? '' : 'unknown'}"><canvas data-fish="${id}"></canvas><h4>${j ? f.name : '??? ' + f.nick}</h4><small>${
+        const tier = RARITY[f.rarity];
+        return `<div class="fishcard ${j ? '' : 'unknown'}"><canvas data-fish="${id}"></canvas><h4>${j ? f.name : '??? ' + f.nick}</h4><span class="tier rarity r-${f.rarity}">${tier.name.toUpperCase()}</span><small>${
           j ? `Best ${j.best.toFixed(1)} kg · ${j.bestLen} cm · caught ${j.count}` : `Record range ${f.min}-${f.max} kg`
         }</small><small>${j ? esc(f.info) : ''}</small></div>`;
       }).join('')}</div>`;
       this.body.querySelectorAll('canvas[data-fish]').forEach((c) => drawFish2D(c, c.dataset.fish, !!s.journal[c.dataset.fish]));
     } else if (tab === 'legends') {
-      this.body.innerHTML = `<h3>Six legendary fish swim these waters</h3><div class="list">${Object.entries(LEGENDS)
+      this.body.innerHTML = `<h3>Six legendary fish swim these waters</h3><p class="catch-info" style="margin:-4px 0 10px">Every other fish is Common, Uncommon, Rare or Epic. Rarer fish bite less often and are worth more per kilogram; a gold hotspot and a perfect cast tempt them.</p><div class="list">${Object.entries(LEGENDS)
         .map(([id, L]) => {
           const got = s.legends[id];
           const pl = g.world.place(L.place);
@@ -493,7 +515,7 @@ export class Screens {
     };
     if (tab === 'tackle') {
       for (const r of RODS) card(r.id, r.name, `${r.desc} Max tension ${r.maxTension}, casts ${r.cast} m.`, r.price, s.gear.rods.includes(r.id), s.gear.rod === r.id, 'rod');
-      for (const [id, l] of Object.entries(LURES))
+      for (const [id, l] of Object.entries(LURES).sort((a, b) => a[1].price - b[1].price))
         card(id, l.name, l.desc, l.price, s.gear.lures.includes(id), s.gear.lure === id, 'lure', `<div class="swatch" style="background:${hex(l.color)}"></div>`);
     } else if (tab === 'gear') {
       const consumable = (id, title, desc, price, have, max) => {
@@ -630,7 +652,7 @@ export class Screens {
     const s = g.state;
     this.title.textContent = 'Tackle box';
     this.setTabs([], null);
-    this.body.innerHTML = `<div class="lure-grid">${Object.entries(LURES)
+    this.body.innerHTML = `<div class="lure-grid">${Object.entries(LURES).sort((a, b) => a[1].price - b[1].price)
       .map(([id, l]) => {
         const owned = s.gear.lures.includes(id);
         return `<div class="item ${owned ? 'owned' : 'locked'}"><div class="row" style="justify-content:flex-start;gap:10px"><div class="swatch" style="background:${hex(l.color)}"></div><h4>${esc(

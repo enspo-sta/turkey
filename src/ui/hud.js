@@ -1,7 +1,7 @@
 // In-game HUD: stats, compass, objective, contextual touch controls, cast and
 // fight meters, speedometer, toasts, banners, prompts and the catch card.
 import { formatMoney, formatTime, clamp, wrapAngle } from '../util/math.js';
-import { LURES, FISH, CHALLENGES } from '../gameplay/data.js';
+import { LURES, FISH, CHALLENGES, RARITY } from '../gameplay/data.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -342,6 +342,7 @@ export class HUD {
     this.blocking = true;
     const badges = [];
     if (info.legend) badges.push('<span class="legend">LEGENDARY</span>');
+    else if (info.rarity && RARITY[info.rarity]) badges.push(`<span class="rarity r-${info.rarity}">${RARITY[info.rarity].name.toUpperCase()}</span>`);
     if (info.isNew) badges.push('<span>NEW SPECIES</span>');
     if (info.isBest) badges.push('<span class="best">PERSONAL BEST</span>');
     $('catch-badges').innerHTML = badges.join('');
@@ -401,7 +402,7 @@ export class HUD {
     });
     set('time', formatTime(g.env.time), (v) => (el.time.textContent = v));
     set('day', g.env.day, (v) => (el.day.textContent = `Day ${v}`));
-    set('lure', s.gear.lure, (v) => (el.lure.textContent = LURES[v].name.replace('Hotrod ', '')));
+    set('lure', s.gear.lure, (v) => (el.lure.textContent = LURES[v].short || LURES[v].name));
 
     const mode = P.mode;
     const tool = P.tool;

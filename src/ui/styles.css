@@ -256,6 +256,12 @@ svg { width: 1em; height: 1em; display: block; }
 .catch-badges span { font-size: 12px; font-weight: 800; letter-spacing: .12em; padding: 3px 8px; border-radius: 8px; background: var(--flame); color: #fff; }
 .catch-badges span.best { background: var(--glacier); color: #0d1a1f; }
 .catch-badges span.legend { background: linear-gradient(90deg, #d4a93a, #ffe79a); color: #3a2400; }
+/* rarity tiers: common, uncommon, rare, epic */
+.rarity.r-common { background: #5a6470; color: #f2f4f6; }
+.rarity.r-uncommon { background: #3f8a3a; color: #f2fbef; }
+.rarity.r-rare { background: #2f6fc0; color: #f0f6ff; }
+.rarity.r-epic { background: linear-gradient(90deg, #7a3aa0, #c678dd); color: #fbf2ff; }
+.fishcard .tier { display: inline-block; align-self: flex-start; width: fit-content; margin: 2px 0 4px; padding: 1px 7px; border-radius: 7px; font-size: 11px; font-weight: 800; letter-spacing: .1em; }
 .catch-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 12px 0 8px; }
 .catch-stats div { background: rgba(255,255,255,.05); border-radius: 12px; padding: 6px 8px; }
 .catch-stats small { display: block; font-size: 11px; letter-spacing: .14em; color: var(--ink-dim); text-transform: uppercase; font-weight: 700; }
