@@ -382,6 +382,8 @@ export const GAME = {
   deer: { name: 'Sitka black-tailed deer', value: 260, hp: 80 },
   sheep: { name: 'Dall sheep', value: 650, hp: 90 },
   bear: { name: 'Grizzly bear', value: 750, hp: 240 },
+  blackbear: { name: 'Black bear', value: 480, hp: 150 },
+  goat: { name: 'Mountain goat', value: 560, hp: 85 },
 };
 
 export const CHALLENGES = [

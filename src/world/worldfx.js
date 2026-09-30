@@ -35,7 +35,7 @@ export const FX = {
   uFxShadeTf: { value: new THREE.Vector3(0, 0, 0) },
   uFxShadeOn: { value: 0 },
   uFxMask: { value: null },
-  uFxTranslucent: { value: new THREE.Color(0, 0, 0) },
+  uFxWaves: { value: null },
 };
 
 // Per water kind (river, lake, glacial, ocean): extinction per metre in
@@ -94,7 +94,7 @@ uniform sampler2D uFxShade;
 uniform vec3 uFxShadeTf;
 uniform float uFxShadeOn;
 uniform sampler2D uFxMask;
-uniform vec3 uFxTranslucent;
+uniform sampler2D uFxWaves;
 
 // Sky colour close to the horizon in direction dir (matches sky.js).
 vec3 fxSkyColor( vec3 dir ) {
@@ -242,6 +242,7 @@ function isLit(material) {
 //   'canopy'  - forest floor darkening (terrain)
 //   'foliage' - backlit leaf translucency
 //   'dry'     - never under water (skip the absorption pass)
+// Unlit materials only get the haze.
 export function fxPatch(shader, material) {
   const flags = (material && material.userData && material.userData.fx) || '';
   let vs = shader.vertexShader;
@@ -259,7 +260,7 @@ export function fxPatch(shader, material) {
       if (!flags.includes('dry')) defines.push('FX_UNDERWATER');
       if (flags.includes('canopy')) defines.push('FX_CANOPY');
       if (flags.includes('foliage')) defines.push('FX_FOLIAGE');
-    } else if (flags.includes('wet')) defines.push('FX_UNDERWATER');
+    }
   }
   if (defines.length) fs = defines.map((d) => `#define ${d}\n`).join('') + fs;
   shader.vertexShader = vs;

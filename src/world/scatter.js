@@ -93,12 +93,333 @@ function snagGeo() {
   return b.build();
 }
 
-// Material with gentle wind sway for tall vegetation.
-function swayMaterial(uniforms, amount) {
+// sRGB 0..1 components to the linear values vertex colours are stored in.
+const _lc = new THREE.Color();
+function lin(r, g, b) {
+  _lc.setRGB(r, g, b, THREE.SRGBColorSpace);
+  return [_lc.r, _lc.g, _lc.b];
+}
+
+// Detailed spruce for close range: whorls of drooping branches with ragged
+// star-shaped tips, closed underneath so looking up into a tree works.
+function spruceDetailed() {
+  const pos = [];
+  const col = [];
+  const rand = mulberry32(71);
+  const push = (p, c) => {
+    pos.push(p[0], p[1], p[2]);
+    col.push(c[0], c[1], c[2]);
+  };
+  const whorls = 14;
+  const dark = lin(0.1, 0.2, 0.12);
+  const mid = lin(0.13, 0.25, 0.15);
+  for (let w = 0; w < whorls; w++) {
+    const t = w / (whorls - 1);
+    const R = lerp(2.2, 0.3, Math.pow(t, 0.85)) * (0.9 + rand() * 0.2);
+    const y = 1.3 + t * 9.8;
+    const h = lerp(1.35, 0.8, t);
+    const droop = R * 0.42;
+    const n = 18;
+    const top = [0, y + h, 0];
+    const under = [0, y - droop * 0.3, 0];
+    const rot = rand() * Math.PI;
+    const base = w % 2 ? dark : mid;
+    const rim = [];
+    for (let i = 0; i < n; i++) {
+      const a = rot + (i / n) * Math.PI * 2;
+      const r = R * (i % 2 ? 0.58 + rand() * 0.12 : 0.92 + rand() * 0.16);
+      rim.push([Math.cos(a) * r, y - droop * (i % 2 ? 0.55 : 1) + (rand() - 0.5) * 0.1, Math.sin(a) * r]);
+    }
+    for (let i = 0; i < n; i++) {
+      const a = rim[i];
+      const b = rim[(i + 1) % n];
+      const lit = 0.85 + rand() * 0.3;
+      const cTop = [base[0] * 1.5 * lit, base[1] * 1.5 * lit, base[2] * 1.4 * lit];
+      const cRim = [base[0] * lit, base[1] * lit, base[2] * lit];
+      push(top, cTop);
+      push(b, cRim);
+      push(a, cRim);
+      const cUnder = [base[0] * 0.8, base[1] * 0.8, base[2] * 0.8];
+      push(under, cUnder);
+      push(a, cUnder);
+      push(b, cUnder);
+    }
+  }
+  // leader shoot
+  const lt = [0, 12.9, 0];
+  const tipC = lin(0.18, 0.32, 0.18);
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    const b = ((i + 1) / 5) * Math.PI * 2;
+    push(lt, tipC);
+    push([Math.cos(b) * 0.2, 11.5, Math.sin(b) * 0.2], mid);
+    push([Math.cos(a) * 0.2, 11.5, Math.sin(a) * 0.2], mid);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  // soft volume lighting: every needle surface faces out from the trunk and
+  // a little up, so undersides seen from below read dark green, not black
+  const nrm = new Float32Array(pos.length);
+  for (let i = 0; i < pos.length; i += 3) {
+    const x = pos[i];
+    const z = pos[i + 2];
+    const l = Math.hypot(x, z) || 1;
+    const nx = x / l;
+    const nz = z / l;
+    const ny = 0.75;
+    const k = Math.hypot(nx, ny, nz);
+    nrm[i] = nx / k;
+    nrm[i + 1] = ny / k;
+    nrm[i + 2] = nz / k;
+  }
+  g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
+  const b = new ModelBuilder();
+  b.cyl(0.1, 0.24, 3.2, 6, { pos: [0, 1.6, 0], color: 0x4a3322 });
+  const trunk = b.build();
+  return mergeGeos([trunk, g]);
+}
+
+// Detailed birch: white trunk with black marks, forked branches and a crown of
+// leaf clusters.
+function birchDetailed() {
+  const b = new ModelBuilder();
+  b.cyl(0.085, 0.17, 6.2, 8, { pos: [0, 3.1, 0], color: 0xe2ded2, jitter: 0.1 });
+  const rand = mulberry32(19);
+  for (let i = 0; i < 7; i++) {
+    const y = 0.8 + i * 0.75 + rand() * 0.3;
+    b.cyl(0.176 - i * 0.012, 0.176 - i * 0.012, 0.07 + rand() * 0.1, 8, { pos: [0, y, 0], rot: [0, rand() * 3, (rand() - 0.5) * 0.2], color: 0x2a2622 });
+  }
+  const limbs = [
+    [[0, 3.4, 0], [1.1, 4.9, 0.35]],
+    [[0, 3.9, 0], [-1.0, 5.3, -0.5]],
+    [[0, 4.5, 0], [0.4, 5.9, -1.0]],
+    [[0, 4.8, 0], [-0.5, 6.1, 0.9]],
+    [[0.6, 4.2, 0.2], [1.5, 5.7, 1.0]],
+  ];
+  for (const [a, c] of limbs) b.beam(a, c, 0.05, 5, { color: 0xd4cfc2, r2: 0.025 });
+  const blobs = [
+    [0, 6.7, 0, 1.45],
+    [1.1, 5.6, 0.5, 1.15],
+    [-1.05, 5.9, -0.45, 1.1],
+    [0.35, 5.3, -1.05, 1.0],
+    [-0.45, 7.5, 0.3, 0.95],
+    [0.8, 6.9, -0.6, 0.9],
+    [-0.8, 6.8, 0.85, 0.95],
+    [1.5, 6.3, 1.1, 0.8],
+    [-1.4, 5.2, 0.6, 0.8],
+    [0.2, 5.0, 1.1, 0.75],
+  ];
+  for (const [x, y, z, r] of blobs) {
+    const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.42, mulberry32((x * 13 + y * 7 + z * 5) | 0));
+    b.add(g, { pos: [x, y, z], color: 0x6a8c36, gradient: 0.38, jitter: 0.16 });
+  }
+  return b.build();
+}
+
+// Fern clump: arching fronds that taper to a point.
+function fernGeo() {
+  const pos = [];
+  const col = [];
+  const rand = mulberry32(5);
+  const fronds = 8;
+  for (let f = 0; f < fronds; f++) {
+    const a = (f / fronds) * Math.PI * 2 + rand() * 0.4;
+    const len = 0.75 + rand() * 0.35;
+    const lift = 0.55 + rand() * 0.25;
+    const ca = Math.cos(a);
+    const sa = Math.sin(a);
+    const segs = 6;
+    let prevL = null;
+    let prevR = null;
+    for (let i = 0; i <= segs; i++) {
+      const t = i / segs;
+      const d = t * len;
+      const y = Math.sin(t * Math.PI * 0.8) * lift * len - t * t * 0.25;
+      const w = 0.13 * Math.sin(Math.min(1, t * 1.15) * Math.PI) * (1 - t * 0.3) + 0.004;
+      const cx = ca * d;
+      const cz = sa * d;
+      const L = [cx - sa * w, y, cz + ca * w];
+      const R = [cx + sa * w, y, cz - ca * w];
+      if (prevL) {
+        const shade = 0.75 + t * 0.35;
+        const c = lin(0.2 * shade, 0.38 * shade, 0.12 * shade);
+        pos.push(...prevL, ...prevR, ...R, ...prevL, ...R, ...L);
+        for (let k = 0; k < 6; k++) col.push(...c);
+      }
+      prevL = L;
+      prevR = R;
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
+// Clump of flower spikes: fireweed (magenta, tall) or lupine (violet, short).
+function flowerSpikes(kind) {
+  const b = new ModelBuilder();
+  const rand = mulberry32(kind === 'lupine' ? 23 : 11);
+  const stems = kind === 'lupine' ? 4 : 5;
+  const H = kind === 'lupine' ? 0.62 : 1.25;
+  const bloomA = kind === 'lupine' ? 0x5a4cc8 : 0xc2308a;
+  const bloomB = kind === 'lupine' ? 0x8a7ae0 : 0xe060a8;
+  for (let i = 0; i < stems; i++) {
+    const a = rand() * Math.PI * 2;
+    const r = rand() * 0.22;
+    const x = Math.cos(a) * r;
+    const z = Math.sin(a) * r;
+    const h = H * (0.75 + rand() * 0.4);
+    b.cyl(0.008, 0.012, h, 3, { pos: [x, h / 2, z], color: 0x3a5a24 });
+    // leaves on the lower stem
+    for (let k = 0; k < 3; k++) {
+      const ly = h * (0.2 + k * 0.15);
+      const la = rand() * Math.PI * 2;
+      const leaf = new THREE.BufferGeometry();
+      const lx = Math.cos(la) * 0.16;
+      const lz = Math.sin(la) * 0.16;
+      leaf.setAttribute('position', new THREE.Float32BufferAttribute([x, ly, z, x + lx - lz * 0.2, ly + 0.05, z + lz + lx * 0.2, x + lx * 0.4 + lz * 0.15, ly + 0.09, z + lz * 0.4 - lx * 0.15], 3));
+      b.add(leaf, { color: 0x3e6a2a, jitter: 0.1 });
+    }
+    // the bloom: small petals spiralling up the top of the stem
+    const n = kind === 'lupine' ? 9 : 10;
+    for (let k = 0; k < n; k++) {
+      const t = k / n;
+      const by = h * (kind === 'lupine' ? 0.55 : 0.6) + t * h * (kind === 'lupine' ? 0.45 : 0.4);
+      const ba = k * 2.4;
+      const br = (kind === 'lupine' ? 0.045 : 0.055) * (1 - t * 0.55);
+      b.add(new THREE.OctahedronGeometry(br, 0), { pos: [x + Math.cos(ba) * br * 0.8, by, z + Math.sin(ba) * br * 0.8], color: k % 2 ? bloomA : bloomB, jitter: 0.12 });
+    }
+  }
+  return b.build();
+}
+
+// Willow and alder thicket along the water: several stems with narrow,
+// grey-green leaf masses.
+function willowGeo() {
+  const b = new ModelBuilder();
+  const rand = mulberry32(31);
+  const stems = 6;
+  for (let i = 0; i < stems; i++) {
+    const a = (i / stems) * Math.PI * 2 + rand() * 0.5;
+    const lean = 0.35 + rand() * 0.35;
+    const h = 2.2 + rand() * 1.2;
+    const top = [Math.cos(a) * lean * h * 0.5, h, Math.sin(a) * lean * h * 0.5];
+    b.beam([Math.cos(a) * 0.08, 0, Math.sin(a) * 0.08], top, 0.045, 4, { color: 0x5a4a3a, r2: 0.02 });
+    for (let k = 0; k < 3; k++) {
+      const t = 0.5 + k * 0.22;
+      const p = [top[0] * t, top[1] * t + 0.2, top[2] * t];
+      const r = 0.55 - k * 0.08;
+      const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.35, mulberry32(i * 7 + k));
+      b.add(g, { pos: p, scale: [0.8, 1.35, 0.8], color: 0x5c7a3c, gradient: 0.35, jitter: 0.14 });
+    }
+  }
+  return b.build();
+}
+
+// Fallen log with broken branch stubs (also used bleached as driftwood).
+function logGeo() {
+  const b = new ModelBuilder();
+  b.add(new THREE.CylinderGeometry(0.2, 0.27, 5.2, 7, 3), { pos: [0, 0.22, 0], rot: [0, 0, Math.PI / 2], color: 0xffffff, jitter: 0.12 });
+  b.add(new THREE.CylinderGeometry(0.2, 0.2, 0.02, 7), { pos: [-2.6, 0.22, 0], rot: [0, 0, Math.PI / 2], color: 0xd8c8a0 });
+  const rand = mulberry32(8);
+  for (let i = 0; i < 5; i++) {
+    const x = -2 + i * 0.95 + rand() * 0.3;
+    const a = rand() * Math.PI * 2;
+    b.beam([x, 0.3, 0], [x + 0.1, 0.3 + Math.cos(a) * 0.5, Math.sin(a) * 0.5], 0.04, 4, { color: 0xeeeeee, r2: 0.02 });
+  }
+  // root plate at the thick end
+  b.add(jitterGeometry(new THREE.CylinderGeometry(0.75, 0.6, 0.25, 8), 0.25, mulberry32(3)), { pos: [2.62, 0.45, 0], rot: [0, 0, Math.PI / 2], color: 0x8a7a64 });
+  return b.build();
+}
+
+function stumpGeo() {
+  const b = new ModelBuilder();
+  b.cyl(0.28, 0.36, 0.55, 8, { pos: [0, 0.27, 0], color: 0x5a4632, jitter: 0.12 });
+  b.cyl(0.27, 0.27, 0.02, 8, { pos: [0, 0.55, 0], color: 0xb89a6c });
+  return b.build();
+}
+
+// Merge plain position/colour geometries (normals recomputed per part).
+function mergeGeos(list) {
+  let total = 0;
+  const parts = list.map((g) => (g.index ? g.toNonIndexed() : g));
+  for (const g of parts) total += g.attributes.position.count;
+  const pos = new Float32Array(total * 3);
+  const col = new Float32Array(total * 3);
+  const nrm = new Float32Array(total * 3);
+  let o = 0;
+  for (const g of parts) {
+    if (!g.attributes.normal) g.computeVertexNormals();
+    pos.set(g.attributes.position.array, o * 3);
+    col.set(g.attributes.color.array, o * 3);
+    nrm.set(g.attributes.normal.array, o * 3);
+    o += g.attributes.position.count;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.computeBoundingSphere();
+  return g;
+}
+
+// Boulders: rock pattern projected in world space with bump lighting, moss
+// and lichen on the tops, per-instance tint.
+function rockMaterial(matTex) {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uMat = { value: matTex };
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        uniform sampler2D uMat;
+        float rHeight = 0.0;
+        vec3 rBump( vec3 surfPos, vec3 surfNorm, float h ) {
+          vec3 sx = dFdx( surfPos );
+          vec3 sy = dFdy( surfPos );
+          vec3 r1 = cross( sy, surfNorm );
+          vec3 r2 = cross( surfNorm, sx );
+          float det = dot( sx, r1 );
+          vec2 dh = vec2( dFdx( h ), dFdy( h ) );
+          vec3 bumped = normalize( abs( det ) * surfNorm - sign( det ) * ( dh.x * r1 + dh.y * r2 ) + surfNorm * 1e-6 );
+          return normalize( mix( surfNorm, bumped, clamp( dot( bumped, surfNorm ) * 2.0 - 0.3, 0.0, 1.0 ) ) );
+        }`
+      )
+      .replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>
+        #ifdef USE_FOG
+        {
+          vec3 wn = normalize( ( vec4( vNormal, 0.0 ) * viewMatrix ).xyz );
+          vec3 bw = abs( wn ) + 0.001;
+          bw /= bw.x + bw.y + bw.z;
+          vec3 wp = vFxWorld * 0.42;
+          float rk = texture2D( uMat, wp.zy ).r * bw.x + texture2D( uMat, wp.xz ).r * bw.y + texture2D( uMat, wp.xy ).r * bw.z;
+          diffuseColor.rgb *= 0.55 + rk * 0.9;
+          // moss and lichen settle on the upper faces
+          float moss = smoothstep( 0.45, 0.85, wn.y ) * smoothstep( 0.35, 0.65, texture2D( uMat, vFxWorld.xz * 0.23 ).a );
+          diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.045, 0.075, 0.028 ) * ( 0.8 + rk * 0.5 ), moss * 0.6 );
+          rHeight = rk * 0.05 * ( 1.0 - smoothstep( 25.0, 70.0, length( vViewPosition ) ) ) * smoothstep( 0.06, 0.3, abs( dot( normalize( vNormal ), normalize( vViewPosition ) ) ) );
+        }
+        #endif`
+      )
+      .replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\nnormal = rBump( - vViewPosition, normal, rHeight );');
+    fxPatch(shader, mat);
+  };
+  mat.customProgramCacheKey = () => 'rock|fx:';
+  return mat;
+}
+
+// Material with gentle wind sway for tall vegetation.
+function swayMaterial(uniforms, amount, { base = 1.0, doubleSide = false } = {}) {
+  const mat = new THREE.MeshLambertMaterial({ vertexColors: true, side: doubleSide ? THREE.DoubleSide : THREE.FrontSide });
   mat.userData.fx = 'foliage';
   // the sway amount is baked into the shader text, so key programs by it
-  mat.customProgramCacheKey = () => 'sway' + amount + '|fx:foliage';
+  mat.customProgramCacheKey = () => 'sway' + amount + '/' + base + '|fx:foliage';
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = uniforms.uTime;
     shader.vertexShader = shader.vertexShader
@@ -112,7 +433,7 @@ function swayMaterial(uniforms, amount) {
           vec2 ip = vec2(0.0);
         #endif
         float sw = sin(uTime * 1.2 + ip.x * 0.05 + ip.y * 0.07) + 0.35 * sin(uTime * 2.7 + ip.x * 0.3);
-        float hh = max(position.y - 1.0, 0.0);
+        float hh = max(position.y - ${base.toFixed(2)}, 0.0);
         transformed.x += sw * ${amount.toFixed(4)} * hh * hh;
         transformed.z += sw * ${(amount * 0.6).toFixed(4)} * hh * hh;`
       );
@@ -187,7 +508,7 @@ class ScatterType {
 }
 
 export class Scatter {
-  constructor(world, colliders, sharedUniforms) {
+  constructor(world, colliders, sharedUniforms, matTex) {
     this.world = world;
     this.colliders = colliders;
     this.group = new THREE.Group();
@@ -196,14 +517,18 @@ export class Scatter {
     this.distScale = 1;
     const sway = swayMaterial(sharedUniforms, 0.0016);
     const swayBirch = swayMaterial(sharedUniforms, 0.0022);
+    const swayShrub = swayMaterial(sharedUniforms, 0.012, { base: 0.4 });
+    const swayPlant = swayMaterial(sharedUniforms, 0.09, { base: 0.1, doubleSide: true });
     const plain = new THREE.MeshLambertMaterial({ vertexColors: true });
     const leafy = new THREE.MeshLambertMaterial({ vertexColors: true });
     leafy.userData.fx = 'foliage';
+    const rocky = rockMaterial(matTex);
 
     this.types = {
       spruce: new ScatterType(
         'spruce',
         [
+          { geo: spruceDetailed(), material: sway, maxDist: 55, capacity: 900, shadow: true },
           { geo: spruceNear(), material: sway, maxDist: 115, capacity: 2000, shadow: true },
           { geo: spruceFar(), material: leafy, maxDist: 720, capacity: 12000 },
         ],
@@ -212,6 +537,7 @@ export class Scatter {
       birch: new ScatterType(
         'birch',
         [
+          { geo: birchDetailed(), material: swayBirch, maxDist: 50, capacity: 500, shadow: true },
           { geo: birchNear(), material: swayBirch, maxDist: 95, capacity: 1000, shadow: true },
           { geo: birchFar(), material: leafy, maxDist: 560, capacity: 5000 },
         ],
@@ -220,11 +546,25 @@ export class Scatter {
       bush: new ScatterType('bush', [{ geo: bushGeo(), material: leafy, maxDist: 160, capacity: 4000, shadow: false }], {
         tint: true,
       }),
+      willow: new ScatterType('willow', [{ geo: willowGeo(), material: swayShrub, maxDist: 230, capacity: 1600, shadow: true }], {
+        tint: true,
+      }),
+      fern: new ScatterType('fern', [{ geo: fernGeo(), material: swayPlant, maxDist: 55, capacity: 2600 }], { tint: true }),
+      fireweed: new ScatterType('fireweed', [{ geo: flowerSpikes('fireweed'), material: swayPlant, maxDist: 85, capacity: 3000 }], {
+        tint: true,
+      }),
+      lupine: new ScatterType('lupine', [{ geo: flowerSpikes('lupine'), material: swayPlant, maxDist: 70, capacity: 2400 }], {
+        tint: true,
+      }),
+      log: new ScatterType('log', [{ geo: logGeo(), material: plain, maxDist: 130, capacity: 700, shadow: true }], { tint: true }),
+      stump: new ScatterType('stump', [{ geo: stumpGeo(), material: plain, maxDist: 80, capacity: 500, shadow: true }], {
+        tint: true,
+      }),
       rock: new ScatterType(
         'rock',
         [
-          { geo: rockGeo(3), material: plain, maxDist: 90, capacity: 2500, shadow: true, receive: true },
-          { geo: rockGeo(3, 0), material: plain, maxDist: 360, capacity: 4000 },
+          { geo: rockGeo(3), material: rocky, maxDist: 90, capacity: 2500, shadow: true, receive: true },
+          { geo: rockGeo(3, 0), material: rocky, maxDist: 360, capacity: 4000 },
         ],
         { tint: true }
       ),
@@ -345,6 +685,109 @@ export class Scatter {
       }
     }
 
+    const lakeSD = (x, z) => {
+      let m = 1e9;
+      for (const lake of W.lakes) m = Math.min(m, W.lakeSD(lake, x, z));
+      return m;
+    };
+
+    // ferns carpet the forest floor
+    for (let gz = -HALF + 2; gz < HALF - 2; gz += 3.4) {
+      for (let gx = -HALF + 2; gx < HALF - 2; gx += 3.4) {
+        const x = gx + rand() * 3.4;
+        const z = gz + rand() * 3.4;
+        const k = W.cellIndex(x, z);
+        const forest = W.forest[k] / 255;
+        if (forest < 0.3 || rand() > forest * 0.34) continue;
+        if (W.roadD[k] < ROAD_HALF + 2 || water(x, z) || blocked(x, z, 1)) continue;
+        const g = 0.8 + rand() * 0.35;
+        T.fern.add(x, W.heightAt(x, z) - 0.04, z, rand() * 6.28, 0.75 + rand() * 0.6, [g, g * (0.95 + rand() * 0.1), g * 0.9]);
+      }
+    }
+
+    // fireweed stands in the meadows, lupine in patches along roads and banks
+    for (let gz = -HALF + 2; gz < HALF - 2; gz += 2.8) {
+      for (let gx = -HALF + 2; gx < HALF - 2; gx += 2.8) {
+        const x = gx + rand() * 2.8;
+        const z = gz + rand() * 2.8;
+        const k = W.cellIndex(x, z);
+        const st = W.surf[k];
+        if (st !== SURF.GRASS && st !== SURF.TUNDRA) continue;
+        if (W.roadD[k] < ROAD_HALF + 1.5) continue;
+        const flower = W.flower[k] / 255;
+        const patch = W.n3.noise(x * 0.025 + 13, z * 0.025 - 7);
+        const nearRoad = W.roadD[k] < ROAD_HALF + 14 ? 0.25 : 0;
+        const pF = flower * 0.55;
+        const pL = patch > 0.3 ? (patch - 0.3) * 0.9 + nearRoad : 0;
+        const r = rand();
+        if (r < pF) {
+          if (water(x, z) || blocked(x, z, 1)) continue;
+          const v = 0.85 + rand() * 0.3;
+          T.fireweed.add(x, W.heightAt(x, z) - 0.03, z, rand() * 6.28, 0.8 + rand() * 0.5, [v, v, v]);
+        } else if (r < pF + pL * 0.35) {
+          if (water(x, z) || blocked(x, z, 1)) continue;
+          const v = 0.85 + rand() * 0.3;
+          T.lupine.add(x, W.heightAt(x, z) - 0.03, z, rand() * 6.28, 0.8 + rand() * 0.5, [v * (0.9 + rand() * 0.2), v, v]);
+        }
+      }
+    }
+
+    // willow and alder thickets along the river and lake shores
+    for (let gz = -HALF + 3; gz < HALF - 3; gz += 6) {
+      for (let gx = -HALF + 3; gx < HALF - 3; gx += 6) {
+        const x = gx + rand() * 6;
+        const z = gz + rand() * 6;
+        const k = W.cellIndex(x, z);
+        const st = W.surf[k];
+        if (st === SURF.ROAD || st === SURF.ROCK || st === SURF.SNOW || st === SURF.ICE || st === SURF.SAND) continue;
+        if (W.roadD[k] < ROAD_HALF + 3) continue;
+        const rd = W.riverD[k];
+        const rw = rd < 200 ? W.riverWidth(W.riverS[k]) : 0;
+        let p = 0;
+        if (rd < rw + 26 && rd > rw + 2) p = 0.38 * (1 - (rd - rw - 2) / 24);
+        const ls = lakeSD(x, z);
+        if (ls > 1 && ls < 20) p = Math.max(p, 0.3 * (1 - ls / 20));
+        if (W.heightAt(x, z) > 110) p *= 0.3;
+        if (rand() > p) continue;
+        if (water(x, z) || blocked(x, z, 2)) continue;
+        const g = 0.8 + rand() * 0.3;
+        const tint = rand() < 0.4 ? [g * 0.85, g, g * 0.8] : [g, g * 1.02, g * 0.9];
+        const sc = 0.8 + rand() * 0.6;
+        T.willow.add(x, W.heightAt(x, z) - 0.1, z, rand() * 6.28, sc, tint);
+        this.colliders.addCircle(x, z, 0.5 * sc);
+      }
+    }
+
+    // fallen logs and stumps in the forest, bleached driftwood on gravel bars
+    // and beaches
+    for (let gz = -HALF + 4; gz < HALF - 4; gz += 10) {
+      for (let gx = -HALF + 4; gx < HALF - 4; gx += 10) {
+        const x = gx + rand() * 10;
+        const z = gz + rand() * 10;
+        const k = W.cellIndex(x, z);
+        const st = W.surf[k];
+        if (W.roadD[k] < ROAD_HALF + 3) continue;
+        const forest = W.forest[k] / 255;
+        const rd = W.riverD[k];
+        const rw = rd < 200 ? W.riverWidth(W.riverS[k]) : 0;
+        const bar = (st === SURF.GRAVEL && rd < rw + 14) || st === SURF.SAND;
+        const r = rand();
+        if (forest > 0.45 && r < 0.16) {
+          if (water(x, z) || blocked(x, z, 3) || W.slopeAt(x, z) > 0.45) continue;
+          const v = 0.75 + rand() * 0.35;
+          T.log.add(x, W.heightAt(x, z) - 0.06, z, rand() * 6.28, 0.7 + rand() * 0.5, [0.46 * v, 0.36 * v, 0.26 * v]);
+        } else if (forest > 0.25 && r < 0.26) {
+          if (water(x, z) || blocked(x, z, 2)) continue;
+          const v = 0.85 + rand() * 0.3;
+          T.stump.add(x, W.heightAt(x, z) - 0.05, z, rand() * 6.28, 0.8 + rand() * 0.5, [v, v, v]);
+        } else if (bar && r < 0.2) {
+          if (water(x, z) || blocked(x, z, 3)) continue;
+          const v = 0.9 + rand() * 0.2;
+          T.log.add(x, W.heightAt(x, z) - 0.1, z, rand() * 6.28, 0.5 + rand() * 0.5, [0.74 * v, 0.71 * v, 0.66 * v]);
+        }
+      }
+    }
+
     // dead snags near water (eagle perches)
     for (let i = 0; i < 1400; i++) {
       const s = rand() * W.river.length;
@@ -395,6 +838,8 @@ export class Scatter {
       const lods = t.lods;
       const meshes = t.meshes;
       const counts = new Array(lods.length).fill(0);
+      const rm = t.reflect;
+      let rc = 0;
       const maxD = t.maxDist * this.distScale;
       const maxD2 = maxD * maxD;
       const i0 = clamp(Math.floor((cx - maxD + HALF) / CELL), 0, GRID - 1);
@@ -456,7 +901,28 @@ export class Scatter {
               ca[c * 3 + 2] = t.tint[idx * 3 + 2];
             }
             counts[lod] = c + 1;
+            if (rm && rc < t.reflectCap) {
+              rm.instanceMatrix.array.set(arr.subarray(o, o + 16), rc * 16);
+              if (rm.instanceColor) {
+                const ra = rm.instanceColor.array;
+                ra[rc * 3] = t.tint[idx * 3];
+                ra[rc * 3 + 1] = t.tint[idx * 3 + 1];
+                ra[rc * 3 + 2] = t.tint[idx * 3 + 2];
+              }
+              rc++;
+            }
           }
+        }
+      }
+      if (rm) {
+        rm.count = rc;
+        rm.instanceMatrix.clearUpdateRanges();
+        rm.instanceMatrix.addUpdateRange(0, rc * 16);
+        rm.instanceMatrix.needsUpdate = true;
+        if (rm.instanceColor) {
+          rm.instanceColor.clearUpdateRanges();
+          rm.instanceColor.addUpdateRange(0, rc * 3);
+          rm.instanceColor.needsUpdate = true;
         }
       }
       for (let l = 0; l < meshes.length; l++) {
@@ -483,9 +949,29 @@ export class Scatter {
     }
   }
 
-  // Show the named types to cameras that render `layer` (the reflections).
-  enableLayer(layer, names) {
-    for (const n of names) for (const m of this.types[n].meshes) m.layers.enable(layer);
+  // Reflection stand-ins: every instance of the named types that is drawn at
+  // any detail level, drawn again with the cheapest model, seen only by
+  // cameras that render `layer` (the water reflections).
+  enableReflections(layer, names) {
+    for (const n of names) {
+      const t = this.types[n];
+      const last = t.lods[t.lods.length - 1];
+      const cap = t.lods.reduce((a, l) => a + l.capacity, 0);
+      const m = new THREE.InstancedMesh(last.geo, last.material, cap);
+      m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      m.count = 0;
+      m.frustumCulled = false;
+      m.layers.set(layer);
+      if (t.opts.tint) {
+        m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3);
+        m.instanceColor.setUsage(THREE.DynamicDrawUsage);
+      }
+      m.name = `${n}-reflect`;
+      t.reflect = m;
+      t.reflectCap = cap;
+      this.group.add(m);
+    }
+    this.lastPos.set(1e9, 0, 0);
   }
 
   stats() {

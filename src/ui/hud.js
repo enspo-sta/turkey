@@ -35,6 +35,7 @@ export class HUD {
       chipLure: $('chip-lure'),
       time: $('hud-time'),
       day: $('hud-day'),
+      fps: $('hud-fps'),
       strip: $('compass-strip'),
       objective: $('objective'),
       toasts: $('toasts'),
@@ -137,6 +138,26 @@ export class HUD {
 
   // ---- messages
   // Brief "Saved" under the clock whenever progress is written.
+  // Frames per second over the last half second, when enabled in Settings.
+  updateFps() {
+    const el = this.el.fps;
+    const on = !!this.game.state.settings.showFps;
+    if (el.hidden === on) el.hidden = !on;
+    if (!on) return;
+    const now = performance.now();
+    const f = this.fpsAcc || (this.fpsAcc = { t0: now, n: 0 });
+    f.n++;
+    if (now - f.t0 >= 500) {
+      const fps = (f.n * 1000) / (now - f.t0);
+      f.t0 = now;
+      f.n = 0;
+      const g = this.game;
+      el.textContent = `${Math.round(fps)} FPS · ${g.qualityName.toUpperCase()} · ${g.dpr.toFixed(2)}x`;
+      el.classList.toggle('slow', fps < 50 && fps >= 35);
+      el.classList.toggle('bad', fps < 35);
+    }
+  }
+
   savedFlash() {
     const el = $('hud-saved');
     if (!el) return;
@@ -365,6 +386,7 @@ export class HUD {
     const s = g.state;
     const el = this.el;
     const P = g.player;
+    this.updateFps();
     // never stay blocked once the card is gone
     if (this.blocking && el.catchCard.hidden) this.closeCatch();
     const set = (k, v, fn) => {

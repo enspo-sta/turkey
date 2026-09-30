@@ -1,0 +1,137 @@
+{
+  "kicker": "Ruben Hotrod Fishing \u00b7 graphics update",
+  "title": "Real water, better light and more wildlife",
+  "lede": "The water is now clear enough to see stones and fish through it, the light comes from a sun that throws long shadows and lets mountains darken the valleys at dawn and dusk, the ground and forests carry far more detail, and fourteen new kinds of animals and birds live around you. Quality presets, dynamic resolution and an automatic step-down keep the frame rate up on older phones.",
+  "links": [
+    {
+      "label": "Play the new build",
+      "href": "https://claude.ai/artifact/3urJEG61Boov67ViABm26A"
+    },
+    {
+      "label": "Code on GitHub",
+      "href": "https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing"
+    },
+    {
+      "label": "README",
+      "href": "https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/README.md"
+    }
+  ],
+  "sections": [
+    {
+      "id": "water",
+      "kicker": "Water",
+      "title": "Water you can see into",
+      "html": "<p>The old surface was a coloured sheet that hid everything under it. Now the surface only adds what really sits on water: reflections of the surroundings, glints from the sun and moon, and foam. Everything below it (the bed, the stones, the fish, a wading moose) is lit through the water by the objects themselves, with light absorbed along the bent path it takes through the water.</p><ul><li><b>Colour by depth and kind of water.</b> Shallow gravel stays clear; deeper pools turn green-blue in the river, tea-green in Moose Lake, milky turquoise in Glacier Lake (the upper river carries some of that silt) and blue-green at sea.</li><li><b>Caustics.</b> Bright rippling light lines on the bottom in sunlight, fading with depth.</li><li><b>Real reflections.</b> A small cube map of the sky, mountains, terrain and forests is captured from the water surface near you, one face per frame, so the far bank, peaks, sunsets, the moon and the northern lights all reflect.</li><li><b>Moving water.</b> Waves come from a small texture animated every frame with deep-water wave physics (long waves travel faster). The river flows along its course, rapids get rougher and whiter, lakes show calm and wind-ruffled patches, and a thin line of foam laps at the shore.</li><li><b>Wet ground.</b> Stones and banks darken just above the waterline, and the pebble pattern on the river bed sways with the waves above it, like refraction.</li></ul>",
+      "pairs": [
+        {
+          "before": {
+            "file": "t1-landing.png",
+            "caption": "Hotrod Landing before: an opaque sheet"
+          },
+          "after": {
+            "file": "water/w-landing.jpg",
+            "caption": "Hotrod Landing now: gravel, caustics and fish under the surface"
+          }
+        },
+        {
+          "before": {
+            "file": "v4-moose-sunset.png",
+            "caption": "Moose Lake at sunset before"
+          },
+          "after": {
+            "file": "light/l-moose-sunset.jpg",
+            "caption": "Moose Lake at sunset now: reflections, mountain shade in the valley"
+          }
+        }
+      ],
+      "figs": [
+        {
+          "file": "water/w-moose.jpg",
+          "caption": "Moose Lake from the dock in the morning: sun glitter and caustics on the lake bed"
+        },
+        {
+          "file": "water/w-pier.jpg",
+          "caption": "Halibut Pier: the mountains reflected in the bay"
+        },
+        {
+          "file": "water/w-bend.jpg",
+          "caption": "Salmon Bend: the deep channel turns green-blue"
+        }
+      ]
+    },
+    {
+      "id": "fish",
+      "kicker": "Fish",
+      "title": "Fish you can spot",
+      "html": "<ul><li>Small schools hold in the current at the fishing hotspots and in nearby pools, noses upstream in the river and cruising in the lakes. Their species come from the same list the bites use, so a school of red sockeye means a sockeye can bite there.</li><li>They scatter when your float lands on them and drift back a moment later.</li><li>The fish that takes the bait is the real model: you watch it swim in under the float, nibble and turn away with the bait, and during the fight it runs and rolls under the surface at the end of your line.</li><li>During a salmon run the river fills with red sockeye.</li></ul>",
+      "figs": [
+        {
+          "file": "fish/f-school-close.jpg",
+          "caption": "A school of red sockeye holding in the river"
+        },
+        {
+          "file": "fish/f-fight.jpg",
+          "caption": "The hooked pink salmon under the surface at the end of the line"
+        }
+      ]
+    },
+    {
+      "id": "light",
+      "kicker": "Lighting",
+      "title": "Better light",
+      "html": "<ul><li><b>Shadows much further out.</b> The sun now casts two shadow layers fitted to what you see: sharp shadows up close and tree shadows out to about 250 metres (190 on Medium), where before they stopped at 70 metres.</li><li><b>Mountain shadows.</b> A map on the graphics processor works out where the sun clears the mountains, refreshed a strip at a time as the sun moves, so valleys fall into shade at dawn and dusk while the peaks still glow.</li><li><b>Sky occlusion.</b> Gullies, the foot of cliffs and the forest floor get less light from the sky, which gives the land depth.</li><li><b>Haze that matches the sky.</b> The air thins with altitude and takes the colour of the sky in each direction, warm toward the sun, so distant ranges melt into the horizon instead of ending against a flat fog colour.</li><li><b>Leaves glow</b> when the sun is behind them, and <b>grass</b> now falls into the shade of trees and mountains.</li><li><b>Neutral tone mapping</b> for truer, clearer colours than before.</li></ul>",
+      "figs": [
+        {
+          "file": "light/e-landing-2030.jpg",
+          "caption": "20:30 at the landing: the valley in the shade of the western mountains, peaks still in sun"
+        },
+        {
+          "file": "light/l-falls.jpg",
+          "caption": "Bear Falls in the afternoon: long tree shadows across the slope"
+        },
+        {
+          "file": "light/l-night.jpg",
+          "caption": "Night: northern lights and the forest reflected in the river"
+        }
+      ]
+    },
+    {
+      "id": "detail",
+      "kicker": "World detail",
+      "title": "More detail everywhere you look",
+      "html": "<ul><li><b>Ground by surface:</b> rounded pebbles on gravel bars and river beds, layered and cracked rock on cliffs, ripples in sand and snow, needles and moss on the forest floor, all with bump lighting that catches the sun.</li><li><b>Trees:</b> a new close-up spruce with drooping, ragged branch whorls and a closed underside, and a birch with forked limbs and a fuller crown, with the old models kept for the middle distance.</li><li><b>New plants:</b> willow and alder thickets along the water, ferns under the trees, fireweed stands in the meadows and patches of lupine along roads and banks.</li><li><b>Dead wood:</b> fallen logs with root plates, stumps, and bleached driftwood on gravel bars and beaches.</li><li><b>Boulders</b> with rock texture and moss and lichen on their tops.</li></ul>",
+      "figs": [
+        {
+          "file": "animals/a-blackbear.jpg",
+          "caption": "Forest with the new spruce and birch, ferns, and a black bear"
+        },
+        {
+          "file": "animals/a-muskox.jpg",
+          "caption": "Caribou Tundra: fireweed, lupine and musk oxen"
+        }
+      ]
+    },
+    {
+      "id": "animals",
+      "kicker": "Wildlife",
+      "title": "Fourteen new animals and birds",
+      "html": "<div class=\"tablewrap\"><table><thead><tr><th>Animal</th><th>Where</th><th>What it does</th></tr></thead><tbody><tr><td>Black bear</td><td>Forests below 100 m</td><td>Wanders and forages, runs from you. Can be hunted.</td></tr><tr><td>Mountain goat</td><td>Cliffs of Mount Ruben</td><td>Small herds on slopes too steep for anything else. Can be hunted.</td></tr><tr><td>Musk ox</td><td>Caribou Tundra</td><td>A herd grazing the flats in long shaggy coats.</td></tr><tr><td>Porcupine</td><td>Forests</td><td>Waddles along slowly and barely bothers to move away.</td></tr><tr><td>Lynx</td><td>Forest edges</td><td>Rare and quick to vanish.</td></tr><tr><td>Arctic ground squirrel</td><td>Meadows and tundra</td><td>Colonies that sit up like fence posts and whistle an alarm as they scatter.</td></tr><tr><td>Beaver</td><td>Moose Lake, with its stick lodge</td><td>Swims out from the lodge trailing a V of ripples, slaps its tail and dives if you come close.</td></tr><tr><td>Trumpeter swan</td><td>Moose Lake</td><td>Swims, takes off when disturbed and lands again.</td></tr><tr><td>Sandhill crane</td><td>Meadows by the lake and river flats</td><td>Stalks in small groups, bugles, and flies off if you get near.</td></tr><tr><td>Black-billed magpie</td><td>Around Ruben's cabin</td><td>Hops about chattering and flies off when you approach.</td></tr><tr><td>Belted kingfisher</td><td>The river near you</td><td>Flies the river, hovers, plunges in with a splash and rattles.</td></tr><tr><td>Steller sea lion</td><td>A rocky shore near Halibut Pier</td><td>A haul-out that barks, and slides into the sea if you walk up.</td></tr><tr><td>Harbour seal</td><td>Around the pier</td><td>Heads pop up, look around and sink again.</td></tr><tr><td>Orca</td><td>The bay</td><td>A pod travels together, surfacing in turn with tall dorsal fins and a blow.</td></tr></tbody></table></div><p>Each has its own low-poly model and animation, and the calls are synthesised like the rest of the sound.</p>",
+      "figs": []
+    },
+    {
+      "id": "performance",
+      "kicker": "Performance",
+      "title": "Built to hold 60 frames per second",
+      "html": "",
+      "after": ""
+    },
+    {
+      "id": "conclusion",
+      "kicker": "What would change this conclusion",
+      "title": "What would change this conclusion",
+      "html": "",
+      "cls": "conclusion"
+    }
+  ],
+  "footer": ""
+}

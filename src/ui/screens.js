@@ -416,7 +416,7 @@ export class Screens {
         .join('');
       const held = s.trophies.length
         ? s.trophies.map((t) => `<div class="li"><b>${esc(t.name)}</b><span>${t.weight} kg</span><span class="v">${formatMoney(t.value)}</span></div>`).join('')
-        : '<p class="catch-info">No unsold trophies. Hunt caribou on the tundra, moose by the lakes and deer in the forests.</p>';
+        : '<p class="catch-info">No unsold trophies. Hunt caribou on the tundra, moose by the lakes, deer and black bears in the forests and mountain goats on the cliffs of Mount Ruben.</p>';
       this.body.innerHTML = `<h3>Hunting log</h3><div class="list">${rows}</div><h3 style="margin-top:16px">Trophies to sell</h3><div class="list">${held}</div>`;
     } else if (tab === 'goals') {
       const cur = s.currentChallenge();
@@ -688,6 +688,8 @@ export class Screens {
       <div class="setting"><label>Graphics</label><div class="seg" id="s-quality">${['low', 'medium', 'high']
         .map((k) => `<button data-q="${k}" class="${q === k ? 'on' : ''}">${k.toUpperCase()}</button>`)
         .join('')}</div></div>
+      <div class="setting"><label>Adjust graphics automatically</label><div class="seg" id="s-auto"><button data-v="0" class="${st.autoQuality === false ? 'on' : ''}">OFF</button><button data-v="1" class="${st.autoQuality === false ? '' : 'on'}">ON</button></div></div>
+      <div class="setting"><label>Show frame rate</label><div class="seg" id="s-fps"><button data-v="0" class="${st.showFps ? '' : 'on'}">OFF</button><button data-v="1" class="${st.showFps ? 'on' : ''}">ON</button></div></div>
       <div class="setting"><label for="s-vol">Sound volume</label><input type="range" id="s-vol" min="0" max="1" step="0.05" value="${st.volume}"></div>
       <div class="setting"><label for="s-music">Music volume</label><input type="range" id="s-music" min="0" max="1" step="0.05" value="${st.music}"></div>
       <div class="setting"><label for="s-sens">Look sensitivity</label><input type="range" id="s-sens" min="0.4" max="2.2" step="0.05" value="${st.sens}"></div>
@@ -723,6 +725,20 @@ export class Screens {
       g.input.sensitivity = st.sens;
       g.state.saveSettings();
     });
+    this.body.querySelectorAll('#s-fps button').forEach((b) =>
+      b.addEventListener('click', () => {
+        st.showFps = b.dataset.v === '1';
+        g.state.saveSettings();
+        this.render();
+      })
+    );
+    this.body.querySelectorAll('#s-auto button').forEach((b) =>
+      b.addEventListener('click', () => {
+        st.autoQuality = b.dataset.v === '1';
+        g.state.saveSettings();
+        this.render();
+      })
+    );
     this.body.querySelectorAll('#s-invert button').forEach((b) =>
       b.addEventListener('click', () => {
         st.invert = b.dataset.v === '1';

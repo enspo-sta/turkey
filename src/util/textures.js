@@ -221,6 +221,104 @@ export function makeCausticTexture() {
   return dataTexture(data, S, { anisotropy: 2 });
 }
 
+// Terrain material detail, four tiling height patterns (0..1):
+//   R rock: bedding layers broken by cracks (projected on cliff faces)
+//   G pebbles: rounded stones of varied tone with dark gaps (gravel, beds)
+//   B sand and snow: soft wind ripples and grain
+//   A forest floor: needles and moss
+export function makeTerrainDetailData(S = 512) {
+  const rand = mulberry32(4711);
+  const data = new Uint8Array(S * S * 4);
+  const f1 = tileableFbm(S, 8, 5, 101, 0.55);
+  const f2 = tileableFbm(S, 16, 4, 202, 0.5);
+  const f3 = tileableFbm(S, 64, 2, 303, 0.5);
+  const f4 = tileableFbm(S, 4, 4, 404, 0.6);
+  // pebbles: jittered toroidal grid of stones
+  const C = 26;
+  const cells = [];
+  for (let j = 0; j < C; j++) {
+    for (let i = 0; i < C; i++) {
+      const a = rand() * Math.PI;
+      cells.push({ x: (i + 0.15 + rand() * 0.7) / C, y: (j + 0.15 + rand() * 0.7) / C, r: (0.5 + rand() * 0.45) / C, t: 0.35 + rand() * 0.65, e: 0.7 + rand() * 0.6, ca: Math.cos(a), sa: Math.sin(a) });
+    }
+  }
+  const pebble = (u, v) => {
+    const ci = Math.floor(u * C);
+    const cj = Math.floor(v * C);
+    let best = 0;
+    for (let dj = -1; dj <= 1; dj++) {
+      for (let di = -1; di <= 1; di++) {
+        const ii = (ci + di + C) % C;
+        const jj = (cj + dj + C) % C;
+        const c = cells[jj * C + ii];
+        let dx = u - c.x;
+        let dy = v - c.y;
+        dx -= Math.round(dx);
+        dy -= Math.round(dy);
+        // elongated, rotated stones
+        const px = (dx * c.ca + dy * c.sa) / (c.r * c.e);
+        const py = (-dx * c.sa + dy * c.ca) / (c.r / c.e);
+        const d2 = px * px + py * py;
+        if (d2 < 1) {
+          const dome = Math.sqrt(1 - d2);
+          const v2 = c.t * (0.55 + 0.45 * dome);
+          if (v2 > best) best = v2;
+        }
+      }
+    }
+    return best;
+  };
+  // needles: short random strokes
+  const needles = new Float32Array(S * S);
+  for (let n = 0; n < 5200; n++) {
+    const x0 = rand() * S;
+    const y0 = rand() * S;
+    const a = rand() * Math.PI;
+    const len = 4 + rand() * 9;
+    const tone = 0.4 + rand() * 0.6;
+    for (let t = 0; t < len; t += 0.5) {
+      const x = Math.floor(x0 + Math.cos(a) * t + S) % S;
+      const y = Math.floor(y0 + Math.sin(a) * t + S) % S;
+      needles[y * S + x] = Math.max(needles[y * S + x], tone);
+    }
+  }
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const i = (y * S + x) * 4;
+      const u = x / S;
+      const v = y / S;
+      const n2 = f2(x, y);
+      const n3 = f3(x, y);
+      // rock: horizontal beds (v is height on cliff faces) warped by noise
+      const warp = f1(x, y) * 3.2;
+      const bed = Math.sin((v * 7 + warp) * Math.PI * 2) * 0.5 + 0.5;
+      const crack = Math.abs(f2(x * 2, y) - 0.5) * 2;
+      const crackV = 1 - Math.min(1, Math.max(0, (crack - 0.015) / 0.09));
+      let rock = 0.38 + bed * 0.24 + n2 * 0.32 - crackV * crackV * 0.22;
+      rock += (n3 - 0.5) * 0.08;
+      // pebbles with sand between
+      const peb = pebble(u, v);
+      const pebbles = peb > 0 ? peb : 0.12 + n3 * 0.12;
+      // sand ripples
+      const rip = Math.sin((u * 18 + f4(x, y) * 2.2) * Math.PI * 2) * 0.5 + 0.5;
+      const sand = 0.45 + rip * 0.25 + (n3 - 0.5) * 0.35;
+      // forest floor: needles over dark humus with moss patches
+      const moss = n2;
+      const floor = Math.max(needles[y * S + x] * 0.85, 0.25 + moss * 0.35);
+      data[i] = Math.max(0, Math.min(255, rock * 255));
+      data[i + 1] = Math.max(0, Math.min(255, pebbles * 255));
+      data[i + 2] = Math.max(0, Math.min(255, sand * 255));
+      data[i + 3] = Math.max(0, Math.min(255, floor * 255));
+    }
+  }
+  return data;
+}
+
+export function makeTerrainDetailTexture(anisotropy) {
+  const S = 512;
+  return dataTexture(makeTerrainDetailData(S), S, { anisotropy });
+}
+
 // ---- Canvas textures (browser only) ------------------------------------------
 
 function canvas(w, h) {

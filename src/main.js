@@ -58,12 +58,14 @@ class Session {
     g.hunting = new Hunting(g);
     g.wildlife = new Wildlife(g);
     g.fish = new AmbientFish(g);
+    g.fish.setDensity(g.quality.fish);
     g.bears = new Bears(g);
     g.hud = new HUD(g);
     g.screens = new Screens(g);
     g.onEvent = (ev) => this.onEvent(ev);
     g.save = () => this.save();
     g.fastTravel = (id, hours) => this.fastTravel(id, hours);
+    g.onQualityDrop = (name) => g.hud.toast(`Graphics set to ${name.toUpperCase()} to keep the game smooth. Change it in Settings.`);
     g.toTitle = () => this.toTitle();
     g.haptic = (kind) => this.haptic(kind);
     g.events = { emit: (type, data) => this.onPlayerEvent(type, data) };

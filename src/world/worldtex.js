@@ -2,10 +2,66 @@
 // colour, a mask texture (R grass, G fireweed, B ocean allowed, A forest) and
 // the water texture (R surface level, G lake, B glacial, A ocean weights).
 import * as THREE from 'three';
-import { N, HALF, SIZE, CS } from './worldgen.js';
+import { N, HALF, SIZE, CS, SURF } from './worldgen.js';
 import { smoothstep } from '../util/math.js';
 
 const DRY = -1000;
+
+// Which detail pattern the ground shows: R rock, G pebbles (gravel bars,
+// river and glacial beds, roads), B sand and snow, A forest floor. Grass and
+// tundra are the remainder. Blurred once so materials blend at the edges.
+function makeSurfaceTexture(world) {
+  const nn = N * N;
+  const w = new Float32Array(nn * 4);
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const k = j * N + i;
+      const st = world.surf[k];
+      const o = k * 4;
+      if (st === SURF.ROCK) w[o] = 1;
+      else if (st === SURF.GRAVEL || st === SURF.ROAD) w[o + 1] = st === SURF.ROAD ? 0.7 : 1;
+      else if (st === SURF.SAND || st === SURF.SNOW || st === SURF.ICE) w[o + 2] = 1;
+      else if (st === SURF.FOREST) w[o + 3] = 1;
+      else if (st === SURF.MUD) {
+        // under water: stones in rivers and the glacial lake, sand at sea,
+        // soft silt in Moose Lake
+        const x = -HALF + i * CS;
+        const z = -HALF + j * CS;
+        const wa = world.waterAt(x, z);
+        if (wa && (wa.kind === 'river' || wa.kind === 'glacier')) w[o + 1] = 1;
+        else w[o + 2] = wa && wa.kind === 'moose' ? 0.6 : 1;
+      }
+      // forest density also means needles under the trees
+      w[o + 3] = Math.max(w[o + 3], (world.forest[k] / 255) * (1 - w[o]) * (1 - w[o + 1]));
+    }
+  }
+  const out = new Uint8Array(nn * 4);
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      for (let c = 0; c < 4; c++) {
+        let sum = 0;
+        let n = 0;
+        for (let dj = -1; dj <= 1; dj++) {
+          const jj = j + dj;
+          if (jj < 0 || jj >= N) continue;
+          for (let di = -1; di <= 1; di++) {
+            const ii = i + di;
+            if (ii < 0 || ii >= N) continue;
+            sum += w[(jj * N + ii) * 4 + c];
+            n++;
+          }
+        }
+        out[(j * N + i) * 4 + c] = Math.round((sum / n) * 255);
+      }
+    }
+  }
+  const tex = new THREE.DataTexture(out, N, N, THREE.RGBAFormat);
+  tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = THREE.LinearFilter;
+  tex.generateMipmaps = false;
+  tex.needsUpdate = true;
+  return tex;
+}
 
 // Water surface level and water kind at every grid vertex, matching
 // World.waterAt. Levels spread a few cells past the shore so filtering never
@@ -188,6 +244,7 @@ export function makeWorldTextures(world) {
   maskTex.needsUpdate = true;
 
   const water = makeWaterTexture(world);
+  const surface = makeSurfaceTexture(world);
 
   return {
     height,
@@ -195,6 +252,7 @@ export function makeWorldTextures(world) {
     mask: maskTex,
     water: water.texture,
     waterMax: water.maxLevel,
+    surface,
     // uv = (xz - worldMin) * uvScale + uvOffset hits texel centres exactly
     worldMin: new THREE.Vector2(-HALF, -HALF),
     worldSize: SIZE,

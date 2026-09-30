@@ -604,6 +604,55 @@ export class AudioEngine {
     this.noise(1.2, 0.25 * sp.vol, { freq: 600, q: 0.6, attack: 0.1, pan: sp.pan });
   }
 
+  // Steller sea lions hauled out: deep, rolling barks.
+  seaLion(x, z) {
+    const sp = this.spatial(x, z, 280);
+    if (sp.vol < 0.02) return;
+    const n = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < n; i++) {
+      const f = 170 + Math.random() * 40;
+      this.tone('sawtooth', f, 0.24, 0.045 * sp.vol, { f2: f * 0.62, pan: sp.pan, when: i * 0.34, dest: this.amb });
+      this.noise(0.22, 0.03 * sp.vol, { type: 'bandpass', freq: 520, q: 1.4, pan: sp.pan, when: i * 0.34, dest: this.amb });
+    }
+  }
+  // Sandhill cranes: a far-carrying rolling bugle.
+  crane(x, z) {
+    const sp = this.spatial(x, z, 520);
+    if (sp.vol < 0.02) return;
+    for (let i = 0; i < 7; i++) this.tone('square', 700 + (i % 2) * 70, 0.085, 0.022 * sp.vol, { f2: 610, pan: sp.pan, when: i * 0.095, dest: this.amb });
+  }
+  // Black-billed magpie: harsh chatter.
+  magpie(x, z) {
+    const sp = this.spatial(x, z, 170);
+    if (sp.vol < 0.02) return;
+    for (let i = 0; i < 6; i++) this.noise(0.055, 0.05 * sp.vol, { type: 'bandpass', freq: 2500 + Math.random() * 500, q: 3, pan: sp.pan, when: i * 0.085, dest: this.amb });
+  }
+  // Belted kingfisher: a dry, loud rattle.
+  kingfisher(x, z) {
+    const sp = this.spatial(x, z, 230);
+    if (sp.vol < 0.02) return;
+    for (let i = 0; i < 10; i++) this.tone('square', 2300 + Math.random() * 400, 0.028, 0.02 * sp.vol, { pan: sp.pan, when: i * 0.05, dest: this.amb });
+  }
+  // A beaver slapping its tail on the water before diving.
+  tailSlap(x, z) {
+    const sp = this.spatial(x, z, 320);
+    if (sp.vol < 0.02) return;
+    this.noise(0.14, 0.3 * sp.vol, { type: 'lowpass', freq: 1100, q: 0.7, pan: sp.pan });
+    this.tone('sine', 120, 0.16, 0.12 * sp.vol, { f2: 55, pan: sp.pan });
+  }
+  // Arctic ground squirrel alarm call ("sik-sik").
+  squeak(x, z) {
+    const sp = this.spatial(x, z, 100);
+    if (sp.vol < 0.02) return;
+    for (let i = 0; i < 2; i++) this.tone('sine', 3300, 0.06, 0.045 * sp.vol, { f2: 2500, pan: sp.pan, when: i * 0.13, dest: this.amb });
+  }
+  // Orca blow: a short sharp exhale.
+  orcaBlow(x, z) {
+    const sp = this.spatial(x, z, 700);
+    if (sp.vol < 0.02) return;
+    this.noise(0.5, 0.2 * sp.vol, { freq: 900, q: 0.7, attack: 0.02, pan: sp.pan });
+  }
+
   // -------------------------------------------------------------- footsteps
   step(surface, water, sprint) {
     if (!this.ready) return;

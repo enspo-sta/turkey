@@ -61,17 +61,41 @@ compressed).
 
 - A bolt-action rifle with a four-round magazine, a scope with breathing sway
   (hold still to steady it), head and vital-zone hits, and an optional 8x scope.
-- Game to hunt: caribou, moose, Sitka black-tailed deer and Dall sheep. Walk up
+- Game to hunt: caribou, moose, Sitka black-tailed deer, Dall sheep, black
+  bears in the forests and mountain goats on the cliffs of Mount Ruben. Walk up
   and **CLAIM** what you shoot, then sell it at the Trading Post.
 - Grizzly bears that fish at Bear Falls, wander the river, follow the smell of
   your catch, bluff and charge. Shoot, use bear spray up close, or get knocked
   down and wake up at the cabin.
-- Around you: wolves, red foxes, snowshoe hares, bald eagles, ravens, gulls,
-  flying V formations of geese, ducks, loons, puffins, ptarmigan, sea otters and
-  whales breaching off the lighthouse.
+- Around you: wolves, red foxes, snowshoe hares, musk oxen on the tundra,
+  porcupines, a lynx, colonies of arctic ground squirrels that sit up and
+  whistle, beavers with their lodge on Moose Lake, bald eagles, ravens, gulls,
+  flying V formations of geese, ducks, loons, trumpeter swans, sandhill cranes,
+  black-billed magpies at the cabin, a belted kingfisher diving in the river,
+  puffins, ptarmigan, sea otters, harbour seals, Steller sea lions hauled out
+  near the pier, a pod of orcas and whales breaching off the lighthouse.
+- Fish you can see: schools hold in the current at the hotspots and in pools,
+  scatter when your float lands, and the fish that takes the bait swims in under
+  the float and fights under the surface. Red sockeye crowd the river during a
+  salmon run.
 
-**World**
+**World and graphics**
 
+- Clear water you can see into: the bed, stones and fish are lit through the
+  water with light absorbed along the way (clear green-blue in the river,
+  tea-green in Moose Lake, milky turquoise in Glacier Lake, blue-green at sea),
+  moving caustics on the bottom, a wet band at the waterline, fresnel
+  reflections of the real surroundings, sun and moon glints, flowing waves and
+  foam in the rapids.
+- Lighting: sun shadows that reach about 250 metres, mountains that throw the
+  valleys into shadow at dawn and dusk, darker gullies and forest floors, haze
+  that thins with height and takes the colour of the sky, and leaves that glow
+  when the sun is behind them.
+- Ground detail by surface: pebbles on gravel bars and river beds, layered rock
+  on cliffs, sand and snow ripples and needles on the forest floor, with bump
+  lighting. Detailed spruce and birch up close, willow and alder along the
+  water, ferns, fireweed and lupine, fallen logs, stumps, bleached driftwood
+  and mossy boulders.
 - Day and night with sunrise and sunset, stars, the moon and the northern
   lights, rain showers, a waterfall with mist, a glacier that calves slabs of
   ice into Glacier Lake with a boom and a wave, a lighthouse beam at night, and
@@ -79,6 +103,9 @@ compressed).
 - 16 challenges with cash rewards guide you through the game, from "Catch your
   first fish at Hotrod Landing" to "Complete the Fish Journal".
 - Progress saves automatically.
+- Graphics presets (Low, Medium, High) in Settings. The game lowers its
+  resolution when frames run long and, unless you turn it off, steps the preset
+  down if that is not enough. Settings can also show the frame rate.
 
 ## Controls
 
@@ -202,12 +229,14 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/game.js` | Engine core: renderer, scene, cameras, lights and shadows, dynamic resolution and the frame loop |
 | `src/world/layout.js` | The peninsula: coastline, river, lakes, glacier, roads and the nine places |
 | `src/world/worldgen.js` | Height field, river and lake carving, road grading, surface types and water queries |
-| `src/world/terrain.js`, `worldtex.js` | Chunked terrain with levels of detail and the painted ground textures |
-| `src/world/sky.js` | Sky dome with sun, moon, stars, clouds and northern lights, and the day and night cycle |
-| `src/world/water.js`, `effects.js`, `calving.js` | River, lake and sea water, the waterfall, splashes, ripples, rain, mist and dust, and the calving glacier |
+| `src/world/terrain.js`, `worldtex.js` | Chunked terrain with levels of detail, the ground material with per-surface detail, and the world textures (height, colour, surfaces, water levels) |
+| `src/world/worldfx.js` | Shading shared by every material: haze, light under water with caustics, mountain shadows and sky occlusion |
+| `src/world/lighting.js` | The mountain shadow and sky visibility maps, computed on the graphics processor |
+| `src/world/sky.js` | Sky dome with sun, moon, stars, clouds and northern lights, the cascaded sun shadows, and the day and night cycle |
+| `src/world/water.js`, `effects.js`, `calving.js` | River, lake and sea surfaces with animated waves and reflections, the waterfall, splashes, ripples, rain, mist and dust, and the calving glacier |
 | `src/world/scatter.js`, `grass.js`, `props.js`, `roads.js`, `colliders.js` | Forests and rocks, wind-blown grass, buildings, bridges, the pier and lighthouse, gravel roads and collision |
 | `src/entities/player.js`, `hotrod.js`, `viewmodel.js` | Walking, the drivable hot rod, and the first-person rod, rifle and hands |
-| `src/entities/wildlife.js`, `animalmodels.js`, `fishmodels.js` | Animal and bird behaviour and their low-poly models, and the 16 fish models |
+| `src/entities/wildlife.js`, `animalmodels.js`, `fishmodels.js`, `ambientfish.js` | Animal and bird behaviour and their low-poly models, the 16 fish models, and the fish schools you can see in the water |
 | `src/gameplay/fishing.js` | Casting meter, float and bites, the fight, landing, the eagle, and catches |
 | `src/gameplay/hunting.js`, `bears.js` | Rifle, scope and hit zones, and the grizzly encounters |
 | `src/gameplay/data.js`, `state.js` | Fish, lures, rods, gear, places and challenges, and the save game |
@@ -232,6 +261,11 @@ node tools/shot.mjs tools/scenarios/eagle.json   # a bald eagle steals a small f
 node tools/shot.mjs tools/scenarios/mobile.json  # phone-sized touch layout
 node tools/shot.mjs tools/scenarios/catch-touch.json  # real taps on KEEP and RELEASE on a phone-sized touch screen
 node tools/shot.mjs tools/scenarios/catch-mouse.json  # real clicks and keys on the catch card with the mouse locked to the view
+node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot
+node tools/shot.mjs tools/scenarios/fish-views.json   # fish schools, a fish approaching the float and the fight
+node tools/shot.mjs tools/scenarios/light-views.json  # morning, noon, evening, sunset and night lighting
+node tools/shot.mjs tools/scenarios/animals.json      # the newer animals and birds
+node tools/shot.mjs tools/scenarios/perf-breakdown.json  # draw calls and triangles per rendering pass
 ```
 
 Playwright is not a project dependency; install it with `npm install --no-save playwright`

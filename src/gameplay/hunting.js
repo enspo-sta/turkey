@@ -230,7 +230,7 @@ export class Hunting {
   claim(a) {
     const g = this.game;
     const info = GAME[a.species];
-    const weight = Math.round({ caribou: 130, moose: 480, deer: 55, sheep: 80, bear: 290 }[a.species] * a.scale * (0.9 + Math.random() * 0.2));
+    const weight = Math.round({ caribou: 130, moose: 480, deer: 55, sheep: 80, bear: 290, blackbear: 115, goat: 78 }[a.species] * a.scale * (0.9 + Math.random() * 0.2));
     const value = Math.round(info.value * a.scale);
     g.state.trophies.push({ species: a.species, name: info.name, weight, value });
     g.state.hunted[a.species] = (g.state.hunted[a.species] || 0) + 1;

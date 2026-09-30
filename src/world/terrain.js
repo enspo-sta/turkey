@@ -17,20 +17,90 @@ for (let i = 0; i < 256; i++) {
   LIN[i] = c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
 }
 
-export function makeTerrainMaterial(detailTex) {
+// Ground material: vertex colours from the world, a large-scale variation
+// map, and per-surface detail (rock layers on cliff faces, pebbles on gravel
+// bars and river beds, sand and snow ripples, needles on the forest floor)
+// with bump lighting from the same patterns. Under water the pattern sways
+// with the waves above it, like refraction.
+export function makeTerrainMaterial(detailTex, matTex, surfaceTex) {
   detailTex.repeat.set(1 / 6.5, 1 / 6.5);
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true, map: detailTex });
   mat.userData.fx = 'canopy';
+  const extra = { uMat: { value: matTex }, uSurf: { value: surfaceTex } };
   mat.onBeforeCompile = (shader) => {
-    shader.fragmentShader = shader.fragmentShader.replace(
-      '#include <map_fragment>',
-      `#ifdef USE_MAP
-        vec4 dA = texture2D( map, vMapUv );
-        vec4 dB = texture2D( map, vMapUv * 0.137 + vec2(0.31, 0.71) );
-        float detail = dA.r * 0.55 + dB.g * 0.45;
-        diffuseColor.rgb *= 0.62 + detail * 0.76;
-      #endif`
-    );
+    Object.assign(shader.uniforms, extra);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vTWorld;\nvarying vec3 vTNormal;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvTWorld = position;\nvTNormal = normal;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        uniform sampler2D uMat;
+        uniform sampler2D uSurf;
+        varying vec3 vTWorld;
+        varying vec3 vTNormal;
+        float tHeight = 0.0;
+        vec3 tBump( vec3 surfPos, vec3 surfNorm, float h ) {
+          vec3 sx = dFdx( surfPos );
+          vec3 sy = dFdy( surfPos );
+          vec3 r1 = cross( sy, surfNorm );
+          vec3 r2 = cross( surfNorm, sx );
+          float det = dot( sx, r1 );
+          vec2 dh = vec2( dFdx( h ), dFdy( h ) );
+          vec3 grad = sign( det ) * ( dh.x * r1 + dh.y * r2 );
+          vec3 bumped = normalize( abs( det ) * surfNorm - grad + surfNorm * 1e-6 );
+          // never tip the surface more than about 50 degrees from its geometry
+          return normalize( mix( surfNorm, bumped, clamp( dot( bumped, surfNorm ) * 2.0 - 0.3, 0.0, 1.0 ) ) );
+        }`
+      )
+      .replace(
+        '#include <map_fragment>',
+        `#ifdef USE_MAP
+          vec4 dA = texture2D( map, vMapUv );
+          vec4 dB = texture2D( map, vMapUv * 0.137 + vec2(0.31, 0.71) );
+          float detail = dA.r * 0.55 + dB.g * 0.45;
+          diffuseColor.rgb *= 0.7 + detail * 0.6;
+        #endif
+        {
+          vec3 tn = normalize( vTNormal );
+          vec4 sw = vec4( 0.0 );
+          vec2 p = vTWorld.xz;
+          #ifdef USE_FOG
+            sw = texture2D( uSurf, ( vTWorld.xz - uFxWorld.xy ) * uFxWorld.z + uFxWorld.w );
+            if ( vTWorld.y < uFxWaterMax ) {
+              float below = fxWaterAt( vTWorld.xz ).x - vTWorld.y;
+              if ( below > 0.0 ) p += ( texture2D( uFxWaves, vTWorld.xz / 7.0 ).rg * 2.0 - 1.0 ) * min( below, 3.0 ) * 0.05;
+            }
+          #endif
+          float steep = 1.0 - smoothstep( 0.62, 0.86, tn.y );
+          float wR = clamp( max( sw.r, steep ), 0.0, 1.0 );
+          float wG = sw.g * ( 1.0 - wR );
+          float wB = sw.b * ( 1.0 - wR * 0.6 );
+          float wA = sw.a * ( 1.0 - wR ) * ( 1.0 - wG );
+          // rock layers projected onto the cliff faces
+          vec2 bw = abs( tn.xz ) + 0.001;
+          bw /= bw.x + bw.y;
+          float rk = texture2D( uMat, vec2( vTWorld.z, vTWorld.y ) * 0.11 ).r * bw.x + texture2D( uMat, vec2( vTWorld.x, vTWorld.y ) * 0.11 ).r * bw.y;
+          rk = mix( texture2D( uMat, p * 0.09 ).r, rk, steep );
+          float pb = texture2D( uMat, p * 0.36 ).g;
+          float sd = texture2D( uMat, p * 0.3 ).b;
+          float ff = texture2D( uMat, p * 0.45 ).a;
+          float tone = mix( 1.0, 0.5 + rk * 0.95, wR );
+          tone *= mix( 1.0, 0.42 + pb * 1.05, wG );
+          tone *= mix( 1.0, 0.8 + sd * 0.4, wB );
+          tone *= mix( 1.0, 0.58 + ff * 0.8, wA );
+          diffuseColor.rgb *= tone;
+          // stones vary a little in colour, warm to cool
+          diffuseColor.rgb *= mix( vec3( 1.0 ), mix( vec3( 1.06, 1.0, 0.92 ), vec3( 0.92, 0.98, 1.06 ), fract( pb * 7.3 ) ), wG * step( 0.2, pb ) );
+          // fade the bumps with distance and at grazing views, where screen
+          // derivatives of the pattern blow up
+          float fade = 1.0 - smoothstep( 35.0, 110.0, length( vViewPosition ) );
+          fade *= smoothstep( 0.06, 0.3, abs( dot( tn, normalize( cameraPosition - vTWorld ) ) ) );
+          tHeight = ( rk * wR * 0.09 + pb * wG * 0.035 + sd * wB * 0.012 + ff * wA * 0.018 ) * fade;
+        }`
+      )
+      .replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\nnormal = tBump( - vViewPosition, normal, tHeight );');
     fxPatch(shader, mat);
   };
   return mat;
@@ -291,58 +361,65 @@ export function buildReflectionTerrain(world, material, layer) {
   const n = Math.floor(CELLS / step) + 1;
   const h = world.h;
   const col = world.color;
-  const pos = new Float32Array(n * n * 3);
-  const nor = new Float32Array(n * n * 3);
-  const clr = new Float32Array(n * n * 3);
-  const uv = new Float32Array(n * n * 2);
-  for (let j = 0; j < n; j++) {
-    for (let i = 0; i < n; i++) {
-      const gi = Math.min(i * step, N - 1);
-      const gj = Math.min(j * step, N - 1);
-      const k = gj * N + gi;
-      const v = j * n + i;
-      const x = -HALF + gi * CS;
-      const z = -HALF + gj * CS;
-      pos[v * 3] = x;
-      pos[v * 3 + 1] = h[k];
-      pos[v * 3 + 2] = z;
-      const il = Math.max(gi - step, 0);
-      const ir = Math.min(gi + step, N - 1);
-      const ju = Math.max(gj - step, 0);
-      const jd = Math.min(gj + step, N - 1);
-      const dx = (h[gj * N + ir] - h[gj * N + il]) / ((ir - il) * CS);
-      const dz = (h[jd * N + gi] - h[ju * N + gi]) / ((jd - ju) * CS);
-      const l = Math.sqrt(dx * dx + 1 + dz * dz);
-      nor[v * 3] = -dx / l;
-      nor[v * 3 + 1] = 1 / l;
-      nor[v * 3 + 2] = -dz / l;
-      clr[v * 3] = LIN[col[k * 3]];
-      clr[v * 3 + 1] = LIN[col[k * 3 + 1]];
-      clr[v * 3 + 2] = LIN[col[k * 3 + 2]];
-      uv[v * 2] = x;
-      uv[v * 2 + 1] = z;
+  const vert = (i, j, pos, nor, clr, uv, v) => {
+    const gi = Math.min(i * step, N - 1);
+    const gj = Math.min(j * step, N - 1);
+    const k = gj * N + gi;
+    const x = -HALF + gi * CS;
+    const z = -HALF + gj * CS;
+    pos[v * 3] = x;
+    pos[v * 3 + 1] = h[k];
+    pos[v * 3 + 2] = z;
+    const il = Math.max(gi - step, 0);
+    const ir = Math.min(gi + step, N - 1);
+    const ju = Math.max(gj - step, 0);
+    const jd = Math.min(gj + step, N - 1);
+    const dx = (h[gj * N + ir] - h[gj * N + il]) / ((ir - il) * CS);
+    const dz = (h[jd * N + gi] - h[ju * N + gi]) / ((jd - ju) * CS);
+    const l = Math.sqrt(dx * dx + 1 + dz * dz);
+    nor[v * 3] = -dx / l;
+    nor[v * 3 + 1] = 1 / l;
+    nor[v * 3 + 2] = -dz / l;
+    clr[v * 3] = LIN[col[k * 3]];
+    clr[v * 3 + 1] = LIN[col[k * 3 + 1]];
+    clr[v * 3 + 2] = LIN[col[k * 3 + 2]];
+    uv[v * 2] = x;
+    uv[v * 2 + 1] = z;
+  };
+  const group = new THREE.Group();
+  group.name = 'reflectionTerrain';
+  const B = 32; // cells per chunk side (400 m)
+  for (let cj = 0; cj < n - 1; cj += B) {
+    for (let ci = 0; ci < n - 1; ci += B) {
+      const w = Math.min(B, n - 1 - ci) + 1;
+      const d = Math.min(B, n - 1 - cj) + 1;
+      const pos = new Float32Array(w * d * 3);
+      const nor = new Float32Array(w * d * 3);
+      const clr = new Float32Array(w * d * 3);
+      const uv = new Float32Array(w * d * 2);
+      for (let j = 0; j < d; j++) for (let i = 0; i < w; i++) vert(ci + i, cj + j, pos, nor, clr, uv, j * w + i);
+      const idx = [];
+      for (let j = 0; j < d - 1; j++) {
+        for (let i = 0; i < w - 1; i++) {
+          const a = j * w + i;
+          const b = a + 1;
+          const c = a + w;
+          const e = c + 1;
+          idx.push(a, c, b, b, c, e);
+        }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+      g.setAttribute('color', new THREE.BufferAttribute(clr, 3));
+      g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+      g.setIndex(idx);
+      g.computeBoundingSphere();
+      const mesh = new THREE.Mesh(g, material);
+      mesh.matrixAutoUpdate = false;
+      mesh.layers.set(layer);
+      group.add(mesh);
     }
   }
-  const idx = [];
-  for (let j = 0; j < n - 1; j++) {
-    for (let i = 0; i < n - 1; i++) {
-      const a = j * n + i;
-      const b = a + 1;
-      const c = a + n;
-      const d = c + 1;
-      idx.push(a, c, b, b, c, d);
-    }
-  }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
-  g.setAttribute('color', new THREE.BufferAttribute(clr, 3));
-  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-  g.setIndex(new THREE.BufferAttribute(new Uint32Array(idx), 1));
-  g.computeBoundingSphere();
-  const mesh = new THREE.Mesh(g, material);
-  mesh.name = 'reflectionTerrain';
-  mesh.matrixAutoUpdate = false;
-  mesh.layers.set(layer);
-  return mesh;
+  return group;
 }

@@ -13,7 +13,7 @@ import { Colliders } from './world/colliders.js';
 import { makeWorldTextures } from './world/worldtex.js';
 import { Props } from './world/props.js';
 import { buildRoads } from './world/roads.js';
-import { makeDetailTexture, makeCloudTexture, makeWaterNormalTexture, makeCausticTexture } from './util/textures.js';
+import { makeDetailTexture, makeCloudTexture, makeWaterNormalTexture, makeCausticTexture, makeTerrainDetailTexture } from './util/textures.js';
 
 export const IS_TOUCH =
   typeof navigator !== 'undefined' &&
@@ -22,9 +22,9 @@ export const IS_TOUCH =
     ('ontouchstart' in window && navigator.maxTouchPoints > 0));
 
 export const QUALITY = {
-  low: { dpr: 1.0, shadow: 0, shadowDist: 0, grass: 0.45, scatter: 0.6, lod: 0.7, reflect: 0, farShadows: false },
-  medium: { dpr: 1.5, shadow: 1024, shadowDist: 190, grass: 0.75, scatter: 0.85, lod: 0.9, reflect: 128, farShadows: false },
-  high: { dpr: 2.0, shadow: 2048, shadowDist: 260, grass: 1.0, scatter: 1.0, lod: 1.0, reflect: 256, farShadows: true },
+  low: { dpr: 1.0, shadow: 0, shadowDist: 0, grass: 0.45, scatter: 0.6, lod: 0.7, reflect: 0, farShadows: false, fish: 0.5 },
+  medium: { dpr: 1.5, shadow: 1024, shadowDist: 190, grass: 0.75, scatter: 0.85, lod: 0.9, reflect: 128, farShadows: false, fish: 0.8 },
+  high: { dpr: 2.0, shadow: 2048, shadowDist: 260, grass: 1.0, scatter: 1.0, lod: 1.0, reflect: 256, farShadows: true, fish: 1.0 },
 };
 
 const _c = new THREE.Color();
@@ -76,6 +76,7 @@ export class Game {
       detail: makeDetailTexture(aniso),
       cloud: makeCloudTexture(),
       waterNormal: makeWaterNormalTexture(),
+      terrainDetail: makeTerrainDetailTexture(aniso),
     };
     this.wtex = makeWorldTextures(this.world);
     this.colliders = new Colliders();
@@ -94,7 +95,7 @@ export class Game {
     FX.uFxGlow.value = this.env.uniforms.uGlow.value;
     this.env.sky.layers.enable(REFLECT_LAYER);
 
-    this.terrainMaterial = makeTerrainMaterial(this.textures.detail);
+    this.terrainMaterial = makeTerrainMaterial(this.textures.detail, this.textures.terrainDetail, this.wtex.surface);
     this.terrain = new Terrain(this.world, this.terrainMaterial);
     this.scene.add(this.terrain.group);
     this.farTerrain = buildFarTerrain(this.world, this.terrainMaterial);
@@ -108,14 +109,15 @@ export class Game {
 
     this.water = new WaterSystem(this.world, this.wtex, this.textures.waterNormal, this.env, renderer);
     this.scene.add(this.water.group);
+    FX.uFxWaves.value = this.water.waves.texture;
 
     progress(0.8, 'Planting spruce and birch');
     await nextFrame();
     this.props = new Props(this);
     const avoid = this.props.reserveAreas();
-    this.scatter = new Scatter(this.world, this.colliders, this.sharedUniforms);
+    this.scatter = new Scatter(this.world, this.colliders, this.sharedUniforms, this.textures.terrainDetail);
     this.scatter.generate(avoid);
-    this.scatter.enableLayer(REFLECT_LAYER, ['spruce', 'birch']);
+    this.scatter.enableReflections(REFLECT_LAYER, ['spruce', 'birch']);
     this.scene.add(this.scatter.group);
     this.props.build();
     this.scene.add(this.props.group);
@@ -148,6 +150,7 @@ export class Game {
     this.scatter.distScale = q.scatter;
     this.terrain.lodBias = q.lod;
     this.water.setReflectionSize(q.reflect);
+    this.fish?.setDensity(q.fish);
     this.resize();
     this.scatter.lastPos.set(1e9, 0, 0);
   }
@@ -219,6 +222,20 @@ export class Game {
       this.renderer.setPixelRatio(this.dpr);
       this.resize();
       a.good = 0;
+      a.slow = 0;
+    } else if (a.avg > 1 / 40 && this.started && !this.paused && !this.menuOpen) {
+      // already at the lowest resolution: step the graphics preset down after
+      // a few slow checks in a row, if the player allows it
+      a.slow = (a.slow || 0) + 1;
+      const settings = this.state?.settings;
+      const next = this.qualityName === 'high' ? 'medium' : this.qualityName === 'medium' ? 'low' : null;
+      if (a.slow >= 3 && next && settings && settings.autoQuality !== false) {
+        a.slow = 0;
+        settings.quality = next;
+        this.setQuality(next);
+        this.state.saveSettings?.();
+        this.onQualityDrop?.(next);
+      }
     } else if (a.avg < 1 / 55 && this.dpr < maxDpr - 0.01) {
       a.good++;
       if (a.good >= 4) {
@@ -227,7 +244,10 @@ export class Game {
         this.resize();
         a.good = 0;
       }
-    } else a.good = 0;
+    } else {
+      a.good = 0;
+      a.slow = 0;
+    }
   }
 
   updateWorld(dt) {

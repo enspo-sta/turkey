@@ -2,6 +2,7 @@
 // halibut pier, Bear Falls platform, lighthouse, lookout, signs and campfires.
 // Each registers colliders, walkable decks and interaction points.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ModelBuilder } from '../util/builder.js';
 import { makeSignTexture, makeAlaskaFlagTexture } from '../util/textures.js';
 import { mulberry32, clamp, lerp } from '../util/math.js';
@@ -161,7 +162,51 @@ export class Props {
     this.buildSigns(L);
     this.buildCampfires(L.fires);
     this.buildGlacierProps();
+    this.mergeStatic();
     return this.group;
+  }
+
+  // Merge the static meshes that share a material into one mesh per 160 m
+  // cell: far fewer draw calls in the view and in both shadow cascades.
+  mergeStatic() {
+    const keep = new Set([this.lantern, this.flag, this.beam, ...(this.bobbers || [])]);
+    const groups = new Map();
+    for (const m of [...this.group.children]) {
+      if (!m.isMesh || keep.has(m) || m.matrixAutoUpdate) continue;
+      const g = m.geometry;
+      const key = [
+        m.material.uuid,
+        m.castShadow ? 1 : 0,
+        Math.floor(m.position.x / 160),
+        Math.floor(m.position.z / 160),
+        Object.keys(g.attributes).sort().join(','),
+        g.index ? 'i' : 'n',
+      ].join('|');
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(m);
+    }
+    for (const list of groups.values()) {
+      if (list.length < 2) continue;
+      const geos = list.map((m) => {
+        m.updateMatrix();
+        return m.geometry.clone().applyMatrix4(m.matrix);
+      });
+      const merged = mergeGeometries(geos, false);
+      if (!merged) continue;
+      merged.computeBoundingSphere();
+      const first = list[0];
+      const mesh = new THREE.Mesh(merged, first.material);
+      mesh.castShadow = first.castShadow;
+      mesh.receiveShadow = first.receiveShadow;
+      mesh.matrixAutoUpdate = false;
+      mesh.name = 'props-merged';
+      for (const m of list) {
+        this.group.remove(m);
+        m.geometry.dispose();
+      }
+      for (const g of geos) g.dispose();
+      this.group.add(mesh);
+    }
   }
 
   addMesh(geo, x, y, z, yaw, mat = this.mat, { shadow = true } = {}) {

@@ -373,3 +373,254 @@ export class AnimatedHerd {
     }
   }
 }
+
+// ---- more species -----------------------------------------------------------
+
+export function blackBearModel() {
+  const b = new ModelBuilder({ limbs: true });
+  const fur = 0x1c1916;
+  const sheen = 0x2a2520;
+  b.sphere(1, 8, 6, { pos: [0, 0.82, -0.05], scale: [0.48, 0.5, 0.86], color: fur, jitter: 0.1 });
+  b.sphere(1, 8, 6, { pos: [0, 0.84, 0.4], scale: [0.44, 0.44, 0.45], color: sheen, jitter: 0.1 });
+  b.sphere(1, 8, 6, { pos: [0, 0.8, -0.72], scale: [0.42, 0.44, 0.4], color: fur });
+  legs(b, { h: 0.64, fx: 0.26, bx: 0.27, zf: 0.45, zb: -0.7, r0: 0.13, r1: 0.11, color: 0x141210, hoof: 0x0e0c0a, hoofH: 0.08 });
+  const hp = [0, 0.92, 0.66];
+  b.sphere(1, 8, 6, { pos: [0, 0.92, 0.9], scale: [0.27, 0.27, 0.28], color: fur, limb: 5, pivot: hp });
+  b.box(0.17, 0.15, 0.26, { pos: [0, 0.86, 1.15], color: 0x8a6a4a, limb: 5, pivot: hp }); // tan muzzle
+  b.box(0.08, 0.06, 0.05, { pos: [0, 0.9, 1.29], color: 0x0a0a0a, limb: 5, pivot: hp });
+  for (const s of [-1, 1]) {
+    b.sphere(0.075, 6, 5, { pos: [s * 0.2, 1.17, 0.84], color: fur, limb: 5, pivot: hp });
+    b.sphere(0.028, 6, 4, { pos: [s * 0.1, 0.98, 1.11], color: 0x050505, limb: 5, pivot: hp });
+  }
+  b.sphere(0.06, 5, 4, { pos: [0, 0.86, -1.1], color: fur, limb: 6, pivot: [0, 0.86, -1.05] });
+  return b.build();
+}
+
+export function goatModel() {
+  const b = new ModelBuilder({ limbs: true });
+  const white = 0xf2efe6;
+  const shade = 0xdcd6c8;
+  b.sphere(1, 8, 6, { pos: [0, 0.86, 0], scale: [0.3, 0.36, 0.58], color: white, jitter: 0.1 });
+  b.sphere(1, 8, 6, { pos: [0, 0.98, 0.28], scale: [0.3, 0.34, 0.3], color: white }); // shoulder hump
+  // shaggy "pantaloons" over the upper legs
+  legs(b, { h: 0.6, fx: 0.13, bx: 0.13, zf: 0.34, zb: -0.36, r0: 0.075, r1: 0.04, color: shade, hoof: 0x1a1a1a, hoofH: 0.07 });
+  const hp = [0, 1.0, 0.45];
+  b.box(0.16, 0.3, 0.22, { pos: [0, 1.1, 0.56], rot: [-0.35, 0, 0], color: white, limb: 5, pivot: hp });
+  b.box(0.13, 0.15, 0.3, { pos: [0, 1.2, 0.74], rot: [0.5, 0, 0], color: white, limb: 5, pivot: hp });
+  b.cone(0.05, 0.2, 5, { pos: [0, 0.98, 0.82], rot: [Math.PI, 0, 0], color: white, limb: 5, pivot: hp }); // beard
+  b.box(0.06, 0.05, 0.05, { pos: [0, 1.13, 0.88], color: 0x1a1a1a, limb: 5, pivot: hp });
+  for (const s of [-1, 1]) {
+    b.cone(0.022, 0.2, 5, { pos: [s * 0.045, 1.4, 0.64], rot: [-0.5, 0, 0], color: 0x111111, limb: 5, pivot: hp });
+    b.box(0.03, 0.1, 0.05, { pos: [s * 0.1, 1.33, 0.62], rot: [0, 0, s * -0.6], color: white, limb: 5, pivot: hp });
+  }
+  b.cone(0.04, 0.08, 4, { pos: [0, 0.94, -0.58], rot: [-2.3, 0, 0], color: white, limb: 6, pivot: [0, 0.96, -0.55] });
+  return b.build();
+}
+
+export function muskoxModel() {
+  const b = new ModelBuilder({ limbs: true });
+  const coat = 0x2e2218;
+  const skirt = 0x3a2a1c;
+  b.sphere(1, 8, 6, { pos: [0, 0.98, -0.05], scale: [0.62, 0.6, 1.0], color: coat, jitter: 0.12 });
+  b.sphere(1, 8, 6, { pos: [0, 1.12, 0.1], scale: [0.4, 0.22, 0.46], color: 0x8a7458 }); // pale saddle
+  // long guard hair hanging almost to the ground
+  b.cyl(0.7, 0.62, 0.55, 9, { pos: [0, 0.5, -0.05], scale: [1, 1, 1.45], color: skirt, jitter: 0.14 });
+  legs(b, { h: 0.5, fx: 0.24, bx: 0.26, zf: 0.5, zb: -0.62, r0: 0.1, r1: 0.08, color: 0xb8a888, hoof: 0x1a1a1a, hoofH: 0.07 });
+  const hp = [0, 1.02, 0.78];
+  b.sphere(1, 7, 5, { pos: [0, 0.94, 1.05], scale: [0.3, 0.33, 0.36], color: coat, limb: 5, pivot: hp });
+  b.box(0.22, 0.16, 0.2, { pos: [0, 0.78, 1.3], color: 0x2a2018, limb: 5, pivot: hp });
+  // horns: a heavy boss that sweeps down past the eyes and hooks up
+  for (const s of [-1, 1]) {
+    b.box(0.26, 0.1, 0.22, { pos: [s * 0.12, 1.22, 1.02], rot: [0, 0, s * 0.2], color: 0xc8b890, limb: 5, pivot: hp });
+    b.beam([s * 0.25, 1.2, 1.02], [s * 0.4, 0.9, 1.06], 0.05, 5, { color: 0xb8a880, r2: 0.035, limb: 5, pivot: hp });
+    b.beam([s * 0.4, 0.9, 1.06], [s * 0.48, 1.05, 1.2], 0.035, 4, { color: 0x2a2420, r2: 0.015, limb: 5, pivot: hp });
+  }
+  b.cone(0.06, 0.12, 4, { pos: [0, 0.95, -1.05], rot: [-2.3, 0, 0], color: coat, limb: 6, pivot: [0, 0.98, -1.0] });
+  return b.build();
+}
+
+export function porcupineModel() {
+  const b = new ModelBuilder({ limbs: true });
+  const fur = 0x2e2418;
+  b.sphere(1, 8, 6, { pos: [0, 0.26, 0], scale: [0.22, 0.2, 0.34], color: fur });
+  // quills: pale-tipped spikes over the back
+  const rnd = (i) => Math.sin(i * 12.9898) * 43758.5453 - Math.floor(Math.sin(i * 12.9898) * 43758.5453);
+  for (let i = 0; i < 26; i++) {
+    const a = rnd(i) * Math.PI - Math.PI / 2;
+    const z = -0.3 + rnd(i + 50) * 0.55;
+    const x = Math.sin(a) * 0.2;
+    const y = 0.26 + Math.cos(a) * 0.18;
+    b.cone(0.02, 0.2, 3, { pos: [x * 1.05, y + 0.05, z], rot: [-0.9 + rnd(i + 9) * 0.3, 0, -a * 0.9], color: i % 3 ? 0xd8ccb0 : 0x4a3c2c, jitter: 0.1 });
+  }
+  legs(b, { h: 0.14, fx: 0.1, bx: 0.1, zf: 0.16, zb: -0.16, r0: 0.04, r1: 0.035, color: 0x1a1410, hoof: 0x100c08, hoofH: 0.03 });
+  const hp = [0, 0.26, 0.3];
+  b.sphere(1, 7, 5, { pos: [0, 0.22, 0.38], scale: [0.1, 0.1, 0.12], color: 0x1c1610, limb: 5, pivot: hp });
+  b.sphere(0.02, 5, 4, { pos: [0, 0.22, 0.5], color: 0x050505, limb: 5, pivot: hp });
+  b.cone(0.07, 0.18, 5, { pos: [0, 0.22, -0.4], rot: [-2.2, 0, 0], color: 0x3a2e20, limb: 6, pivot: [0, 0.24, -0.32] });
+  return b.build();
+}
+
+export function lynxModel() {
+  const b = new ModelBuilder({ limbs: true });
+  const coat = 0x9a8a72;
+  b.sphere(1, 8, 6, { pos: [0, 0.52, 0], scale: [0.17, 0.19, 0.42], color: coat });
+  legs(b, { h: 0.46, fx: 0.08, bx: 0.08, zf: 0.28, zb: -0.3, r0: 0.05, r1: 0.04, color: 0x8a7a64, hoof: 0x9a8a72, hoofH: 0.06 });
+  const hp = [0, 0.62, 0.36];
+  b.sphere(1, 8, 6, { pos: [0, 0.66, 0.48], scale: [0.13, 0.12, 0.12], color: coat, limb: 5, pivot: hp });
+  b.sphere(1, 7, 5, { pos: [0, 0.6, 0.47], scale: [0.17, 0.1, 0.08], color: 0xd8ccb8, limb: 5, pivot: hp }); // facial ruff
+  b.box(0.07, 0.05, 0.06, { pos: [0, 0.63, 0.59], color: 0xd8ccb8, limb: 5, pivot: hp });
+  for (const s of [-1, 1]) {
+    b.cone(0.035, 0.1, 4, { pos: [s * 0.07, 0.8, 0.46], color: 0x6a5a48, limb: 5, pivot: hp });
+    b.box(0.008, 0.07, 0.008, { pos: [s * 0.07, 0.88, 0.46], color: 0x111111, limb: 5, pivot: hp }); // ear tufts
+    b.sphere(0.018, 5, 4, { pos: [s * 0.045, 0.69, 0.58], color: 0xc8a030, limb: 5, pivot: hp });
+  }
+  b.cone(0.035, 0.1, 5, { pos: [0, 0.56, -0.44], rot: [-2.0, 0, 0], color: 0x2a2420, limb: 6, pivot: [0, 0.58, -0.4] });
+  return b.build();
+}
+
+export function squirrelModel() {
+  const b = new ModelBuilder({ limbs: true });
+  const fur = 0x9a8058;
+  b.sphere(1, 7, 5, { pos: [0, 0.12, 0], scale: [0.07, 0.07, 0.13], color: fur });
+  b.sphere(1, 6, 5, { pos: [0, 0.11, 0.02], scale: [0.055, 0.05, 0.1], color: 0xd8c8a8 });
+  legs(b, { h: 0.06, fx: 0.035, bx: 0.04, zf: 0.07, zb: -0.07, r0: 0.018, r1: 0.015, color: 0x8a7050, hoof: 0x6a5840, hoofH: 0.01 });
+  const hp = [0, 0.15, 0.1];
+  b.sphere(1, 6, 5, { pos: [0, 0.16, 0.14], scale: [0.045, 0.045, 0.055], color: fur, limb: 5, pivot: hp });
+  b.sphere(0.012, 4, 3, { pos: [0, 0.16, 0.19], color: 0x111111, limb: 5, pivot: hp });
+  b.cone(0.03, 0.12, 5, { pos: [0, 0.14, -0.17], rot: [-2.4, 0, 0], color: 0x7a6040, limb: 6, pivot: [0, 0.13, -0.12] });
+  return b.build();
+}
+
+export function beaverModel() {
+  const b = new ModelBuilder({ limbs: true });
+  const fur = 0x4a3220;
+  b.sphere(1, 8, 6, { pos: [0, 0, 0], scale: [0.2, 0.15, 0.42], color: fur });
+  b.sphere(1, 7, 5, { pos: [0, 0.05, 0.38], scale: [0.13, 0.12, 0.14], color: 0x3e2a1a });
+  b.box(0.06, 0.04, 0.03, { pos: [0, -0.01, 0.52], color: 0xd88a2a }); // orange incisors
+  for (const s of [-1, 1]) b.sphere(0.03, 5, 4, { pos: [s * 0.09, 0.15, 0.34], color: 0x2a1a10 });
+  // flat, scaly paddle tail
+  b.box(0.2, 0.035, 0.34, { pos: [0, -0.02, -0.56], color: 0x2a2420, limb: 6, pivot: [0, 0, -0.4] });
+  return b.build();
+}
+
+export function orcaModel() {
+  const b = new ModelBuilder({ limbs: true });
+  const black = 0x101214;
+  const white = 0xf2f2ee;
+  b.sphere(1, 10, 6, { pos: [0, 0, 0], scale: [1.0, 1.0, 3.6], color: black, jitter: 0.03 });
+  b.sphere(1, 8, 6, { pos: [0, -0.3, 0.9], scale: [0.8, 0.55, 2.2], color: white }); // belly
+  for (const s of [-1, 1]) b.sphere(1, 6, 4, { pos: [s * 0.62, 0.35, 2.3], scale: [0.12, 0.18, 0.42], color: white }); // eye patches
+  b.sphere(1, 6, 4, { pos: [0, 0.55, -0.9], scale: [0.55, 0.2, 0.7], color: 0x8a9096 }); // saddle
+  // the tall dorsal fin
+  b.add(new THREE.ConeGeometry(0.25, 1.8, 4), { pos: [0, 1.6, -0.2], scale: [0.35, 1, 1], rot: [-0.2, 0, 0], color: black });
+  for (const s of [-1, 1]) b.box(1.1, 0.1, 0.6, { pos: [s * 1.0, -0.45, 1.5], rot: [0, s * -0.4, s * -0.3], color: black });
+  const tp = [0, 0, -3.3];
+  b.cyl(0.25, 0.6, 1.6, 8, { pos: [0, 0, -4.0], rot: [Math.PI / 2, 0, 0], color: black, limb: 6, pivot: tp });
+  for (const s of [-1, 1]) b.box(1.3, 0.08, 0.7, { pos: [s * 0.65, 0, -4.9], rot: [0, s * 0.35, 0], color: black, limb: 6, pivot: tp });
+  return b.build();
+}
+
+export function seaLionModel() {
+  const b = new ModelBuilder({ limbs: true });
+  const brown = 0x7a5a3a;
+  b.sphere(1, 8, 6, { pos: [0, 0.3, -0.2], scale: [0.4, 0.34, 1.05], color: brown });
+  b.sphere(1, 8, 6, { pos: [0, 0.5, 0.65], scale: [0.3, 0.36, 0.4], color: 0x8a6a48 }); // chest
+  const hp = [0, 0.7, 0.8];
+  b.beam([0, 0.6, 0.8], [0, 0.95, 1.05], 0.16, 7, { color: 0x8a6a48, r2: 0.12, limb: 5, pivot: hp });
+  b.sphere(1, 7, 5, { pos: [0, 1.0, 1.12], scale: [0.13, 0.12, 0.17], color: 0x6a4a2e, limb: 5, pivot: hp });
+  b.box(0.08, 0.06, 0.1, { pos: [0, 0.97, 1.28], color: 0x3a2a1a, limb: 5, pivot: hp });
+  // fore flippers prop the chest up; hind flippers trail
+  for (const s of [-1, 1]) {
+    b.box(0.12, 0.5, 0.22, { pos: [s * 0.3, 0.22, 0.75], rot: [0.3, 0, s * 0.35], color: 0x3e2c1c, limb: s > 0 ? 1 : 2, pivot: [s * 0.25, 0.45, 0.7] });
+    b.box(0.14, 0.05, 0.36, { pos: [s * 0.18, 0.05, -1.3], rot: [0, s * 0.4, 0], color: 0x3e2c1c, limb: 6, pivot: [0, 0.1, -1.1] });
+  }
+  return b.build();
+}
+
+export function sealHeadModel() {
+  const b = new ModelBuilder({ limbs: true });
+  const grey = 0x6e6a62;
+  b.sphere(1, 8, 6, { pos: [0, -0.1, -0.1], scale: [0.26, 0.26, 0.5], color: grey });
+  b.sphere(1, 8, 6, { pos: [0, 0.18, 0.18], scale: [0.16, 0.16, 0.19], color: 0x7a766c });
+  b.box(0.1, 0.07, 0.08, { pos: [0, 0.14, 0.34], color: 0x4a4640 });
+  for (const s of [-1, 1]) b.sphere(0.035, 6, 4, { pos: [s * 0.08, 0.23, 0.3], color: 0x0a0a0a });
+  return b.build();
+}
+
+export function swanModel() {
+  const b = new ModelBuilder({ limbs: true });
+  const white = 0xf6f6f2;
+  b.sphere(1, 8, 6, { pos: [0, 0, 0], scale: [0.26, 0.2, 0.5], color: white });
+  b.beam([0, 0.05, 0.38], [0, 0.42, 0.44], 0.05, 6, { color: white, r2: 0.04 });
+  b.beam([0, 0.42, 0.44], [0, 0.6, 0.52], 0.04, 6, { color: white });
+  b.sphere(0.07, 6, 5, { pos: [0, 0.62, 0.56], color: white });
+  b.box(0.05, 0.035, 0.12, { pos: [0, 0.6, 0.66], rot: [0.3, 0, 0], color: 0x111111 });
+  b.box(0.14, 0.02, 0.14, { pos: [0, 0.04, -0.5], color: white, limb: 6, pivot: [0, 0.04, -0.42] });
+  wings(b, 2.2, 0.36, white, 0xeeeeea, 0.06);
+  return b.build();
+}
+
+export function craneModel() {
+  const b = new ModelBuilder({ limbs: true });
+  const grey = 0x8a8a86;
+  b.sphere(1, 8, 6, { pos: [0, 1.0, 0], scale: [0.16, 0.17, 0.36], color: grey });
+  b.box(0.22, 0.12, 0.2, { pos: [0, 0.98, -0.38], rot: [0.5, 0, 0], color: 0x6e6c68, limb: 6, pivot: [0, 1.0, -0.3] }); // bustle
+  // legs swing with the walk (limbs 1 and 2)
+  for (const s of [-1, 1]) {
+    const limb = s > 0 ? 1 : 2;
+    b.cyl(0.015, 0.018, 0.9, 4, { pos: [s * 0.07, 0.48, 0.02], color: 0x2a2a2a, limb, pivot: [s * 0.07, 0.93, 0.02] });
+  }
+  const hp = [0, 1.08, 0.28];
+  b.beam([0, 1.05, 0.28], [0, 1.52, 0.42], 0.04, 5, { color: grey, r2: 0.03, limb: 5, pivot: hp });
+  b.sphere(0.06, 6, 5, { pos: [0, 1.56, 0.45], color: 0xd8d6d0, limb: 5, pivot: hp });
+  b.box(0.05, 0.03, 0.05, { pos: [0, 1.61, 0.47], color: 0xc0201a, limb: 5, pivot: hp }); // red crown
+  b.cone(0.018, 0.16, 4, { pos: [0, 1.54, 0.58], rot: [Math.PI / 2 + 0.2, 0, 0], color: 0x2a2a2a, limb: 5, pivot: hp });
+  wings(b, 1.9, 0.3, grey, 0x5a5a58, 1.0);
+  return b.build();
+}
+
+export function magpieModel() {
+  const b = new ModelBuilder({ limbs: true });
+  b.sphere(1, 7, 5, { pos: [0, 0, 0], scale: [0.07, 0.07, 0.16], color: 0x0e0e12 });
+  b.sphere(1, 6, 5, { pos: [0, -0.02, 0.02], scale: [0.06, 0.05, 0.1], color: 0xf4f4f0 }); // white belly
+  b.sphere(0.05, 6, 5, { pos: [0, 0.03, 0.16], color: 0x0e0e12 });
+  b.cone(0.016, 0.06, 4, { pos: [0, 0.02, 0.23], rot: [Math.PI / 2, 0, 0], color: 0x0a0a0a });
+  // the long, iridescent tail
+  b.box(0.05, 0.012, 0.3, { pos: [0, 0, -0.3], color: 0x1a2a3a, limb: 6, pivot: [0, 0, -0.15] });
+  wings(b, 0.6, 0.12, 0x101418, 0xf0f0ec);
+  return b.build();
+}
+
+export function kingfisherModel() {
+  const b = new ModelBuilder({ limbs: true });
+  const blue = 0x44607e;
+  b.sphere(1, 7, 5, { pos: [0, 0, 0], scale: [0.06, 0.06, 0.12], color: blue });
+  b.sphere(0.055, 6, 5, { pos: [0, 0.04, 0.1], color: blue });
+  b.cone(0.03, 0.06, 4, { pos: [0, 0.1, 0.06], rot: [-0.8, 0, 0], color: blue }); // ragged crest
+  b.box(0.1, 0.03, 0.04, { pos: [0, 0.0, 0.1], color: 0xf4f4f0 }); // white collar
+  b.cone(0.016, 0.09, 4, { pos: [0, 0.03, 0.2], rot: [Math.PI / 2, 0, 0], color: 0x1a1a1a });
+  b.box(0.05, 0.01, 0.08, { pos: [0, 0, -0.14], color: blue, limb: 6, pivot: [0, 0, -0.1] });
+  wings(b, 0.5, 0.1, blue, 0x2a3a4e);
+  return b.build();
+}
+
+// Beaver lodge: a dome of gnawed sticks and mud at the water's edge.
+export function beaverLodgeGeometry() {
+  const b = new ModelBuilder();
+  b.sphere(1, 9, 6, { pos: [0, -0.2, 0], scale: [2.6, 1.3, 2.3], color: 0x4a3a2a, jitter: 0.18 });
+  const rnd = (i) => Math.sin(i * 78.233) * 43758.5453 - Math.floor(Math.sin(i * 78.233) * 43758.5453);
+  for (let i = 0; i < 70; i++) {
+    const a = rnd(i) * Math.PI * 2;
+    const r = 0.6 + rnd(i + 3) * 2.0;
+    const y = 1.1 * Math.sqrt(Math.max(0, 1 - (r / 2.6) ** 2)) - 0.1;
+    const x = Math.cos(a) * r;
+    const z = Math.sin(a) * r * 0.9;
+    const t = rnd(i + 11) * Math.PI;
+    const len = 0.9 + rnd(i + 7) * 1.4;
+    b.beam([x - Math.cos(t) * len * 0.5, y, z - Math.sin(t) * len * 0.5], [x + Math.cos(t) * len * 0.5, y + (rnd(i + 5) - 0.3) * 0.5, z + Math.sin(t) * len * 0.5], 0.035, 4, {
+      color: i % 4 ? 0x7a6450 : 0xb8a888,
+      jitter: 0.12,
+    });
+  }
+  return b.build();
+}

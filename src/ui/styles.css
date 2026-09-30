@@ -391,3 +391,8 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
   #banner.show, #place-title.show { animation: none !important; opacity: 1; }
   #prompt.show { animation: none !important; }
 }
+
+/* frame rate readout (Settings > Frame rate) */
+.fps-note { position: absolute; top: calc(100% + 32px); right: 0; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; pointer-events: none; }
+.fps-note.slow { color: #ffb347; }
+.fps-note.bad { color: #ff6b5a; }
