@@ -13,6 +13,7 @@ import { Fishing } from './gameplay/fishing.js';
 import { Hunting } from './gameplay/hunting.js';
 import { Wildlife } from './entities/wildlife.js';
 import { AmbientFish } from './entities/ambientfish.js';
+import { Insects } from './entities/insects.js';
 import { makeFishModel } from './entities/fishmodels.js';
 import { Bears } from './gameplay/bears.js';
 import { Effects } from './world/effects.js';
@@ -62,6 +63,8 @@ class Session {
     g.wildlife = new Wildlife(g);
     g.fish = new AmbientFish(g);
     g.fish.setDensity(g.quality.fish);
+    g.insects = new Insects(g);
+    g.scene.add(g.insects.group);
     g.bears = new Bears(g);
     g.hud = new HUD(g);
     g.screens = new Screens(g);
@@ -135,6 +138,7 @@ class Session {
     show(g.fishing.float);
     show(g.fishing.line);
     show(g.hotrod.group);
+    show(g.insects.group);
     // a fish in the world (under water, fog) and in the hands (no fog), so the
     // first bite and the first catch do not stall on shader compiles
     const fishWorld = makeFishModel('pink');
@@ -620,6 +624,7 @@ class Session {
     g.hunting.update(dt);
     g.wildlife.update(dt);
     g.fish.update(dt);
+    g.insects.update(dt);
     g.bears.update(dt);
 
     // camera

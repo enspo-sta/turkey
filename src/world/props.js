@@ -61,6 +61,8 @@ export class Props {
     this.interactions = [];
     this.fires = [];
     this.smokePoints = [];
+    // lit windows, lamps and fires that draw moths at night
+    this.nightLights = [];
     this.beam = null;
     this.parking = {};
     this.avoid = [];
@@ -308,6 +310,8 @@ export class Props {
     wg.box(0.95, 0.75, 0.06, { pos: [-1.9, 1.55, D / 2 + 0.26], color: 0xffffff, jitter: 0 });
     wg.box(0.06, 0.75, 0.95, { pos: [W / 2 + 0.26, 1.55, 0.3], color: 0xffffff, jitter: 0 });
     this.addMesh(wg.build(), c.x, base, c.z, c.yaw, this.glowMat, { shadow: false });
+    const [mx, mz] = f.to(-1.9, D / 2 + 0.7);
+    this.nightLights.push(new THREE.Vector3(mx, base + 1.6, mz));
     this.colliders.addBox(c.x, c.z, W / 2 + 0.4, D / 2 + 0.4, c.yaw);
     const [px, pz] = f.to(0, D / 2 + 1.4);
     this.colliders.addDeck(px, pz, W / 2 + 0.2, 1.15, c.yaw, base + 0.35);
@@ -393,11 +397,15 @@ export class Props {
     this.addMesh(b.build(), c.x, base, c.z, c.yaw);
     // window glow
     const wg = new ModelBuilder();
-    for (const wx of [-4.2, 4.2]) wg.box(1.9, 1.3, 0.05, { pos: [wx, 2.0, D / 2 + 0.16], color: 0xffffff, jitter: 0 });
+    for (const wx of [-4.2, 4.2]) {
+      wg.box(1.9, 1.3, 0.05, { pos: [wx, 2.0, D / 2 + 0.16], color: 0xffffff, jitter: 0 });
+      const [mx, mz] = f.to(wx, D / 2 + 0.7);
+      this.nightLights.push(new THREE.Vector3(mx, base + 2.0, mz));
+    }
     this.addMesh(wg.build(), c.x, base, c.z, c.yaw, this.glowMat, { shadow: false });
     // big sign on the false front
     const [sx, sz] = f.to(0, D / 2 + 0.2);
-    this.addSign('Kenai Trading Post', 'FISH  ·  FUEL  ·  AMMO  ·  TACKLE', sx, base + 5.6, sz, c.yaw, 11, 2.2);
+    this.addSign('Kenai Trading Post', 'FISH  ·  FUEL  ·  ARROWS  ·  TACKLE', sx, base + 5.6, sz, c.yaw, 11, 2.2);
     const [ix2, iz2] = f.to(-W / 2 - 0.7, 2.5);
     this.addSign('ICE', '', ix2, base + 1.1, iz2 + 0, c.yaw, 1.2, 0.35);
     this.colliders.addBox(c.x, c.z, W / 2 + 0.3, D / 2 + 0.3, c.yaw);
@@ -594,6 +602,8 @@ export class Props {
     for (let i = 1; i < 4; i++) {
       const z = -len / 2 + (i * len) / 4;
       lamps.sphere(0.18, 8, 6, { pos: [d.width / 2 - 0.3, 3.45, z], color: 0xffffff, jitter: 0 });
+      const [mx, mz] = f.to(d.width / 2 - 0.3, z);
+      this.nightLights.push(new THREE.Vector3(mx, d.top + 3.3, mz));
     }
     this.addMesh(lamps.build(), cx, d.top, cz, yaw, this.lampMat, { shadow: false });
     this.colliders.addDeck(cx, cz, d.width / 2 + 0.1, len / 2, yaw, d.top);
@@ -859,6 +869,7 @@ export class Props {
       this.addMesh(b.build(), x, y, z, 0);
       this.colliders.addCircle(x, z, 0.9);
       this.fires.push({ x, y, z, id });
+      this.nightLights.push(new THREE.Vector3(x, y + 1.4, z));
     }
   }
 

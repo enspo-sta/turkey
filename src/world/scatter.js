@@ -645,7 +645,7 @@ function cottonGrassGeo() {
   const col = [];
   const stemC = lin(0.36, 0.42, 0.2);
   const b = new ModelBuilder();
-  for (let i = 0; i < 13; i++) {
+  for (let i = 0; i < 11; i++) {
     const a = rand() * Math.PI * 2;
     const r = rand() * 0.16;
     const x = Math.cos(a) * r;
@@ -656,7 +656,19 @@ function cottonGrassGeo() {
     // a thin blade of a stem
     pos.push(x - 0.004, 0, z, x + 0.004, 0, z, lx, h, lz);
     col.push(...stemC, ...stemC, ...stemC);
-    b.add(jitterGeometry(new THREE.IcosahedronGeometry(0.035, 0), 0.012, mulberry32(i * 3 + 1)), { pos: [lx, h + 0.02, lz], scale: [1, 1.25, 1], color: 0xf6f6f0, jitter: 0.05 });
+    // two soft lobes with round normals: a fluffy tuft, not a faceted pebble
+    for (let k = 0; k < 2; k++) {
+      const head = jitterGeometry(new THREE.IcosahedronGeometry(0.022, 0), 0.009, mulberry32(i * 5 + k * 17 + 1));
+      const hp = head.attributes.position;
+      const hn = head.attributes.normal;
+      for (let v = 0; v < hp.count; v++) {
+        const l = Math.hypot(hp.getX(v), hp.getY(v), hp.getZ(v)) || 1;
+        hn.setXYZ(v, hp.getX(v) / l, hp.getY(v) / l, hp.getZ(v) / l);
+      }
+      const ox = (rand() - 0.5) * 0.024;
+      const oz = (rand() - 0.5) * 0.024;
+      b.add(head, { pos: [lx + ox, h + 0.012 + k * 0.022, lz + oz], scale: [1, 1.25, 1], color: k ? 0xfafaf4 : 0xeeeee6, jitter: 0.03, smooth: true });
+    }
   }
   // grassy leaves at the base
   for (let i = 0; i < 6; i++) {

@@ -14,6 +14,7 @@ import { makeWorldTextures } from './world/worldtex.js';
 import { Props } from './world/props.js';
 import { buildRoads } from './world/roads.js';
 import { Scenery } from './world/scenery.js';
+import { Floaters } from './world/floaters.js';
 import { makeDetailTexture, makeCloudTexture, makeWaterNormalTexture, makeCausticTexture, makeTerrainDetailTexture } from './util/textures.js';
 
 export const IS_TOUCH =
@@ -142,6 +143,9 @@ export class Game {
 
     this.grass = new GrassField(this.wtex, this.env);
     this.scene.add(this.grass.group);
+    // driftwood, branches, petals and leaves on the water, pond lilies, ice floes
+    this.floaters = new Floaters(this);
+    this.scene.add(this.floaters.group);
 
     progress(0.9, 'Waking the wildlife');
     await nextFrame();
@@ -286,6 +290,7 @@ export class Game {
     this.updateFx();
     this.water.update(dt, rain, cam, this.scene);
     this.scenery.update(dt);
+    this.floaters.update(dt);
     this.grass.update(dt, cam.position, this.env.sun, this.env.hemi, 0.3 + rain * 0.8);
   }
 
