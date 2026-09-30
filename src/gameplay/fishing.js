@@ -192,6 +192,11 @@ export class Fishing {
       this.updateLine(dt);
       return;
     }
+    if (this.watchT > 0) {
+      this.watchT -= dt;
+      const b = this.watchBird;
+      if (b && b.mode === 'carry' && this.state === 'idle' && input.lookTouch.id === null && !input.mouseDown) this.lookToward(b.x, b.y, b.z, dt, 2.5);
+    }
     const primaryPressed = input.pressed('primary') || input.keyPressed('Space') || input.keyPressed('Mouse0');
     const primaryHeld = input.held('primary') || input.key('Space') || input.key('Mouse0');
     const primaryReleased = input.released('primary');
@@ -224,6 +229,9 @@ export class Fishing {
         break;
       case 'landing':
         this.updateLanding(dt);
+        break;
+      case 'stolen':
+        this.updateStolen(dt);
         break;
       case 'catch':
         break;
@@ -904,6 +912,27 @@ export class Fishing {
     const F = this.fight;
     this.landT += dt;
     const P = g.player;
+    // a bald eagle may snatch a small fish right at the surface
+    if (!F.eagleRolled) {
+      F.eagleRolled = true;
+      const fish = F.fish;
+      const chance = g.debugEagle ? 1 : 0.07;
+      if (fish.weight < 3.2 && !fish.legend && g.env.night < 0.5 && Math.random() < chance) {
+        const ok = g.wildlife.swoopSteal(
+          () => (this.jumper ? this.jumper.position : F.pos),
+          (bird) => this.stolen(bird)
+        );
+        if (ok) {
+          this.state = 'stolen';
+          this.stealT = 0;
+          this.stealSpot = null;
+          this.stealSplashT = 0;
+          g.hud.banner('BALD EAGLE!', 'danger');
+          g.audio?.reelScream(false);
+          return;
+        }
+      }
+    }
     if (this.jumper) {
       this.jumper.visible = true;
       const t = Math.min(1, this.landT / 0.7);
@@ -913,6 +942,78 @@ export class Fishing {
       this.jumper.userData.uniforms.uFlopT.value += dt;
     }
     if (this.landT > 0.7) this.finishCatch();
+  }
+
+  // The eagle's dive in progress: the fish flops at the surface near shore.
+  updateStolen(dt) {
+    const g = this.game;
+    const F = this.fight;
+    const P = g.player;
+    this.stealT += dt;
+    const j = this.jumper;
+    if (j) {
+      j.visible = true;
+      if (!this.stealSpot) {
+        // thrashing at the surface a few metres out
+        const d = Math.max(4.5, Math.hypot(F.pos.x - P.pos.x, F.pos.z - P.pos.z));
+        const a = Math.atan2(F.pos.x - P.pos.x, F.pos.z - P.pos.z);
+        this.stealSpot = { x: P.pos.x + Math.sin(a) * d, z: P.pos.z + Math.cos(a) * d };
+      }
+      const hop = Math.abs(Math.sin(this.stealT * 5));
+      j.position.set(this.stealSpot.x, F.level + 0.05 + hop * 0.5, this.stealSpot.z);
+      j.rotation.set(0, this.stealT * 1.7, Math.sin(this.stealT * 10) * 0.6);
+      j.userData.uniforms.uFlop.value = 1.2;
+      j.userData.uniforms.uFlopT.value += dt;
+      if (hop < 0.08 && this.stealT - (this.stealSplashT || 0) > 0.3) {
+        this.stealSplashT = this.stealT;
+        g.effects.splash(j.position.x, F.level, j.position.z, 0.35);
+      }
+    }
+    // keep the diving eagle and the fish in view
+    const eagle = g.wildlife.birds.find((b) => b.mode === 'swoop');
+    const tx = j ? j.position.x : F.pos.x;
+    const ty = j ? j.position.y : F.level;
+    const tz = j ? j.position.z : F.pos.z;
+    let lx = tx;
+    let ly = ty;
+    let lz = tz;
+    if (eagle) {
+      const w = clamp(Math.hypot(eagle.x - tx, eagle.z - tz) / 60, 0, 0.6);
+      lx = lerp(tx, eagle.x, w);
+      ly = lerp(ty, eagle.y, w);
+      lz = lerp(tz, eagle.z, w);
+    }
+    this.lookToward(lx, ly, lz, dt, 3);
+    if (this.stealT > 12) this.lose('The fish got away');
+  }
+
+  // Ease the first person view toward a world point.
+  lookToward(x, y, z, dt, rate) {
+    const P = this.game.player;
+    const eye = this.game.camera.position;
+    const yaw = Math.atan2(-(x - eye.x), -(z - eye.z));
+    const pitch = Math.atan2(y - eye.y, Math.hypot(x - eye.x, z - eye.z));
+    const k = Math.min(1, dt * rate);
+    P.yaw += angleDiff(P.yaw, yaw) * k;
+    P.pitch += (clamp(pitch, -0.9, 0.9) - P.pitch) * k;
+  }
+
+  stolen(bird) {
+    const g = this.game;
+    // the player walked off or drove away before the eagle arrived
+    if (this.state !== 'stolen') return;
+    // hand the fish over to the eagle, which carries it off
+    if (this.jumper) {
+      bird.carried = this.jumper;
+      this.jumper = null;
+    }
+    // watch the thief fly off for a moment
+    this.watchBird = bird;
+    this.watchT = 3.5;
+    g.state.stats.stolen = (g.state.stats.stolen || 0) + 1;
+    g.hud.banner('Stolen by an eagle!', 'bad');
+    g.hud.toast('A bald eagle snatched your fish. Welcome to Alaska');
+    this.cancel();
   }
 
   finishCatch() {

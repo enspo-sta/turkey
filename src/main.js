@@ -638,24 +638,29 @@ class Session {
     const g = this.game;
     g.paused = true;
     this.titleT += dt;
-    const landing = g.world.place('landing');
-    const L = g.props.layout;
-    const c = L.cabin;
-    const t = this.titleT * 0.035;
-    const cx = (landing.x + c.x) / 2;
-    const cz = (landing.z + c.z) / 2;
-    const r = 34;
-    const x = cx + Math.sin(t + 0.6) * r;
-    const z = cz + Math.cos(t + 0.6) * r;
-    const y = Math.max(g.world.heightAt(x, z) + 7, landing.y + 9);
-    g.camera.position.set(x, y, z);
-    g.camera.lookAt(cx, landing.y + 2.5, cz);
-    g.camera.updateMatrixWorld();
+    // hero shot: the hot rod at the cabin with the river behind, drifting slowly
+    const car = g.hotrod;
+    const cam = g.camera;
+    const a = car.yaw + 0.75 + Math.sin(this.titleT * 0.07) * 0.35;
+    const r = 8.2;
+    const x = car.pos.x + Math.sin(a) * r;
+    const z = car.pos.z + Math.cos(a) * r;
+    const y = Math.max(g.world.heightAt(x, z) + 1.4, car.pos.y + 1.8);
+    cam.position.set(x, y, z);
+    // frame the car in the lower right, clear of the logo and the menu,
+    // whatever the screen shape
+    const tanV = Math.tan((cam.fov * Math.PI) / 360);
+    const yawOff = Math.atan(0.6 * tanV * cam.aspect);
+    const pitchOff = Math.atan(0.46 * tanV);
+    const pitch0 = Math.atan2(car.pos.y + 0.7 - y, r);
+    cam.rotation.set(pitch0 + pitchOff, a + yawOff, 0, 'YXZ');
+    cam.updateMatrixWorld();
     g.focus = g.camera.position;
     g.env.advance(dt * 0.3);
     g.wildlife.update(dt);
     g.hotrod.update(dt, g.input, g.state);
   }
+
 }
 
 async function boot() {

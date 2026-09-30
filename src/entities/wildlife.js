@@ -401,6 +401,27 @@ export class Wildlife {
     this.game.audio?.splash(0.35, x, z);
   }
 
+  // A bald eagle dives in and snatches a small fish. Returns false when no
+  // eagle is around.
+  swoopSteal(targetFn, onGrab) {
+    const g = this.game;
+    const P = g.player;
+    const eagle = this.birds.find((b) => b.sp === 'eagle' && (b.mode === 'soar' || b.mode === 'perch'));
+    if (!eagle) return false;
+    // enter high over the water in front of the player so the whole dive
+    // plays out on screen
+    const front = P.yaw + Math.PI + (Math.random() < 0.5 ? 0.45 : -0.45);
+    eagle.x = P.pos.x + Math.sin(front) * 85;
+    eagle.z = P.pos.z + Math.cos(front) * 85;
+    eagle.y = P.pos.y + 42;
+    eagle.mode = 'swoop';
+    eagle.t = 0;
+    eagle.swoopTarget = targetFn;
+    eagle.onGrab = onGrab;
+    g.audio?.eagle(eagle.x, eagle.z);
+    return true;
+  }
+
   // ----------------------------------------------------------------- update
   update(dt) {
     const g = this.game;
@@ -646,6 +667,63 @@ export class Wildlife {
           b.cx += Math.sin(b.ang * 0.1) * dt * 0.8;
           break;
         }
+        case 'swoop': {
+          const tp = b.swoopTarget();
+          const dx = tp.x - b.x;
+          const dy = tp.y + 0.25 - b.y;
+          const dz = tp.z - b.z;
+          const dist = Math.hypot(dx, dy, dz);
+          const k = Math.min(1, (28 * dt) / Math.max(dist, 0.01));
+          b.yaw = Math.atan2(dx, dz);
+          b.x += dx * k;
+          b.y += dy * k;
+          b.z += dz * k;
+          b.flap = dist < 14 ? 1.4 : 0.05;
+          b.bank = 0;
+          b.t += dt;
+          if (dist < 1.3 || b.t > 10) {
+            b.mode = 'carry';
+            b.t = 0;
+            // climb away from the player, out over the water
+            const P = g.player.pos;
+            b.yaw = Math.atan2(b.x - P.x, b.z - P.z) + (Math.random() - 0.5) * 1.2;
+            g.effects.splash(b.x, tp.y, b.z, 0.9);
+            g.audio?.eagle(b.x, b.z);
+            if (b.onGrab) b.onGrab(b);
+            b.onGrab = null;
+          }
+          break;
+        }
+        case 'carry': {
+          b.t += dt;
+          b.y += 7 * dt;
+          b.x += Math.sin(b.yaw) * 13 * dt;
+          b.z += Math.cos(b.yaw) * 13 * dt;
+          b.flap = 1.2;
+          if (b.carried) {
+            b.carried.position.set(b.x, b.y - 0.4, b.z);
+            b.carried.rotation.set(0, b.yaw + Math.PI / 2, 0.25);
+            b.carried.userData.uniforms.uFlopT.value += dt;
+          }
+          if (b.t > 9) {
+            if (b.carried) {
+              b.carried.parent?.remove(b.carried);
+              b.carried.traverse((o) => {
+                if (o.isMesh) o.material.dispose();
+              });
+              b.carried = null;
+            }
+            // resume circling from the current spot without a jump
+            b.mode = 'soar';
+            b.R = 50;
+            b.ang = 0;
+            b.cx = b.x - b.R;
+            b.cz = b.z;
+            b.speed = 9;
+            b.alt = 55;
+          }
+          break;
+        }
         case 'perch':
           b.flap = 0;
           b.bank = 0;
@@ -858,7 +936,7 @@ export class Wildlife {
       _q.setFromEuler(_e);
       if (b.bank) _q.multiply(_q2.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -b.bank * 0.8));
       _v.set(b.x, b.y, b.z);
-      _s.setScalar(1);
+      _s.setScalar(b.sp === 'eagle' ? 1.2 : 1);
       _m.compose(_v, _q, _s);
       herd.push(_m, b.phase, 0, 0, b.flap);
     }

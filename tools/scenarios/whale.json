@@ -1,0 +1,7 @@
+{"width":800,"height":450,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":1500},
+{"eval":"(()=>{const g=__rhf.game; document.getElementById('hud').hidden=true; const p=g.world.place('pier'); g.player.place(p.x,p.z,p.face); g.player.pitch=0.02; g.env.setTime(13); const w=g.wildlife.whales[0]; const P=g.player; w.x=P.pos.x-Math.sin(P.yaw)*120; w.z=P.pos.z-Math.cos(P.yaw)*120; w.yaw=P.yaw+1.57; w.phase='breach'; w.t=0.9; const w2=g.wildlife.whales[1]; w2.x=P.pos.x-Math.sin(P.yaw+0.5)*160; w2.z=P.pos.z-Math.cos(P.yaw+0.5)*160; w2.phase='surface'; w2.t=3; return 'whales staged'})()"},
+{"wait":1500},{"shot":"x1-whales"},
+{"eval":"(()=>{const g=__rhf.game; const P=g.player; const b=g.bears.bears.find(b=>b.mode==='roam'); b.x=P.pos.x-Math.sin(P.yaw)*6; b.z=P.pos.z-Math.cos(P.yaw)*6; b.state='attack'; b.t=5; b.swipeT=0; g.bears.threat=b; g.bears.bears.forEach(o=>{ if(o!==b){o.state='gone'; o.t=999;} }); const p=g.world.place('landing'); g.player.place(p.x,p.z,p.face); b.x=p.x-Math.sin(p.face)*3.5; b.z=p.z-Math.cos(p.face)*3.5; b.yaw=p.face+Math.PI; document.getElementById('hud').hidden=false; return 'bear attack staged'})()"},
+{"wait":4000},{"shot":"x2-attack"},
+{"eval":"(()=>{const g=__rhf.game; return 'health '+g.player.health.toFixed(0)})()"}
+]}
