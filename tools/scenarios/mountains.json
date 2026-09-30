@@ -1,0 +1,9 @@
+{"width":800,"height":450,"timeout":200000,"steps":[{"wait":1500},
+{"eval":"__rhf.start(false)"},{"wait":6000},
+{"eval":"(()=>{const g=__rhf.game; g.state.settings.autoQuality=false; g.setQuality('high'); g.dpr=1; g.renderer.setPixelRatio(1); g.resize(); g.bears.directorT=9999; const we=g.env.weather; we.cloud=0.2; we.cloudTarget=0.2; we.rain=0; we.rainTarget=0; we.timer=9999; g.hud.firstShown=-1000; g.hud.hint('',0); g.hud.show(false); __rhf.god(true); g.env.timeScale=0; g.wildlife.threatPos=()=>({x:1e7,z:1e7,loud:0}); window.__face=async(id,tx,tz,time,pitch)=>{ const p=g.world.place(id); g.env.setTime(time); g.player.place(p.x,p.z,Math.atan2(-(tx-p.x),-(tz-p.z))); g.player.pitch=pitch; g.player.tool='none'; g.viewmodel.setTool('none'); await new Promise(r=>setTimeout(r,2000)); g.env.setTime(time); await new Promise(r=>setTimeout(r,5000)); return id+' facing '+Math.round(Math.hypot(tx-p.x,tz-p.z))+' m, cascades '+g.scenery.cascades.length; }; return 'ok'})()"},
+{"wait":6000},
+{"eval":"__face('landing',-780,-420,11,0.14)"},{"shot":"m-ruben.jpg"},
+{"eval":"__face('bend',-780,-420,15,0.12)"},{"shot":"m-ruben-bend.jpg"},
+{"eval":"__face('tundra',400,-1100,10,0.1)"},{"shot":"m-north.jpg"},
+{"eval":"__face('moose',230,-560,17,0.1)"},{"shot":"m-sawtooth.jpg"}
+]}

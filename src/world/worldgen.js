@@ -353,9 +353,11 @@ export class World {
       const dz = z - m.z;
       const d = Math.sqrt(dx * dx + dz * dz);
       if (d < m.r) {
+        // a rounded dome (steepest half way up, not at the top) with
+        // softer, wider ridges: a few degrees gentler than before
         const f = 1 - d / m.r;
-        const r = n2.ridged(x * 0.0032 + k * 17.1, z * 0.0032 - k * 9.3, 5);
-        e += m.h * f * f * (0.4 + 0.95 * r) * land;
+        const r = n2.ridged(x * 0.0026 + k * 17.1, z * 0.0026 - k * 9.3, 5, 2.1, 0.42);
+        e += m.h * f * f * (3 - 2 * f) * (0.52 + 0.75 * r) * land;
       }
     }
 
@@ -365,8 +367,8 @@ export class World {
     const mS = smoothstep(880, 1180, z) * smoothstep(260, 520, x);
     const m = Math.max(mN, mW, mE, mS) * land;
     if (m > 0.001) {
-      const r = n2.ridged(x * 0.0021 + 3.3, z * 0.0021 + 1.7, 6);
-      e += m * (110 + 380 * r * (0.45 + 0.55 * m));
+      const r = n2.ridged(x * 0.0017 + 3.3, z * 0.0017 + 1.7, 5, 2.1, 0.42);
+      e += m * (110 + 330 * r * (0.45 + 0.55 * m));
     }
 
     e += land * n3.fbm(x * 0.012, z * 0.012, 3) * 3.0;
@@ -384,15 +386,15 @@ export class World {
     if (edge > HALF) {
       // ridged ranges, less busy in the fine detail, grouped into higher and
       // lower massifs so the skyline has a rhythm instead of even teeth
-      const r = this.n2.ridged(x * 0.00095 + 7.7, z * 0.00095 + 2.2, 5, 2.05, 0.42);
+      const r = this.n2.ridged(x * 0.00085 + 7.7, z * 0.00085 + 2.2, 5, 2.05, 0.4);
       const big = 0.55 + 0.8 * (this.n3.noise(x * 0.00035 + 3.3, z * 0.00035 - 8.1) * 0.5 + 0.5);
-      e += land * smoothstep(HALF + 150, HALF + 1100, edge) * (100 + 720 * r * big);
+      e += land * smoothstep(HALF + 150, HALF + 1100, edge) * (100 + 680 * r * big);
     }
     // far shore across the bay (south-west)
     const across = (-x + z) * 0.7071;
     if (across > 2300) {
       const f = smoothstep(2300, 3300, across);
-      const r = this.n1.ridged(x * 0.0009 - 3.1, z * 0.0009 + 5.2, 5, 2.05, 0.42);
+      const r = this.n1.ridged(x * 0.0008 - 3.1, z * 0.0008 + 5.2, 5, 2.05, 0.4);
       const mtn = -8 + 180 * f + 820 * r * f;
       e = Math.max(e, lerp(e, mtn, f));
     }
@@ -736,7 +738,7 @@ export class World {
         const nB = this.n2.noise(x * 0.05 + 9, z * 0.05 - 4);
         const nC = this.n3.fbm(x * 0.0045 - 30, z * 0.0045 + 12, 3);
 
-        const treeline = 112 + nC * 22;
+        const treeline = 150 + nC * 25;
         const snowline = 240 + nA * 40;
 
         // underwater?
@@ -756,8 +758,8 @@ export class World {
 
         // forest density
         let forest = smoothstep(-0.28, 0.22, this.n2.fbm(x * 0.0036 + 100, z * 0.0036, 3) + 0.12);
-        forest *= 1 - smoothstep(treeline - 25, treeline + 2, e);
-        forest *= 1 - smoothstep(0.55, 0.85, slope);
+        forest *= 1 - smoothstep(treeline - 30, treeline + 5, e);
+        forest *= 1 - smoothstep(0.62, 0.95, slope);
         forest *= smoothstep(rw + 5, rw + 16, rd);
         forest *= smoothstep(8, 26, lakeSDmin);
         forest *= smoothstep(30, 80, csd);
