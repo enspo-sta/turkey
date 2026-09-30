@@ -738,7 +738,10 @@ export class World {
         const nB = this.n2.noise(x * 0.05 + 9, z * 0.05 - 4);
         const nC = this.n3.fbm(x * 0.0045 - 30, z * 0.0045 + 12, 3);
 
-        const treeline = 150 + nC * 25;
+        // the forest climbs to about 150 m on the mountains, but the raised
+        // plateau of Caribou Tundra keeps its open tundra above about 112 m
+        const plateau = smoothstep(330, 650, x) * smoothstep(-160, -430, z);
+        const treeline = lerp(150 + nC * 25, 112 + nC * 22, plateau);
         const snowline = 240 + nA * 40;
 
         // underwater?
@@ -758,7 +761,7 @@ export class World {
 
         // forest density
         let forest = smoothstep(-0.28, 0.22, this.n2.fbm(x * 0.0036 + 100, z * 0.0036, 3) + 0.12);
-        forest *= 1 - smoothstep(treeline - 30, treeline + 5, e);
+        forest *= 1 - smoothstep(treeline - lerp(30, 25, plateau), treeline + lerp(5, 2, plateau), e);
         forest *= 1 - smoothstep(0.62, 0.95, slope);
         forest *= smoothstep(rw + 5, rw + 16, rd);
         forest *= smoothstep(8, 26, lakeSDmin);
