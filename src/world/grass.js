@@ -7,6 +7,7 @@ import { mulberry32 } from '../util/math.js';
 const vert = /* glsl */ `
 #include <common>
 #include <fog_pars_vertex>
+#include <shadowmap_pars_vertex>
 attribute vec3 aOffset; // x,z offset in patch, y random
 uniform vec2 uCam;
 uniform float uR;
@@ -23,7 +24,11 @@ uniform vec3 uSunCol;
 uniform vec3 uSkyCol;
 uniform vec3 uGroundCol;
 uniform float uWind;
+uniform sampler2D uFxShade;
+uniform vec3 uFxShadeTf;
+uniform float uFxShadeOn;
 varying vec3 vColor;
+varying vec3 vSun;
 void main() {
   float size = 2.0 * uR;
   vec2 base = uCam - uR;
@@ -60,18 +65,34 @@ void main() {
     col = g * (0.62 + tip * 0.75) * vec3(0.95, 1.08, 0.88);
   }
   float diff = clamp(uSunDir.y, 0.0, 1.0) * 0.85 + 0.15;
-  vColor = col * (uSkyCol * 0.9 + uSunCol * diff * 0.65) * (0.7 + tip * 0.35);
-  vec4 mvPosition = viewMatrix * vec4(world, 1.0);
+  // mountain shadow and open sky from the terrain lighting maps
+  vec2 shade = vec2(1.0);
+  vec2 suv = (wp - uFxShadeTf.xy) * uFxShadeTf.z;
+  if (uFxShadeOn > 0.5) shade = texture2D(uFxShade, suv).rg;
+  float shadeTip = 0.7 + tip * 0.35;
+  vColor = col * uSkyCol * 0.9 * mix(0.42, 1.0, shade.g) * shadeTip;
+  vSun = col * uSunCol * diff * 0.65 * shade.r * shadeTip;
+  vec4 worldPosition = vec4(world, 1.0);
+  vec4 mvPosition = viewMatrix * worldPosition;
   gl_Position = projectionMatrix * mvPosition;
+  #include <shadowmap_vertex>
   #include <fog_vertex>
 }`;
 
 const frag = /* glsl */ `
 #include <common>
+#include <packing>
 #include <fog_pars_fragment>
+#include <lights_pars_begin>
+#include <shadowmap_pars_fragment>
 varying vec3 vColor;
+varying vec3 vSun;
 void main() {
-  gl_FragColor = vec4(vColor, 1.0);
+  float sunShadow = 1.0;
+  #if defined( USE_SHADOWMAP ) && NUM_SUN_LIGHT_SHADOWS > 0
+    sunShadow = getSunShadow( sunShadowMap[ 0 ], sunLightShadows[ 0 ], 0 );
+  #endif
+  gl_FragColor = vec4(vColor + vSun * sunShadow, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
   #include <fog_fragment>
@@ -160,7 +181,11 @@ export class GrassField {
     ig.attributes.color = geo.attributes.color;
     ig.setAttribute('aOffset', new THREE.InstancedBufferAttribute(off, 3));
     ig.instanceCount = count;
-    const uniforms = { ...this.uniforms, ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog) };
+    const uniforms = {
+      ...this.uniforms,
+      ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
+      ...THREE.UniformsUtils.clone(THREE.UniformsLib.lights),
+    };
     uniforms.uChannel = { value: channel };
     uniforms.uR = { value: channel ? radius : radius };
     const mat = new THREE.ShaderMaterial({
@@ -169,10 +194,12 @@ export class GrassField {
       fragmentShader: frag,
       side: THREE.DoubleSide,
       fog: true,
+      lights: true,
       vertexColors: true,
     });
     const mesh = new THREE.Mesh(ig, mat);
     mesh.frustumCulled = false;
+    mesh.receiveShadow = true;
     mesh.userData.maxCount = count;
     return mesh;
   }

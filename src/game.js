@@ -6,6 +6,7 @@ import { Terrain, makeTerrainMaterial, buildFarTerrain, buildReflectionTerrain }
 import { Environment } from './world/sky.js';
 import { WaterSystem, REFLECT_LAYER } from './world/water.js';
 import { FX, installWorldFx } from './world/worldfx.js';
+import { TerrainLighting } from './world/lighting.js';
 import { Scatter } from './world/scatter.js';
 import { GrassField } from './world/grass.js';
 import { Colliders } from './world/colliders.js';
@@ -21,9 +22,9 @@ export const IS_TOUCH =
     ('ontouchstart' in window && navigator.maxTouchPoints > 0));
 
 export const QUALITY = {
-  low: { dpr: 1.0, shadow: 0, grass: 0.45, scatter: 0.6, lod: 0.7, reflect: 0 },
-  medium: { dpr: 1.5, shadow: 1024, grass: 0.75, scatter: 0.85, lod: 0.9, reflect: 128 },
-  high: { dpr: 2.0, shadow: 2048, grass: 1.0, scatter: 1.0, lod: 1.0, reflect: 256 },
+  low: { dpr: 1.0, shadow: 0, shadowDist: 0, grass: 0.45, scatter: 0.6, lod: 0.7, reflect: 0, farShadows: false },
+  medium: { dpr: 1.5, shadow: 1024, shadowDist: 190, grass: 0.75, scatter: 0.85, lod: 0.9, reflect: 128, farShadows: false },
+  high: { dpr: 2.0, shadow: 2048, shadowDist: 260, grass: 1.0, scatter: 1.0, lod: 1.0, reflect: 256, farShadows: true },
 };
 
 const _c = new THREE.Color();
@@ -47,7 +48,7 @@ export class Game {
       stencil: false,
       preserveDrawingBuffer: false,
     });
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMapping = THREE.NeutralToneMapping;
     renderer.toneMappingExposure = 1.0;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -101,6 +102,9 @@ export class Game {
     this.scene.add(this.farTerrain);
     // coarse copy of the playable terrain, seen only by the reflection probe
     this.scene.add(buildReflectionTerrain(this.world, this.terrainMaterial, REFLECT_LAYER));
+    // mountain shadows and sky occlusion maps
+    this.lighting = new TerrainLighting(renderer, this.world, this.wtex, this.farTerrain.userData.grid, IS_TOUCH ? 768 : 1024);
+    this.lastLight = new THREE.Vector3(0, -1, 0);
 
     this.water = new WaterSystem(this.world, this.wtex, this.textures.waterNormal, this.env, renderer);
     this.scene.add(this.water.group);
@@ -137,7 +141,8 @@ export class Game {
     this.quality = q;
     this.dpr = Math.min(window.devicePixelRatio || 1, q.dpr);
     this.renderer.setPixelRatio(this.dpr);
-    this.env.setShadowQuality(q.shadow);
+    this.env.setShadowQuality(q.shadow, q.shadowDist);
+    this.scatter.setFarShadows(q.farShadows);
     this.renderer.shadowMap.enabled = q.shadow > 0;
     this.grass.setDensity(q.grass);
     this.scatter.distScale = q.scatter;
@@ -231,6 +236,12 @@ export class Game {
     const focus = this.focus || cam.position;
     if (!this.paused) this.env.advance(dt);
     this.env.update(dt, focus);
+    // mountain shadows follow the light: a band per frame, all at once
+    // after a jump in time of day
+    const ld = this.env.lightDir;
+    if (this.lastLight.dot(ld) < 0.9994) this.lighting.refresh(ld);
+    else this.lighting.update(ld, 1);
+    this.lastLight.copy(ld);
     this.terrain.update(cam.position.x, cam.position.z);
     this.scatter.update(cam);
     this.props.update(dt, this.time, this.env);

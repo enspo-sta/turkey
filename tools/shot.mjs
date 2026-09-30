@@ -53,6 +53,18 @@ for (const s of steps) {
       console.log('eval error:', e.message);
     }
   }
+  // evaluate to a data URL and save it as a file (debug images)
+  if (s.saveEval) {
+    try {
+      const url = await page.evaluate(s.saveEval);
+      const b64 = String(url).split(',')[1] || '';
+      const { writeFileSync } = await import('node:fs');
+      writeFileSync(`${outDir}/${s.file}`, Buffer.from(b64, 'base64'));
+      console.log('saved', s.file);
+    } catch (e) {
+      console.log('saveEval error:', e.message);
+    }
+  }
   if (s.wait) await page.waitForTimeout(s.wait);
   if (s.tap) await page.touchscreen.tap(s.tap[0], s.tap[1]);
   if (s.click) await page.mouse.click(s.click[0], s.click[1]);

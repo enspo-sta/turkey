@@ -279,6 +279,8 @@ export function buildFarTerrain(world, material) {
   const mesh = new THREE.Mesh(g, material);
   mesh.name = 'farTerrain';
   mesh.matrixAutoUpdate = false;
+  // the height grid, reused for the distant part of the lighting maps
+  mesh.userData.grid = { coords, H };
   return mesh;
 }
 

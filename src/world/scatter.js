@@ -475,6 +475,14 @@ export class Scatter {
     return true;
   }
 
+  // Distant tree LODs cast shadows into the far shadow cascade.
+  setFarShadows(on) {
+    for (const n of ['spruce', 'birch']) {
+      const t = this.types[n];
+      t.meshes[t.meshes.length - 1].castShadow = on;
+    }
+  }
+
   // Show the named types to cameras that render `layer` (the reflections).
   enableLayer(layer, names) {
     for (const n of names) for (const m of this.types[n].meshes) m.layers.enable(layer);

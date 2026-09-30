@@ -1,6 +1,7 @@
 // Sky dome (gradient, sun, moon, clouds, stars, aurora), lights, fog and the
 // day/night cycle. Colours are keyed by sun elevation.
 import * as THREE from 'three';
+import { SunLight } from 'three/examples/jsm/lights/SunLight.js';
 import { clamp, lerp, smoothstep, DEG } from '../util/math.js';
 
 const skyVert = /* glsl */ `
@@ -271,20 +272,17 @@ export class Environment {
     this.sky.frustumCulled = false;
     scene.add(this.sky);
 
-    this.sun = new THREE.DirectionalLight(0xffffff, 2.5);
+    // sun (or moon) with two shadow cascades fitted to the view: sharp
+    // shadows up close, softer tree shadows out to the shadow distance
+    this.sun = new SunLight(0xffffff, 2.5);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(2048, 2048);
-    const sc = this.sun.shadow.camera;
-    sc.left = -70;
-    sc.right = 70;
-    sc.top = 70;
-    sc.bottom = -70;
-    sc.near = 1;
-    sc.far = 500;
-    this.sun.shadow.bias = -0.0006;
-    this.sun.shadow.normalBias = 0.6;
+    this.sun.shadow.camera.near = 1;
+    this.sun.shadow.camera.far = 260;
+    this.sun.shadow.bias = -0.0004;
+    this.sun.shadow.normalBias = 0.45;
+    this.sun.shadow.radius = 1.6;
     scene.add(this.sun);
-    scene.add(this.sun.target);
 
     this.hemi = new THREE.HemisphereLight(0xbcd4f0, 0x56603c, 1.0);
     scene.add(this.hemi);
@@ -302,12 +300,13 @@ export class Environment {
     this.update(0, new THREE.Vector3());
   }
 
-  setShadowQuality(size) {
+  setShadowQuality(size, distance = 260) {
     if (size <= 0) {
       this.sun.castShadow = false;
       return;
     }
     this.sun.castShadow = true;
+    this.sun.shadow.camera.far = distance;
     if (this.sun.shadow.mapSize.x !== size) {
       this.sun.shadow.mapSize.set(size, size);
       if (this.sun.shadow.map) {
@@ -417,14 +416,8 @@ export class Environment {
     if (overcast > 0) this.fog.color.lerp(_fogGrey.copy(FOG_GREY).multiplyScalar(0.3 + 0.7 * smoothstep(-6, 20, e)), overcast * 0.6);
     this.fog.density = this.fogBase * (1 + w.rain * 1.6 + overcast * 0.4);
 
-    // follow the focus point with the sun and shadow camera, snapped to texels
-    const sc = this.sun.shadow.camera;
-    const texel = (sc.right - sc.left) / this.sun.shadow.mapSize.x;
-    const fx = Math.round(focus.x / texel) * texel;
-    const fz = Math.round(focus.z / texel) * texel;
-    this.sun.target.position.set(fx, focus.y, fz);
-    this.sun.position.set(fx + this.lightDir.x * 200, focus.y + this.lightDir.y * 200, fz + this.lightDir.z * 200);
-    this.sun.target.updateMatrixWorld();
+    // the light shines from its position toward the origin
+    this.sun.position.copy(this.lightDir);
 
     this.sky.position.copy(focus);
     if (Math.abs(e - this.lastEnvElevation) > 2.5) this.envDirty = true;

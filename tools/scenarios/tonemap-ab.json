@@ -1,0 +1,6 @@
+{"width":960,"height":540,"steps":[{"wait":1500},{"eval":"__rhf.start(false)"},{"wait":2500},
+{"eval":"(()=>{const g=__rhf.game; g.setQuality('high'); g.dpr=1; g.renderer.setPixelRatio(1); g.resize(); g.bears.directorT=9999; g.env.weather.cloud=0.3; g.env.weather.cloudTarget=0.3; g.env.weather.rain=0; g.env.weather.rainTarget=0; g.env.weather.timer=9999; g.hud.firstShown=-1000; g.hud.hint('',0); g.hud.show(false); __rhf.god(true); const p=g.world.place('bend'); g.player.place(p.x,p.z,p.face+0.3); g.player.pitch=0.02; g.env.setTime(18.2); return 'ok'})()"},
+{"wait":4000},{"shot":"tm-aces.jpg"},
+{"eval":"(()=>{const g=__rhf.game; g.renderer.toneMapping=6; return 'agx'})()"},{"wait":4000},{"shot":"tm-agx.jpg"},
+{"eval":"(()=>{const g=__rhf.game; g.renderer.toneMapping=7; return 'neutral'})()"},{"wait":4000},{"shot":"tm-neutral.jpg"}
+]}

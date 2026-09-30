@@ -1,0 +1,7 @@
+{"width":960,"height":540,"steps":[{"wait":1500},{"eval":"__rhf.start(false)"},{"wait":2500},
+{"eval":"(()=>{const g=__rhf.game; g.setQuality('high'); g.dpr=1; g.renderer.setPixelRatio(1); g.resize(); g.bears.directorT=9999; g.env.weather.cloud=0.3; g.env.weather.cloudTarget=0.3; g.env.weather.rain=0; g.env.weather.rainTarget=0; g.env.weather.timer=9999; g.hud.firstShown=-1000; g.hud.hint('',0); __rhf.god(true); window.__go=async(id,time,pitch,yawOff)=>{ const p=g.world.place(id); g.player.place(p.x,p.z,(p.face ?? 0)+(yawOff||0)); g.player.pitch=pitch; g.env.setTime(time); await new Promise(r=>setTimeout(r,3000)); return id+' '+time+' e '+g.env.sunElevation.toFixed(1); }; return 'ok'})()"},
+{"eval":"__go('landing',20.5,0.02,0.6)"},{"shot":"e-landing-2030.jpg"},
+{"eval":"__go('bend',19.0,0.0,3.14)"},{"shot":"e-bend-1900.jpg"},
+{"eval":"__go('landing',6.2,0.02,2.5)"},{"shot":"e-landing-0612.jpg"},
+{"eval":"__go('pier',20.0,0.02,0.4)"},{"shot":"e-pier-2000.jpg"}
+]}

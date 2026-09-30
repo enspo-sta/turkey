@@ -6,8 +6,43 @@
 // worldfx.js), so shallow gravel shows clearly and deep pools turn green-blue.
 import * as THREE from 'three';
 import { smoothstep, clamp, mulberry32 } from '../util/math.js';
+import { FX } from './worldfx.js';
 
 export const REFLECT_LAYER = 2;
+
+const _probePos = new THREE.Vector3();
+
+// Flat disc (y = 0) of rings spaced more widely with distance: small
+// triangles near the middle keep interpolated world positions exact up close,
+// where one huge triangle would lose metres of precision.
+function ringedDisc(radius, first = 1, grow = 1.45, segments = 64) {
+  const radii = [0];
+  for (let r = first; r < radius; r *= grow) radii.push(r);
+  radii.push(radius);
+  const pos = [];
+  const idx = [];
+  pos.push(0, 0, 0);
+  for (let i = 1; i < radii.length; i++) {
+    for (let s = 0; s < segments; s++) {
+      const a = (s / segments) * Math.PI * 2;
+      pos.push(Math.cos(a) * radii[i], 0, Math.sin(a) * radii[i]);
+    }
+  }
+  for (let s = 0; s < segments; s++) idx.push(0, 1 + ((s + 1) % segments), 1 + s);
+  for (let i = 1; i < radii.length - 1; i++) {
+    const a0 = 1 + (i - 1) * segments;
+    const b0 = 1 + i * segments;
+    for (let s = 0; s < segments; s++) {
+      const s1 = (s + 1) % segments;
+      idx.push(a0 + s, a0 + s1, b0 + s, a0 + s1, b0 + s1, b0 + s);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  return g;
+}
+const _dir = new THREE.Vector3();
 
 const vert = /* glsl */ `
 #include <common>
@@ -100,7 +135,7 @@ void main() {
   vec3 R = reflect(-V, n);
   R.y = max(R.y, 0.015);
   R = normalize(R);
-  float lod = clamp(log2(1.0 + dist * 0.035) + uRain * 2.0 + vFoam * 1.5, 0.0, 6.0);
+  float lod = clamp(log2(1.0 + dist * 0.035) + uRain * 2.0 + vFoam * 1.5, 0.0, 6.0) * mix(0.35, 1.0, smoothstep(0.0, 0.2, R.y));
   vec3 refl = uReflOn > 0.5 ? textureLod(uRefl, R, lod).rgb : fxSkyColor(R) * mix(1.0, 0.8, R.y);
 
   // --- sun glints: a sharp highlight plus a glitter path toward the sun ---
@@ -260,8 +295,42 @@ class ReflectionProbe {
     });
     if (!hdr) this.rt.texture.colorSpace = THREE.SRGBColorSpace;
     this.rt.texture.name = 'waterReflection';
-    this.camera = new THREE.CubeCamera(1, 9000, this.rt);
+    this.camera = new THREE.CubeCamera(0.1, 9000, this.rt);
     this.camera.layers.set(REFLECT_LAYER);
+    // A dark water plane just below the eye: whatever the probe sees under
+    // the horizon reads as water, so blurred reflections never pick up the
+    // bare lake bed or land colours below the waterline.
+    const disc = ringedDisc(6000, 0.25, 1.5, 48);
+    const floorMat = new THREE.ShaderMaterial({
+      uniforms: { ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog), uDeep: { value: new THREE.Color(0x0a2226) } },
+      vertexShader: /* glsl */ `
+        #include <fog_pars_vertex>
+        varying vec3 vPos;
+        void main() {
+          vec4 wp = modelMatrix * vec4(position, 1.0);
+          vPos = wp.xyz;
+          vec4 mvPosition = viewMatrix * wp;
+          gl_Position = projectionMatrix * mvPosition;
+          #include <fog_vertex>
+        }`,
+      fragmentShader: /* glsl */ `
+        #include <fog_pars_fragment>
+        uniform vec3 uDeep;
+        varying vec3 vPos;
+        void main() {
+          vec3 V = normalize(vPos - cameraPosition);
+          // like the real surface: dark straight down, sky at a glance
+          float f = min(0.02 + 0.98 * pow(1.0 - clamp(-V.y, 0.0, 1.0), 5.0), 0.4);
+          vec3 col = mix(uDeep * uFxWaterLight, fxSkyColor(reflect(V, vec3(0.0, 1.0, 0.0))), f);
+          gl_FragColor = vec4(col, 1.0);
+        }`,
+      fog: true,
+    });
+    floorMat.userData.fx = 'manual';
+    this.floor = new THREE.Mesh(disc, floorMat);
+    this.floor.layers.set(REFLECT_LAYER);
+    this.floor.frustumCulled = false;
+    this.floor.name = 'reflectionFloor';
     this.faces = [0, 1, 2, 4, 5];
     this.next = 0;
     this.ready = false;
@@ -269,6 +338,9 @@ class ReflectionProbe {
 
   dispose() {
     this.rt.dispose();
+    this.floor.removeFromParent();
+    this.floor.geometry.dispose();
+    this.floor.material.dispose();
   }
 
   // Render `count` faces from position `pos`.
@@ -280,6 +352,8 @@ class ReflectionProbe {
     }
     cam.position.copy(pos);
     cam.updateMatrixWorld(true);
+    if (this.floor.parent !== scene) scene.add(this.floor);
+    this.floor.position.set(pos.x, pos.y - 0.3, pos.z);
     const prevTarget = renderer.getRenderTarget();
     const prevFace = renderer.getActiveCubeFace();
     const prevLevel = renderer.getActiveMipmapLevel();
@@ -308,6 +382,8 @@ export class WaterSystem {
     this.materials = [];
     this.waves = new WaveTexture(256);
     this.probe = null;
+    this.levelT = 0;
+    this.viewLevel = null;
     this.shared = {
       uTime: { value: 0 },
       uSunLight: { value: new THREE.Color() },
@@ -383,9 +459,10 @@ export class WaterSystem {
     return mat;
   }
 
+  // A disc around the camera (moved every frame, see update); the shader
+  // works from world positions, so the waves stay put.
   oceanGeometry() {
-    const g = new THREE.PlaneGeometry(14000, 14000, 1, 1);
-    g.rotateX(-Math.PI / 2);
+    const g = ringedDisc(7500, 1, 1.35, 64);
     const n = g.attributes.position.count;
     g.setAttribute('flowUv', new THREE.BufferAttribute(new Float32Array(n * 2), 2));
     g.setAttribute('foam', new THREE.BufferAttribute(new Float32Array(n), 1));
@@ -534,15 +611,27 @@ export class WaterSystem {
     return mesh;
   }
 
+  // Lake surface: rings following the shoreline (no long thin triangles).
   lakeGeometry(lake) {
     const segs = 160;
+    const rings = [0.12, 0.3, 0.5, 0.68, 0.82, 0.92, 1];
     const pos = [lake.x, lake.level, lake.z];
     const idx = [];
-    for (let i = 0; i <= segs; i++) {
-      const a = (i / segs) * Math.PI * 2;
-      const r = this.world.lakeRadius(lake, a) + 14;
-      pos.push(lake.x + Math.cos(a) * r, lake.level, lake.z + Math.sin(a) * r);
-      if (i > 0) idx.push(0, i + 1, i);
+    for (let k = 0; k < rings.length; k++) {
+      for (let i = 0; i < segs; i++) {
+        const a = (i / segs) * Math.PI * 2;
+        const r = (this.world.lakeRadius(lake, a) + 14) * rings[k];
+        pos.push(lake.x + Math.cos(a) * r, lake.level, lake.z + Math.sin(a) * r);
+      }
+    }
+    for (let i = 0; i < segs; i++) idx.push(0, 1 + ((i + 1) % segs), 1 + i);
+    for (let k = 1; k < rings.length; k++) {
+      const a0 = 1 + (k - 1) * segs;
+      const b0 = 1 + k * segs;
+      for (let i = 0; i < segs; i++) {
+        const i1 = (i + 1) % segs;
+        idx.push(a0 + i, a0 + i1, b0 + i, a0 + i1, b0 + i1, b0 + i);
+      }
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
@@ -554,6 +643,24 @@ export class WaterSystem {
     return g;
   }
 
+  // Surface level of the water in view (null if none): the reflections are
+  // captured from just above it, like the view from the water itself.
+  levelAhead(camera) {
+    const W = this.world;
+    camera.getWorldDirection(_dir);
+    _dir.y = 0;
+    if (_dir.lengthSq() < 1e-6) _dir.set(0, 0, -1);
+    _dir.normalize();
+    const p = camera.position;
+    for (const d of [0, 4, 9, 16, 26, 40, 60, 90, 130]) {
+      const x = p.x + _dir.x * d;
+      const z = p.z + _dir.z * d;
+      const w = W.waterAt(x, z);
+      if (w) return w.level;
+    }
+    return null;
+  }
+
   // Per frame: the wave texture, one reflection face and the light uniforms.
   update(dt, rain, camera, scene) {
     const sh = this.shared;
@@ -562,9 +669,18 @@ export class WaterSystem {
     const sun = this.env.sun;
     sh.uSunLight.value.copy(sun.color).multiplyScalar(sun.intensity);
     sh.uLightDir.value.copy(this.env.lightDir);
+    this.ocean.position.set(Math.round(camera.position.x), 0, Math.round(camera.position.z));
+    this.ocean.updateMatrixWorld();
     this.waves.render(this.renderer, sh.uTime.value);
     if (this.probe && scene) {
-      this.probe.update(this.renderer, scene, camera.position, this.primed ? 1 : 5);
+      this.levelT -= dt;
+      if (this.levelT <= 0) {
+        this.levelT = 0.4;
+        this.viewLevel = this.levelAhead(camera);
+      }
+      _probePos.copy(camera.position);
+      if (this.viewLevel !== null && this.viewLevel < camera.position.y) _probePos.y = this.viewLevel + 0.3;
+      this.probe.update(this.renderer, scene, _probePos, this.primed ? 1 : 5);
       this.primed = true;
       sh.uReflOn.value = this.probe.ready ? 1 : 0;
     }
