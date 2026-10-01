@@ -27,6 +27,10 @@ compressed).
 | ![A rainbow over Ruben's cabin as an evening shower passes](docs/screenshots/rainbow.jpg) | ![Morning mist over the river at Hotrod Landing](docs/screenshots/mist.jpg) |
 | ![Puddles and wet ground after rain by the Trading Post](docs/screenshots/puddles.jpg) | ![An epic salmon shark landed at Halibut Pier, with the small map in the corner](docs/screenshots/shark.jpg) |
 
+What changed in the latest round, with pictures, the audit and the tests:
+[docs/hotrod-update.html](docs/hotrod-update.html). The earlier graphics rounds:
+[docs/graphics-update.html](docs/graphics-update.html).
+
 ## What is in the game
 
 **Fishing**
@@ -446,7 +450,7 @@ node tools/shot.mjs tools/scenarios/minimap.json      # the small map on foot an
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot
 node tools/shot.mjs tools/scenarios/fish-views.json   # fish schools, a fish approaching the float and the fight
 node tools/shot.mjs tools/scenarios/light-views.json  # morning, noon, evening, sunset and night lighting
-node tools/shot.mjs tools/scenarios/light-compare.json # steam against a low sun and at night, Old Faceful at dusk, Bear Falls in the evening and the forest at noon
+node tools/shot.mjs tools/scenarios/light-compare.json # steam against a low sun and at night, Old Faceful at dusk, Bear Falls in the evening, and the forest at noon with and without the eye adapting
 node tools/shot.mjs tools/scenarios/before-after.json # Bear Falls and three mountain views, for comparing with an older build
 node tools/shot.mjs tools/scenarios/perf-new-places.json # draw calls, triangles and frame time at the three new places
 node tools/shot.mjs tools/scenarios/animals.json      # poses each of the newer animals and birds in front of the camera

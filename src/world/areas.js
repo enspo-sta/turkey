@@ -52,18 +52,7 @@ function signBoard(P, title, sub, x, z, yaw, opts = {}) {
   post.box(0.14, 2.3, 0.14, { pos: [-1.2, 1.15, 0], color: WOOD_DARK });
   post.box(0.14, 2.3, 0.14, { pos: [1.2, 1.15, 0], color: WOOD_DARK });
   P.addMesh(post.build(), x, y, z, yaw);
-  if (opts.bg || opts.fg) {
-    const tex = makeSignTexture(title, sub, opts);
-    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
-    const plain = P.signBack || (P.signBack = new THREE.MeshStandardMaterial({ color: 0x4a3220, roughness: 0.9 }));
-    const m = new THREE.Mesh(new THREE.BoxGeometry(2.9, 1.1, 0.08), [plain, plain, plain, plain, mat, plain]);
-    m.position.set(x, y + 1.75, z);
-    m.rotation.y = yaw;
-    m.castShadow = true;
-    m.updateMatrix();
-    m.matrixAutoUpdate = false;
-    P.group.add(m);
-  } else P.addSign(title, sub, x, y + 1.75, z, yaw, 2.9, 1.1);
+  P.addSign(title, sub, x, y + 1.75, z, yaw, 2.9, 1.1, opts);
   P.colliders.addBox(x, z, 1.4, 0.15, yaw);
 }
 

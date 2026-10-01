@@ -807,21 +807,25 @@ export class Props {
   }
 
   // ------------------------------------------------------------- signs
-  addSign(text, sub, x, y, z, yaw, w, h) {
-    const tex = makeSignTexture(text, sub);
-    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
-    const geo = new THREE.BoxGeometry(w, h, 0.08);
-    // only the front face shows the painted text; the rest is plain wood
+  addSign(text, sub, x, y, z, yaw, w, h, opts = {}) {
+    // the board is plain wood, merged with the other boards nearby; the
+    // painted face is one more draw, just proud of its front
     if (!this.signBack) this.signBack = new THREE.MeshStandardMaterial({ color: 0x4a3220, roughness: 0.9 });
-    const plain = this.signBack;
-    const mesh = new THREE.Mesh(geo, [plain, plain, plain, plain, mat, plain]);
-    mesh.position.set(x, y, z);
-    mesh.rotation.y = yaw;
-    mesh.castShadow = true;
-    mesh.updateMatrix();
-    mesh.matrixAutoUpdate = false;
-    this.group.add(mesh);
-    return mesh;
+    const board = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.08), this.signBack);
+    board.position.set(x, y, z);
+    board.rotation.y = yaw;
+    board.castShadow = true;
+    board.updateMatrix();
+    board.matrixAutoUpdate = false;
+    this.group.add(board);
+    const mat = new THREE.MeshStandardMaterial({ map: makeSignTexture(text, sub, opts), roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+    face.position.set(x + Math.sin(yaw) * 0.043, y, z + Math.cos(yaw) * 0.043);
+    face.rotation.y = yaw;
+    face.updateMatrix();
+    face.matrixAutoUpdate = false;
+    this.group.add(face);
+    return face;
   }
 
   buildSigns(L) {

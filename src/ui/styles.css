@@ -510,7 +510,8 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
   .map-card { width: min(300px, 62%); }
   /* a narrower compass, a little left of centre, clear of the top buttons */
   #compass { width: 40vw; left: 44%; }
-  #objective { left: 44%; max-width: 52vw; }
+  /* the goal keeps to the free space between the money and the bite readout */
+  #objective { left: 45%; max-width: calc(90vw - 330px); font-size: 13px; }
 }
 @media (orientation: portrait) {
   #catch { left: 50%; right: auto; top: auto; bottom: calc(var(--sab) + 16px); transform: translateX(-50%); width: min(420px, 92vw); animation: none; }

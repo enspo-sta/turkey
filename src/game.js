@@ -389,7 +389,7 @@ export class Game {
       for (const c of this.colliders.circlesNear(p.x, p.z, 9)) {
         if (c.tag === 'tree' && (c.x - p.x) ** 2 + (c.z - p.z) ** 2 < 81) n++;
       }
-      this.canopy = S(n, 1, 6);
+      this.canopy = S(n, 2, 9);
     }
     const day = 1 - env.night;
     let t = 1;

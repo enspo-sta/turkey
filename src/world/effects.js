@@ -489,6 +489,9 @@ export class Effects {
     const env = g.env;
     const u = this.soft.material.uniforms;
     u.uLight.value.copy(env.sun.color).multiplyScalar(env.sun.intensity * 0.24).add(_lc.copy(env.hemi.color).multiplyScalar(env.hemi.intensity * 0.36));
+    // by moonlight steam and spray still show, faint and blue
+    const L = u.uLight.value;
+    L.setRGB(Math.max(L.r, 0.045), Math.max(L.g, 0.055), Math.max(L.b, 0.075));
     u.uGlow.value.copy(env.sun.color).multiplyScalar(env.sun.intensity * 0.4);
     u.uLightDir.value.copy(env.lightDir);
     this.soft.update(dt);
