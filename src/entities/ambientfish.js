@@ -42,6 +42,9 @@ const LOOK = {
   dogfish: { back: 0x4a4e52, side: 0x686c70, head: 0x4a4e52 },
   skate: { back: 0x584a38, side: 0x4a3e30, head: 0x584a38 },
   salmonshark: { back: 0x222c36, side: 0x3e4852, head: 0x222c36 },
+  blackfish: { back: 0x1c1e16, side: 0x34362a, head: 0x1c1e16 },
+  sheefish: { back: 0x34484a, side: 0xa8aca6, head: 0x34484a },
+  wolfeel: { back: 0x4e4e46, side: 0x6a685e, head: 0x4e4e46 },
 };
 
 // How many swim together, and how wide the body is (width, height per length).
@@ -74,6 +77,9 @@ const HABIT = {
   dogfish: { school: [3, 6], w: 0.14, h: 0.14 },
   skate: { school: [1, 1], w: 0.9, h: 0.08 },
   salmonshark: { school: [1, 1], w: 0.16, h: 0.17 },
+  blackfish: { school: [4, 9], w: 0.15, h: 0.17 },
+  sheefish: { school: [1, 3], w: 0.13, h: 0.18 },
+  wolfeel: { school: [1, 1], w: 0.12, h: 0.12 },
 };
 
 // Unit fish along +z (head at +0.5, tail at -0.5). aRegion: x back (0 belly
@@ -283,7 +289,7 @@ export class AmbientFish {
   scan() {
     const g = this.game;
     const W = g.world;
-    const P = g.player.mode === 'drive' ? g.hotrod.pos : g.player.pos;
+    const P = g.player.mode === 'drive' ? g.hotrod.pos : g.player.mode === 'boat' ? g.boat.pos : g.player.pos;
     const hs = g.fishing ? g.fishing.hotspots : [];
     const place = g.fishing ? g.fishing.hotPlace : null;
     for (let i = this.schools.length - 1; i >= 0; i--) {

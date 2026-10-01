@@ -7,6 +7,7 @@ import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { FISH, LURES, LEGENDS, RARITY, TIMING, speciesPool } from './data.js';
+import { biteOutlook, speciesMood } from './bite.js';
 import { lengthFor, makeFishModel } from '../entities/fishmodels.js';
 import { clamp, lerp, damp, weightedPick, randRange, angleDiff, smoothstep } from '../util/math.js';
 
@@ -312,11 +313,17 @@ export class Fishing {
         m.power = m.needle;
         m.phase = 1;
         m.t = 0;
+        // the Golden Hotrod widens the dark green line
+        const pk = this.rod().perfect || 1;
+        m.zones = pk === 1 ? TIMING : { ...TIMING, perfect: TIMING.perfect * pk };
         g.audio?.tick(1);
       }
     } else if (m.phase === 1) {
-      // the white marker sweeps across the timing bar: tap it on the middle line
-      m.cursor = m.t * TIMING.speed;
+      // the white marker sweeps back and forth across the timing bar: tap it
+      // on the dark green line
+      const s = m.t * TIMING.speed;
+      const k = s % 2;
+      m.cursor = k < 1 ? k : 2 - k;
       if (tap) {
         m.acc = m.cursor - 0.5;
         g.audio?.tick(2);
@@ -324,8 +331,8 @@ export class Fishing {
         else this.releaseCast();
         return;
       }
-      if (m.cursor > 1) {
-        this.backlash();
+      if (s > TIMING.passes) {
+        this.cancel('You lower the rod');
         return;
       }
     }
@@ -335,15 +342,16 @@ export class Fishing {
       phase: m.phase,
       water: this.aim.waterBands,
       hot: this.aim.hotBand,
-      timing: TIMING,
+      timing: m.zones || TIMING,
     });
   }
 
-  // A tap in the red, or none at all: a bird's nest in the reel.
+  // A tap in the red: a bird's nest in the reel.
   backlash() {
     const g = this.game;
     g.hud.hideMeter();
-    g.hud.banner("Backlash! Bird's nest in the reel", 'bad');
+    g.announcer.say('backlash', { kind: 'bad' });
+    g.hud.toast("Backlash: a bird's nest in the reel. Tap to pick it out");
     g.audio?.snag();
     this.state = 'tangle';
     this.t2 = 2.4;
@@ -367,17 +375,18 @@ export class Fishing {
   releaseCast() {
     const g = this.game;
     const m = this.meter;
-    // how far the marker was from the middle line when you tapped, early below zero
+    // how far the marker was from the middle line when you tapped, left of it below zero
     const err = m.acc;
     const aerr = Math.abs(err);
     let quality;
-    if (aerr <= TIMING.perfect) quality = 'perfect';
+    if (aerr <= (m.zones || TIMING).perfect) quality = 'perfect';
     else if (aerr <= TIMING.green) quality = 'good';
     else quality = 'poor';
     const inHot = this.aim.hotBand && m.power >= this.aim.hotBand.p0 - 0.015 && m.power <= this.aim.hotBand.p1 + 0.015;
     this.perfect = quality === 'perfect' && (inHot || !this.aim.hotBand);
-    // in the green the lure lands in the ring; in the orange an early tap
-    // hooks it left and a late one slices it right, and it falls short
+    // in the green the lure lands in the ring; in the orange a tap left of
+    // the line hooks it left and one right of it slices it right, and it
+    // falls short
     let yawErr = 0;
     let k = 1;
     if (quality === 'poor') {
@@ -396,7 +405,7 @@ export class Fishing {
     g.state.stats.casts++;
     if (this.perfect) {
       g.state.stats.perfects++;
-      g.hud.banner('PERFECT CAST!', 'good');
+      g.announcer.say('perfect');
       g.audio?.chime();
       g.onEvent({ type: 'perfect' });
     } else if (quality === 'poor') {
@@ -455,6 +464,13 @@ export class Fishing {
       this.waitT = 0;
       this.encounter = null;
       this.nextApproach = this.approachDelay();
+      // Old Earl's lucky lure, for the odd job
+      g.jobs?.onCastLanded(this.hotPlace?.id);
+      // nothing lives in the hot pool
+      if (this.water && this.water.kind === 'hotpool') {
+        this.nextApproach = Infinity;
+        g.hud.toast('Nothing lives in water this hot. Except maybe a very confused shrimp');
+      }
       g.player.moveLocked = true;
     }
   }
@@ -467,10 +483,8 @@ export class Fishing {
     const hot = this.hotspotAt(f.x, f.z);
     if (hot === 'in') rate *= 3.4;
     else if (hot === 'near') rate *= 1.7;
-    const t = g.env.time;
-    if ((t > 4 && t < 8.5) || (t > 19 && t < 23)) rate *= 1.45;
-    else if (g.env.night > 0.5) rate *= 0.8;
-    rate *= 1 + g.env.weather.rain * 0.35;
+    // the time of day, the weather and on the sea the tide
+    rate *= biteOutlook(g.env, this.water?.kind).k;
     if (this.perfect) rate *= 1.35;
     // lure match with the local species pool
     const pool = this.pool();
@@ -510,8 +524,11 @@ export class Fishing {
     const night = g.env.night > 0.5;
     // a gold hotspot and a perfect cast tempt the rarer fish
     const skill = (this.castHot ? 1.5 : 1) * (this.perfect ? 1.3 : 1);
-    const rareK = { common: 1, uncommon: 1 + (skill - 1) * 0.4, rare: skill, epic: skill * skill };
-    const choice = weightedPick(pool, (p) => p.w * (lure.likes[p.id] ?? 0.5) * (FISH[p.id].night && !night ? 0.1 : 1) * rareK[FISH[p.id].rarity]);
+    const rk = g.state.rod().rare || 1;
+    const rareK = { common: 1, uncommon: 1 + (skill - 1) * 0.4, rare: skill * rk, epic: skill * skill * rk };
+    // each species keeps its own hours: kings at dawn, pike in the midday sun
+    const out = biteOutlook(g.env, this.water?.kind);
+    const choice = weightedPick(pool, (p) => p.w * (lure.likes[p.id] ?? 0.5) * (FISH[p.id].night && !night ? 0.1 : 1) * rareK[FISH[p.id].rarity] * speciesMood(p.id, out));
     const id = choice ? choice.id : 'dolly';
     const f = FISH[id];
     // legendary?
@@ -526,7 +543,7 @@ export class Fishing {
       if (g.state.gear.lure === L.lure) chance *= 2.5;
       if (this.castHot) chance *= 1.8;
       if (this.perfect) chance *= 1.6;
-      if (g.state.rod().id === 'bigblock') chance *= 1.3;
+      chance *= g.state.rod().legend || 1;
       if (Math.random() < chance) {
         return { species: id, weight: L.weight * randRange(0.97, 1.04), legend: lid, name: L.name };
       }
@@ -591,7 +608,8 @@ export class Fishing {
         return;
       }
       if (enc && enc.phase === 'nibble') {
-        g.hud.toast('Too early! It spooked');
+        g.announcer.say('early', { kind: 'bad' });
+        g.hud.toast('Too early! It spooked. Wait for the float to go under');
         g.audio?.plop(0.3);
         this.spook();
       } else {
@@ -687,7 +705,7 @@ export class Fishing {
       nibbles: Math.floor(Math.random() * 3),
       dipT: 0,
       gap: 0.4 + Math.random() * 0.6,
-      window: clamp(0.95 - big * 0.3 - (fish.legend ? 0.2 : 0), 0.45, 0.95),
+      window: clamp(0.95 - big * 0.3 - (fish.legend ? 0.2 : 0), 0.45, 0.95) * (this.rod().hookWindow || 1),
       skipNibble: false,
       size: clamp(lengthFor(fish.species, fish.weight) / 100, 0.3, 2.2),
     };
@@ -776,6 +794,7 @@ export class Fishing {
       e.z = fl.z - Math.cos(yaw) * e.size * 0.3;
       this.swimFish(e.x, e.z, yaw, deep * 0.8, 1.1, dt);
       if (e.t > e.window) {
+        g.announcer.say('missed', { kind: 'bad' });
         g.hud.toast('Missed it! The fish spat the hook');
         g.hud.prompt(null);
         this.spook();
@@ -800,7 +819,10 @@ export class Fishing {
     const P = g.player;
     const fl = this.float.position;
     g.hud.prompt(null);
-    g.hud.banner(fish.legend ? `${fish.name.toUpperCase()}!` : 'FISH ON!', fish.legend ? 'legend' : 'good');
+    if (fish.legend) g.announcer.say('legend', { sub: `${fish.name.toUpperCase()}!`, kind: 'legend' });
+    else g.announcer.say('fishOn');
+    // a heavy one gets a second shout once the first has had its moment
+    this.bigCallT = !fish.legend && fish.weight > f.min + (f.max - f.min) * 0.6 ? 1.6 : -1;
     g.audio?.fishOn(!!fish.legend);
     g.haptic?.('heavy');
     const power = f.fight * (10 + 9 * Math.pow(fish.weight, 0.6)) * (fish.legend ? 1.1 : 1);
@@ -862,10 +884,16 @@ export class Fishing {
       F.jumps++;
       F.jumpChecked = false;
       this.game.hud.prompt('JUMP! Let go of REEL', 'warn', 1.1);
+      // the first leap of a fight gets a shout, later ones now and then
+      if (F.jumps === 1 || Math.random() < 0.3) this.game.announcer.say('jump', { banner: false });
     }
   }
 
   updateFight(dt, reeling, input) {
+    if (this.bigCallT > 0) {
+      this.bigCallT -= dt;
+      if (this.bigCallT <= 0) this.game.announcer.say('bigOne', { banner: false });
+    }
     const g = this.game;
     const F = this.fight;
     const rod = this.rod();
@@ -903,7 +931,7 @@ export class Fishing {
       F.dist += (runSpeed * 0.5 - gain) * dt;
     } else F.dist += runSpeed * dt;
     F.dist = Math.max(1.2, F.dist);
-    if (F.dist > 140) return this.lose('Spooled! The fish stripped all your line', true);
+    if (F.dist > 140) return this.lose('The fish stripped all your line', true, 'spooled');
 
     // lateral movement, kept on water
     const angSpeed = F.state === 'run' ? 0.5 : F.state === 'swim' ? 0.16 : 0.02;
@@ -969,15 +997,15 @@ export class Fishing {
     // failure: overload, slack, jumps
     if (F.tension > rod.maxTension) F.overload += dt;
     else F.overload = Math.max(0, F.overload - dt * 2);
-    if (F.overload > 0.4) return this.lose('SNAP! The line broke', true);
+    if (F.overload > 0.4) return this.lose('Too much drag: ease off the reel when the line goes red', true, 'snap');
     if (F.tension < Math.min(5, F.power * 0.15) && F.state !== 'tired') F.slack += dt;
     else F.slack = Math.max(0, F.slack - dt * 2);
-    if (F.slack > 2.7) return this.lose('Slack line. The fish shook the hook');
+    if (F.slack > 2.7 * (rod.slack || 1)) return this.lose('Slack line: keep reeling so the line stays tight', false, 'hookOff');
     if (F.state === 'jump') {
       F.jumpT += dt;
       if (!F.jumpChecked && F.jumpT > 0.45) {
         F.jumpChecked = true;
-        if (reeling && Math.random() < 0.45) return this.lose('It threw the hook mid-jump!');
+        if (reeling && Math.random() < 0.45) return this.lose('Ease off the reel while it jumps', false, 'threwHook');
       }
     }
 
@@ -1102,14 +1130,19 @@ export class Fishing {
     }
   }
 
-  lose(message, snapped = false) {
+  // The fish is gone: the announcer shouts the line (key) and a toast
+  // says what went wrong.
+  lose(message, snapped = false, line = null) {
     const g = this.game;
     if (snapped) {
       g.state.stats.snapped++;
       g.audio?.snap();
       g.haptic?.('heavy');
     } else g.audio?.splash(0.5);
-    g.hud.banner(message, 'bad');
+    if (line) {
+      g.announcer.say(line, { kind: 'bad' });
+      g.hud.toast(message, 'bad');
+    } else g.hud.banner(message, 'bad');
     this.cancel();
     return false;
   }
@@ -1193,7 +1226,7 @@ export class Fishing {
       lz = lerp(tz, eagle.z, w);
     }
     this.lookToward(lx, ly, lz, dt, 3);
-    if (this.stealT > 12) this.lose('The fish got away');
+    if (this.stealT > 12) this.lose('The fish slipped away in the confusion', false, 'gotAway');
   }
 
   // Ease the first person view toward a world point.
@@ -1220,7 +1253,7 @@ export class Fishing {
     this.watchBird = bird;
     this.watchT = 3.5;
     g.state.stats.stolen = (g.state.stats.stolen || 0) + 1;
-    g.hud.banner('Stolen by an eagle!', 'bad');
+    g.announcer.say('eagle', { kind: 'bad' });
     g.hud.toast('A bald eagle snatched your fish. Welcome to Alaska');
     this.cancel();
   }
@@ -1253,11 +1286,18 @@ export class Fishing {
     g.player.lookLocked = true;
     g.audio?.fanfare(!!fish.legend || flags.isNew);
     g.haptic?.('success');
+    // the announcer calls it: a legend, a new species, a personal best or
+    // just a nice fish
+    const shout = { place: 'left' };
+    if (fish.legend) g.announcer.say('legend', { ...shout, sub: `${fish.name.toUpperCase()}!`, kind: 'legend' });
+    else if (flags.isNew) g.announcer.say('newSpecies', { ...shout, sub: `${f.name.toUpperCase()}!` });
+    else if (flags.isBest) g.announcer.say('best', { ...shout, sub: `${fish.weight.toFixed(1)} KG ${f.name.toUpperCase()}` });
+    else g.announcer.say('landed', shout);
     if (fish.legend) {
       const p = g.camera.position;
       g.effects.sparkle(p.x - Math.sin(g.player.yaw) * 1.5, p.y, p.z - Math.cos(g.player.yaw) * 1.5, 60);
     }
-    g.onEvent({ type: 'catch', fish: { species: fish.species, weight: fish.weight, legend: fish.legend } });
+    g.onEvent({ type: 'catch', fish: { species: fish.species, weight: fish.weight, legend: fish.legend }, fromBoat: !!g.player.boat });
     g.hud.showCatch(this.catchInfo, g.state.coolerFull(), (keep) => this.resolveCatch(keep));
   }
 
@@ -1274,7 +1314,7 @@ export class Fishing {
     const g = this.game;
     const c = this.catchInfo;
     if (keep && !g.state.coolerFull()) {
-      g.state.cooler.push({ species: c.species, weight: c.weight, length: c.length, value: c.value, legend: c.legend, name: c.name });
+      g.state.cooler.push({ species: c.species, weight: c.weight, length: c.length, value: c.value, legend: c.legend, name: c.name, lure: g.state.gear.lure });
       g.hud.toast(`${c.name} in the cooler (${g.state.cooler.length}/${g.state.coolerCap()})`);
       g.bears?.onFishKept?.();
     } else {
@@ -1341,7 +1381,7 @@ export class Fishing {
     this.aimMat.linewidth = 2.6 * (g.dpr || 1);
     this.aimEdgeMat.linewidth = 5 * (g.dpr || 1);
     // the ring grows with the distance so it stays easy to see, and swells on the middle line
-    const perfectNow = m.phase === 1 && Math.abs(m.cursor - 0.5) <= TIMING.perfect;
+    const perfectNow = m.phase === 1 && Math.abs(m.cursor - 0.5) <= (m.zones || TIMING).perfect;
     const size = clamp(this.castDist(power) / 12, 1, 2.5) * (1 + Math.sin(this.t * 7) * 0.06) * (perfectNow ? 1.3 : 1);
     this.aimRing.position.set(end.x, end.y + 0.05, end.z);
     this.aimRing.scale.setScalar(size);
@@ -1396,7 +1436,7 @@ export class Fishing {
 
   updateHotspots(dt) {
     const g = this.game;
-    const P = g.player.mode === 'drive' ? g.hotrod.pos : g.player.pos;
+    const P = g.player.mode === 'drive' ? g.hotrod.pos : g.player.mode === 'boat' ? g.boat.pos : g.player.pos;
     // nearest fishing place
     let near = null;
     let nd = 1e9;

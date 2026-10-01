@@ -5,7 +5,7 @@
 // shake. Hit zones on game animals and grizzlies, aim help against a
 // charging bear, and claiming downed game.
 import * as THREE from 'three';
-import { GAME, QUIVER } from './data.js';
+import { GAME, ARROWS, ARROW_ORDER } from './data.js';
 import { ModelBuilder } from '../util/builder.js';
 import { clamp } from '../util/math.js';
 
@@ -62,6 +62,11 @@ export class Hunting {
     const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
     this.mesh = new THREE.InstancedMesh(arrowGeometry(0), mat, ARROW_CAP);
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    // each kind of arrow in its own colour
+    this.mesh.setColorAt(0, new THREE.Color(1, 1, 1));
+    this.mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+    this.tints = {};
+    for (const k of ARROW_ORDER) this.tints[k] = new THREE.Color(ARROWS[k].tint);
     this.mesh.count = 0;
     this.mesh.frustumCulled = false;
     this.mesh.castShadow = true;
@@ -99,16 +104,19 @@ export class Hunting {
       this.wasHeld = false;
       return;
     }
-    const gear = g.state.gear;
+    const s = g.state;
     if (input.pressed('secondary') || input.keyPressed('Mouse2')) this.setAiming(!this.aiming);
+    if (input.pressed('arrows') || input.keyPressed('KeyT')) this.nextKind(true);
     if (input.pressed('spray') || input.keyPressed('KeyG')) g.bears.spray();
 
     // fit the next arrow after a shot
     if (this.nockT > 0) this.nockT = Math.max(0, this.nockT - dt);
-    const ready = this.nockT <= 0 && gear.arrows > 0;
+    // out of this kind: nock the next kind there is
+    if (s.arrowsLeft() <= 0 && s.totalArrows() > 0 && !this.drawing) this.nextKind(false);
+    const ready = this.nockT <= 0 && s.arrowsLeft() > 0;
 
     const held = input.held('primary') || input.key('Space') || input.mouseAction();
-    if (held && !this.wasHeld && !ready && gear.arrows <= 0) g.hud.toast('Quiver empty. Pick up your arrows or buy more at the Trading Post', 'bad');
+    if (held && !this.wasHeld && !ready && s.totalArrows() <= 0) g.hud.toast('Quiver empty. Pick up your arrows or buy more at the Trading Post', 'bad');
     if (held && ready) {
       if (!this.drawing) {
         this.drawing = true;
@@ -128,7 +136,7 @@ export class Hunting {
     const moving = Math.abs(P.lookDelta.x) + Math.abs(P.lookDelta.y) > 0.0005 || P.speed > 0.5;
     this.swayT += dt;
     if (this.drawing) {
-      const steady = gear.sight ? 0.6 : 1;
+      const steady = s.gear.sight ? 0.6 : 1;
       let amp = (this.aiming ? 0.0016 : 0.003) * steady * (moving ? 1.6 : 1) * (P.health < 50 ? 1.7 : 1);
       if (this.fullT > 3) amp *= 1 + Math.min(3, (this.fullT - 3) * 0.9);
       P.lookSway.x = Math.sin(this.swayT * 0.9) * amp + Math.sin(this.swayT * 2.3) * amp * 0.3;
@@ -137,6 +145,25 @@ export class Hunting {
       P.lookSway.x *= Math.max(0, 1 - dt * 6);
       P.lookSway.y *= Math.max(0, 1 - dt * 6);
     }
+  }
+
+  // Nock the next kind of arrow there is (tap the arrows chip, or T).
+  nextKind(announce) {
+    const g = this.game;
+    const s = g.state;
+    const i = ARROW_ORDER.indexOf(s.gear.arrow);
+    for (let k = 1; k <= ARROW_ORDER.length; k++) {
+      const kind = ARROW_ORDER[(i + k) % ARROW_ORDER.length];
+      if (s.arrowsLeft(kind) > 0) {
+        if (kind === s.gear.arrow) break;
+        s.gear.arrow = kind;
+        if (!this.drawing) this.nockT = Math.max(this.nockT, 0.3);
+        g.audio?.tick(1);
+        if (announce) g.hud.toast(`${ARROWS[kind].name}: ${s.arrowsLeft(kind)} left`);
+        return;
+      }
+    }
+    if (announce) g.hud.toast(s.totalArrows() ? 'Only one kind of arrow in the quiver' : 'Quiver empty');
   }
 
   letDown() {
@@ -148,16 +175,18 @@ export class Hunting {
 
   loose() {
     const g = this.game;
-    const gear = g.state.gear;
+    const s = g.state;
+    const kind = s.gear.arrow;
+    const A = ARROWS[kind];
     const power = this.draw;
     this.drawing = false;
     this.draw = 0;
     this.fullT = 0;
     g.audio?.creak?.(0);
-    if (gear.arrows <= 0) return;
-    gear.arrows--;
+    if (s.arrowsLeft(kind) <= 0) return;
+    s.gear.quiver[kind]--;
     this.shots++;
-    this.nockT = gear.arrows > 0 ? NOCK_TIME : 0;
+    this.nockT = s.totalArrows() > 0 ? NOCK_TIME : 0;
     const cam = g.camera;
     cam.getWorldDirection(_dir);
     _o.copy(cam.position);
@@ -167,7 +196,7 @@ export class Hunting {
     _dir.y += (Math.random() - 0.5) * spread;
     _dir.z += (Math.random() - 0.5) * spread;
     _dir.normalize();
-    const speed = (24 + 48 * Math.pow(power, 0.8)) * this.speedScale;
+    const speed = (24 + 48 * Math.pow(power, 0.8)) * this.speedScale * A.speed;
     // help against a close charging bear when shooting without aiming
     const threat = g.bears.threat;
     if (threat && !this.aiming) {
@@ -186,8 +215,9 @@ export class Hunting {
     // start a little in front of the eye and just below it, where the arrow
     // lies at full draw
     const start = new THREE.Vector3(_o.x + _dir.x * 0.5, _o.y + _dir.y * 0.5 - 0.04, _o.z + _dir.z * 0.5);
-    this.spawn(start, _dir.clone().multiplyScalar(speed), 55 + 75 * power);
+    this.spawn(start, _dir.clone().multiplyScalar(speed), (55 + 75 * power) * A.damage, kind);
     g.audio?.twang?.(power);
+    if (A.whistle) g.audio?.whistle?.();
     g.viewmodel.loose(power);
     g.player.kick += 0.012;
     g.haptic?.('light');
@@ -195,13 +225,13 @@ export class Hunting {
     g.wildlife.scare(_o.x, _o.z, 12);
   }
 
-  spawn(pos, vel, damage) {
+  spawn(pos, vel, damage, kind = 'cedar') {
     if (this.arrows.length >= ARROW_CAP) {
       // drop the oldest stuck arrow
       const i = this.arrows.findIndex((a) => a.stuck);
       this.arrows.splice(i >= 0 ? i : 0, 1);
     }
-    this.arrows.push({ pos, vel, damage, stuck: false, life: 0, sink: 0, flown: 0, dir: vel.clone().normalize() });
+    this.arrows.push({ pos, vel, damage, kind, stuck: false, life: 0, sink: 0, flown: 0, dir: vel.clone().normalize() });
   }
 
   updateArrows(dt) {
@@ -213,7 +243,25 @@ export class Hunting {
     for (let i = this.arrows.length - 1; i >= 0; i--) {
       const a = this.arrows[i];
       a.life += dt;
-      if (!a.stuck) this.fly(a, dt);
+      if (!a.stuck) {
+        const x0 = a.pos.x;
+        const y0 = a.pos.y;
+        const z0 = a.pos.z;
+        this.fly(a, dt);
+        // a whistler shrieking past a bear sends it running: the closest
+        // approach over this frame's flight, so a fast arrow cannot skip it
+        if (ARROWS[a.kind].whistle) {
+          const sx = a.pos.x - x0;
+          const sy = a.pos.y - y0;
+          const sz = a.pos.z - z0;
+          const ll = sx * sx + sy * sy + sz * sz || 1;
+          for (const b of g.bears.bears) {
+            if (b.dead || b.state === 'flee' || b.state === 'gone') continue;
+            const u = clamp(((b.x - x0) * sx + (b.y + 1 - y0) * sy + (b.z - z0) * sz) / ll, 0, 1);
+            if (Math.hypot(b.x - x0 - sx * u, b.y + 1 - y0 - sy * u, b.z - z0 - sz * u) < 9) g.bears.scareOff(b);
+          }
+        }
+      }
       if (a.remove || a.life > STUCK_LIFE || (!a.stuck && a.life > 12)) {
         this.arrows.splice(i, 1);
         continue;
@@ -221,8 +269,9 @@ export class Hunting {
       // walk over an arrow to pick it up
       if (a.stuck && !a.inWater && P.mode === 'foot') {
         const d = Math.hypot(a.pos.x - P.pos.x, a.pos.z - P.pos.z);
-        if (d < 1.5 && Math.abs(a.pos.y - P.pos.y) < 2.2 && g.state.gear.arrows < QUIVER) {
-          g.state.gear.arrows++;
+        const s = g.state;
+        if (d < 1.5 && Math.abs(a.pos.y - P.pos.y) < 2.2 && s.arrowsLeft(a.kind) < s.arrowCap(a.kind)) {
+          s.gear.quiver[a.kind] = s.arrowsLeft(a.kind) + 1;
           this.arrows.splice(i, 1);
           g.audio?.tick(1);
           if (this.pickedUp++ === 0) g.hud.toast('Picked up an arrow', 'good');
@@ -239,10 +288,14 @@ export class Hunting {
       _o.set(a.pos.x, y, a.pos.z);
       _m.compose(_o, _q, _s);
       _m.toArray(mat, n * 16);
+      this.mesh.setColorAt(n, this.tints[a.kind] || this.tints.cedar);
       n++;
     }
     this.mesh.count = n;
-    if (n) this.mesh.instanceMatrix.needsUpdate = true;
+    if (n) {
+      this.mesh.instanceMatrix.needsUpdate = true;
+      this.mesh.instanceColor.needsUpdate = true;
+    }
     void W;
   }
 
@@ -321,7 +374,7 @@ export class Hunting {
     g.audio?.arrowHit?.(px, pz, 'game');
     const from = g.player.pos;
     let killed;
-    if (a.species === 'bear') {
+    if (a.isBear) {
       a.hp -= dmg;
       killed = a.hp <= 0;
       if (killed) {
@@ -329,12 +382,15 @@ export class Hunting {
         a.state = 'dead';
         a.speed = 0;
       }
-      g.bears.onHit(a, killed);
+      // a whistler that hits is still a whistler: the bear runs
+      if (!killed && ARROWS[arrow.kind]?.whistle) g.bears.scareOff(a);
+      else g.bears.onHit(a, killed);
     } else killed = g.wildlife.damage(a, dmg, hit.zone, from.x, from.z);
     g.hud.hitmark(killed);
     if (killed) {
       g.hud.toast(`${GAME[a.species].name} down${hit.zone === 'head' ? ' with a clean shot' : ''}`, 'good');
-      if (a.species === 'bear') g.hud.banner('GRIZZLY DOWN', 'good');
+      if (hit.zone === 'head') g.announcer?.say('bullseye', { banner: false });
+      if (a.isBear) g.hud.banner(g.bears.downBanner(a), 'good');
     }
     // the rest of the herd bolts
     g.wildlife.scare(px, pz, 70);
@@ -435,7 +491,7 @@ export class Hunting {
     g.hud.toast(`${info.name} field dressed. Sell it at the Trading Post (${'$' + value})`, 'money');
     g.audio?.cash();
     g.onEvent({ type: 'hunt', animal: a.species });
-    if (a.species === 'bear') g.bears.remove(a);
+    if (a.isBear) g.bears.remove(a);
     else g.wildlife.removeAnimal(a);
     g.save();
   }

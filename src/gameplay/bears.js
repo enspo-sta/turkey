@@ -1,12 +1,19 @@
-// Grizzly bears: fishing bears at Bear Falls, roaming bears, and the encounter
-// director that stages charges near fishing spots (smell of fish in the
-// cooler makes it likelier). States: roam, fish, stalk, alert, charge,
-// attack, retreat, dead.
+// Grizzly and black bears: fishing bears at Bear Falls, roaming bears, and the
+// encounter director that stages charges near fishing spots. A bear only
+// comes for you when there is fish in the cooler; with none it fishes, roams
+// and runs off when hurt. States: roam, fish, stalk, alert, charge, attack,
+// retreat, dead.
 import * as THREE from 'three';
 import { clamp, damp, dampAngle, angleDiff, lerp } from '../util/math.js';
 import { HALF, SURF } from '../world/worldgen.js';
 
 const CFG = { walk: 1.5, run: 10.5, height: 1.25, len: 2.1, body: 0.62, head: 0.34, wade: 1.4, maxSlope: 0.9 };
+// black bears: smaller, lighter swipes, quicker to bluff and to run
+const BLACK = { walk: 1.1, run: 9, height: 1.0, len: 1.5, body: 0.42, head: 0.2, wade: 0.6, maxSlope: 0.8 };
+const KIND = {
+  grizzly: { species: 'bear', cfg: CFG, hp: 240, bluff: 0.28, dmg: [20, 30], smell: 30, name: 'GRIZZLY!', down: 'GRIZZLY DOWN', herd: 'bear' },
+  black: { species: 'blackbear', cfg: BLACK, hp: 150, bluff: 0.6, dmg: [10, 16], smell: 22, name: 'BLACK BEAR!', down: 'BLACK BEAR DOWN', herd: 'blackbear' },
+};
 
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
@@ -29,10 +36,13 @@ export class Bears {
     this.spawnBears();
   }
 
-  makeBear(x, z, mode) {
+  makeBear(x, z, mode, kind = 'grizzly') {
+    const K = KIND[kind];
     const b = {
-      species: 'bear',
-      cfg: CFG,
+      species: K.species,
+      kind,
+      isBear: true,
+      cfg: K.cfg,
       x,
       z,
       y: this.world.heightAt(x, z),
@@ -44,7 +54,7 @@ export class Bears {
       state: mode,
       mode,
       t: Math.random() * 5,
-      hp: 240,
+      hp: K.hp,
       dead: false,
       huntable: true,
       visible: true,
@@ -90,6 +100,15 @@ export class Bears {
       [-620, 380],
     ];
     for (const [x, z] of spots) this.makeBear(x, z, 'roam');
+    // black bears in the thick forest
+    const wl = this.game.wildlife;
+    if (wl && wl.habitats) for (const p of wl.findSpots(wl.habitats.blackbear, 3, 120)) this.makeBear(p.x, p.z, 'roam', 'black');
+  }
+
+  // Fish in the cooler (or the chest freezer): the only thing that makes a
+  // bear come for you.
+  smellsFish() {
+    return this.game.state.cooler.length > 0;
   }
 
   clearThreat() {
@@ -112,7 +131,14 @@ export class Bears {
 
   playerPos() {
     const g = this.game;
-    return g.player.mode === 'drive' ? g.hotrod.pos : g.player.pos;
+    return g.player.mode === 'drive' ? g.hotrod.pos : g.player.mode === 'boat' ? g.boat.pos : g.player.pos;
+  }
+
+  // On your own two feet on land: in the car or out on the boat a bear
+  // cannot get at you.
+  exposed() {
+    const P = this.game.player;
+    return P.mode === 'foot' && !P.boat;
   }
 
   // ---------------------------------------------------------------- director
@@ -132,8 +158,8 @@ export class Bears {
     const risk = place && pd < 180 ? place.bearRisk || 0.15 : 0.12;
     const fishing = g.fishing.state === 'waiting' || g.fishing.state === 'fight';
     const cooler = g.state.cooler.length;
-    const onFoot = g.player.mode === 'foot';
-    if (!onFoot) return;
+    const onFoot = this.exposed();
+    if (!onFoot || !this.smellsFish()) return;
     this.directorT -= dt * (fishing ? 1 : 0.5) * (0.5 + risk) * (1 + cooler * 0.08) * (g.state.salmonRun ? 1.3 : 1);
     if (this.directorT > 0) return;
     this.directorT = 85 + Math.random() * 110;
@@ -174,8 +200,8 @@ export class Bears {
       bear.z = z;
       bear.state = 'stalk';
       bear.t = 25;
-      bear.hp = 240;
-      bear.bluff = Math.random() < 0.28;
+      bear.hp = KIND[bear.kind].hp;
+      bear.bluff = Math.random() < KIND[bear.kind].bluff;
       this.firstEncounterDone = true;
       g.audio?.growl(x, z, 0.5);
       return;
@@ -188,7 +214,8 @@ export class Bears {
     if (g.paused && g.started) return;
     this.director(dt);
     const P = this.playerPos();
-    const onFoot = g.player.mode === 'foot';
+    const onFoot = this.exposed();
+    const fish = this.smellsFish();
     for (const b of this.bears) {
       if (b.state === 'gone') {
         b.t -= dt;
@@ -197,7 +224,7 @@ export class Bears {
           b.state = b.mode;
           b.x = b.homeX;
           b.z = b.homeZ;
-          b.hp = 240;
+          b.hp = KIND[b.kind].hp;
           b.dead = false;
         }
         continue;
@@ -229,8 +256,8 @@ export class Bears {
             b.lunge -= dt;
             b.headT = 1.2;
           }
-          // surprise: player walks right up to a fishing bear
-          if (onFoot && d < 16 && !this.threat) this.alert(b, 2.2);
+          // surprise: player walks right up to a fishing bear with fish on him
+          if (onFoot && fish && d < 16 && !this.threat) this.alert(b, 2.2);
           break;
         }
         case 'roam': {
@@ -241,9 +268,9 @@ export class Bears {
             b.tz = b.homeZ + (Math.random() - 0.5) * 160;
           }
           desired = Math.atan2((b.tx ?? b.x) - b.x, (b.tz ?? b.z) - b.z);
-          b.targetSpeed = CFG.walk;
-          const smell = 30 + g.state.cooler.length * 6;
-          if (onFoot && d < Math.min(smell, 45) && !this.threat) this.alert(b, 3.2);
+          b.targetSpeed = b.cfg.walk;
+          const smell = KIND[b.kind].smell + g.state.cooler.length * 6;
+          if (onFoot && fish && d < Math.min(smell, 45) && !this.threat) this.alert(b, 3.2);
           break;
         }
         case 'stalk': {
@@ -256,7 +283,7 @@ export class Bears {
             g.audio?.huff(b.x, b.z);
           }
           if (d < 42 || b.t <= 0) this.alert(b, 3.6);
-          if (!onFoot) {
+          if (!onFoot || !fish) {
             b.state = 'retreat';
             b.t = 8;
           }
@@ -272,7 +299,7 @@ export class Bears {
             g.audio?.huff(b.x, b.z);
           }
           if (b.t <= 0) {
-            if (!onFoot || d > 70) {
+            if (!onFoot || d > 70 || !fish) {
               b.state = 'retreat';
               b.t = 10;
               this.endThreat(false);
@@ -288,7 +315,7 @@ export class Bears {
         }
         case 'charge': {
           desired = toPlayer;
-          b.targetSpeed = CFG.run;
+          b.targetSpeed = b.cfg.run;
           b.headT = -0.1;
           if (b.growlT <= 0) {
             b.growlT = 1.2;
@@ -331,7 +358,8 @@ export class Bears {
           } else if (b.swipeT <= 0 && d < 3) {
             b.swipeT = 1.15;
             b.lunge = 0.35;
-            const dmg = 20 + Math.random() * 10;
+            const [d0, d1] = KIND[b.kind].dmg;
+            const dmg = d0 + Math.random() * (d1 - d0);
             g.audio?.swipe();
             g.audio?.growl(b.x, b.z, 1, true);
             g.player.hurt(dmg, dx / (d || 1), dz / (d || 1));
@@ -350,7 +378,7 @@ export class Bears {
         case 'retreat':
         case 'flee':
           desired = toPlayer + Math.PI;
-          b.targetSpeed = b.state === 'flee' ? CFG.run * 0.9 : CFG.walk * 2.5;
+          b.targetSpeed = b.state === 'flee' ? b.cfg.run * 0.9 : b.cfg.walk * 2.5;
           if (b.t <= 0 || d > 150) {
             b.state = b.mode;
             b.t = 5;
@@ -395,8 +423,9 @@ export class Bears {
     b.growlT = 0;
     this.threat = b;
     this.threatStartHp = b.hp;
-    g.audio?.growl(b.x, b.z, 0.8);
-    g.hud?.banner('GRIZZLY!', 'danger');
+    g.audio?.growl(b.x, b.z, b.kind === 'black' ? 0.6 : 0.8);
+    g.hud?.banner(KIND[b.kind].name, 'danger');
+    g.announcer?.say('bear', { banner: false, sub: KIND[b.kind].name });
     g.hud?.toast(g.player.tool !== 'bow' ? 'Switch to your bow!' : 'Draw and aim for the chest!', 'bad');
     g.haptic?.('heavy');
     if (g.fishing.state === 'fight' || g.fishing.state === 'waiting') g.fishing.cancel('You drop the line');
@@ -407,7 +436,7 @@ export class Bears {
     if (survived && this.threat) {
       g.state.stats.bearsSurvived++;
       g.onEvent({ type: 'bearSurvived' });
-      g.hud?.toast('You survived the grizzly', 'good');
+      g.hud?.toast(this.threat.kind === 'black' ? 'You saw off the black bear' : 'You survived the grizzly', 'good');
     }
     this.threat = null;
     g.hud?.danger(0, 0);
@@ -421,8 +450,8 @@ export class Bears {
       g.state.stats.bearsKilled++;
       return;
     }
-    // wounded bears often break off
-    if (b.hp < 110 && Math.random() < 0.55) {
+    // wounded bears often break off, and always when there is no fish to fight for
+    if (!this.smellsFish() || b.kind === 'black' || (b.hp < 110 && Math.random() < 0.55)) {
       b.state = 'flee';
       b.t = 12;
       if (this.threat === b) this.endThreat(true);
@@ -435,6 +464,23 @@ export class Bears {
       g.audio?.growl(b.x, b.z, 1, true);
       g.hud?.banner('CHARGE!', 'danger');
     }
+  }
+
+  // A whistler arrow shrieking past sends a bear running, fish or no fish.
+  scareOff(b) {
+    const g = this.game;
+    if (b.dead || b.state === 'flee' || b.state === 'gone') return;
+    b.state = 'flee';
+    b.t = 14;
+    g.audio?.growl(b.x, b.z, 0.7);
+    if (this.threat === b) this.endThreat(true);
+    g.hud?.toast('The whistler sent the bear running', 'good');
+    g.jobs?.onEvent('scareOff');
+  }
+
+  // The banner when a bear goes down.
+  downBanner(b) {
+    return KIND[b.kind].down;
   }
 
   // Bear spray in front of the player.
@@ -476,7 +522,7 @@ export class Bears {
       const w = W.waterAt(nx, nz);
       const slope = W.slopeAt(nx, nz);
       const charging = b.state === 'charge' || b.state === 'attack';
-      if ((!w || w.depth < CFG.wade || charging) && (slope < CFG.maxSlope || charging)) {
+      if ((!w || w.depth < b.cfg.wade || charging) && (slope < b.cfg.maxSlope || charging)) {
         const r = this.game.colliders.resolve(nx, nz, 0.6, b.y, 1.5);
         b.x = r.x;
         b.z = r.z;
@@ -486,16 +532,18 @@ export class Bears {
 
   render(dt) {
     const W = this.world;
-    const herd = this.game.wildlife.herds.bear;
+    const herds = this.game.wildlife.herds;
     for (const b of this.bears) {
       if (!b.visible) continue;
+      const herd = herds[KIND[b.kind].herd];
+      const C = b.cfg;
       const water = W.waterAt(b.x, b.z);
       const ground = W.heightAt(b.x, b.z);
       b.y = water ? Math.max(ground, water.level - 0.8) : ground;
       b.head = damp(b.head, b.headT, 4, dt);
       b.stand = damp(b.stand, b.standT, 5, dt);
       b.phase += dt * (b.speed * 1.1 + (b.speed > 0.1 ? 1 : 0));
-      const amp = clamp(b.speed / CFG.walk, 0, 1) * 0.5 + clamp((b.speed - CFG.walk) / (CFG.run - CFG.walk), 0, 1) * 0.5;
+      const amp = clamp(b.speed / C.walk, 0, 1) * 0.5 + clamp((b.speed - C.walk) / (C.run - C.walk), 0, 1) * 0.5;
       b.amp = damp(b.amp, b.dead ? 0 : amp, 6, dt);
       W.normalAt(b.x, b.z, _n);
       _nv.set(_n.x, _n.y, _n.z);

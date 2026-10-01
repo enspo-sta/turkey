@@ -367,6 +367,45 @@ export const FISH = {
     col: { back: 0x2a3440, side: 0x4a5460, belly: 0xf0f0f0, spots: 0x3a3a3a, band: null, big: true },
     info: 'A warm-blooded shark that follows the salmon runs into the inlet. Blistering speed and a mouth full of teeth.',
   },
+  blackfish: {
+    rarity: 'common',
+    name: 'Alaska Blackfish',
+    nick: 'Bog gremlin',
+    min: 0.05,
+    max: 0.45,
+    perKg: 40,
+    fight: 0.3,
+    jumpy: 0.05,
+    shape: 'greenling',
+    col: { back: 0x24261c, side: 0x3e4230, belly: 0x9a9468, spots: 0x16180f, band: null },
+    info: 'Small, ugly and unkillable. It breathes air, survives being frozen solid, and stares at you like you owe it money.',
+  },
+  sheefish: {
+    rarity: 'rare',
+    name: 'Sheefish',
+    nick: 'Inconnu',
+    min: 3,
+    max: 24,
+    perKg: 10,
+    fight: 0.95,
+    jumpy: 0.65,
+    shape: 'whitefish',
+    col: { back: 0x3e5a5c, side: 0xd8dcd6, belly: 0xf4f4f0, spots: null, band: null, scales: true, big: true },
+    info: 'The tarpon of the north: a big silver whitefish with an underbite, famous for cartwheeling out of the water.',
+  },
+  wolfeel: {
+    rarity: 'epic',
+    name: 'Wolf Eel',
+    nick: 'A face only a mother could love',
+    min: 4,
+    max: 18,
+    perKg: 16,
+    fight: 1.0,
+    jumpy: 0,
+    shape: 'eel',
+    col: { back: 0x6a6a60, side: 0x8c8a7e, belly: 0xb4ae9c, spots: 0x34342e, band: null },
+    info: 'Not an eel at all but a wolffish, with the face of a grumpy old sea captain. Lives in the wreck and crunches crabs for breakfast.',
+  },
 };
 
 export const SPECIES_IDS = Object.keys(FISH);
@@ -383,6 +422,26 @@ export const RARITY = {
 };
 export const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
+// The fish of a fishing place, commonest first, from the water it fishes. Day
+// and night pools are both read, so fish that only come out at night can be
+// marked on the map.
+export function placeSpecies(world, place) {
+  let water;
+  if (place.water === 'river') water = { kind: 'river', s: world.river.nearest(place.x, place.z).s };
+  else water = { kind: place.water };
+  const day = speciesPool(water, world, place.id, false);
+  const night = speciesPool(water, world, place.id, true);
+  const out = [];
+  for (const n of night) {
+    const d = day.find((x) => x.id === n.id);
+    const dw = d ? d.w : 0;
+    if (n.w <= 0 && dw <= 0) continue;
+    out.push({ id: n.id, w: Math.max(dw, n.w), night: dw < n.w * 0.15 });
+  }
+  out.sort((a, b) => RARITY_ORDER.indexOf(FISH[a.id].rarity) - RARITY_ORDER.indexOf(FISH[b.id].rarity) || b.w - a.w);
+  return out;
+}
+
 export const LEGENDS = {
   missdolly: { base: 'dolly', name: 'Miss Dolly', place: 'landing', weight: 7.4, lure: 'spinner', bonus: 900 },
   rusty: { base: 'rainbow', name: 'Rusty the Leopard', place: 'bend', weight: 12.6, lure: 'fly', bonus: 1400 },
@@ -390,6 +449,9 @@ export const LEGENDS = {
   ghost: { base: 'char', name: 'The Ice Ghost', place: 'glacier', weight: 11.8, lure: 'fly', bonus: 1600 },
   bertha: { base: 'pike', name: 'Big Bertha', place: 'moose', weight: 19.5, lure: 'spoon', bonus: 1500 },
   barndoor: { base: 'halibut', name: 'Barn Door', place: 'pier', weight: 168, lure: 'herring', bonus: 3500 },
+  oldsteamy: { base: 'rainbow', name: 'Old Steamy', place: 'springs', weight: 11.4, lure: 'bugger', bonus: 1500 },
+  sheezilla: { base: 'sheefish', name: 'Sheezilla', place: 'flats', weight: 27, lure: 'spoon', bonus: 2200 },
+  davyjones: { base: 'lingcod', name: 'Davy Jones', place: 'wreck', weight: 36, lure: 'swimbait', bonus: 2400 },
 };
 
 export const LURES = {
@@ -428,6 +490,9 @@ export const LURES = {
       dogfish: 0.3,
       skate: 0.1,
       salmonshark: 0.3,
+      blackfish: 0.6,
+      sheefish: 1.2,
+      wolfeel: 0.3,
     },
   },
   fly: {
@@ -465,6 +530,9 @@ export const LURES = {
       dogfish: 0.1,
       skate: 0.05,
       salmonshark: 0.05,
+      blackfish: 1.2,
+      sheefish: 0.9,
+      wolfeel: 0.4,
     },
   },
   spoon: {
@@ -502,6 +570,9 @@ export const LURES = {
       dogfish: 0.6,
       skate: 0.2,
       salmonshark: 0.8,
+      blackfish: 0.4,
+      sheefish: 1.6,
+      wolfeel: 0.5,
     },
   },
   plug: {
@@ -539,6 +610,9 @@ export const LURES = {
       dogfish: 0.5,
       skate: 0.3,
       salmonshark: 1.1,
+      blackfish: 0.3,
+      sheefish: 1.2,
+      wolfeel: 0.6,
     },
   },
   herring: {
@@ -576,6 +650,9 @@ export const LURES = {
       dogfish: 1.8,
       skate: 1.6,
       salmonshark: 1.4,
+      blackfish: 0.2,
+      sheefish: 0.6,
+      wolfeel: 1.5,
     },
   },
   bead: {
@@ -613,6 +690,9 @@ export const LURES = {
       dogfish: 0.1,
       skate: 0.05,
       salmonshark: 0.05,
+      blackfish: 1.2,
+      sheefish: 0.6,
+      wolfeel: 0.3,
     },
   },
   dryfly: {
@@ -650,6 +730,9 @@ export const LURES = {
       dogfish: 0.05,
       skate: 0.05,
       salmonshark: 0.05,
+      blackfish: 1.4,
+      sheefish: 0.5,
+      wolfeel: 0.1,
     },
   },
   bugger: {
@@ -687,6 +770,9 @@ export const LURES = {
       dogfish: 0.2,
       skate: 0.05,
       salmonshark: 0.1,
+      blackfish: 1.3,
+      sheefish: 0.9,
+      wolfeel: 0.5,
     },
   },
   popper: {
@@ -724,6 +810,9 @@ export const LURES = {
       dogfish: 0.1,
       skate: 0.05,
       salmonshark: 0.05,
+      blackfish: 0.5,
+      sheefish: 0.9,
+      wolfeel: 0.2,
     },
   },
   hoochie: {
@@ -761,6 +850,9 @@ export const LURES = {
       flounder: 0.3,
       sculpin: 0.4,
       skate: 0.2,
+      blackfish: 0.2,
+      sheefish: 0.7,
+      wolfeel: 1.2,
     },
   },
   swimbait: {
@@ -798,6 +890,9 @@ export const LURES = {
       grayling: 0.3,
       whitefish: 0.2,
       burbot: 0.7,
+      blackfish: 0.3,
+      sheefish: 1.4,
+      wolfeel: 1.3,
     },
   },
   squid: {
@@ -835,13 +930,77 @@ export const LURES = {
       kokanee: 0.1,
       grayling: 0.1,
       whitefish: 0.2,
+      blackfish: 0.2,
+      sheefish: 0.4,
+      wolfeel: 1.7,
     },
   },
 };
 
+// Rods, cheapest first. maxTension is what the line holds, cast the longest
+// cast in metres, reel how fast it winds. A perk is optional: hookWindow
+// stretches the moment to set the hook, slack how long a slack line holds,
+// rare the odds of rare and epic fish, legend the odds of a legend, perfect
+// the width of the timing bar's dark green line. look colours the rod you hold.
 export const RODS = [
-  { id: 'classic', name: 'Hotrod Classic', price: 0, maxTension: 100, cast: 30, reel: 1.0, desc: 'Ruben’s trusty medium-action rod.' },
-  { id: 'pro', name: 'Hotrod Pro', price: 650, maxTension: 150, cast: 40, reel: 1.25, desc: 'Graphite blank and a faster reel. Handles kings.' },
+  {
+    id: 'classic',
+    name: 'Hotrod Classic',
+    price: 0,
+    maxTension: 100,
+    cast: 30,
+    reel: 1.0,
+    desc: 'Ruben’s trusty medium-action rod.',
+    look: { blank: 0x8e1a14, wrap: 0xd4a93a, grip: 0xc9a46e, tip: 0xf0f0f0 },
+  },
+  {
+    id: 'willow',
+    name: 'Willow Whip',
+    price: 120,
+    maxTension: 85,
+    cast: 26,
+    reel: 1.15,
+    hookWindow: 1.2,
+    perk: 'Sensitive tip: a longer moment to set the hook.',
+    desc: 'A whippy little ultralight. Feels every nibble, folds on a king.',
+    look: { blank: 0x6e7a3a, wrap: 0xe8e0c8, grip: 0xd8b886, tip: 0xffe08a },
+  },
+  {
+    id: 'glass',
+    name: 'Glacier Glass',
+    price: 420,
+    maxTension: 125,
+    cast: 34,
+    reel: 1.1,
+    slack: 1.4,
+    perk: 'Forgiving fibreglass: a slack line holds on far longer.',
+    desc: 'Milky blue fibreglass that bends double and forgives everything.',
+    look: { blank: 0x7fc8d8, wrap: 0x1e4a5a, grip: 0x2a2a2a, tip: 0xffffff },
+  },
+  { id: 'pro', name: 'Hotrod Pro', price: 650, maxTension: 150, cast: 40, reel: 1.25, desc: 'Graphite blank and a faster reel. Handles kings.', look: { blank: 0x1d1d22, wrap: 0xff7a1a, grip: 0x2c2c2c, tip: 0xff7a1a } },
+  {
+    id: 'fly',
+    name: 'Kenai Fly Rod',
+    price: 900,
+    maxTension: 105,
+    cast: 36,
+    reel: 1.2,
+    rare: 1.25,
+    perk: 'Light and lively: rare and epic fish come to it more often.',
+    desc: 'Nine feet of split cane. People will ask if you tie your own flies.',
+    look: { blank: 0xb07a3a, wrap: 0x2a4a2a, grip: 0xd9b98a, tip: 0xe8d8b8 },
+  },
+  {
+    id: 'surf',
+    name: 'Tidewater Surf Caster',
+    price: 1300,
+    maxTension: 185,
+    cast: 64,
+    reel: 1.2,
+    perk: 'Reaches the deep water nobody else can.',
+    desc: 'Thirteen feet long. Do not swing it near the cabin windows.',
+    look: { blank: 0xe8e4d8, wrap: 0x1a5aa8, grip: 0x1a1a1a, tip: 0xff3a2a },
+  },
   {
     id: 'bigblock',
     name: 'Hotrod Big Block',
@@ -849,17 +1008,46 @@ export const RODS = [
     maxTension: 235,
     cast: 52,
     reel: 1.5,
+    legend: 1.3,
+    perk: 'Legends notice it.',
     desc: 'Heavy saltwater rig. For halibut and legendary fish.',
+    look: { blank: 0x2a1a3a, wrap: 0xffcc3a, grip: 0x111111, tip: 0xffcc3a },
+  },
+  {
+    id: 'antler',
+    name: 'Gus’s Antler Special',
+    price: 2600,
+    maxTension: 245,
+    cast: 46,
+    reel: 1.4,
+    legend: 1.6,
+    perk: 'Legends cannot resist it. Nobody knows why.',
+    desc: 'Carved by a hermit named Gus from an antler he says he found. Smells faintly of moose.',
+    look: { blank: 0xd8c8a0, wrap: 0x6a3a1a, grip: 0x8a5a2a, tip: 0x3a2a1a, stripe: 0xa08860 },
+  },
+  {
+    id: 'golden',
+    name: 'Golden Hotrod',
+    price: 6500,
+    maxTension: 320,
+    cast: 58,
+    reel: 1.75,
+    perfect: 1.6,
+    legend: 1.2,
+    perk: 'Even the timing bar’s dark green line gets wider.',
+    desc: 'Gold leaf, flame wraps and a reel that purrs like a V8. Completely unnecessary. Absolutely essential.',
+    look: { blank: 0xd4a93a, wrap: 0xff4a12, grip: 0x1a1a1a, tip: 0xffe08a, stripe: 0xff7a1a },
   },
 ];
 
 // The timing bar of the cast, laid out like a player's own drawing of it: a
-// white marker sweeps left to right over red, orange and green with a dark
+// white marker sweeps back and forth over red, orange and green with a dark
 // green line in the middle. Half-widths from the middle, in bar widths: the
 // line is a perfect cast, green lands where the throw line shows, orange
-// hooks it left or slices it right, and red is a backlash. speed is bar
-// widths a second.
-export const TIMING = { speed: 0.9, perfect: 0.025, green: 0.125, orange: 0.355 };
+// left of the line hooks it left and right of it slices it right, and red
+// is a backlash. speed is bar widths a second; after this many passes with
+// no tap the rod is lowered.
+export const TIMING = { speed: 0.9, perfect: 0.025, green: 0.125, orange: 0.355, passes: 8 };
 
 // The timing bar as a CSS background, from the same zones the cast uses.
 export function timingGradient(T = TIMING) {
@@ -899,11 +1087,96 @@ export const PAINTS = [
   { id: 'orange', name: 'Ruben Orange', price: 400, base: '#d2561a', a: '#fff0a0', b: '#ffd23a' },
 ];
 
-// arrows the quiver holds
+// The wardrobe. Shirts show on your sleeves and on Ruben at the wheel; skin,
+// beard and hat show on him too. A few loud pieces cost money.
+export const LOOKS = {
+  shirt: [
+    { id: 'red', name: 'Red flannel', main: 0xb2261e, band: 0x7a1812, price: 0 },
+    { id: 'blue', name: 'Blue flannel', main: 0x2d5f9e, band: 0x173a66, price: 0 },
+    { id: 'green', name: 'Forest flannel', main: 0x3f6b34, band: 0x23401d, price: 0 },
+    { id: 'denim', name: 'Denim jacket', main: 0x45658c, band: 0x30486a, price: 0 },
+    { id: 'hoodie', name: 'Black hoodie', main: 0x2a2c31, band: 0x1c1d21, price: 0 },
+    { id: 'camo', name: 'Camo jacket', main: 0x5d6b3c, band: 0x3b3a25, alt: 0x8c7b4c, price: 0 },
+    { id: 'hivis', name: 'Hi-vis rain jacket', main: 0xff9a1a, band: 0xd8dde0, price: 0 },
+    { id: 'hawaii', name: 'Hawaiian shirt', main: 0x19b8c4, band: 0xff5c9a, alt: 0xffe14a, price: 120 },
+    { id: 'racing', name: 'Hotrod racing jacket', main: 0x161616, band: 0xff6a1a, alt: 0xffd23a, price: 400 },
+  ],
+  skin: [
+    { id: 'pale', color: 0xf3cfb0 },
+    { id: 'fair', color: 0xd9a27c },
+    { id: 'olive', color: 0xbf8a5e },
+    { id: 'brown', color: 0x93603c },
+    { id: 'dark', color: 0x5e3b25 },
+  ],
+  hat: [
+    { id: 'cap', name: 'Orange cap', color: 0xe86a1a, price: 0 },
+    { id: 'trucker', name: 'Trucker cap', color: 0x1d1d1d, front: 0xf2efe6, price: 0 },
+    { id: 'beanie', name: 'Wool beanie', color: 0xb2261e, price: 0 },
+    { id: 'bucket', name: 'Bucket hat', color: 0x8a8a5a, price: 0 },
+    { id: 'cowboy', name: 'Cowboy hat', color: 0x6a4a2a, price: 0 },
+    { id: 'antler', name: 'Moose antler hat', color: 0x7a5a36, horn: 0xd9c8a0, price: 250 },
+    { id: 'none', name: 'No hat', price: 0 },
+  ],
+  beard: [
+    { id: 'full', name: 'Full beard' },
+    { id: 'lumber', name: 'Lumberjack beard' },
+    { id: 'stache', name: 'Handlebar mustache' },
+    { id: 'stubble', name: 'Stubble' },
+    { id: 'none', name: 'Clean shaven' },
+  ],
+  hair: [
+    { id: 'brown', color: 0x6a3e1e },
+    { id: 'black', color: 0x231710 },
+    { id: 'blond', color: 0xc9a052 },
+    { id: 'ginger', color: 0xb0471c },
+    { id: 'grey', color: 0xaaa69e },
+  ],
+  gloves: [
+    { id: 'leather', name: 'Leather gloves', color: 0x6a4a2e },
+    { id: 'wool', name: 'Fingerless wool', color: 0x5d5d5d },
+    { id: 'none', name: 'Bare hands' },
+  ],
+};
+export const LOOK_DEFAULT = { shirt: 'red', skin: 'fair', hat: 'cap', beard: 'full', hair: 'brown', gloves: 'leather' };
+
+// The colours the models need for a look.
+export function lookColors(look) {
+  const L = { ...LOOK_DEFAULT, ...(look || {}) };
+  const by = (list, id) => list.find((x) => x.id === id) || list[0];
+  const shirt = by(LOOKS.shirt, L.shirt);
+  const skin = by(LOOKS.skin, L.skin).color;
+  const crease = ((((skin >> 16) & 255) * 0.86) << 16) | ((((skin >> 8) & 255) * 0.82) << 8) | ((skin & 255) * 0.8);
+  const gloves = by(LOOKS.gloves, L.gloves);
+  return {
+    shirt,
+    skin,
+    crease: crease >>> 0,
+    hat: by(LOOKS.hat, L.hat),
+    beard: L.beard,
+    hair: by(LOOKS.hair, L.hair).color,
+    glove: gloves.color ?? skin,
+    gloves: gloves.id,
+    cuff: shirt.id === 'hivis' ? 0x3a3a3a : 0x3a1a14,
+  };
+}
+
+// arrows the quiver holds, of each kind
 export const QUIVER = 36;
 
+// Arrows for the longbow, sold in packs. speed and damage scale the shot;
+// tint colours the shaft so you can tell them apart in flight and in the
+// grass. A whistler shrieks in flight and sends any bear it passes close to
+// running; it barely scratches game.
+export const ARROWS = {
+  cedar: { name: 'Cedar arrows', short: 'Cedar', pack: 12, price: 40, speed: 1, damage: 1, tint: 0xffffff, desc: 'Plain and true. The arrow your grandad would buy.' },
+  carbon: { name: 'Carbon arrows', short: 'Carbon', pack: 12, price: 110, speed: 1.22, damage: 1.1, tint: 0x4a4c54, desc: 'Fast and flat: far less drop at long range.' },
+  broadhead: { name: 'Heavy broadheads', short: 'Heavy', pack: 12, price: 150, speed: 0.9, damage: 1.7, tint: 0xb07a4a, desc: 'Hit like a truck and drop like a stone. For moose, and for bears that will not take a hint.' },
+  glow: { name: 'Glow-nock arrows', short: 'Glow', pack: 12, price: 70, speed: 1.05, damage: 1, tint: 0xfff27a, desc: 'A bright nock you can follow in flight and find again in the grass, even at dusk.' },
+  whistler: { name: 'Bear whistlers', short: 'Whistler', pack: 6, price: 120, speed: 1, damage: 0.5, tint: 0x7ab8ff, whistle: true, cap: 12, desc: 'Shrieks in flight. A bear it passes close to turns tail. So does everyone else within a mile.' },
+};
+export const ARROW_ORDER = ['cedar', 'carbon', 'broadhead', 'glow', 'whistler'];
+
 export const GEAR = {
-  arrows: { name: 'Cedar arrows (12)', price: 40, desc: 'Broadhead arrows for the longbow. Walk over the ones that miss to pick them up.' },
   sight: { name: 'Bow sight and stabiliser', price: 450, desc: 'A steadier hold at full draw and a closer look when you AIM.' },
   yew: { name: 'Yew longbow', price: 700, desc: 'A heavier draw: faster, flatter arrows that hit harder.' },
   spray: { name: 'Bear spray', price: 80, desc: 'Stops a charging grizzly at close range. Carry up to 2.' },
@@ -939,7 +1212,13 @@ export const CHALLENGES = [
   { id: 'twenty', text: 'Catch 20 different species', reward: 1600 },
   { id: 'epic', text: 'Catch an Epic fish: a big skate or a salmon shark at Halibut Pier', reward: 1400 },
   { id: 'legend', text: 'Land a legendary fish', reward: 1500 },
-  { id: 'journal', text: 'Complete the Fish Journal (all 28 species)', reward: 5000 },
+  { id: 'boat', text: 'Buy the boat, launch it and land a fish from it', reward: 300 },
+  { id: 'soak', text: 'Soak in the hot pool at Steaming Springs', reward: 150 },
+  { id: 'sheefish', text: 'Catch a Sheefish at Mosquito Flats', reward: 500 },
+  { id: 'deck', text: 'Walk the gangplank onto the Unsinkable II at Shipwreck Cove', reward: 120 },
+  { id: 'wolfeel', text: 'Land a Wolf Eel at Shipwreck Cove', reward: 900 },
+  { id: 'photo', text: 'Photograph 8 different animals with the camera', reward: 400 },
+  { id: 'journal', text: `Complete the Fish Journal (all ${SPECIES_IDS.length} species)`, reward: 5000 },
 ];
 
 // Fish available at a water location. Returns [{id, w}] weights: how well
@@ -960,6 +1239,12 @@ export function speciesPool(water, world, placeId, night) {
     }
   } else if (water.kind === 'moose') pool = { pike: 4, rainbow: 2, kokanee: 2.6, laker: 1.1, grayling: 0.4, burbot: night ? 2.5 : 0.1 };
   else if (water.kind === 'glacier') pool = { char: 3, laker: 2, whitefish: 2.5, grayling: 1.4, dolly: 1, burbot: night ? 1 : 0 };
+  // the warm pond at Steaming Springs: fat trout that never feel winter
+  else if (water.kind === 'springs') pool = { rainbow: 3.5, grayling: 2.4, dolly: 1.5, char: 1, whitefish: 1.4, blackfish: 0.6 };
+  // nothing lives in the hot pool
+  else if (water.kind === 'hotpool') return [];
+  // the sloughs at Mosquito Flats
+  else if (water.kind === 'slough' || water.kind === 'slough2') pool = { pike: 3.4, blackfish: 3, whitefish: 1.4, sheefish: 1.3, grayling: 0.8, burbot: night ? 2.2 : 0.1 };
   else
     pool = {
       halibut: 3,
@@ -979,5 +1264,7 @@ export function speciesPool(water, world, placeId, night) {
       skate: 1.4,
       salmonshark: 0.7,
     };
+  // the wreck: rockfish, lingcod and a wolf eel or two live in her shadow
+  if (placeId === 'wreck' && water.kind === 'ocean') Object.assign(pool, { wolfeel: 1.3, lingcod: 3, yelloweye: 2.4, quillback: 2.2, blackrock: 3.5, halibut: 1.6 });
   return Object.entries(pool).map(([id, w]) => ({ id, w: w * RARITY[FISH[id].rarity].bite }));
 }

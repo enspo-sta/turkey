@@ -230,7 +230,8 @@ export class AudioEngine {
     if (!this.ready) return;
     const ctx = this.ctx;
     const t = ctx.currentTime + when;
-    const s = this.noiseSource(buf || this.white, false);
+    // the noise buffer is two seconds long: loop it for anything longer
+    const s = this.noiseSource(buf || this.white, dur > 1.4);
     const f = ctx.createBiquadFilter();
     f.type = type;
     f.frequency.setValueAtTime(freq, t);
@@ -383,6 +384,39 @@ export class AudioEngine {
     this.tone('sine', 180 + power * 50, 0.12, 0.12, { f2: 140 });
     this.noise(0.03, 0.28, { freq: 2600, q: 2 });
     this.noise(0.34, 0.12 + power * 0.1, { type: 'bandpass', freq: 1500, f2: 520, q: 1.4, when: 0.02 });
+  }
+  // A mosquito right by your ear.
+  buzz() {
+    if (!this.ready) return;
+    this.tone('sawtooth', 620, 1.1, 0.03, { f2: 560, pan: Math.random() - 0.5 });
+    this.tone('sawtooth', 640, 0.9, 0.02, { f2: 700, when: 0.2, pan: Math.random() - 0.5 });
+  }
+  // The ground rumbling before the geyser blows.
+  rumble(x, z) {
+    const s = this.spatial(x, z, 220);
+    if (s.vol < 0.02) return;
+    this.noise(3.2, 0.3 * s.vol, { type: 'lowpass', freq: 90, f2: 160, pan: s.pan });
+  }
+  // The geyser: a roaring hiss that dies away.
+  geyser(x, z) {
+    const s = this.spatial(x, z, 500);
+    if (s.vol < 0.02) return;
+    this.noise(8.5, 0.45 * s.vol, { type: 'bandpass', freq: 1400, q: 0.6, f2: 700, pan: s.pan, attack: 0.3 });
+    this.noise(6, 0.3 * s.vol, { type: 'lowpass', freq: 260, pan: s.pan, attack: 0.2 });
+  }
+  // A camera shutter: a sharp click, the mirror slap and a short whir.
+  shutter() {
+    if (!this.ready) return;
+    this.noise(0.03, 0.35, { freq: 4200, q: 3 });
+    this.noise(0.05, 0.25, { freq: 1800, q: 2, when: 0.06 });
+    this.tone('square', 900, 0.12, 0.03, { f2: 1400, when: 0.1 });
+  }
+  // A whistler arrow: a high shriek that rises and falls as it flies.
+  whistle() {
+    if (!this.ready) return;
+    this.tone('sine', 2100, 0.45, 0.07, { f2: 3300, attack: 0.04 });
+    this.tone('sine', 3300, 0.4, 0.06, { f2: 2300, when: 0.42 });
+    this.noise(0.8, 0.05, { type: 'bandpass', freq: 2800, q: 6, f2: 2200 });
   }
   // An arrow landing: a wet thump in game, a knock in wood, a click on
   // stone, a soft thud in the ground.
@@ -796,6 +830,42 @@ export class AudioEngine {
     const vol = (occupied ? 0.16 + throttle * 0.14 : 0.09) * near;
     e.g.gain.setTargetAtTime(Math.max(0.0001, vol), t, 0.08);
     e.rg.gain.setTargetAtTime(0.25 + throttle * 0.3, t, 0.1);
+  }
+
+  // The outboard: a buzzy two-stroke that rises with the throttle. Built on
+  // first use; rpm 0 silences it.
+  updateOutboard(rpm, throttle, dist, on) {
+    if (!this.ready) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    if (!this.outboard) {
+      if (!rpm) return;
+      const o1 = ctx.createOscillator();
+      o1.type = 'sawtooth';
+      const o2 = ctx.createOscillator();
+      o2.type = 'square';
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.Q.value = 2.5;
+      const gn = ctx.createGain();
+      gn.gain.value = 0.0001;
+      const g2 = ctx.createGain();
+      g2.gain.value = 0.35;
+      o1.connect(f);
+      o2.connect(g2).connect(f);
+      f.connect(gn).connect(this.sfx);
+      o1.start();
+      o2.start();
+      this.outboard = { o1, o2, f, g: gn };
+    }
+    const e = this.outboard;
+    const fire = Math.max(20, rpm / 60);
+    e.o1.frequency.setTargetAtTime(fire, t, 0.06);
+    e.o2.frequency.setTargetAtTime(fire * 2.01, t, 0.06);
+    e.f.frequency.setTargetAtTime(380 + rpm * 0.25 + throttle * 600, t, 0.08);
+    const near = Math.max(0, 1 - dist / 120);
+    const vol = rpm ? (on ? 0.07 + throttle * 0.08 : 0.04) * near : 0;
+    e.g.gain.setTargetAtTime(Math.max(0.0001, vol), t, 0.1);
   }
 
   // ------------------------------------------------------------- per frame

@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { ModelBuilder } from '../util/builder.js';
 import { makeFishModel } from './fishmodels.js';
 import { arrowGeometry } from '../gameplay/hunting.js';
+import { ARROWS, lookColors } from '../gameplay/data.js';
 import { clamp, damp, lerp } from '../util/math.js';
 
 const ROD_LEN = 2.3;
@@ -28,13 +29,15 @@ function rodMaterial(uniforms) {
   return m;
 }
 
-function buildRod() {
+// The rod you hold, in the colours of the rod you own (see RODS in data.js).
+function buildRod(look = {}) {
+  const L = { blank: 0x8e1a14, wrap: 0xd4a93a, grip: 0xc9a46e, tip: 0xf0f0f0, ...look };
   const b = new ModelBuilder();
-  // butt and cork grip
+  // butt and grip
   b.cyl(0.016, 0.016, 0.05, 8, { pos: [0, 0, 0.2], rot: [Math.PI / 2, 0, 0], color: 0x222222 });
-  b.cyl(0.016, 0.018, 0.34, 10, { pos: [0, 0, 0.02], rot: [Math.PI / 2, 0, 0], color: 0xc9a46e, jitter: 0.04 });
+  b.cyl(0.016, 0.018, 0.34, 10, { pos: [0, 0, 0.02], rot: [Math.PI / 2, 0, 0], color: L.grip, jitter: 0.04 });
   b.cyl(0.013, 0.013, 0.12, 8, { pos: [0, 0, -0.2], rot: [Math.PI / 2, 0, 0], color: 0x1a1a1a });
-  b.cyl(0.015, 0.015, 0.1, 10, { pos: [0, 0, -0.31], rot: [Math.PI / 2, 0, 0], color: 0xc9a46e });
+  b.cyl(0.015, 0.015, 0.1, 10, { pos: [0, 0, -0.31], rot: [Math.PI / 2, 0, 0], color: L.grip });
   // blank in segments tapering to the tip
   const segs = 10;
   const z0 = -0.36;
@@ -49,13 +52,13 @@ function buildRod() {
     b.cyl(r1, r0, za - zb, 6, {
       pos: [0, 0, (za + zb) / 2],
       rot: [-Math.PI / 2, 0, 0],
-      color: i === segs - 1 ? 0xf0f0f0 : 0x8e1a14,
+      color: i === segs - 1 ? L.tip : L.stripe && i % 2 ? L.stripe : L.blank,
       jitter: 0.02,
       hseg: 3,
     });
     // guide with gold wrap
     if (i > 0) {
-      b.cyl(r0 * 1.6, r0 * 1.6, 0.02, 6, { pos: [0, 0, za], rot: [Math.PI / 2, 0, 0], color: 0xd4a93a, jitter: 0 });
+      b.cyl(r0 * 1.6, r0 * 1.6, 0.02, 6, { pos: [0, 0, za], rot: [Math.PI / 2, 0, 0], color: L.wrap, jitter: 0 });
       const gs = 0.012 + (1 - t0) * 0.02;
       b.torus(gs, 0.0018, 4, 10, { pos: [0, -r0 - gs - 0.004, za], color: 0xcfcfcf, jitter: 0 });
     }
@@ -86,23 +89,35 @@ function buildReel() {
   return g;
 }
 
-function buildHand(color = 0x6a4a2e) {
+// The colour of sleeve band i: flannel checks alternate two colours, the
+// loud shirts cycle through three.
+function sleeve(c, i) {
+  const S = c.shirt;
+  if (S.alt) return [S.main, S.band, S.main, S.alt][i % 4];
+  return i % 2 ? S.band : S.main;
+}
+
+function buildHand(c) {
   const b = new ModelBuilder();
+  const color = c.glove;
   b.box(0.075, 0.085, 0.1, { pos: [0, 0, 0], color });
   b.box(0.03, 0.03, 0.06, { pos: [-0.04, 0.02, -0.04], rot: [0, 0.3, 0], color });
-  // flannel sleeve
-  b.cyl(0.055, 0.062, 0.34, 8, { pos: [0.03, -0.06, 0.22], rot: [1.25, 0, 0], color: 0xb2261e });
-  b.cyl(0.063, 0.063, 0.04, 8, { pos: [0.03, -0.1, 0.33], rot: [1.25, 0, 0], color: 0x1a1a1a });
+  // fingerless wool: the fingertips poke out
+  if (c.gloves === 'wool') b.box(0.077, 0.03, 0.03, { pos: [0, 0.02, -0.052], color: c.skin });
+  // sleeve and cuff
+  b.cyl(0.055, 0.062, 0.34, 8, { pos: [0.03, -0.06, 0.22], rot: [1.25, 0, 0], color: c.shirt.main });
+  b.cyl(0.0625, 0.0625, 0.05, 8, { pos: [0.03, -0.075, 0.27], rot: [1.25, 0, 0], color: c.shirt.band });
+  b.cyl(0.063, 0.063, 0.04, 8, { pos: [0.03, -0.1, 0.33], rot: [1.25, 0, 0], color: c.shirt.alt ?? 0x1a1a1a });
   return b.build();
 }
 
 // Bare hand and flannel sleeve for holding up a catch. Built in the fish
 // rig's frame (x right, y up, z toward the camera) with the grip point at the
 // origin: side 1 grips the tail wrist, side -1 cradles the belly.
-function buildFishArm(side) {
+function buildFishArm(side, c) {
   const b = new ModelBuilder();
-  const skin = 0xd9a27c;
-  const crease = 0xbf8662;
+  const skin = c.skin;
+  const crease = c.crease;
   if (side > 0) {
     // fist closed around the tail wrist, knuckles toward the camera
     b.box(0.068, 0.084, 0.07, { pos: [0, 0, 0], color: skin });
@@ -121,11 +136,11 @@ function buildFishArm(side) {
   const n = Math.hypot(dir[0], dir[1], dir[2]);
   const at = (t) => [(dir[0] / n) * t, (dir[1] / n) * t, (dir[2] / n) * t];
   b.beam(at(0.02), at(0.1), 0.03, 12, { r2: 0.034, color: skin, smooth: true });
-  b.beam(at(0.09), at(0.13), 0.049, 14, { r2: 0.05, color: 0x3a1a14, smooth: true });
-  // flannel sleeve with dark check bands
+  b.beam(at(0.09), at(0.13), 0.049, 14, { r2: 0.05, color: c.cuff, smooth: true });
+  // the sleeve in bands of the shirt's colours
   for (let i = 0; i < 7; i++) {
     const t0 = 0.13 + i * 0.07;
-    b.beam(at(t0), at(t0 + 0.07), 0.051 + i * 0.004, 14, { r2: 0.055 + i * 0.004, color: i % 2 ? 0x7a1812 : 0xb2261e, smooth: true });
+    b.beam(at(t0), at(t0 + 0.07), 0.051 + i * 0.004, 14, { r2: 0.055 + i * 0.004, color: sleeve(c, i), smooth: true });
   }
   return b.build();
 }
@@ -192,10 +207,10 @@ function bowTip(bend, side, out) {
 
 // Left hand closed round the grip, forearm and flannel sleeve running back
 // toward the shoulder.
-function buildBowArm() {
+function buildBowArm(c) {
   const b = new ModelBuilder();
-  const skin = 0xd9a27c;
-  const crease = 0xbf8662;
+  const skin = c.skin;
+  const crease = c.crease;
   b.box(0.05, 0.09, 0.05, { pos: [-0.008, -0.004, 0.024], color: skin });
   for (let i = 0; i < 4; i++) b.box(0.056, 0.02, 0.022, { pos: [-0.006, 0.03 - i * 0.021, -0.024], color: i % 2 ? crease : skin });
   b.box(0.022, 0.05, 0.024, { pos: [0.024, 0.02, 0.02], rot: [0, 0, -0.35], color: skin });
@@ -204,20 +219,20 @@ function buildBowArm() {
   const at = (t, o = [0, 0, 0]) => [o[0] + (dir[0] / n) * t, o[1] + (dir[1] / n) * t, o[2] + (dir[2] / n) * t];
   const w = [-0.01, -0.02, 0.04];
   b.beam(at(0, w), at(0.12, w), 0.026, 12, { r2: 0.029, color: skin, smooth: true });
-  b.beam(at(0.11, w), at(0.15, w), 0.042, 12, { r2: 0.043, color: 0x3a1a14, smooth: true });
+  b.beam(at(0.11, w), at(0.15, w), 0.042, 12, { r2: 0.043, color: c.cuff, smooth: true });
   for (let i = 0; i < 7; i++) {
     const t0 = 0.15 + i * 0.07;
-    b.beam(at(t0, w), at(t0 + 0.07, w), 0.045 + i * 0.004, 12, { r2: 0.049 + i * 0.004, color: i % 2 ? 0x7a1812 : 0xb2261e, smooth: true });
+    b.beam(at(t0, w), at(t0 + 0.07, w), 0.045 + i * 0.004, 12, { r2: 0.049 + i * 0.004, color: sleeve(c, i), smooth: true });
   }
   return b.build();
 }
 
 // Right hand hooking the string with three fingers, forearm back past the
 // cheek toward the raised elbow.
-function buildDrawArm() {
+function buildDrawArm(c) {
   const b = new ModelBuilder();
-  const skin = 0xd9a27c;
-  const crease = 0xbf8662;
+  const skin = c.skin;
+  const crease = c.crease;
   for (let i = 0; i < 3; i++) b.box(0.02, 0.018, 0.05, { pos: [-0.004, 0.022 - i * 0.022, -0.004], color: i % 2 ? crease : skin });
   b.box(0.05, 0.07, 0.06, { pos: [0.022, 0.0, 0.036], color: skin });
   b.box(0.02, 0.02, 0.05, { pos: [0.036, 0.034, 0.012], rot: [0.3, 0, 0], color: skin });
@@ -226,10 +241,10 @@ function buildDrawArm() {
   const at = (t, o) => [o[0] + (dir[0] / n) * t, o[1] + (dir[1] / n) * t, o[2] + (dir[2] / n) * t];
   const w = [0.03, -0.006, 0.06];
   b.beam(at(0, w), at(0.11, w), 0.025, 12, { r2: 0.028, color: skin, smooth: true });
-  b.beam(at(0.1, w), at(0.14, w), 0.041, 12, { r2: 0.042, color: 0x3a1a14, smooth: true });
+  b.beam(at(0.1, w), at(0.14, w), 0.041, 12, { r2: 0.042, color: c.cuff, smooth: true });
   for (let i = 0; i < 6; i++) {
     const t0 = 0.14 + i * 0.07;
-    b.beam(at(t0, w), at(t0 + 0.07, w), 0.044 + i * 0.004, 12, { r2: 0.048 + i * 0.004, color: i % 2 ? 0x7a1812 : 0xb2261e, smooth: true });
+    b.beam(at(t0, w), at(t0 + 0.07, w), 0.044 + i * 0.004, 12, { r2: 0.048 + i * 0.004, color: sleeve(c, i), smooth: true });
   }
   return b.build();
 }
@@ -268,13 +283,15 @@ export class Viewmodel {
     this.rodPivot = new THREE.Group();
     this.rodRig.add(this.rodPivot);
     this.rod = new THREE.Mesh(buildRod(), rodMaterial(this.rodUniforms));
+    this.rodId = 'classic';
     this.rodPivot.add(this.rod);
     this.reel = buildReel();
     this.reel.position.set(0, -0.012, -0.2);
     this.rodPivot.add(this.reel);
     const handMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 });
     this.handMat = handMat;
-    this.rodHand = new THREE.Mesh(buildHand(), handMat);
+    const look = lookColors(null);
+    this.rodHand = new THREE.Mesh(buildHand(look), handMat);
     this.rodHand.position.set(0.0, -0.02, 0.02);
     this.rodPivot.add(this.rodHand);
     this.root.add(this.rodRig);
@@ -287,8 +304,8 @@ export class Viewmodel {
     this.bowAsh = new THREE.Mesh(buildBow(false), bowMat);
     this.bowYew = new THREE.Mesh(buildBow(true), bowMat);
     this.bowYew.visible = false;
-    this.bowArm = new THREE.Mesh(buildBowArm(), handMat);
-    this.drawArm = new THREE.Mesh(buildDrawArm(), handMat);
+    this.bowArm = new THREE.Mesh(buildBowArm(look), handMat);
+    this.drawArm = new THREE.Mesh(buildDrawArm(look), handMat);
     const stringMat = new THREE.MeshStandardMaterial({ color: 0xe6dfcc, roughness: 0.9 });
     const stringGeo = new THREE.CylinderGeometry(0.0013, 0.0013, 1, 4, 1, true);
     stringGeo.translate(0, 0.5, 0);
@@ -306,7 +323,7 @@ export class Viewmodel {
     this.fishRig = new THREE.Group();
     this.root.add(this.fishRig);
     this.fishModel = null;
-    this.fishHands = [new THREE.Mesh(buildFishArm(1), handMat), new THREE.Mesh(buildFishArm(-1), handMat)];
+    this.fishHands = [new THREE.Mesh(buildFishArm(1, look), handMat), new THREE.Mesh(buildFishArm(-1, look), handMat)];
     for (const h of this.fishHands) this.fishRig.add(h);
 
     this.tool = 'rod';
@@ -334,6 +351,20 @@ export class Viewmodel {
     if (tool === this.tool) return;
     this.tool = tool;
     this.switchT = 0;
+  }
+
+  // Dress the arms in the wardrobe's shirt, skin and gloves.
+  applyLook(look) {
+    const c = lookColors(look);
+    const swap = (mesh, geo) => {
+      mesh.geometry.dispose();
+      mesh.geometry = geo;
+    };
+    swap(this.rodHand, buildHand(c));
+    swap(this.bowArm, buildBowArm(c));
+    swap(this.drawArm, buildDrawArm(c));
+    swap(this.fishHands[0], buildFishArm(1, c));
+    swap(this.fishHands[1], buildFishArm(-1, c));
   }
 
   setBowWood(yew) {
@@ -438,6 +469,13 @@ export class Viewmodel {
 
     // ---- rod
     if (this.rodRig.visible) {
+      // a new rod from the Trading Post: build it in its own colours
+      const owned = game.state.rod();
+      if (owned.id !== this.rodId) {
+        this.rodId = owned.id;
+        this.rod.geometry.dispose();
+        this.rod.geometry = buildRod(owned.look);
+      }
       const P = this.rodPose;
       const T = this.rodPoseTarget;
       P.pitch = damp(P.pitch, T.pitch, 8, dt);
@@ -471,7 +509,12 @@ export class Viewmodel {
       const H = game.hunting;
       const drawing = !!(H && H.drawing);
       const nocking = H ? H.nockT : 0;
-      const hasArrow = game.state.gear.arrows > 0;
+      const hasArrow = game.state.totalArrows() > 0;
+      // the nocked arrow wears its kind's colour
+      if (this.bowArrowKind !== game.state.gear.arrow) {
+        this.bowArrowKind = game.state.gear.arrow;
+        this.bowArrow.material.color.setHex(ARROWS[this.bowArrowKind]?.tint ?? 0xffffff);
+      }
       this.drawPose = damp(this.drawPose, drawing || (H && H.aiming) ? 1 : 0, drawing ? 9 : 5, dt);
       // the string follows the draw and snaps home on the loose with a buzz
       this.looseT = Math.min(1, this.looseT + dt * 2.5);

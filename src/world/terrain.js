@@ -120,6 +120,17 @@ export function makeTerrainMaterial(detailTex, matTex, surfaceTex) {
           float fade = 1.0 - smoothstep( 35.0, 110.0, length( vViewPosition ) );
           fade *= smoothstep( 0.06, 0.3, abs( dot( tn, normalize( cameraPosition - vTWorld ) ) ) );
           tHeight = ( rk * wR * 0.09 + pb * wG * 0.035 + sd * wB * 0.012 + ff * wA * 0.018 ) * fade * ( 1.0 - snow * 0.85 );
+          // far away, the mountains get crags, gullies and buttresses a few
+          // tens of metres across: more than the mesh can carry, lit per pixel
+          float farV = smoothstep( 140.0, 420.0, length( vViewPosition ) );
+          if ( farV > 0.0 ) {
+            float crag = texture2D( uMat, vTWorld.xz * 0.0061 + vec2( 0.17, 0.53 ) ).r;
+            float gully = texture2D( uMat, vec2( vTWorld.x * 0.009 + vTWorld.z * 0.004, vTWorld.y * 0.02 ) ).r;
+            float steepF = smoothstep( 0.92, 0.55, tn.y );
+            tHeight += farV * steepF * ( crag * 9.0 + gully * 4.0 ) * ( 1.0 - snow * 0.6 );
+            // gullies hold shade and old snow
+            diffuseColor.rgb *= mix( 1.0, 0.82 + gully * 0.3, farV * steepF * ( 1.0 - snow ) );
+          }
           #if defined( USE_FOG ) && defined( FX_PUDDLES )
             // puddles after rain in the flat hollows of tracks, gravel and
             // bare ground, growing the longer it rains; bare ground shines
@@ -321,8 +332,9 @@ export function buildFarTerrain(world, material) {
   const coords = [];
   const R = 6400;
   const NEAR = HALF + 700;
+  // 20 m round the playable square, where the nearest mountains rise
   for (let v = -R; v < -NEAR; v += 100) coords.push(v);
-  for (let v = -NEAR; v <= NEAR; v += 40) coords.push(v);
+  for (let v = -NEAR; v <= NEAR; v += 20) coords.push(v);
   for (let v = NEAR + 100; v <= R; v += 100) coords.push(v);
   // make sure the square edge lines exist exactly
   const n = coords.length;

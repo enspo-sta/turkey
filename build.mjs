@@ -39,7 +39,7 @@ const fontFaces = [
 const css = fontFaces + '\n' + readFileSync('src/ui/styles.css', 'utf8');
 const body = readFileSync('src/ui/body.html', 'utf8');
 
-const title = 'Ruben Hotrod Fishing';
+const title = 'Hotrod Outdoor Alaska Fishing';
 const icon = existsSync('assets/icons/icon-180.png')
   ? `<link rel="apple-touch-icon" href="icon-180.png">\n<link rel="icon" type="image/png" href="icon-192.png">`
   : '';
@@ -53,9 +53,9 @@ const full = `<!doctype html>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Hotrod Fishing">
+<meta name="apple-mobile-web-app-title" content="Hotrod Alaska">
 <meta name="theme-color" content="#0d1a1f">
-<meta name="description" content="Ruben Hotrod Fishing: a first-person Alaskan fishing and hunting adventure. Drive your hot rod between fishing spots, cast with the timing meter, and keep your rifle ready for grizzlies.">
+<meta name="description" content="Hotrod Outdoor Alaska Fishing: a first-person fishing and hunting adventure in Alaska. Drive your hot rod between fishing spots, time your cast, and keep your longbow ready for grizzlies.">
 <link rel="manifest" href="manifest.webmanifest">
 ${icon}
 <style>
@@ -86,8 +86,8 @@ mkdirSync('build', { recursive: true });
 writeFileSync('build/artifact.html', fragment);
 
 const manifest = {
-  name: 'Ruben Hotrod Fishing',
-  short_name: 'Hotrod Fishing',
+  name: 'Hotrod Outdoor Alaska Fishing',
+  short_name: 'Hotrod Alaska',
   description: 'First-person Alaskan fishing and hunting adventure.',
   start_url: './',
   display: 'fullscreen',

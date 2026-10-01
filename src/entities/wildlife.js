@@ -51,7 +51,8 @@ const SPECIES = {
   wolf: { walk: 1.8, run: 10, flee: 60, height: 0.9, len: 1.3, body: 0.3, head: 0.15, wade: 0.5, maxSlope: 0.9, count: 4, herd: true, gait: 2.0 },
   fox: { walk: 1.6, run: 8, flee: 24, height: 0.45, len: 0.8, body: 0.15, head: 0.08, wade: 0.2, maxSlope: 0.9, count: 5, gait: 3.2 },
   hare: { walk: 1.4, run: 9, flee: 12, height: 0.35, len: 0.4, body: 0.1, head: 0.06, wade: 0.1, maxSlope: 0.9, count: 12, gait: 4.0, hop: true },
-  blackbear: { walk: 1.1, run: 9, flee: 48, height: 1.0, len: 1.5, body: 0.42, head: 0.2, wade: 0.6, maxSlope: 0.8, count: 3, gait: 1.9 },
+  // black bears live in the bear system (src/gameplay/bears.js), which can make them charge
+  blackbear: { walk: 1.1, run: 9, flee: 48, height: 1.0, len: 1.5, body: 0.42, head: 0.2, wade: 0.6, maxSlope: 0.8, count: 0, gait: 1.9 },
   goat: { walk: 0.8, run: 5, flee: 75, height: 1.05, len: 1.2, body: 0.34, head: 0.17, wade: 0.2, maxSlope: 2.4, count: 7, herd: true, gait: 2.0 },
   muskox: { walk: 0.8, run: 7, flee: 40, height: 1.3, len: 2.0, body: 0.6, head: 0.3, wade: 0.5, maxSlope: 0.6, count: 7, herd: true, gait: 1.4 },
   porcupine: { walk: 0.35, run: 0.9, flee: 6, height: 0.4, len: 0.7, body: 0.2, head: 0.1, wade: 0.1, maxSlope: 0.9, count: 5, gait: 3.4 },
@@ -413,6 +414,7 @@ export class Wildlife {
   threatPos() {
     const g = this.game;
     if (g.player.mode === 'drive') return { x: g.hotrod.pos.x, z: g.hotrod.pos.z, loud: 1.3 + Math.abs(g.hotrod.speed) / 20 };
+    if (g.player.mode === 'boat') return { x: g.boat.pos.x, z: g.boat.pos.z, loud: 1 + Math.abs(g.boat.speed) / 8 };
     const run = g.player.speed > 5 ? 1.35 : g.player.speed > 1 ? 1.0 : 0.75;
     return { x: g.player.pos.x, z: g.player.pos.z, loud: run };
   }
@@ -534,7 +536,23 @@ export class Wildlife {
     if (this.jumpers.length >= 5) return;
     const cam = this.game.camera.position;
     if (Math.hypot(cam.x - x, cam.z - z) > 180) return;
-    const species = kind === 'ocean' ? 'coho' : kind === 'moose' ? 'rainbow' : kind === 'glacier' ? 'char' : this.game.state.salmonRun ? 'sockeye' : Math.random() < 0.5 ? 'pink' : 'coho';
+    if (kind === 'hotpool') return;
+    const species =
+      kind === 'ocean'
+        ? 'coho'
+        : kind === 'moose' || kind === 'springs'
+          ? 'rainbow'
+          : kind === 'glacier'
+            ? 'char'
+            : kind === 'slough' || kind === 'slough2'
+              ? Math.random() < 0.3
+                ? 'sheefish'
+                : 'pike'
+              : this.game.state.salmonRun
+                ? 'sockeye'
+                : Math.random() < 0.5
+                  ? 'pink'
+                  : 'coho';
     let m = this.jumperModels[species]?.find((q) => !q.parent);
     if (!m) {
       m = makeFishModel(species);

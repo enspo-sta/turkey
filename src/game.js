@@ -68,7 +68,7 @@ export class Game {
     // bloom, sun rays and the colour grade (High preset)
     this.post = new PostFX(renderer);
     this.container.appendChild(renderer.domElement);
-    renderer.domElement.setAttribute('aria-label', 'Ruben Hotrod Fishing game view');
+    renderer.domElement.setAttribute('aria-label', 'Hotrod Outdoor Alaska Fishing game view');
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(68, 1, 0.35, 9000);
@@ -235,7 +235,15 @@ export class Game {
     this.updateWorld(dt);
     const t2 = performance.now();
     this.menuFrame = (this.menuFrame || 0) + 1;
-    if (!this.menuOpen || this.menuFrame % 3 === 0) this.render();
+    if (!this.menuOpen || this.menuFrame % 3 === 0) {
+      this.render();
+      // a photo grabs the frame right after it is drawn
+      if (this.onRendered) {
+        const f = this.onRendered;
+        this.onRendered = null;
+        f(this.renderer.domElement);
+      }
+    }
     const t3 = performance.now();
     for (const s of this.systems) s.postRender?.(dt, this);
     const st = this.perf || (this.perf = { game: 0, world: 0, render: 0 });

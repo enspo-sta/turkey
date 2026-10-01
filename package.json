@@ -1,8 +1,8 @@
 {
-  "name": "ruben-hotrod-fishing",
+  "name": "hotrod-outdoor-alaska-fishing",
   "version": "1.0.0",
   "private": true,
-  "description": "Ruben Hotrod Fishing: a first-person Alaskan fishing and hunting adventure for iPhone and iPad",
+  "description": "Hotrod Outdoor Alaska Fishing: a first-person fishing and hunting adventure in Alaska for iPhone and iPad",
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
@@ -10,7 +10,7 @@
     "serve": "node tools/serve.mjs",
     "icons": "node tools/make-icons.mjs",
     "shot": "node tools/shot.mjs",
-    "zip": "cd dist && zip -r -X ../ruben-hotrod-fishing-web.zip index.html privacy.html manifest.webmanifest icon-180.png icon-192.png icon-512.png"
+    "zip": "cd dist && zip -r -X ../hotrod-outdoor-alaska-fishing-web.zip index.html privacy.html manifest.webmanifest icon-180.png icon-192.png icon-512.png"
   },
   "repository": {
     "type": "git",

@@ -31,7 +31,7 @@ export function renderMapRGBA(world, size) {
         let wr = 0.24;
         let wg = 0.47;
         let wb = 0.58;
-        if (w.kind === 'glacier') {
+        if (w.kind === 'glacier' || w.kind === 'springs' || w.kind === 'hotpool') {
           wr = 0.36;
           wg = 0.68;
           wb = 0.72;

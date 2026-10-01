@@ -384,7 +384,8 @@ export class Insects {
       butterfly: day * dry * (env.weather && env.weather.cloud > 0.8 ? 0.5 : 1),
       bee: day * dry,
       dragonfly: day * dry,
-      mosquito: e > -8 && e < 10 ? dry : 0,
+      // dusk everywhere, and all day long at Mosquito Flats without bug dope
+      mosquito: Math.max(e > -8 && e < 10 ? dry : 0, g.areas ? g.areas.near('flats', 120, 260) * dry * ((g.bugDopeT || 0) > 0 ? 0.2 : 1) : 0),
       moth: env.night > 0.5 ? 1 : 0,
       fluff: day * dry,
     };

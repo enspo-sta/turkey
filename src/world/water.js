@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { smoothstep, clamp, mulberry32 } from '../util/math.js';
 import { FX } from './worldfx.js';
+import { ModelBuilder } from '../util/builder.js';
 
 export const REFLECT_LAYER = 2;
 
@@ -425,6 +426,7 @@ export class WaterSystem {
       this.group.add(m);
     }
     for (const c of this.group.children) {
+      if (c === this.falls) continue;
       c.renderOrder = 1;
       c.receiveShadow = false;
     }
@@ -537,28 +539,144 @@ export class WaterSystem {
     return g;
   }
 
-  // Animated curtain of falling water at Bear Falls.
+  // Bear Falls: the river slides glassy over the lip, arcs out and falls as
+  // white water, split into three falls by two boulders; a darker sheet
+  // behind gives it depth, and foam boils where it lands in the pool.
   buildWaterfall() {
     const W = this.world;
     const s0 = W.fallsS;
     const top = W.riverLevel(s0 - 0.01);
     const bot = W.riverLevel(s0 + 0.01);
     const p = W.river.sample(s0);
-    const width = (W.riverWidth(s0) + 3.2) * 2;
-    const height = top - bot + 1.2;
-    const geo = new THREE.PlaneGeometry(width, height, 20, 10);
-    const pos = geo.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i);
-      const y = pos.getY(i);
-      const v = (y + height / 2) / height; // 0 bottom, 1 top
-      // lip curls outward near the top, water bows out slightly mid-drop
-      const bulge = Math.sin(v * Math.PI) * 0.9 + Math.pow(v, 6) * 1.4;
-      const edge = 1 - Math.pow(Math.abs(x) / (width / 2), 4);
-      pos.setZ(i, bulge * (0.4 + 0.6 * edge));
-    }
-    geo.computeVertexNormals();
-    const mat = new THREE.ShaderMaterial({
+    const half = W.riverWidth(s0) + 3.2;
+    const drop = top - bot;
+    const group = new THREE.Group();
+    group.position.set(p.x, bot, p.z);
+    // local +z points downstream
+    group.rotation.y = Math.atan2(p.tx, p.tz);
+    group.name = 'waterfall';
+    // the path of the water: a flat run to the lip, then a falling arc
+    const OUT = 2.6;
+    const shape = (v, back) => {
+      if (v <= 0) return { y: drop + 0.04, z: v * 14 - (back ? 0.5 : 0) };
+      const y = drop * (1 - v);
+      return { y, z: OUT * Math.sqrt(2 * drop * v / 9.8) * (back ? 0.62 : 1) - (back ? 0.5 : 0) };
+    };
+    const sheet = (back) => {
+      const nx = 36;
+      const ny = 20;
+      const pos = [];
+      const uv = [];
+      const idx = [];
+      for (let j = 0; j <= ny; j++) {
+        // a few rows on the run-in, the rest down the drop
+        const v = j < 3 ? -0.12 + (j / 3) * 0.12 : (j - 3) / (ny - 3);
+        const sh = shape(v, back);
+        for (let i = 0; i <= nx; i++) {
+          const u = i / nx;
+          const x = (u - 0.5) * 2 * half * (1 + Math.max(0, v) * 0.12);
+          // the middle bows out a little more than the sides
+          const bow = Math.max(0, v) * (1 - Math.pow(Math.abs(u - 0.5) * 2, 2)) * 0.5;
+          pos.push(x, sh.y, sh.z + bow);
+          uv.push(u, v);
+        }
+      }
+      for (let j = 0; j < ny; j++)
+        for (let i = 0; i < nx; i++) {
+          const a = j * (nx + 1) + i;
+          idx.push(a, a + nx + 1, a + 1, a + 1, a + nx + 1, a + nx + 2);
+        }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+      g.setIndex(idx);
+      g.computeVertexNormals();
+      return g;
+    };
+    const fallMat = (back) =>
+      new THREE.ShaderMaterial({
+        uniforms: {
+          uTime: this.shared.uTime,
+          uNoise: { value: this.shared.uFoamTex.value },
+          uSunColor: this.shared.uSunColor,
+          uNight: this.shared.uNight,
+          uBack: { value: back ? 1 : 0 },
+          ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
+        },
+        vertexShader: /* glsl */ `
+          #include <common>
+          #include <fog_pars_vertex>
+          varying vec2 vUv;
+          varying vec3 vN;
+          varying vec3 vView;
+          void main() {
+            vUv = uv;
+            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+            vN = normalize(normalMatrix * normal);
+            vView = -mvPosition.xyz;
+            gl_Position = projectionMatrix * mvPosition;
+            #include <fog_vertex>
+          }`,
+        fragmentShader: /* glsl */ `
+          #include <common>
+          #include <fog_pars_fragment>
+          uniform float uTime;
+          uniform sampler2D uNoise;
+          uniform vec3 uSunColor;
+          uniform float uNight;
+          uniform float uBack;
+          varying vec2 vUv;
+          varying vec3 vN;
+          varying vec3 vView;
+          void main() {
+            float v = vUv.y;
+            float fall = clamp(v, 0.0, 1.0);
+            // the water speeds up as it falls: the pattern scrolls faster lower down
+            float run = v - uTime * (0.35 + fall * 1.6) * (1.0 - uBack * 0.35);
+            float n1 = texture2D(uNoise, vec2(vUv.x * 5.0, run * 0.7)).b;
+            float n2 = texture2D(uNoise, vec2(vUv.x * 13.0 + 0.37, run * 1.6 + 0.2)).b;
+            float n3 = texture2D(uNoise, vec2(vUv.x * 2.0 + 0.11, v * 0.4 - uTime * 0.2)).g;
+            float streak = smoothstep(0.3, 0.85, n1 * 0.55 + n2 * 0.55);
+            // aerated white water grows down the drop
+            float white = smoothstep(0.05, 0.7, fall) * 0.7 + streak * 0.5;
+            // two boulders on the lip split the river into three falls
+            float gapA = 1.0 - smoothstep(0.035, 0.07 + fall * 0.02, abs(vUv.x - 0.34 + n3 * 0.02));
+            float gapB = 1.0 - smoothstep(0.03, 0.065 + fall * 0.02, abs(vUv.x - 0.68 - n3 * 0.02));
+            float gap = max(gapA, gapB) * smoothstep(-0.04, 0.02, v) * (1.0 - smoothstep(0.55, 0.95, fall) * 0.8);
+            // ragged sides that fray as they fall
+            float fray = 0.03 + fall * 0.06 + n2 * 0.05;
+            float edge = smoothstep(0.0, fray, vUv.x) * smoothstep(1.0, 1.0 - fray, vUv.x);
+            vec3 glass = vec3(0.12, 0.34, 0.33);
+            vec3 foam = vec3(0.93, 0.96, 0.97);
+            vec3 col = mix(glass, foam, clamp(white, 0.0, 1.0));
+            // light: sun colour and a bright rim where the sheet turns from you
+            float rim = pow(1.0 - abs(dot(normalize(vN), normalize(vView))), 2.0);
+            col *= (0.7 + 0.4 * clamp(length(uSunColor), 0.0, 1.5)) * mix(1.0, 0.25, uNight);
+            col += rim * 0.12 * (1.0 - uNight);
+            col *= mix(1.0, 0.62, uBack);
+            float alpha = mix(0.38, 0.95, clamp(white, 0.0, 1.0)) * edge * (1.0 - gap);
+            // the run-in is clear water, the falls themselves opaque white
+            alpha *= mix(0.55, 1.0, smoothstep(-0.06, 0.08, v));
+            alpha *= mix(1.0, 0.7, uBack);
+            gl_FragColor = vec4(col, alpha);
+            #include <tonemapping_fragment>
+            #include <colorspace_fragment>
+            #include <fog_fragment>
+          }`,
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        fog: true,
+      });
+    const back = new THREE.Mesh(sheet(true), fallMat(true));
+    back.renderOrder = 2;
+    const front = new THREE.Mesh(sheet(false), fallMat(false));
+    front.renderOrder = 3;
+    // foam boiling where the falls land, spreading downstream
+    const landZ = OUT * Math.sqrt((2 * drop) / 9.8);
+    const foamGeo = new THREE.PlaneGeometry(half * 2.6, 16, 1, 1);
+    foamGeo.rotateX(-Math.PI / 2);
+    const foamMat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: this.shared.uTime,
         uNoise: { value: this.shared.uFoamTex.value },
@@ -585,33 +703,44 @@ export class WaterSystem {
         uniform float uNight;
         varying vec2 vUv;
         void main() {
-          vec2 uv = vec2(vUv.x * 3.0, vUv.y * 0.6 + uTime * 0.9);
-          float n1 = texture2D(uNoise, uv).b;
-          float n2 = texture2D(uNoise, vec2(vUv.x * 7.0 + 0.3, vUv.y * 1.3 + uTime * 1.6)).b;
-          float streak = smoothstep(0.35, 0.8, n1 * 0.6 + n2 * 0.5);
-          vec3 deep = vec3(0.32, 0.55, 0.55);
-          vec3 foam = vec3(0.93, 0.96, 0.97);
-          vec3 col = mix(deep, foam, 0.35 + streak * 0.65);
-          col *= mix(1.0, 0.25, uNight) * (0.75 + 0.35 * clamp(length(uSunColor), 0.0, 1.5));
-          float edge = smoothstep(0.0, 0.06, vUv.x) * smoothstep(1.0, 0.94, vUv.x);
-          float alpha = (0.72 + streak * 0.28) * edge * smoothstep(0.0, 0.05, vUv.y);
-          gl_FragColor = vec4(col, alpha);
+          // vUv.y: 1 at the falls, 0 downstream
+          float d = 1.0 - vUv.y;
+          float n1 = texture2D(uNoise, vec2(vUv.x * 4.0, d * 2.0 - uTime * 0.5)).b;
+          float n2 = texture2D(uNoise, vec2(vUv.x * 9.0 + 0.3, d * 4.0 - uTime * 0.9)).b;
+          float boil = smoothstep(0.35, 0.8, n1 * 0.6 + n2 * 0.5);
+          float fade = smoothstep(1.0, 0.75, d) * 0.4 + smoothstep(0.85, 0.1, d) * 0.6;
+          float side = smoothstep(0.0, 0.18, vUv.x) * smoothstep(1.0, 0.82, vUv.x);
+          float a = boil * fade * side * 0.9;
+          vec3 col = vec3(0.92, 0.95, 0.96) * (0.72 + 0.35 * clamp(length(uSunColor), 0.0, 1.5)) * mix(1.0, 0.25, uNight);
+          gl_FragColor = vec4(col, a);
           #include <tonemapping_fragment>
           #include <colorspace_fragment>
           #include <fog_fragment>
         }`,
       transparent: true,
       depthWrite: false,
-      side: THREE.DoubleSide,
       fog: true,
     });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(p.x, (top + bot) / 2 - 0.3, p.z);
-    // face downstream: plane normal +z -> flow direction
-    mesh.rotation.y = Math.atan2(p.tx, p.tz);
-    mesh.renderOrder = 2;
-    mesh.name = 'waterfall';
-    return mesh;
+    const foam = new THREE.Mesh(foamGeo, foamMat);
+    foam.position.set(0, 0.07, landZ + 6.5);
+    foam.renderOrder = 2;
+    // the two boulders on the lip and a few wet rocks in the plunge
+    const rb = new ModelBuilder();
+    for (const u of [0.34, 0.68]) {
+      const x = (u - 0.5) * 2 * half;
+      rb.dodeca(1.15, { pos: [x, drop - 0.2, 0.1], scale: [0.9, 1.0, 1.3], color: 0x34332f, jitter: 0.25 });
+      rb.dodeca(0.8, { pos: [x + 0.3, drop - 1.4, 0.4], scale: [0.8, 1.1, 0.9], color: 0x2c2b28, jitter: 0.25 });
+    }
+    for (let i = 0; i < 6; i++) {
+      const x = (i / 5 - 0.5) * 2 * half * 1.1;
+      rb.dodeca(0.6 + (i % 3) * 0.25, { pos: [x, 0.05, landZ + 2 + (i % 2) * 2.5], scale: [1.2, 0.6, 1], color: 0x3a3934, jitter: 0.25 });
+    }
+    const rocks = new THREE.Mesh(rb.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.35, metalness: 0.05 }));
+    rocks.castShadow = true;
+    group.add(back, front, foam, rocks);
+    // the mist rises where the water lands
+    this.fallsLanding = { x: p.x + p.tx * landZ, z: p.z + p.tz * landZ, y: bot };
+    return group;
   }
 
   // Lake surface: rings following the shoreline (no long thin triangles).

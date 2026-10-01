@@ -51,7 +51,7 @@ export class Minimap {
     this.t = 1 / 15;
     if (!this.image || this.button.offsetParent === null) return;
     if (this.px <= 1) this.resize();
-    const focus = driving ? g.hotrod.pos : g.player.pos;
+    const focus = driving ? g.hotrod.pos : g.player.mode === 'boat' ? g.boat.pos : g.player.pos;
     const moved = Math.abs(focus.x - this.last.x) + Math.abs(focus.z - this.last.z);
     const turned = Math.abs(heading - this.last.h);
     const threat = g.bears && g.bears.threat;
@@ -143,6 +143,12 @@ export class Minimap {
     if (g.player.mode === 'foot') {
       const q = at(g.hotrod.pos.x, g.hotrod.pos.z, true);
       if (q) dot(q, 3.6 * unit, '#e8452c', '#1a0804');
+    }
+    // the boat, moored or anchored somewhere
+    const B = g.boat;
+    if (B && B.owned && B.where === 'water' && g.player.mode !== 'boat') {
+      const q = at(B.pos.x, B.pos.z, true);
+      if (q) dot(q, 3.2 * unit, '#f2efe6', '#2d6fb0');
     }
     const threat = g.bears && g.bears.threat;
     if (threat) {

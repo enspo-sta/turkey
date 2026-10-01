@@ -1,0 +1,303 @@
+// The camera: buy it at the Trading Post, raise it with the tool button,
+// zoom in and snap moose, bears, eagles, whales and your best catches. Every
+// species keeps its best picture in the photo album (Journal > Photos); the
+// first good shot of a species sells to a magazine.
+import * as THREE from 'three';
+import { FISH, SPECIES_IDS } from './data.js';
+
+const STORE_KEY = 'rubenHotrodFishing.photos.v1';
+export const CAMERA_PRICE = 250;
+export const ZOOMS = [1, 2, 4, 8];
+const THUMB_W = 320;
+const THUMB_H = 180;
+const ROLL = 8;
+
+// Everything the album has a page for. size is roughly how tall the
+// animal stands in the picture, in metres; value is what the magazine pays
+// for a three-star first shot.
+export const PHOTO_SUBJECTS = {
+  moose: { name: 'Moose', group: 'land', value: 40, size: 2.1 },
+  caribou: { name: 'Caribou', group: 'land', value: 30, size: 1.3 },
+  deer: { name: 'Sitka black-tailed deer', group: 'land', value: 25, size: 1.0 },
+  sheep: { name: 'Dall sheep', group: 'land', value: 45, size: 1.0 },
+  goat: { name: 'Mountain goat', group: 'land', value: 50, size: 1.05 },
+  muskox: { name: 'Muskox', group: 'land', value: 50, size: 1.3 },
+  wolf: { name: 'Gray wolf', group: 'land', value: 70, size: 0.9 },
+  fox: { name: 'Red fox', group: 'land', value: 35, size: 0.5 },
+  hare: { name: 'Snowshoe hare', group: 'land', value: 20, size: 0.4 },
+  lynx: { name: 'Canada lynx', group: 'land', value: 90, size: 0.65 },
+  porcupine: { name: 'Porcupine', group: 'land', value: 30, size: 0.4 },
+  squirrel: { name: 'Red squirrel', group: 'land', value: 15, size: 0.25 },
+  beaver: { name: 'Beaver', group: 'land', value: 40, size: 0.4 },
+  bear: { name: 'Grizzly bear', group: 'land', value: 80, size: 1.4 },
+  blackbear: { name: 'Black bear', group: 'land', value: 60, size: 1.0 },
+  eagle: { name: 'Bald eagle', group: 'birds', value: 50, size: 1.2 },
+  raven: { name: 'Common raven', group: 'birds', value: 15, size: 0.8 },
+  gull: { name: 'Glaucous-winged gull', group: 'birds', value: 10, size: 0.8 },
+  goose: { name: 'Canada goose', group: 'birds', value: 20, size: 0.9 },
+  duck: { name: 'Mallard', group: 'birds', value: 15, size: 0.45 },
+  loon: { name: 'Common loon', group: 'birds', value: 35, size: 0.5 },
+  puffin: { name: 'Tufted puffin', group: 'birds', value: 45, size: 0.35 },
+  ptarmigan: { name: 'Willow ptarmigan', group: 'birds', value: 30, size: 0.35 },
+  swan: { name: 'Trumpeter swan', group: 'birds', value: 40, size: 0.9 },
+  crane: { name: 'Sandhill crane', group: 'birds', value: 40, size: 1.1 },
+  magpie: { name: 'Black-billed magpie', group: 'birds', value: 20, size: 0.45 },
+  kingfisher: { name: 'Belted kingfisher', group: 'birds', value: 60, size: 0.3 },
+  whale: { name: 'Humpback whale', group: 'sea', value: 90, size: 3.5 },
+  orca: { name: 'Orca', group: 'sea', value: 100, size: 2.2 },
+  otter: { name: 'Sea otter', group: 'sea', value: 45, size: 0.5 },
+  sealion: { name: 'Steller sea lion', group: 'sea', value: 40, size: 1.0 },
+  seal: { name: 'Harbor seal', group: 'sea', value: 30, size: 0.4 },
+  geyser: { name: 'Old Faceful erupting', group: 'moments', value: 60, size: 14 },
+  bigfoot: { name: 'Bigfoot (probably)', group: 'moments', value: 300, size: 2.6 },
+};
+for (const id of SPECIES_IDS) PHOTO_SUBJECTS['fish:' + id] = { name: FISH[id].name, group: 'fish', value: 0, size: 0.5 };
+
+export const PHOTO_GROUPS = [
+  ['land', 'Land animals'],
+  ['birds', 'Birds'],
+  ['sea', 'Sea mammals'],
+  ['moments', 'Moments'],
+  ['fish', 'Fish'],
+];
+
+const _v = new THREE.Vector3();
+
+function loadAlbum() {
+  try {
+    const raw = window.localStorage.getItem(STORE_KEY);
+    const d = raw ? JSON.parse(raw) : null;
+    if (d && d.shots && Array.isArray(d.roll)) return d;
+  } catch (e) {
+    /* private mode or a broken store: start a fresh album */
+  }
+  return { shots: {}, roll: [] };
+}
+
+export class PhotoCamera {
+  constructor(game) {
+    this.game = game;
+    this.album = loadAlbum();
+    this.zoomIndex = 1;
+    this.focus = null;
+    this.focusT = 0;
+    this.busy = false;
+  }
+
+  get zoom() {
+    return ZOOMS[this.zoomIndex];
+  }
+
+  owned() {
+    return !!this.game.state.gear.camera;
+  }
+
+  persist() {
+    try {
+      window.localStorage.setItem(STORE_KEY, JSON.stringify(this.album));
+      return true;
+    } catch (e) {
+      // the device ran out of room: drop the roll and try once more
+      this.album.roll.length = 0;
+      try {
+        window.localStorage.setItem(STORE_KEY, JSON.stringify(this.album));
+        return true;
+      } catch (e2) {
+        return false;
+      }
+    }
+  }
+
+  // Wipe the album with the save (a new game).
+  wipe() {
+    this.album = { shots: {}, roll: [] };
+    try {
+      window.localStorage.removeItem(STORE_KEY);
+    } catch (e) {
+      /* nothing stored */
+    }
+  }
+
+  count() {
+    return Object.keys(this.album.shots).length;
+  }
+
+  // Everything that could be in the picture right now.
+  subjects() {
+    const g = this.game;
+    const W = g.wildlife;
+    const out = [];
+    const add = (id, x, y, z, size) => {
+      if (PHOTO_SUBJECTS[id]) out.push({ id, x, y, z, size: size ?? PHOTO_SUBJECTS[id].size });
+    };
+    for (const a of W.animals) if (!a.dead && a.alive !== false && a.visible !== false) add(a.species, a.x, a.y + a.cfg.height * a.scale * 0.55, a.z, a.cfg.height * a.scale);
+    for (const b of g.bears.bears) if (!b.dead && b.state !== 'gone' && b.visible !== false) add(b.kind === 'black' ? 'blackbear' : 'bear', b.x, (b.y || 0) + 0.8, b.z);
+    for (const b of W.birds) if (!(b.under > 0)) add(b.sp, b.x, b.y + 0.2, b.z);
+    for (const w of W.whales) if (w.y > -1.6) add('whale', w.x, Math.max(0, w.y + 1), w.z);
+    for (const o of W.orcas || []) if (o.y > -1.2 && o.x !== undefined) add('orca', o.x, Math.max(0, o.y + 0.8), o.z);
+    for (const o of W.otters) add('otter', o.x, 0.15, o.z);
+    for (const s of W.seaLions || []) add('sealion', s.x, (s.y ?? 0.5) + 0.4, s.z);
+    for (const s of W.seals || []) if (s.up) add('seal', s.x, 0.2, s.z);
+    for (const b of W.beavers || []) if (!(b.under > 0)) add('beaver', b.x, (b.lake ? b.lake.level : 0) + 0.15, b.z);
+    // something big and hairy at the edge of the trees
+    const B = g.bigfoot;
+    if (B && B.active) add('bigfoot', B.pos.x, B.pos.y + 1.4, B.pos.z);
+    // a moment in progress: the geyser blowing
+    const m = this.moment;
+    if (m && g.time < m.until) add(m.id, m.x, m.y, m.z);
+    return out;
+  }
+
+  // The subject the shot would be of, with its star rating (0 to 3).
+  evaluate() {
+    const g = this.game;
+    const cam = g.camera;
+    const W = g.world;
+    const eye = cam.position;
+    const tanHalf = Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2);
+    let best = null;
+    for (const s of this.subjects()) {
+      const dx = s.x - eye.x;
+      const dy = s.y - eye.y;
+      const dz = s.z - eye.z;
+      const d = Math.hypot(dx, dy, dz);
+      if (d < 1.5 || d > 600) continue;
+      _v.set(s.x, s.y, s.z).project(cam);
+      if (_v.z > 1 || Math.abs(_v.x) > 0.9 || Math.abs(_v.y) > 0.9) continue;
+      // how much of the frame height it fills
+      const frac = s.size / (2 * d * tanHalf);
+      const off = Math.max(Math.abs(_v.x), Math.abs(_v.y));
+      // the ground in the way?
+      let blocked = false;
+      for (let i = 1; i < 10; i++) {
+        const t = i / 10;
+        const x = eye.x + dx * t;
+        const z = eye.z + dz * t;
+        if (W.heightAt(x, z) > eye.y + dy * t + 0.3) {
+          blocked = true;
+          break;
+        }
+      }
+      if (blocked) continue;
+      let stars = frac >= 0.2 ? 3 : frac >= 0.09 ? 2 : frac >= 0.035 ? 1 : 0;
+      if (stars > 1 && off > 0.4) stars--;
+      const score = frac * (1.4 - off);
+      if (!best || score > best.score) best = { ...s, d, frac, off, stars, score };
+    }
+    return best;
+  }
+
+  // Raise or lower the camera: the HUD shows the viewfinder while it is up.
+  update(dt) {
+    const g = this.game;
+    const P = g.player;
+    const active = P.mode === 'foot' && P.tool === 'camera' && !g.menuOpen && !g.hud.blocking;
+    if (!active) {
+      this.focus = null;
+      return;
+    }
+    const input = g.input;
+    if (input.pressed('secondary') || input.keyPressed('KeyZ') || input.keyPressed('Mouse2')) {
+      this.zoomIndex = (this.zoomIndex + 1) % ZOOMS.length;
+      g.audio?.tick(this.zoomIndex === 0 ? 0 : 1);
+    }
+    // what the viewfinder is on, a few times a second
+    this.focusT -= dt;
+    if (this.focusT <= 0) {
+      this.focusT = 0.25;
+      this.focus = this.evaluate();
+    }
+    if ((input.pressed('primary') || input.keyPressed('Space') || input.mouseActionPressed()) && !this.busy) this.snap();
+  }
+
+  // Take the picture: the next rendered frame is grabbed, shrunk and kept.
+  snap(subjectOverride = null) {
+    const g = this.game;
+    this.busy = true;
+    g.audio?.shutter?.();
+    g.hud.flash?.();
+    const subject = subjectOverride || this.evaluate();
+    const hour = g.env.time;
+    const day = g.env.day;
+    const place = g.fishing.hotPlace ? g.fishing.hotPlace.name : null;
+    g.onRendered = (canvas) => {
+      this.busy = false;
+      // every Bigfoot picture is blurry: it is the law
+      const img = this.thumbnail(canvas, subject && subject.id === 'bigfoot' ? 2.2 : 0);
+      if (!img) return;
+      this.keep(img, subject, { hour, day, place });
+    };
+  }
+
+  thumbnail(src, blur = 0) {
+    try {
+      const c = document.createElement('canvas');
+      c.width = THUMB_W;
+      c.height = THUMB_H;
+      const ctx = c.getContext('2d');
+      if (blur) ctx.filter = `blur(${blur}px)`;
+      // a 16:9 frame from the middle of the screen, about as tall as the
+      // viewfinder, so the subject fills the picture as it filled the frame
+      const sw = src.width;
+      const sh = src.height;
+      const k = Math.min((sw * 0.86) / THUMB_W, (sh * 0.64) / THUMB_H);
+      const w = THUMB_W * k;
+      const h = THUMB_H * k;
+      ctx.drawImage(src, (sw - w) / 2, (sh - h) / 2, w, h, 0, 0, THUMB_W, THUMB_H);
+      return c.toDataURL('image/jpeg', 0.72);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // File the picture: the album keeps each species' best shot, the roll the
+  // last few of everything else.
+  keep(img, subject, when) {
+    const g = this.game;
+    const A = this.album;
+    if (!subject || subject.stars <= 0) {
+      A.roll.unshift({ img, ...when });
+      A.roll.length = Math.min(A.roll.length, ROLL);
+      this.persist();
+      g.hud.toast(subject ? `Too far away to make out the ${PHOTO_SUBJECTS[subject.id].name.toLowerCase()}. Zoom in or get closer` : 'Nice view. Saved to the camera roll');
+      return;
+    }
+    const info = PHOTO_SUBJECTS[subject.id];
+    g.jobs?.onPhoto(subject.id, subject.stars);
+    const old = A.shots[subject.id];
+    const stars = '★'.repeat(subject.stars) + '☆'.repeat(3 - subject.stars);
+    if (!old || subject.stars >= old.stars) {
+      A.shots[subject.id] = { img, stars: subject.stars, dist: Math.round(subject.d || 0), ...when };
+      const saved = this.persist();
+      if (!saved) {
+        g.hud.toast('The album is full on this device', 'bad');
+        return;
+      }
+      if (!old) {
+        // the magazine buys a first shot of anything that is not a fish
+        const pay = info.value ? Math.round((info.value * subject.stars) / 3 / 5) * 5 : 0;
+        if (pay > 0) g.state.addMoney(pay);
+        g.hud.toast(`${stars} ${info.name}: new in the album${pay ? `. Alaska Outdoors buys it for $${pay}` : ''}`, 'good');
+        const animals = Object.keys(this.album.shots).filter((id) => !id.startsWith('fish:') && PHOTO_SUBJECTS[id] && PHOTO_SUBJECTS[id].group !== 'moments').length;
+        g.onEvent({ type: 'photo', id: subject.id, stars: subject.stars, animals });
+      } else g.hud.toast(`${stars} ${info.name}: a better shot for the album`, 'good');
+      if (subject.id === 'bigfoot') {
+        g.announcer?.say('bigfoot', { sub: 'BLURRY, AS TRADITION DEMANDS', kind: 'legend' });
+        g.onEvent({ type: 'bigfoot' });
+      } else if (subject.stars === 3) g.announcer?.say('photo', { banner: false });
+    } else {
+      A.roll.unshift({ img, ...when });
+      A.roll.length = Math.min(A.roll.length, ROLL);
+      this.persist();
+      g.hud.toast(`${stars} ${info.name}. The album already has a better one`);
+    }
+  }
+
+  // A trophy shot of the fish in your hands (from the catch card).
+  catchPhoto(info) {
+    const f = FISH[info.species];
+    const u = (info.weight - f.min) / Math.max(0.1, f.max - f.min);
+    const stars = info.legend ? 3 : u > 0.6 ? 3 : u > 0.3 ? 2 : 1;
+    this.snap({ id: 'fish:' + info.species, stars, d: 1 });
+  }
+}

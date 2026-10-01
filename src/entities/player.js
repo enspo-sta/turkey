@@ -23,6 +23,7 @@ export class Player {
     this.onDeck = false;
     this.water = null;
     this.sprintTime = 0;
+    this.running = false; // the RUN button: on until it is tapped again
     this.shake = 0;
     this.shakeT = 0;
     this.kick = 0; // recoil pitch offset
@@ -85,6 +86,17 @@ export class Player {
     this.lookDelta.x = look.dx;
     this.lookDelta.y = look.dy;
 
+    // standing in the anchored boat: you ride it, you do not walk
+    if (this.boat) {
+      const sp = this.boat.standPoint();
+      this.pos.set(sp.x, sp.y, sp.z);
+      this.vel.set(0, 0, 0);
+      this.water = null;
+      this.speed = 0;
+      this.bobAmt = damp(this.bobAmt || 0, 0, 6, dt);
+      return;
+    }
+
     // move
     const mv = input.readMove();
     let mx = mv.x;
@@ -96,7 +108,7 @@ export class Player {
     const mag = Math.hypot(mx, my);
     if (mag > 0.93 && input.usingTouch) this.sprintTime += dt;
     else if (mag < 0.5) this.sprintTime = 0;
-    const sprint = (input.key('ShiftLeft') || input.key('ShiftRight') || this.sprintTime > 0.45) && my < -0.3;
+    const sprint = (this.running && mag > 0.3) || ((input.key('ShiftLeft') || input.key('ShiftRight') || this.sprintTime > 0.45) && my < -0.3);
     let speed = sprint ? 7.2 : 4.3;
     // slow, careful steps while aiming or holding a draw
     if (game.hunting && (game.hunting.aiming || game.hunting.drawing)) speed = 1.8;

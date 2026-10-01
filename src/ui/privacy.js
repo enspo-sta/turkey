@@ -6,7 +6,7 @@ export const PRIVACY_UPDATED = '30 September 2026';
 export const PRIVACY_SECTIONS = [
   [
     'In short',
-    'Ruben Hotrod Fishing does not collect any personal data. There are no accounts, no sign-in, no advertising, no analytics and no tracking, and the game does not share anything with anyone.',
+    'Hotrod Outdoor Alaska Fishing does not collect any personal data. There are no accounts, no sign-in, no advertising, no analytics and no tracking, and the game does not share anything with anyone.',
   ],
   [
     'What the game stores',
@@ -43,7 +43,7 @@ export function privacyPage() {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ruben Hotrod Fishing privacy policy</title>
+<title>Hotrod Outdoor Alaska Fishing privacy policy</title>
 <style>
 :root { color-scheme: dark; --bg: #0d1a1f; --panel: #11232a; --ink: #f4ead6; --dim: #c9c0ad; --flame: #ffcc3a; --link: #7fd6cf; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); }
@@ -58,7 +58,7 @@ a { color: var(--link); }
 </head>
 <body>
 <main>
-<h1>Ruben Hotrod Fishing: privacy policy</h1>
+<h1>Hotrod Outdoor Alaska Fishing: privacy policy</h1>
 <p class="updated">Last updated ${PRIVACY_UPDATED}</p>
 ${privacyHTML()}
 </main>

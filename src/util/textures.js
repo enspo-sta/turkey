@@ -53,9 +53,9 @@ function dataTexture(data, size, { repeat = true, mipmaps = true, anisotropy = 4
 
 // Ground detail: R = fine grain, G = blotches, B = streaks (for rock), mean ~0.5
 export function makeDetailTexture(anisotropy) {
-  const S = 256;
-  const fine = tileableFbm(S, 32, 3, 7, 0.6);
-  const blot = tileableFbm(S, 4, 4, 11, 0.55);
+  const S = 512;
+  const fine = tileableFbm(S, 32, 4, 7, 0.6);
+  const blot = tileableFbm(S, 4, 5, 11, 0.55);
   const rand = mulberry32(99);
   const data = new Uint8Array(S * S * 4);
   for (let y = 0; y < S; y++) {
@@ -93,13 +93,14 @@ export function makeCloudTexture() {
 
 // Water normal map: RG = normal xz, B = foam noise
 export function makeWaterNormalTexture() {
-  const S = 256;
-  const h = tileableFbm(S, 8, 5, 21, 0.5);
-  const foam = tileableFbm(S, 16, 3, 5, 0.55);
+  const S = 512;
+  const h = tileableFbm(S, 8, 6, 21, 0.5);
+  const foam = tileableFbm(S, 16, 4, 5, 0.55);
   const H = new Float32Array(S * S);
   for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) H[y * S + x] = h(x, y);
   const data = new Uint8Array(S * S * 4);
-  const k = 3.2;
+  // the same slopes as at 256 texels: neighbours are half as far apart
+  const k = 3.2 * (S / 256);
   for (let y = 0; y < S; y++) {
     for (let x = 0; x < S; x++) {
       const i = (y * S + x) * 4;
@@ -270,11 +271,12 @@ export function makeTerrainDetailData(S = 512) {
   };
   // needles: short random strokes
   const needles = new Float32Array(S * S);
-  for (let n = 0; n < 5200; n++) {
+  const k = S / 512;
+  for (let n = 0; n < 5200 * k * k; n++) {
     const x0 = rand() * S;
     const y0 = rand() * S;
     const a = rand() * Math.PI;
-    const len = 4 + rand() * 9;
+    const len = (4 + rand() * 9) * k;
     const tone = 0.4 + rand() * 0.6;
     for (let t = 0; t < len; t += 0.5) {
       const x = Math.floor(x0 + Math.cos(a) * t + S) % S;
@@ -315,7 +317,9 @@ export function makeTerrainDetailData(S = 512) {
 }
 
 export function makeTerrainDetailTexture(anisotropy) {
-  const S = 512;
+  // 1024 texels: pebbles, rock beds and needles stay sharp up close on a
+  // Retina screen
+  const S = 1024;
   return dataTexture(makeTerrainDetailData(S), S, { anisotropy });
 }
 

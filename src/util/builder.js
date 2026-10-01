@@ -43,12 +43,15 @@ export class ModelBuilder {
     if (Array.isArray(o.color)) _c.setRGB(o.color[0], o.color[1], o.color[2]);
     else _c.set(o.color ?? 0xffffff);
     const jitter = o.jitter ?? 0.06;
+    // a part that brings its own vertex colours keeps them (keepColors)
+    const own = o.keepColors && g.attributes.color ? g.attributes.color.array : null;
     for (let t = 0; t < count; t += 3) {
       const f = 1 + (rnd() - 0.5) * 2 * jitter;
       for (let v = 0; v < 3 && t + v < count; v++) {
-        col[(t + v) * 3] = _c.r * f;
-        col[(t + v) * 3 + 1] = _c.g * f;
-        col[(t + v) * 3 + 2] = _c.b * f;
+        const i = (t + v) * 3;
+        col[i] = (own ? own[i] : _c.r) * f;
+        col[i + 1] = (own ? own[i + 1] : _c.g) * f;
+        col[i + 2] = (own ? own[i + 2] : _c.b) * f;
       }
     }
     // optional vertical gradient (darker at the bottom), useful for foliage

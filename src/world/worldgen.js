@@ -14,6 +14,7 @@ import {
   MASSIFS,
   ROADS,
   PLACES,
+  GEYSER,
 } from './layout.js';
 
 export const SIZE = 2400;
@@ -59,6 +60,15 @@ const C = {
   mud: [0.4, 0.36, 0.28],
   seabed: [0.45, 0.42, 0.33],
   fireweed: [0.62, 0.3, 0.48],
+  // the springs: white sinter, and orange and ochre mats where the hot
+  // water runs off
+  sinter: [0.86, 0.84, 0.77],
+  mats: [0.76, 0.42, 0.14],
+  ochre: [0.7, 0.55, 0.26],
+  // the muskeg: moss and the red of sphagnum
+  muskeg: [0.5, 0.53, 0.26],
+  sphagnum: [0.52, 0.27, 0.2],
+  bogpool: [0.2, 0.2, 0.12],
 };
 
 function mix3(out, c, t) {
@@ -749,6 +759,8 @@ export class World {
         if (e < 0.05 && csd < 200) waterLevel = 0;
         if (rd < rw + 3 && e < rlevel) waterLevel = Math.max(waterLevel, rlevel);
         let lakeSDmin = 1e9;
+        let geo = 0;
+        let bog = 0;
         for (const lake of this.lakes) {
           const dx = x - lake.x;
           const dz = z - lake.z;
@@ -756,6 +768,12 @@ export class World {
           const sd = this.lakeSD(lake, x, z);
           lakeSDmin = Math.min(lakeSDmin, sd);
           if (sd < 2 && e < lake.level) waterLevel = Math.max(waterLevel, lake.level);
+          if (lake.warm || lake.hot) geo = Math.max(geo, 1 - smoothstep(3, lake.hot ? 24 : 34, sd));
+          if (lake.bog) bog = Math.max(bog, 1 - smoothstep(18, 140, sd));
+        }
+        {
+          const gd = Math.hypot(x - GEYSER.x, z - GEYSER.z);
+          if (gd < 40) geo = Math.max(geo, 1 - smoothstep(6, 38, gd));
         }
         const under = e < waterLevel - 0.02;
 
@@ -765,6 +783,8 @@ export class World {
         forest *= 1 - smoothstep(0.62, 0.95, slope);
         forest *= smoothstep(rw + 5, rw + 16, rd);
         forest *= smoothstep(8, 26, lakeSDmin);
+        // nothing grows on the hot ground; only stunted black spruce in the bog
+        forest *= (1 - geo) * (1 - bog * 0.72);
         forest *= smoothstep(30, 80, csd);
         forest *= smoothstep(9, 18, roadD);
         for (let q = 0; q < placeClear.length; q++) {
@@ -805,6 +825,21 @@ export class World {
         if (rd < 300) mix3(col, C.gravel, gravelF * 0.9);
         const lakeShoreF = 1 - smoothstep(0, 7, lakeSDmin);
         if (lakeSDmin < 20) mix3(col, C.gravel, lakeShoreF * 0.7);
+        if (bog > 0 && !under) {
+          // moss with red patches of sphagnum and tea-dark puddles
+          const mc = [C.muskeg[0], C.muskeg[1], C.muskeg[2]];
+          mix3(mc, C.sphagnum, smoothstep(0.25, 0.5, nB) * 0.45);
+          mix3(mc, C.bogpool, smoothstep(0.42, 0.52, nA) * 0.6);
+          mix3(col, mc, bog * 0.75);
+        }
+        if (geo > 0 && !under) {
+          // sinter crust with bands of orange and ochre where the runoff flows
+          const sc = [C.sinter[0], C.sinter[1], C.sinter[2]];
+          const band = Math.abs(Math.sin((x * 0.11 + z * 0.07) + nB * 3));
+          mix3(sc, C.mats, smoothstep(0.55, 0.85, band) * 0.85);
+          mix3(sc, C.ochre, smoothstep(0.2, 0.5, nA) * 0.4);
+          mix3(col, sc, geo * 0.9);
+        }
         const roadF = 1 - smoothstep(ROAD_HALF - 0.5, ROAD_HALF + 2.5, roadD);
         mix3(col, C.road, roadF);
         const shoulder = (1 - smoothstep(ROAD_HALF + 1, ROAD_HALF + 5, roadD)) * (1 - roadF);
@@ -852,7 +887,7 @@ export class World {
         let st = SURF.GRASS;
         if (forest > 0.5) st = SURF.FOREST;
         if (tundraF > 0.5) st = SURF.TUNDRA;
-        if (gravelF > 0.5 || lakeShoreF > 0.6 || shoulder > 0.6) st = SURF.GRAVEL;
+        if (gravelF > 0.5 || lakeShoreF > 0.6 || shoulder > 0.6 || geo > 0.5) st = SURF.GRAVEL;
         if (sandF > 0.5) st = SURF.SAND;
         if (rockF > 0.6) st = SURF.ROCK;
         if (snowF > 0.5) st = SURF.SNOW;
@@ -991,7 +1026,7 @@ export class World {
         p.riverS = near.s;
         p.waterX = c.x;
         p.waterZ = c.z;
-      } else if (p.kind === 'fishing' && (p.water === 'moose' || p.water === 'glacier')) {
+      } else if (p.kind === 'fishing' && this.lakeById[p.water]) {
         const lake = this.lakeById[p.water];
         let dx = p.x - lake.x;
         let dz = p.z - lake.z;
@@ -1002,8 +1037,8 @@ export class World {
         p.face = yawTo(-dx, -dz);
         p.waterX = lake.x + dx * (r - 30);
         p.waterZ = lake.z + dz * (r - 30);
-        if (p.water === 'moose') {
-          // wooden dock reaching into the lake
+        if (p.water === 'moose' || p.water === 'slough') {
+          // wooden dock (at the flats, the end of the boardwalk) reaching into the lake
           const x0 = lake.x + dx * (r + 5);
           const z0 = lake.z + dz * (r + 5);
           const x1 = lake.x + dx * (r - 16);
@@ -1015,6 +1050,24 @@ export class World {
           p.x = lake.x + dx * (r + 4.5);
           p.z = lake.z + dz * (r + 4.5);
         }
+      } else if (p.kind === 'fishing' && p.water === 'ocean' && p.wreck) {
+        // a beach: stand at the waterline, the wreck aground offshore
+        const g = this.coastGradient(p.x, p.z);
+        let bx = p.x;
+        let bz = p.z;
+        for (let i = 0; i < 40; i++) {
+          const c = this.coastAt(bx, bz);
+          if (Math.abs(c - 4) < 0.6) break;
+          bx += g.x * (4 - c) * 0.8;
+          bz += g.z * (4 - c) * 0.8;
+        }
+        p.x = bx;
+        p.z = bz;
+        p.face = yawTo(-g.x, -g.z);
+        // she ran in bow first and swung a little on the falling tide
+        p.wreckAt = { x: bx - g.x * 24, z: bz - g.z * 24, yaw: Math.atan2(g.x, g.z) + 0.35 };
+        p.waterX = bx - g.x * 60;
+        p.waterZ = bz - g.z * 60;
       } else if (p.kind === 'fishing' && p.water === 'ocean') {
         // pier from the beach out to deep water
         const g = this.coastGradient(p.x, p.z);

@@ -29,6 +29,8 @@ const context = await browser.newContext({
   hasTouch: !!scenario.touch,
   isMobile: !!scenario.mobile,
   userAgent: scenario.ua,
+  // frozen CSS animations, so banners and toasts show in the pictures
+  reducedMotion: scenario.reducedMotion ? 'reduce' : 'no-preference',
 });
 const page = await context.newPage();
 const logs = [];

@@ -1,6 +1,6 @@
 // Persistent game state (money, gear, cooler, journal, challenges) with
 // localStorage save/load and challenge evaluation.
-import { CHALLENGES, SPECIES_IDS, COOLERS, RODS, FISH } from './data.js';
+import { CHALLENGES, SPECIES_IDS, COOLERS, RODS, FISH, ARROWS, ARROW_ORDER, QUIVER, LOOKS, LOOK_DEFAULT } from './data.js';
 
 const SAVE_KEY = 'rubenHotrodFishing.save.v1';
 const SETTINGS_KEY = 'rubenHotrodFishing.settings.v1';
@@ -32,7 +32,7 @@ export class GameState {
   constructor() {
     this.listeners = [];
     this.reset();
-    this.settings = { quality: null, volume: 0.8, music: 0.55, sens: 1, invert: false, haptics: true, showFps: false, autoQuality: true };
+    this.settings = { quality: null, volume: 0.8, music: 0.55, sens: 1, invert: false, haptics: true, showFps: false, autoQuality: true, minimap: true, announcer: true };
     this.loadSettings();
   }
 
@@ -50,7 +50,10 @@ export class GameState {
       lures: ['spinner'],
       sight: false,
       yew: false,
-      arrows: 18,
+      camera: false,
+      // arrows of each kind, and the kind on the string
+      quiver: { cedar: 18 },
+      arrow: 'cedar',
       spray: 1,
       medkit: 1,
       cooler: 0,
@@ -60,6 +63,16 @@ export class GameState {
       paints: ['flame'],
     };
     this.discovered = { landing: true, post: false };
+    // the wardrobe: what you wear, and the loud pieces you have bought
+    this.look = { ...LOOK_DEFAULT };
+    this.wardrobe = [];
+    // the boat: owned, the outboard, and where it is (see entities/boat.js)
+    this.boat = null;
+    // one-off things done (the sea chest opened, the wreck boarded)
+    this.flags = {};
+    // the odd job in hand ({ id, done, n }) and the ones finished
+    this.job = null;
+    this.jobsDone = [];
     this.challenges = {};
     this.stats = { casts: 0, perfects: 0, caught: 0, released: 0, snapped: 0, bearsSurvived: 0, bearsKilled: 0, hunted: 0, earned: 0 };
     this.time = 6.5;
@@ -73,6 +86,28 @@ export class GameState {
 
   on(fn) {
     this.listeners.push(fn);
+  }
+
+  // A wardrobe piece is yours if it is free or bought.
+  ownsLook(part, id) {
+    const item = LOOKS[part].find((x) => x.id === id);
+    return !!item && (!item.price || this.wardrobe.includes(part + ':' + id));
+  }
+
+  // Arrows of a kind in the quiver (the kind on the string by default).
+  arrowsLeft(kind = this.gear.arrow) {
+    return this.gear.quiver[kind] || 0;
+  }
+
+  totalArrows() {
+    let n = 0;
+    for (const k of ARROW_ORDER) n += this.gear.quiver[k] || 0;
+    return n;
+  }
+
+  // How many of a kind the quiver can hold.
+  arrowCap(kind) {
+    return ARROWS[kind].cap || QUIVER;
   }
 
   rod() {
@@ -137,6 +172,9 @@ export class GameState {
         if (f.species === 'char') complete('char');
         if (f.species === 'halibut' && f.weight >= 40) complete('halibut');
         if (f.legend) complete('legend');
+        if (f.species === 'sheefish') complete('sheefish');
+        if (f.species === 'wolfeel') complete('wolfeel');
+        if (ev.fromBoat) complete('boat');
         const r = FISH[f.species] && FISH[f.species].rarity;
         if (r === 'rare' || r === 'epic') complete('rare');
         if (r === 'epic') complete('epic');
@@ -160,6 +198,16 @@ export class GameState {
         break;
       case 'bearSurvived':
         complete('bear');
+        break;
+      case 'soak':
+        complete('soak');
+        break;
+      case 'deck':
+        complete('deck');
+        break;
+      case 'photo':
+        // animals only: fish pictures do not count
+        if ((ev.animals || 0) >= 8) complete('photo');
         break;
       case 'hunt':
         if (ev.animal === 'caribou') complete('caribou');
@@ -187,6 +235,12 @@ export class GameState {
       legends: this.legends,
       hunted: this.hunted,
       gear: this.gear,
+      look: this.look,
+      wardrobe: this.wardrobe,
+      boat: this.boat,
+      flags: this.flags,
+      job: this.job,
+      jobsDone: this.jobsDone,
       discovered: this.discovered,
       challenges: this.challenges,
       stats: this.stats,
@@ -242,6 +296,12 @@ export class GameState {
         legends: d.legends || {},
         hunted: d.hunted || {},
         discovered: { ...this.discovered, ...(d.discovered || {}) },
+        look: { ...LOOK_DEFAULT, ...(d.look || {}) },
+        wardrobe: Array.isArray(d.wardrobe) ? d.wardrobe : [],
+        boat: d.boat && typeof d.boat === 'object' ? d.boat : null,
+        flags: d.flags && typeof d.flags === 'object' ? d.flags : {},
+        job: d.job && typeof d.job === 'object' ? d.job : null,
+        jobsDone: Array.isArray(d.jobsDone) ? d.jobsDone : [],
         challenges: d.challenges || {},
         stats: { ...this.stats, ...(d.stats || {}) },
         time: d.time ?? this.time,
@@ -254,10 +314,16 @@ export class GameState {
       this.gear = { ...this.gear, ...(d.gear || {}) };
       // saves from the rifle days: the scope becomes the bow sight and the
       // quiver starts full
-      if (d.gear && d.gear.arrows === undefined) {
+      if (d.gear && d.gear.arrows === undefined && !d.gear.quiver) {
         this.gear.sight = !!d.gear.scope;
         this.gear.arrows = 18;
       }
+      // saves from before the arrow kinds: the arrows were cedar
+      if (!d.gear || !d.gear.quiver) this.gear.quiver = { cedar: this.gear.arrows ?? 18 };
+      this.gear.quiver = { ...this.gear.quiver };
+      if (!ARROWS[this.gear.arrow]) this.gear.arrow = 'cedar';
+      for (const part of Object.keys(LOOK_DEFAULT)) if (!LOOKS[part].some((x) => x.id === this.look[part])) this.look[part] = LOOK_DEFAULT[part];
+      delete this.gear.arrows;
       delete this.gear.scope;
       delete this.gear.ammo;
       delete this.gear.mag;

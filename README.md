@@ -1,10 +1,11 @@
-# Ruben Hotrod Fishing
+# Hotrod Outdoor Alaska Fishing
 
 A first-person fishing and hunting adventure in Alaska, made for iPhone and iPad.
-Drive Ruben's flame-painted hot rod between nine places on a wild Alaskan
-peninsula, cast with a timing meter, fight salmon and halibut, hunt caribou and
-moose on the tundra with a longbow, and keep it close: grizzlies smell the fish
-in your cooler.
+Drive Ruben's flame-painted hot rod between twelve places on a wild Alaskan
+peninsula, tow a fishing boat to any lake, river or the bay, cast with a timing
+bar, fight salmon and halibut, hunt caribou and moose with a longbow, take
+pictures of the wildlife, and keep your bow close: grizzlies smell the fish in
+your cooler.
 
 ![Title screen](docs/screenshots/title.jpg)
 
@@ -34,10 +35,23 @@ compressed).
   meter shows where the water is, gold marks a fish hotspot), then tap the
   timing. While you cast, a dashed line on the water marks out the throw and a
   ring shows where the lure will land. The timing bar has red ends, orange,
-  green and a dark line in the middle, and a white marker sweeps across it: tap
-  on the dark line for a **PERFECT CAST** and better bites; anywhere in the
-  green the lure lands in the ring; orange hooks it left or slices it right and
-  falls short; red, or no tap at all, gives you a backlash to untangle.
+  green and a dark green line in the middle, and a white marker sweeps back and
+  forth across it: tap on the dark green line for a **PERFECT CAST** and better
+  bites; anywhere in the green the lure lands in the ring; in the orange, left
+  of the line hooks it left and right of it slices it right, and it falls
+  short; red gives you a backlash to untangle.
+- The bite follows the time and the weather: fish feed hardest at dawn and
+  dusk, when a front rolls in and with rain on the water, sulk deep under a
+  bright midday sun and go quiet at night; on the sea the tide matters, and
+  every species keeps its own hours (kings at dawn, pike in the midday sun,
+  halibut on a running tide, burbot at night). The **BITE** readout under the
+  map button says SLOW, FAIR, GOOD or HOT; tap it to hear why. The map shows
+  the bite at each place and when each fish bites best.
+- An announcer calls the big moments, in a voice and in big arcade letters:
+  **FISH ON!**, **IT THREW THE HOOK!**, **OH NO, THE HOOK CAME OFF!**, **SNAP!
+  THE LINE BROKE!**, **NEW SPECIES! NORTHERN PIKE!**, **PERSONAL BEST!**,
+  **LEGENDARY!** and **THE BITE IS ON!** The voice can be switched off in
+  Settings.
 - Watch the float: nibbles are twitches, a real bite pulls it under and you have
   a moment to tap **HOOK!** The line only comes in when you reel: the current
   carries the float along but never back to your feet, and a lure that lands on
@@ -47,36 +61,72 @@ compressed).
   it jumps or it throws the hook. Lines snap, go slack and get spooled. Only
   reeling brings a fish closer: let go and it stays out, and a tired fish is
   landed when you reel it in to your feet.
-- 28 species in four tiers of rarity. Common: Pink and Sockeye Salmon, Dolly
+- 31 species in four tiers of rarity. Common: Pink and Sockeye Salmon, Dolly
   Varden, Arctic Grayling, Northern Pike, Pacific Cod, Round Whitefish, Black
-  Rockfish, Kelp Greenling and Pacific Staghorn Sculpin. Uncommon: Coho and Chum
-  Salmon, Rainbow Trout, Arctic Char, Lake Trout, Burbot (at night), Pacific
-  Halibut, Lingcod, Coastal Cutthroat Trout, Kokanee, Starry Flounder and Spiny
-  Dogfish. Rare: King Salmon, Steelhead, and Yelloweye and Quillback Rockfish.
-  Epic: Big Skate and Salmon Shark, both off Halibut Pier. Each has its own
+  Rockfish, Kelp Greenling, Pacific Staghorn Sculpin and the Alaska Blackfish
+  of the bog. Uncommon: Coho and Chum Salmon, Rainbow Trout, Arctic Char, Lake
+  Trout, Burbot (at night), Pacific Halibut, Lingcod, Coastal Cutthroat Trout,
+  Kokanee, Starry Flounder and Spiny Dogfish. Rare: King Salmon, Steelhead,
+  Yelloweye and Quillback Rockfish, and the Sheefish of Mosquito Flats. Epic:
+  Big Skate and Salmon Shark off Halibut Pier, and the Wolf Eel that lives in
+  the wreck at Shipwreck Cove. Each has its own
   waters, lure preferences and fighting style. Rarer fish bite less often and
   are worth more, and a cast to a hotspot or a perfect cast raises the odds.
-- Six legendary fish, each at its own spot and only on the right lure: Miss
-  Dolly, Rusty the Leopard, Old Chrome, The Ice Ghost, Big Bertha and Barn Door.
+- Nine legendary fish, each at its own spot and only on the right lure: Miss
+  Dolly, Rusty the Leopard, Old Chrome, The Ice Ghost, Big Bertha, Barn Door,
+  Old Steamy, Sheezilla and Davy Jones.
 - Twelve lures: Hotrod Spinner, Glo Bead, Mosquito Dry Fly, Egg-Sucking Leech,
   Woolly Bugger, Flash Spoon, Paddle-tail Swimbait, Pike Popper, Octopus
-  Hoochie, Circle Hook and Squid, Diving Plug and Herring Jig. Three rods:
-  Hotrod Classic, Hotrod Pro and Hotrod Big Block (you need the Big Block, and
-  a light touch on **REEL** while it runs, for a salmon shark).
+  Hoochie, Circle Hook and Squid, Diving Plug and Herring Jig. Nine rods, each
+  with its own colours and a perk: Hotrod Classic, Willow Wand (a longer moment
+  to hook), Glass Noodle (forgives slack line), Hotrod Pro, Fly Whisperer
+  (tempts rarer fish), Surf Cannon (casts furthest), Hotrod Big Block (tempts
+  legends), Gus's Antler Special and the Golden Hotrod (a wider perfect line and
+  the strongest line of all). You need a heavy rod, and a light touch on
+  **REEL** while it runs, for a salmon shark.
 - A Fish Journal sorted by rarity with personal records, and a bald eagle that
   sometimes dives in and steals a small fish right as you land it.
 
-**The hot rod and the places**
+**The hot rod, the boat and the places**
 
-- Nine places joined by gravel roads and truss bridges: Hotrod Landing (Ruben's
-  cabin), Kenai Trading Post, Salmon Bend, Bear Falls, Glacier Lake, Moose Lake,
-  Halibut Pier, Caribou Tundra and Kachemak Light.
+- Twelve places joined by gravel roads and truss bridges: Hotrod Landing
+  (Ruben's cabin), Kenai Trading Post, Salmon Bend, Bear Falls, Glacier Lake,
+  Moose Lake, Halibut Pier, Caribou Tundra, Kachemak Light and three newer ones:
+  - Steaming Springs: a warm green trout pond in a basin of white and orange
+    sinter, steam vents, bubbling mud pots, a hot pool to **SOAK** in (it heals
+    you and passes an hour) and Old Faceful, a geyser that rumbles and blows
+    every minute or two.
+  - Mosquito Flats: tea-dark sloughs in the coastal muskeg with pike, sheefish
+    and blackfish, a boardwalk over the bog, dead snags, the World's Largest
+    Mosquito (Alaska's unofficial state bird) and a machine that sells bug dope,
+    which keeps the swarms and their opinions away for a while.
+  - Shipwreck Cove: the Unsinkable II, a rusty trawler aground off the beach
+    since 1987. Walk the gangplank onto her deck, fish the deep water from it
+    for rockfish, lingcod and the wolf eel, open the sea chest in her wheelhouse,
+    and look out at the sea stacks.
+- A fishing boat on a trailer (at the garage): a sixteen-foot aluminium skiff
+  with an outboard. It hitches to the hot rod and follows it round the map. Stop
+  near any lake, the river or the bay and tap **LAUNCH**; walk up and **BOARD**
+  it; **GAS** and steer to run the water with a seat view or a chase camera;
+  **FISH** drops anchor so you can cast all round the boat (bears cannot reach
+  you out there); **ASHORE** steps off where the water meets the land, and
+  **LOAD BOAT** winches it back onto the trailer. A bigger outboard makes it
+  half again as fast.
 - Arcade driving with cockpit and chase cameras, a horn, engine sound that
   follows the revs, and upgrades: Flathead V8, Small-block 350 and a blown
   big-block, all-terrain tires, and four paint jobs.
 - A small map in the top left corner that turns as you do and shows the land
-  around you, the places you know, the hot rod, your next goal and a charging
-  grizzly. It zooms out while you drive, and a tap opens the full map.
+  around you, the places you know, the hot rod, the boat, your next goal and a
+  charging grizzly. It zooms out while you drive, and a tap opens the full map.
+- The full map fills the screen: drag it, pinch or use the buttons to zoom,
+  and tap a place, or the lake, river or sea it fishes, to see what lives there
+  (only at places you have been to), the bite there right now and when each
+  fish bites best.
+- A wardrobe behind the T-shirt button at the top: shirts (flannels, denim, a
+  hoodie, camo, hi-vis, a Hawaiian shirt and a Hotrod racing jacket), hats
+  (caps, a beanie, a bucket hat, a cowboy hat and a moose antler hat), beards
+  and moustaches, hair colour, skin tone and gloves. You see your sleeves and
+  gloves in first person, and Ruben at the wheel wears it all.
 - Fast travel from the map to any place you have already discovered (the trip
   costs in-game time), and sleep at the cabin to skip the night.
 
@@ -85,16 +135,27 @@ compressed).
 - A longbow: hold to draw, release to loose. Arrows fly in an arc, so aim a
   little high for distance, and a full draw held too long starts to shake.
   Head and vital-zone hits, arrows you can walk over to pick up again, and at
-  the Trading Post more cedar arrows, a bow sight with a stabiliser and a
-  faster yew longbow.
+  the Trading Post a bow sight with a stabiliser, a faster yew longbow and five
+  kinds of arrow, each with its own colour: cedar, fast and flat carbon, heavy
+  broadheads, glow-nock arrows you can follow in flight, and bear whistlers that
+  shriek and send any bear they pass running. Tap the arrows chip to switch.
+- A camera with a zoom lens (at the Trading Post): the tool button brings it
+  up, **ZOOM** steps from 1x to 8x and **SNAP** takes the picture. The
+  viewfinder names what it is on and rates the shot from one to three stars
+  (close and centred is best). The photo album in the Journal keeps your best
+  picture of every animal, bird and sea mammal, the geyser blowing, and the
+  fish you photograph from the catch card; the first good picture of each
+  animal sells to Alaska Outdoors magazine.
 - Put the rod away when you are not fishing: the tool button cycles the rod,
-  the longbow and empty hands.
+  the longbow, the camera (once you have one) and empty hands.
 - Game to hunt: caribou, moose, Sitka black-tailed deer, Dall sheep, black
   bears in the forests and mountain goats on the cliffs of Mount Ruben. Walk up
   and **CLAIM** what you shoot, then sell it at the Trading Post.
-- Grizzly bears that fish at Bear Falls, wander the river, follow the smell of
-  your catch, bluff and charge. Loose arrows, use bear spray up close, or get
-  knocked down and wake up at the cabin.
+- Grizzly bears that fish at Bear Falls and wander the river, and black bears in
+  the forests. They only come for you when there is fish in your cooler: then
+  they follow the smell, bluff and charge (a black bear bluffs more and swipes
+  softer). Loose arrows, use bear spray up close, or get knocked down and wake
+  up at the cabin. With an empty cooler they leave you be.
 - Around you: wolves, red foxes, snowshoe hares, musk oxen on the tundra,
   porcupines, a lynx, colonies of arctic ground squirrels that sit up and
   whistle, beavers with their lodge on Moose Lake, bald eagles, ravens, gulls,
@@ -106,6 +167,20 @@ compressed).
   scatter when your float lands, and the fish that takes the bait swims in under
   the float and fights under the surface. Red sockeye crowd the river during a
   salmon run.
+
+**Adventure**
+
+- Odd jobs on the board at the Trading Post: Mrs. Henderson wants a pike over
+  6 kg for her famous casserole, the Kenai Gazette a three-star eagle for the
+  front page, the cannery foreman three sockeye, Old Earl the lucky lure he
+  dropped at Salmon Bend in 1974, Chef Rosa a 30 kg halibut, the aquarium a
+  wolf eel, the ranger a grizzly moved along with a whistler, and your aching
+  back a soak in the hot pool, among others. One job at a time, three on the
+  board, new ones every morning.
+- The sea chest in the wheelhouse of the Unsinkable II.
+- Bigfoot. Very rarely, at dawn or dusk, something big and hairy strolls along
+  the forest edge a long way off and is gone. Get a picture: the late-night
+  radio show pays well. It comes out blurry, as tradition demands.
 
 **World and graphics**
 
@@ -155,8 +230,9 @@ compressed).
   lights, rain showers, a waterfall with mist, a glacier that calves slabs of
   ice into Glacier Lake with a boom and a wave, a lighthouse beam at night, and
   animals that react to where you are.
-- 19 challenges with cash rewards guide you through the game, from "Catch your
-  first fish at Hotrod Landing" to "Complete the Fish Journal".
+- 25 challenges with cash rewards guide you through the game, from "Catch your
+  first fish at Hotrod Landing" through the boat, the springs, the wreck and
+  the camera to "Complete the Fish Journal".
 - Progress saves automatically.
 - Graphics presets in Settings. High is the default (the game is made for
   iPhone 13 and newer) and adds a soft bloom on bright light, sun rays through
@@ -170,16 +246,22 @@ compressed).
 | Action | Touch (iPhone and iPad) | Keyboard and mouse |
 |---|---|---|
 | Walk | Drag on the left half of the screen | `W` `A` `S` `D`, hold `Shift` to jog |
+| Run | **RUN** on the left: tap to run, tap again to walk | Hold `Shift` |
 | Look | Drag on the right half | Drag the mouse (click the view to lock the pointer) |
 | Cast, hook, reel | Big orange button (**CAST** / **HOOK!** / **REEL**) | `Space` or left click |
 | Draw and loose the longbow | Hold the big orange button (**DRAW**), let go to loose | Hold `Space` or the left mouse button, let go to loose |
 | Steer the rod in a fight | Drag left or right on the left half | `A` / `D` |
 | Aim the longbow (a closer view) | **AIM** | Right click |
-| Switch tool: rod, longbow, empty hands | Tool button | `Q`, or `1` `2` `3` |
+| Switch tool: rod, longbow, camera, empty hands | Tool button | `Q`, or `1` `2` `4` `3` |
+| Switch arrows | Tap the arrows chip in the top left | `T` |
+| Camera: zoom and take a picture | **ZOOM** and **SNAP** | Right click or `Z`, and `Space` or left click |
 | Bear spray / first aid kit | Buttons next to **DRAW** | `G` / `X` |
-| Enter, trade, claim, sleep | Context button (**DRIVE**, **TRADE**, **CLAIM**, **SLEEP**) | `E` |
+| Enter, trade, claim, sleep, soak | Context button (**DRIVE**, **TRADE**, **CLAIM**, **SLEEP**, **SOAK**) | `E` |
+| The boat: launch, board, fish, step ashore, load | The second context button (**LAUNCH**, **BOARD**, **ASHORE**, **LOAD BOAT**) and **FISH** / **DRIVE** | `V` for the second button, `E` for the first |
+| How the fish are biting | Tap **BITE** under the map button | |
+| Wardrobe | T-shirt button at the top | |
 | Keep or release a catch | **KEEP** / **RELEASE** on the catch card | `E` or `Enter` / `R` |
-| Drive | **GAS**, **BRAKE**, steer by dragging on the left half | `W` gas, `S` brake and reverse, `A` / `D` steer |
+| Drive the hot rod or the boat | **GAS**, **BRAKE**, steer by dragging on the left half | `W` gas, `S` brake and reverse, `A` / `D` steer |
 | Car camera / horn | Camera and horn buttons | `C` / `H` |
 | Lures / map / journal / pause and save | **LURE** next to **CAST**; map, journal and pause at the top (or tap the small map) | `L` / `M` / `J` / `Esc` |
 
@@ -226,7 +308,9 @@ your save game.
 1. On a Mac, install [Xcode](https://developer.apple.com/xcode/) 26 or newer
    (Apple requires Xcode 26 or later to upload iPhone and iPad apps to App Store
    Connect).
-2. Open `ios/RubenHotrodFishing.xcodeproj`.
+2. Open `ios/RubenHotrodFishing.xcodeproj`. The project, its folder and target
+   keep the game's first name; the name under the icon is **Hotrod Alaska**
+   (`CFBundleDisplayName` in `ios/RubenHotrodFishing/Info.plist`).
 3. Select the **RubenHotrodFishing** target, open **Signing & Capabilities**,
    and choose your team (a free Apple ID works for your own devices). If Xcode
    says the bundle identifier is taken, change `se.rubenhotrod.fishing` to
@@ -286,7 +370,8 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 |---|---|
 | `src/main.js` | Game session: title screen, start and continue, the per-frame gameplay loop, interactions, saving, fast travel and the debug hooks used by the tests |
 | `src/game.js` | Engine core: renderer, scene, cameras, lights and shadows, dynamic resolution and the frame loop |
-| `src/world/layout.js` | The peninsula: coastline, river, lakes, glacier, roads and the nine places |
+| `src/world/layout.js` | The peninsula: coastline, river, lakes, glacier, roads and the twelve places |
+| `src/world/areas.js` | Steaming Springs (the geyser, the hot pool, steam vents and mud pots), Mosquito Flats (the giant mosquito, the boardwalk, the bug dope machine) and Shipwreck Cove (the wreck, its deck, gangplank and sea chest, the sea stacks) |
 | `src/world/worldgen.js` | Height field, river and lake carving, road grading, surface types and water queries |
 | `src/world/terrain.js`, `worldtex.js` | Chunked terrain with levels of detail, the ground material with per-surface detail, and the world textures (height, colour, surfaces, water levels) |
 | `src/world/worldfx.js` | Shading shared by every material: haze and valley mist, light under water with caustics, mountain and cloud shadows, sky occlusion, gusts of wind, and wet ground with puddles |
@@ -298,12 +383,15 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/world/floaters.js` | Driftwood, branches, petals and leaves on the water, pond lilies, pondweed and ice floes |
 | `src/world/post.js` | Bloom, sun rays and the colour grade of the High preset |
 | `src/entities/insects.js` | Butterflies, bumblebees, dragonflies, mosquitoes, moths and cottonwood fluff |
-| `src/entities/player.js`, `hotrod.js`, `viewmodel.js` | Walking, the drivable hot rod, and the first-person rod, longbow and hands |
+| `src/entities/player.js`, `hotrod.js`, `boat.js`, `viewmodel.js` | Walking, the drivable hot rod, the fishing boat and its trailer, and the first-person rod, longbow and hands in the clothes from the wardrobe |
 | `src/entities/wildlife.js`, `animalmodels.js`, `fishmodels.js`, `ambientfish.js` | Animal and bird behaviour and their low-poly models, the 28 fish models, and the fish schools you can see in the water |
 | `src/gameplay/fishing.js` | Casting meter, float and bites, the fight, landing, the eagle, and catches |
-| `src/gameplay/hunting.js`, `bears.js` | The longbow, arrows in flight and hit zones, and the grizzly encounters |
+| `src/gameplay/hunting.js`, `bears.js` | The longbow, the five kinds of arrow in flight and their hit zones, and the grizzly and black bear encounters |
+| `src/gameplay/bite.js` | How hungry the fish are: time of day, fronts, rain, sunshine and the tide, and each species' own hours |
+| `src/gameplay/camera.js` | The camera, the star rating of a shot and the photo album |
 | `src/gameplay/data.js`, `state.js` | Fish, lures, rods, gear, places and challenges, and the save game |
 | `src/audio/audio.js` | All sound and music, synthesised with the Web Audio interface |
+| `src/audio/announcer.js` | The announcer's lines, spoken with the device's speech synthesis, and their banners |
 | `src/ui/` | HUD, the small map, menus, the Trading Post, garage, map and journal, touch and keyboard input, and styles |
 | `ios/` | The Xcode project for the native iOS app |
 | `tools/shot.mjs`, `tools/scenarios/` | Headless screenshot and gameplay test harness with scripted scenarios |
@@ -332,6 +420,13 @@ node tools/shot.mjs tools/scenarios/reel-stuck.json   # a held REEL button alway
 node tools/shot.mjs tools/scenarios/line-stays.json   # a lure on the bank and a float in the current stay out until you hold REEL
 node tools/shot.mjs tools/scenarios/fight-stays.json  # hooked fish at every fishing place: none comes closer unless you reel, and careful reeling lands them
 node tools/shot.mjs tools/scenarios/timing-bar.json   # the timing bar and the throw line on a phone-sized screen, and where a tap in each zone sends the lure
+node tools/shot.mjs tools/scenarios/ui-check.json     # phone layout: the small map clear of the buttons, RUN on and off, the full map and a tap on a lake and the river
+node tools/shot.mjs tools/scenarios/bears-arrows.json # bears leave you alone with an empty cooler, black bears, the arrow shop, the arrows chip, a whistler past a charging grizzly and an old save
+node tools/shot.mjs tools/scenarios/announcer-bite.json # the bite readout at midday and at dawn with a front coming, its tap, the announcer's banners and the bite on the map
+node tools/shot.mjs tools/scenarios/wardrobe.json     # the T-shirt button, buying and wearing clothes, the sleeves in first person, Ruben at the wheel, the save
+node tools/shot.mjs tools/scenarios/camera.json       # buying the camera, the viewfinder on a moose, a three-star shot, the catch photo and the album
+node tools/shot.mjs tools/scenarios/boat.json         # buying the boat, the trailer, LAUNCH, BOARD, driving, the chase camera, fishing from the boat and LOAD BOAT
+node tools/shot.mjs tools/scenarios/areas.json        # Steaming Springs with the geyser blowing and the hot pool, Mosquito Flats, and Shipwreck Cove from the beach and the deck
 node tools/shot.mjs tools/scenarios/fish-species.json # lands each of the twelve newer fish, then shows the journal by rarity and the tackle box
 node tools/shot.mjs tools/scenarios/minimap.json      # the small map on foot and driving, its goal marker, and a tap to the full map
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot

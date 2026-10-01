@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { ModelBuilder } from '../util/builder.js';
 import { clamp, damp, lerp, dampAngle, wrapAngle } from '../util/math.js';
 import { HALF, SURF, ROAD_HALF } from '../world/worldgen.js';
-import { ENGINES, TIRES, PAINTS } from '../gameplay/data.js';
+import { ENGINES, TIRES, PAINTS, lookColors } from '../gameplay/data.js';
 
 const WHEELBASE = 2.75;
 const _v = new THREE.Vector3();
@@ -69,6 +69,64 @@ function plateTexture() {
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
+}
+
+// Ruben at the wheel: shirt, head, beard and hat from the wardrobe.
+function buildDriver(c) {
+  const rb = new ModelBuilder();
+  const S = c.shirt;
+  const X = 0.3;
+  const Z = -0.52;
+  rb.box(0.46, 0.5, 0.3, { pos: [X, 1.2, Z], color: S.main });
+  // check bands, or the loud shirt's pattern
+  for (let i = 0; i < 3; i++) rb.box(0.47, 0.04, 0.31, { pos: [X, 1.05 + i * 0.15, Z], color: S.alt && i === 1 ? S.alt : S.band });
+  if (S.id === 'hivis') rb.box(0.47, 0.035, 0.31, { pos: [X, 1.32, Z], color: 0xe8ecee });
+  rb.beam([0.12, 1.36, -0.45], [0.2, 1.18, 0.05], 0.05, 5, { color: S.main });
+  rb.beam([0.48, 1.36, -0.45], [0.42, 1.18, 0.05], 0.05, 5, { color: S.main });
+  // hands on the wheel
+  rb.box(0.07, 0.06, 0.08, { pos: [0.2, 1.17, 0.07], color: c.glove });
+  rb.box(0.07, 0.06, 0.08, { pos: [0.42, 1.17, 0.07], color: c.glove });
+  // head, ears, hair at the back and sides
+  rb.box(0.2, 0.2, 0.2, { pos: [X, 1.58, Z], color: c.skin });
+  rb.box(0.03, 0.06, 0.05, { pos: [X - 0.11, 1.58, Z], color: c.skin });
+  rb.box(0.03, 0.06, 0.05, { pos: [X + 0.11, 1.58, Z], color: c.skin });
+  rb.box(0.21, 0.1, 0.05, { pos: [X, 1.62, Z - 0.09], color: c.hair });
+  // the beard
+  if (c.beard === 'full') rb.box(0.22, 0.16, 0.12, { pos: [X, 1.47, Z + 0.09], color: c.hair });
+  else if (c.beard === 'lumber') {
+    rb.box(0.24, 0.2, 0.14, { pos: [X, 1.45, Z + 0.1], color: c.hair });
+    rb.box(0.16, 0.12, 0.1, { pos: [X, 1.32, Z + 0.12], color: c.hair });
+  } else if (c.beard === 'stache') {
+    rb.box(0.16, 0.035, 0.04, { pos: [X, 1.52, Z + 0.11], color: c.hair });
+    rb.box(0.03, 0.07, 0.03, { pos: [X - 0.085, 1.49, Z + 0.11], color: c.hair });
+    rb.box(0.03, 0.07, 0.03, { pos: [X + 0.085, 1.49, Z + 0.11], color: c.hair });
+  } else if (c.beard === 'stubble') rb.box(0.205, 0.09, 0.04, { pos: [X, 1.5, Z + 0.085], color: (c.skin & 0xfefefe) >> 1 });
+  // the hat
+  const H = c.hat;
+  if (H.id === 'cap' || H.id === 'trucker') {
+    rb.box(0.24, 0.08, 0.24, { pos: [X, 1.7, Z], color: H.color });
+    rb.box(0.2, 0.03, 0.16, { pos: [X, 1.67, Z + 0.16], color: H.color });
+    if (H.front) rb.box(0.2, 0.07, 0.02, { pos: [X, 1.71, Z + 0.12], color: H.front });
+  } else if (H.id === 'beanie') {
+    rb.box(0.23, 0.12, 0.23, { pos: [X, 1.72, Z], color: H.color });
+    rb.box(0.24, 0.04, 0.24, { pos: [X, 1.67, Z], color: 0xe8e2d6 });
+    rb.box(0.06, 0.05, 0.06, { pos: [X, 1.8, Z], color: 0xe8e2d6 });
+  } else if (H.id === 'bucket') {
+    rb.box(0.22, 0.1, 0.22, { pos: [X, 1.72, Z], color: H.color });
+    rb.box(0.32, 0.02, 0.32, { pos: [X, 1.67, Z], color: H.color });
+  } else if (H.id === 'cowboy') {
+    rb.box(0.2, 0.12, 0.2, { pos: [X, 1.74, Z], color: H.color });
+    rb.box(0.44, 0.02, 0.36, { pos: [X, 1.68, Z], color: H.color });
+    rb.box(0.21, 0.03, 0.21, { pos: [X, 1.7, Z], color: 0x2a1a10 });
+  } else if (H.id === 'antler') {
+    rb.box(0.23, 0.1, 0.23, { pos: [X, 1.71, Z], color: H.color });
+    for (const sd of [-1, 1]) {
+      rb.beam([X + sd * 0.1, 1.74, Z], [X + sd * 0.32, 1.86, Z - 0.02], 0.025, 5, { color: H.horn });
+      rb.box(0.2, 0.025, 0.12, { pos: [X + sd * 0.36, 1.9, Z - 0.02], rot: [0, 0, sd * 0.35], color: H.horn });
+      rb.beam([X + sd * 0.3, 1.88, Z], [X + sd * 0.34, 1.98, Z + 0.03], 0.018, 4, { color: H.horn });
+    }
+  } else rb.box(0.21, 0.05, 0.21, { pos: [X, 1.69, Z], color: c.hair });
+  return rb.build();
 }
 
 function tireGeometry(r, w, seg = 18) {
@@ -280,17 +338,8 @@ export class HotRod {
       body.add(l);
     }
 
-    // Ruben at the wheel (visible in chase cam)
-    const rb = new ModelBuilder();
-    rb.box(0.46, 0.5, 0.3, { pos: [0.3, 1.2, -0.52], color: 0xb2261e }); // plaid shirt
-    for (let i = 0; i < 3; i++) rb.box(0.47, 0.04, 0.31, { pos: [0.3, 1.05 + i * 0.15, -0.52], color: 0x1a1a1a });
-    rb.box(0.2, 0.2, 0.2, { pos: [0.3, 1.58, -0.52], color: 0xe0a882 }); // head
-    rb.box(0.22, 0.16, 0.12, { pos: [0.3, 1.47, -0.43], color: 0x6a3e1e }); // beard
-    rb.box(0.24, 0.08, 0.24, { pos: [0.3, 1.7, -0.52], color: 0xe86a1a }); // cap
-    rb.box(0.2, 0.03, 0.16, { pos: [0.3, 1.67, -0.36], color: 0xe86a1a }); // cap bill
-    rb.beam([0.12, 1.36, -0.45], [0.2, 1.18, 0.05], 0.05, 5, { color: 0xb2261e });
-    rb.beam([0.48, 1.36, -0.45], [0.42, 1.18, 0.05], 0.05, 5, { color: 0xb2261e });
-    this.driver = new THREE.Mesh(rb.build(), dark);
+    // Ruben at the wheel (visible in chase cam), dressed from the wardrobe
+    this.driver = new THREE.Mesh(buildDriver(lookColors(null)), dark);
     this.driver.castShadow = true;
     this.driver.visible = false;
     body.add(this.driver);
@@ -338,6 +387,12 @@ export class HotRod {
     this.group.traverse((o) => {
       if (o.isMesh) o.receiveShadow = true;
     });
+  }
+
+  // Dress Ruben at the wheel from the wardrobe.
+  setLook(look) {
+    this.driver.geometry.dispose();
+    this.driver.geometry = buildDriver(lookColors(look));
   }
 
   setPaint(id) {
@@ -439,6 +494,8 @@ export class HotRod {
       cap *= f;
       grip = 3.2 + tires.grip * 2.5;
     }
+    // a boat on the trailer behind: a little slower
+    if (this.towing) cap *= 0.82;
     const water = W.waterAt(this.pos.x, this.pos.z);
     if (water && water.depth > 0.35 && !this.onBridge) {
       cap = Math.min(cap, 4.5);
@@ -457,8 +514,11 @@ export class HotRod {
     }
     if (!throttle && !brake) this.speed -= Math.sign(this.speed) * Math.min(Math.abs(this.speed), (onRoad ? 0.9 : 2.2) * dt);
     if (this.speed > cap) this.speed = damp(this.speed, cap, 1.5, dt);
-    // slope
-    this.speed -= 9.8 * Math.sin(this.pitch) * dt * 0.75;
+    // slope, except when parked: an empty car, or one crawling with no pedal
+    // down, holds on its brake instead of rolling off down a bank
+    const holding = !this.occupied || (!throttle && !brake && Math.abs(this.speed) < 1.5);
+    if (holding) this.speed = damp(this.speed, 0, 6, dt);
+    else this.speed -= 9.8 * Math.sin(this.pitch) * dt * 0.75;
 
     // steering
     const maxSteer = 0.58 * (1 - Math.min(0.62, Math.abs(this.speed) / 55));

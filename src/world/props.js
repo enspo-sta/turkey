@@ -7,6 +7,7 @@ import { ModelBuilder } from '../util/builder.js';
 import { makeSignTexture, makeAlaskaFlagTexture } from '../util/textures.js';
 import { mulberry32, clamp, lerp } from '../util/math.js';
 import { ROAD_HALF } from './worldgen.js';
+import { buildAreas, areaAvoid } from './areas.js';
 
 const WOOD = 0x6b4a2e;
 const WOOD_DARK = 0x4a3220;
@@ -87,6 +88,7 @@ export class Props {
     out.push({ x: L.light.x, z: L.light.z, r: 20 });
     for (const pk of Object.values(L.parking)) out.push({ x: pk.x, z: pk.z, r: 7 });
     for (const fr of L.fires) out.push({ x: fr.x, z: fr.z, r: 4 });
+    out.push(...areaAvoid(W));
     this.avoid = out;
     return out;
   }
@@ -164,6 +166,7 @@ export class Props {
     this.buildSigns(L);
     this.buildCampfires(L.fires);
     this.buildGlacierProps();
+    buildAreas(this, L);
     this.mergeStatic();
     return this.group;
   }
@@ -817,6 +820,9 @@ export class Props {
       pier: ['Halibut Pier', 'Halibut · Lingcod · Rockfish'],
       tundra: ['Caribou Tundra', 'Hunting area'],
       lighthouse: ['Kachemak Light', 'Whale watching'],
+      springs: ['Steaming Springs', 'Trout · Geyser · Hot pool'],
+      flats: ['Mosquito Flats', 'Pike · Sheefish · Bring bug dope'],
+      wreck: ['Shipwreck Cove', 'Rockfish · Lingcod · Wolf eel'],
     };
     for (const [id, [title, sub]] of Object.entries(nice)) {
       const pk = L.parking[id];

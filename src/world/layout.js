@@ -91,7 +91,61 @@ export const LAKES = [
     seed: 23,
     tint: 'glacial',
   },
+  // Steaming Springs: a warm green pond in a geothermal basin, and a hot
+  // pool too hot for fish (but just right for a soak)
+  {
+    id: 'springs',
+    name: 'Steaming Springs',
+    x: 846,
+    z: 52,
+    r: 36,
+    level: 24.0,
+    depth: 4.5,
+    seed: 31,
+    tint: 'glacial',
+    warm: true,
+  },
+  {
+    id: 'hotpool',
+    name: 'the hot pool',
+    x: 884,
+    z: 8,
+    r: 9,
+    level: 30.0,
+    depth: 1.2,
+    seed: 37,
+    tint: 'glacial',
+    hot: true,
+  },
+  // Mosquito Flats: tea-dark sloughs in the coastal muskeg
+  {
+    id: 'slough',
+    name: 'Big Slough',
+    x: 272,
+    z: 628,
+    r: 46,
+    level: 16.0,
+    depth: 3.2,
+    seed: 41,
+    tint: 'lake',
+    bog: true,
+  },
+  {
+    id: 'slough2',
+    name: 'Little Slough',
+    x: 214,
+    z: 700,
+    r: 26,
+    level: 11.0,
+    depth: 2.4,
+    seed: 43,
+    tint: 'lake',
+    bog: true,
+  },
 ];
+
+// The geyser at Steaming Springs: a sinter cone that blows every minute or two.
+export const GEYSER = { x: 834, z: -4 };
 
 // Glacier tongue flowing from the north mountains into Glacier Lake.
 export const GLACIER_POINTS = [
@@ -166,6 +220,39 @@ export const ROADS = [
       [520, -320],
       [600, -420],
       [672, -500],
+    ],
+  },
+  {
+    id: 'springs',
+    name: 'Springs Road',
+    points: [
+      [300, -120],
+      [420, -112],
+      [540, -84],
+      [650, -46],
+      [740, -16],
+      [800, 4],
+    ],
+  },
+  {
+    id: 'flats',
+    name: 'Muskeg Road',
+    points: [
+      [120, 660],
+      [160, 652],
+      [204, 640],
+      [230, 626],
+    ],
+  },
+  {
+    id: 'wreck',
+    name: 'Wreck Road',
+    points: [
+      [-660, 574],
+      [-700, 540],
+      [-746, 514],
+      [-790, 488],
+      [-830, 460],
     ],
   },
   {
@@ -261,6 +348,37 @@ export const PLACES = [
     z: -505,
     blurb: 'Open tundra above the treeline. Caribou herds and Dall sheep on the ridges.',
     bearRisk: 0.3,
+  },
+  {
+    id: 'springs',
+    name: 'Steaming Springs',
+    kind: 'fishing',
+    x: 812,
+    z: 40,
+    water: 'springs',
+    blurb: 'A warm green pond in a steaming basin. Rainbows grow fat in the warm water. Mind the geyser, and soak in the hot pool.',
+    bearRisk: 0.3,
+  },
+  {
+    id: 'flats',
+    name: 'Mosquito Flats',
+    kind: 'fishing',
+    x: 236,
+    z: 612,
+    water: 'slough',
+    blurb: "Muskeg, a boardwalk and the World's Largest Mosquito. Pike, sheefish and blackfish in the sloughs. Bring bug dope.",
+    bearRisk: 0.2,
+  },
+  {
+    id: 'wreck',
+    name: 'Shipwreck Cove',
+    kind: 'fishing',
+    x: -856,
+    z: 446,
+    water: 'ocean',
+    wreck: true,
+    blurb: 'The Unsinkable II has sat on this beach since 1987. Rockfish and lingcod live in her shadow; walk the gangplank and fish from her deck.',
+    bearRisk: 0.15,
   },
   {
     id: 'lighthouse',

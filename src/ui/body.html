@@ -3,6 +3,8 @@
 
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
+      <symbol id="i-boat" viewBox="0 0 32 32"><path d="M3 17h26l-3.5 7.5c-.5 1-1.5 1.5-2.5 1.5H9c-1 0-2-.5-2.5-1.5z" fill="currentColor"/><path d="M8 17l4-8h7l1 8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M27 13v6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+      <symbol id="i-shirt" viewBox="0 0 32 32"><path d="M11.5 4.5 4 8.6l3.2 6.2 3.3-1.7V28h11V13.1l3.3 1.7L28 8.6l-7.5-4.1c-.8 2-2.6 3.3-4.5 3.3s-3.7-1.3-4.5-3.3z" fill="currentColor"/></symbol>
       <symbol id="i-fish" viewBox="0 0 32 32"><path d="M3 16c4-6 10-8 16-7 4 1 7 3 9 7-2 4-5 6-9 7-6 1-12-1-16-7zm-2-5 5 5-5 5z" fill="currentColor"/><circle cx="22" cy="14.5" r="1.6" fill="#0d1a1f"/></symbol>
       <symbol id="i-heart" viewBox="0 0 32 32"><path d="M16 28S3 20 3 11a7 7 0 0 1 13-3 7 7 0 0 1 13 3c0 9-13 17-13 17z" fill="currentColor"/></symbol>
       <symbol id="i-arrow" viewBox="0 0 32 32"><path d="M5 27L24 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M28 4l-8 2 6 6z" fill="currentColor"/><path d="M5 27l-1-6 3 3zM5 27l6 1-3-3z" fill="currentColor"/><path d="M9 23l-3-1M11 21l-3-1M9 23l1 3M11 21l1 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
@@ -35,6 +37,8 @@
     <div id="danger-back" class="danger-edge back"></div>
 
     <div id="crosshair"><i></i></div>
+    <div id="viewfinder" hidden><i class="vf-c tl"></i><i class="vf-c tr"></i><i class="vf-c bl"></i><i class="vf-c br"></i><i class="vf-focus" id="vf-focus"></i><span class="vf-zoom" id="vf-zoom">2×</span><span class="vf-rec">● PHOTO</span><span class="vf-label" id="vf-label"></span></div>
+    <div id="flash"></div>
     <div id="hitmark"></div>
 
     <div class="top-left">
@@ -42,7 +46,7 @@
       <div class="stat health"><svg><use href="#i-heart"/></svg><div class="bar"><i id="hud-health"></i></div></div>
       <div class="stat-row">
         <div class="stat chip" id="chip-cooler"><svg><use href="#i-cooler"/></svg><span id="hud-cooler">0/8</span></div>
-        <div class="stat chip" id="chip-arrows" hidden><svg><use href="#i-arrow"/></svg><span id="hud-arrows">18</span></div>
+        <button class="stat chip" id="chip-arrows" hidden aria-label="Switch arrows"><svg><use href="#i-arrow"/></svg><i class="arrow-tint" id="hud-arrow-tint"></i><span id="hud-arrows">Cedar 18</span></button>
         <div class="stat chip" id="chip-lure"><svg><use href="#i-lure"/></svg><span id="hud-lure">Spinner</span></div>
       </div>
     </div>
@@ -51,10 +55,16 @@
     <div id="objective"></div>
 
     <div class="top-right">
-      <div class="clock"><svg><use href="#i-clock"/></svg><span id="hud-time">07:00</span><span id="hud-day">Day 1</span><span class="saved-note" id="hud-saved">Saved</span><span class="fps-note" id="hud-fps" hidden></span></div>
-      <button class="btn icon" id="btn-map" aria-label="Map"><svg><use href="#i-map"/></svg></button>
-      <button class="btn icon" id="btn-journal" aria-label="Journal"><svg><use href="#i-book"/></svg></button>
-      <button class="btn icon" id="btn-pause" aria-label="Pause"><svg><use href="#i-pause"/></svg></button>
+      <div class="top-icons">
+        <button class="btn icon" id="btn-wardrobe" aria-label="Wardrobe"><svg><use href="#i-shirt"/></svg></button>
+        <button class="btn icon" id="btn-map" aria-label="Map"><svg><use href="#i-map"/></svg></button>
+        <button class="btn icon" id="btn-journal" aria-label="Journal"><svg><use href="#i-book"/></svg></button>
+        <button class="btn icon" id="btn-pause" aria-label="Pause"><svg><use href="#i-pause"/></svg></button>
+      </div>
+      <div class="top-status">
+        <button class="bite-pill fair" id="bite-pill" aria-label="How the fish are biting"><svg><use href="#i-fish"/></svg><span>BITE</span><b id="hud-bite">FAIR</b></button>
+        <div class="clock"><svg><use href="#i-clock"/></svg><span id="hud-time">07:00</span><span id="hud-day">Day 1</span><span class="saved-note" id="hud-saved">Saved</span><span class="fps-note" id="hud-fps" hidden></span></div>
+      </div>
     </div>
 
     <button class="btn minimap" id="minimap" aria-label="Map"><canvas id="minimap-canvas"></canvas><span id="minimap-n">N</span></button>
@@ -112,10 +122,12 @@
       <button class="btn round small" id="btn-med" aria-label="First aid" hidden><svg><use href="#i-med"/></svg><em id="med-count">1</em></button>
       <button class="btn round small" id="btn-horn" aria-label="Horn" hidden><svg><use href="#i-horn"/></svg></button>
       <button class="btn round small" id="btn-cam" aria-label="Camera" hidden><svg><use href="#i-cam"/></svg></button>
+      <button class="btn round small" id="btn-run" aria-label="Run" aria-pressed="false" hidden><span>RUN</span></button>
       <button class="btn round pedal" id="btn-brake" hidden><span>BRAKE</span></button>
       <button class="btn round pedal gas" id="btn-gas" hidden><span>GAS</span></button>
     </div>
     <button class="btn pill" id="btn-interact" hidden><svg><use href="#i-car"/></svg><span>DRIVE</span></button>
+    <button class="btn pill second" id="btn-interact2" hidden><svg><use href="#i-boat"/></svg><span>BOARD</span></button>
     <div id="left-hint" class="no-look"></div>
   </div>
 
@@ -131,6 +143,7 @@
     </div>
     <p class="catch-info" id="catch-info"></p>
     <div class="catch-actions">
+      <button class="btn big ghost" id="catch-photo" aria-label="Take a photo" hidden><svg><use href="#i-cam"/></svg></button>
       <button class="btn big ghost" id="catch-release">Release<kbd class="key-hint">R</kbd></button>
       <button class="btn big hot" id="catch-keep">Keep<kbd class="key-hint">E</kbd></button>
     </div>
@@ -147,12 +160,12 @@
   <!-- title screen -->
   <div id="title" class="screen" hidden>
     <div class="title-inner">
-      <div class="logo">
-        <span class="logo-ruben">Ruben</span>
+      <div class="logo" role="img" aria-label="Hotrod Outdoor Alaska Fishing">
         <span class="logo-hotrod">Hotrod</span>
-        <span class="logo-fishing">Fishing</span>
+        <span class="logo-script">Outdoor</span>
+        <span class="logo-fishing">Alaska Fishing</span>
       </div>
-      <p class="tagline">Alaska · Rivers, rods and one loud V8</p>
+      <p class="tagline">Rivers, rods and one loud V8</p>
       <div class="title-buttons">
         <button class="btn big hot" id="btn-continue">Continue</button>
         <button class="btn big" id="btn-new">New game</button>
@@ -171,7 +184,7 @@
 
   <div id="loading" class="screen">
     <div class="load-card">
-      <div class="logo small"><span class="logo-ruben">Ruben</span><span class="logo-hotrod">Hotrod</span><span class="logo-fishing">Fishing</span></div>
+      <div class="logo small" role="img" aria-label="Hotrod Outdoor Alaska Fishing"><span class="logo-hotrod">Hotrod</span><span class="logo-script">Outdoor</span><span class="logo-fishing">Alaska Fishing</span></div>
       <div class="load-bar"><div id="load-fill"></div></div>
       <div id="load-label">Loading</div>
     </div>

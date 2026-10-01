@@ -1,8 +1,10 @@
 // In-game HUD: stats, compass, objective, contextual touch controls, cast and
 // fight meters, speedometer, toasts, banners, prompts and the catch card.
 import { formatMoney, formatTime, clamp, wrapAngle } from '../util/math.js';
-import { LURES, FISH, CHALLENGES, RARITY, timingGradient } from '../gameplay/data.js';
+import { LURES, FISH, CHALLENGES, RARITY, ARROWS, timingGradient } from '../gameplay/data.js';
 import { Minimap } from './minimap.js';
+import { biteOutlook } from '../gameplay/bite.js';
+import { PHOTO_SUBJECTS } from '../gameplay/camera.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -34,9 +36,16 @@ export class HUD {
       chipCooler: $('chip-cooler'),
       arrows: $('hud-arrows'),
       chipArrows: $('chip-arrows'),
+      arrowTint: $('hud-arrow-tint'),
       lure: $('hud-lure'),
       chipLure: $('chip-lure'),
       time: $('hud-time'),
+      bite: $('hud-bite'),
+      viewfinder: $('viewfinder'),
+      vfZoom: $('vf-zoom'),
+      vfLabel: $('vf-label'),
+      flash: $('flash'),
+      bitePill: $('bite-pill'),
       day: $('hud-day'),
       fps: $('hud-fps'),
       strip: $('compass-strip'),
@@ -76,6 +85,7 @@ export class HUD {
       primary: $('btn-primary'),
       secondary: $('btn-secondary'),
       tool: $('btn-tool'),
+      run: $('btn-run'),
       spray: $('btn-spray'),
       sprayCount: $('spray-count'),
       med: $('btn-med'),
@@ -85,6 +95,7 @@ export class HUD {
       gas: $('btn-gas'),
       brake: $('btn-brake'),
       interact: $('btn-interact'),
+      interact2: $('btn-interact2'),
       leftHint: $('left-hint'),
       catchCard: $('catch'),
     };
@@ -100,6 +111,17 @@ export class HUD {
     input.bindButton(this.el.primary, 'primary');
     input.bindButton(this.el.secondary, 'secondary');
     input.bindButton(this.el.tool, 'tool');
+    input.bindButton(this.el.run, 'run');
+    input.bindButton(this.el.chipArrows, 'arrows');
+    // tap the bite readout to hear why the fish are (or are not) biting
+    const tellBite = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const o = this.biteNow();
+      this.toast(`Bite ${o.level.label}: ${o.reasons.join(' · ')}`, o.level.id === 'slow' ? 'bad' : o.level.id === 'fair' ? '' : 'good');
+    };
+    this.el.bitePill.addEventListener('touchstart', tellBite, { passive: false });
+    this.el.bitePill.addEventListener('mousedown', tellBite);
     input.bindButton(this.el.spray, 'spray');
     input.bindButton(this.el.med, 'med');
     input.bindButton(this.el.horn, 'horn');
@@ -107,6 +129,7 @@ export class HUD {
     input.bindButton(this.el.gas, 'gas');
     input.bindButton(this.el.brake, 'brake');
     input.bindButton(this.el.interact, 'interact');
+    input.bindButton(this.el.interact2, 'interact2');
     input.setStickElements($('stick'), $('stick-knob'));
     $('btn-map').addEventListener('click', () => game.screens.open('map'));
     // the always-on minimap; tapping it opens the full map
@@ -115,9 +138,11 @@ export class HUD {
       return ch ? OBJECTIVE_PLACE[ch.id] : null;
     });
     $('minimap').addEventListener('click', () => game.screens.open('map'));
+    this.minimapEl = $('minimap');
     $('btn-journal').addEventListener('click', () => game.screens.open('journal'));
+    $('btn-wardrobe').addEventListener('click', () => game.screens.open('wardrobe'));
     $('btn-pause').addEventListener('click', () => game.screens.open('pause'));
-    for (const id of ['btn-map', 'btn-journal', 'btn-pause', 'catch', 'minimap']) {
+    for (const id of ['btn-map', 'btn-journal', 'btn-pause', 'btn-wardrobe', 'catch', 'minimap']) {
       $(id).addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
     }
   }
@@ -166,6 +191,22 @@ export class HUD {
     }
   }
 
+  // The white flash of a photo.
+  flash() {
+    const f = this.el.flash;
+    f.classList.remove('on');
+    void f.offsetWidth;
+    f.classList.add('on');
+  }
+
+  // How the fish are biting where the player is.
+  biteNow() {
+    const g = this.game;
+    const F = g.fishing;
+    const water = F.water?.kind || F.hotPlace?.water || null;
+    return biteOutlook(g.env, water);
+  }
+
   savedFlash() {
     const el = $('hud-saved');
     if (!el) return;
@@ -192,14 +233,21 @@ export class HUD {
     }, 3700);
   }
 
-  banner(text, kind = 'good') {
+  // A big arcade banner; sub is a second line under it (a species name) and
+  // place 'left' keeps it clear of the catch card on the right.
+  banner(text, kind = 'good', sub = null, place = null) {
     const b = this.el.banner;
     b.textContent = text;
+    if (sub) {
+      const small = document.createElement('small');
+      small.textContent = sub;
+      b.appendChild(small);
+    }
     b.className = '';
     void b.offsetWidth;
-    b.className = 'show ' + kind;
+    b.className = 'show ' + kind + (sub ? ' long' : '') + (place ? ' ' + place : '');
     clearTimeout(this.bannerT);
-    this.bannerT = setTimeout(() => (b.className = ''), 1950);
+    this.bannerT = setTimeout(() => (b.className = ''), sub ? 2850 : 1950);
   }
 
   prompt(text, kind = 'hot', duration = 1) {
@@ -280,7 +328,7 @@ export class HUD {
     el.meterTiming.hidden = !timing;
     el.meterStep.textContent = timing ? 'TIMING' : 'POWER';
     el.meterHelp.textContent = timing
-      ? 'Tap when the marker is on the middle line'
+      ? 'Tap when the marker hits the dark green line'
       : m.hot
         ? 'Stop the needle in the gold zone'
         : 'Tap to set casting power';
@@ -386,6 +434,15 @@ export class HUD {
     };
     keep.onclick = () => this.catchChoice?.(true);
     rel.onclick = () => this.catchChoice?.(false);
+    // a trophy shot for the album, once per catch
+    const photo = $('catch-photo');
+    photo.hidden = !this.game.photo?.owned();
+    photo.disabled = false;
+    photo.onclick = () => {
+      if (photo.disabled) return;
+      photo.disabled = true;
+      this.game.photo.catchPhoto(info);
+    };
   }
 
   // Hide the catch card without choosing (the caller settles the fish).
@@ -393,7 +450,7 @@ export class HUD {
     this.el.catchCard.hidden = true;
     this.blocking = false;
     this.catchChoice = null;
-    $('catch-keep').onclick = $('catch-release').onclick = null;
+    $('catch-keep').onclick = $('catch-release').onclick = $('catch-photo').onclick = null;
   }
 
   // ---- per-frame update
@@ -419,6 +476,22 @@ export class HUD {
       el.chipCooler.classList.toggle('full', s.coolerFull());
     });
     set('time', formatTime(g.env.time), (v) => (el.time.textContent = v));
+    // the bite, from the time, the weather and the water you are at
+    this.biteT = (this.biteT || 0) - dt;
+    if (this.biteT <= 0) {
+      this.biteT = 1;
+      const o = this.biteNow();
+      const was = this.cache.bite;
+      set('bite', o.level.id, (v) => {
+        el.bite.textContent = o.level.label;
+        el.bitePill.className = 'bite-pill ' + v;
+        // the bite turning on while you play (not the first reading)
+        if (v === 'hot' && was && g.started && !g.menuOpen) {
+          this.toast(`The bite is on! ${o.reasons[0]}`, 'good');
+          g.announcer?.say('bite');
+        }
+      });
+    }
     set('day', g.env.day, (v) => (el.day.textContent = `Day ${v}`));
     set('lure', s.gear.lure, (v) => (el.lure.textContent = LURES[v].short || LURES[v].name));
 
@@ -429,7 +502,14 @@ export class HUD {
     const onFoot = mode === 'foot';
     el.chipArrows.hidden = !(onFoot && tool === 'bow');
     el.chipLure.hidden = !(onFoot && tool === 'rod');
-    if (!el.chipArrows.hidden) set('arrows', String(s.gear.arrows), (v) => (el.arrows.textContent = v));
+    if (!el.chipArrows.hidden)
+      set('arrows', s.gear.arrow + ' ' + s.arrowsLeft() + ' ' + s.totalArrows(), () => {
+        const A = ARROWS[s.gear.arrow];
+        el.arrows.textContent = `${A.short} ${s.arrowsLeft()}`;
+        el.arrowTint.style.background = '#' + A.tint.toString(16).padStart(6, '0');
+        // a second kind in the quiver: tap the chip to switch
+        el.chipArrows.classList.toggle('full', s.totalArrows() > s.arrowsLeft());
+      });
 
     // objective
     const ch = s.currentChallenge();
@@ -439,7 +519,8 @@ export class HUD {
 
     // controls by context
     const catchOpen = !el.catchCard.hidden;
-    const driving = mode === 'drive';
+    // the hot rod and the boat share the pedals, the camera button and the gauge
+    const driving = mode === 'drive' || mode === 'boat';
     el.gas.hidden = !driving;
     el.brake.hidden = !driving;
     el.horn.hidden = !driving;
@@ -447,12 +528,19 @@ export class HUD {
     el.speedo.hidden = !driving;
     el.primary.hidden = driving || catchOpen || tool === 'none';
     el.tool.hidden = driving || catchOpen || (fishing && fishing.state !== 'idle');
+    el.run.hidden = !onFoot || catchOpen;
+    set('running', !!P.running, (v) => {
+      el.run.classList.toggle('on', v);
+      el.run.setAttribute('aria-pressed', String(v));
+    });
     el.spray.hidden = !onFoot || s.gear.spray <= 0 || catchOpen || !g.bears?.threat;
     el.med.hidden = !onFoot || s.gear.medkit <= 0 || P.health > 70 || catchOpen;
     set('spray', s.gear.spray, (v) => (el.sprayCount.textContent = v));
     set('med', s.gear.medkit, (v) => (el.medCount.textContent = v));
     // the button shows the tool it switches to: rod, longbow, empty hands
-    set('toolIcon', tool, (v) => (el.tool.innerHTML = `<svg><use href="#i-${v === 'rod' ? 'bow' : v === 'bow' ? 'hand' : 'rod'}"/></svg>`));
+    // the icon shows the tool a tap switches to
+    const nextTool = tool === 'rod' ? 'bow' : tool === 'bow' ? (g.photo.owned() ? 'cam' : 'hand') : tool === 'camera' ? 'hand' : 'rod';
+    set('toolIcon', nextTool, (v) => (el.tool.innerHTML = `<svg><use href="#i-${v}"/></svg>`));
     el.tool.classList.toggle('pulse', !!(g.bears?.threat && tool !== 'bow'));
 
     let pLabel = '';
@@ -483,11 +571,14 @@ export class HUD {
         default:
           pLabel = 'REEL';
       }
+    } else if (onFoot && tool === 'camera') {
+      pLabel = 'SNAP';
+      sLabel = `ZOOM ${g.photo.zoom}×`;
     } else if (onFoot && tool === 'bow' && hunting) {
-      pLabel = hunting.drawing ? (hunting.draw >= 1 ? 'LOOSE' : 'DRAW') : hunting.nockT > 0 ? '...' : s.gear.arrows > 0 ? 'DRAW' : 'EMPTY';
+      pLabel = hunting.drawing ? (hunting.draw >= 1 ? 'LOOSE' : 'DRAW') : hunting.nockT > 0 ? '...' : s.totalArrows() > 0 ? 'DRAW' : 'EMPTY';
       pClass += ' fire';
       if (hunting.drawing && hunting.draw >= 1) pClass += ' alert';
-      if (!hunting.drawing && s.gear.arrows <= 0) pClass += ' off';
+      if (!hunting.drawing && s.totalArrows() <= 0) pClass += ' off';
       sLabel = hunting.aiming ? 'BACK' : 'AIM';
     }
     // how far the string is drawn, as a ring around the button
@@ -508,7 +599,7 @@ export class HUD {
     if (sLabel) set('sLabel', sLabel, (v) => (el.secondary.innerHTML = `<span>${v}</span>`));
     el.secondary.classList.toggle('on', !!(hunting && hunting.aiming && tool === 'bow'));
 
-    // interact pill
+    // interact pills
     const ia = g.interaction;
     const iaKey = ia ? ia.label + ia.icon : '';
     set('interact', iaKey, () => {
@@ -518,9 +609,27 @@ export class HUD {
     if (catchOpen) el.interact.hidden = true;
     else el.interact.hidden = !ia;
     el.interact.classList.toggle('driving', driving);
+    const ia2 = g.interaction2;
+    const ia2Key = ia2 ? ia2.label + ia2.icon : '';
+    set('interact2', ia2Key, () => {
+      if (ia2) el.interact2.innerHTML = `<svg><use href="#i-${ia2.icon}"/></svg><span>${ia2.label}</span>`;
+    });
+    el.interact2.hidden = catchOpen || !ia2;
+    el.interact2.classList.toggle('driving', driving);
 
     // crosshair: a ring for the bow, a dot for the rod, none with empty hands
-    el.crosshair.hidden = driving || catchOpen || tool === 'none';
+    // or the camera, which has its viewfinder
+    el.crosshair.hidden = driving || catchOpen || tool === 'none' || tool === 'camera';
+    const vf = onFoot && tool === 'camera' && !catchOpen;
+    el.viewfinder.hidden = !vf;
+    if (vf) {
+      const f = g.photo.focus;
+      const name = f ? PHOTO_SUBJECTS[f.id].name : '';
+      const lbl = f ? (f.stars > 0 ? `${name} · ${Math.round(f.d)} m · ${'★'.repeat(f.stars)}${'☆'.repeat(3 - f.stars)}` : `${name} · too far, zoom in`) : '';
+      set('vfLabel', lbl, (v) => (el.vfLabel.textContent = v));
+      set('vfZoom', g.photo.zoom, (v) => (el.vfZoom.textContent = v + '×'));
+      el.viewfinder.classList.toggle('lock', !!(f && f.stars > 0));
+    }
     set('xhair', tool === 'bow' && onFoot ? 'bow' : '', (v) => (el.crosshair.className = v));
 
     // left hint text when idle
@@ -534,17 +643,23 @@ export class HUD {
 
     // speedometer
     if (driving) {
-      const kmh = Math.abs(g.hotrod.speed) * 3.6;
+      const v = mode === 'boat' ? g.boat.speed : g.hotrod.speed;
+      const kmh = Math.abs(v) * 3.6;
       const f = clamp(kmh / 160, 0, 1);
       const a = Math.PI + f * Math.PI;
       el.speedoNeedle.setAttribute('x2', (100 + Math.cos(a) * 66).toFixed(1));
       el.speedoNeedle.setAttribute('y2', (110 + Math.sin(a) * 66).toFixed(1));
       el.speedoArc.setAttribute('stroke-dasharray', `${(f * 251).toFixed(1)} 999`);
       set('kmh', Math.round(kmh), (v) => (el.speedoVal.textContent = v));
-      set('gear', g.hotrod.speed < -0.3 ? 'R' : String(g.hotrod.gear), (v) => (el.speedoGear.textContent = v));
+      set('gear', v < -0.3 ? 'R' : mode === 'boat' ? (Math.abs(v) < 0.3 ? 'N' : 'F') : String(g.hotrod.gear), (x) => (el.speedoGear.textContent = x));
     }
 
     this.updateCompass(dt);
+    // Settings can hide the small map
+    set('minimapOn', s.settings.minimap !== false, (v) => {
+      this.minimapEl.hidden = !v;
+      if (v) this.minimap.last.x = Infinity;
+    });
     if (!this.minimap.image && g.screens.mapImage) this.minimap.setImage(g.screens.mapImage);
     this.minimap.update(dt, this.heading || 0);
   }

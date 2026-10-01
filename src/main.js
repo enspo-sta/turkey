@@ -4,10 +4,16 @@ import * as THREE from 'three';
 import { Game, IS_TOUCH } from './game.js';
 import { Input } from './ui/input.js';
 import { HUD } from './ui/hud.js';
+import { Announcer } from './audio/announcer.js';
+import { PhotoCamera } from './gameplay/camera.js';
+import { Jobs } from './gameplay/jobs.js';
+import { Bigfoot } from './entities/bigfoot.js';
 import { Screens } from './ui/screens.js';
 import { GameState } from './gameplay/state.js';
 import { Player } from './entities/player.js';
 import { HotRod } from './entities/hotrod.js';
+import { Boat } from './entities/boat.js';
+import { Areas } from './world/areas.js';
 import { Viewmodel } from './entities/viewmodel.js';
 import { Fishing } from './gameplay/fishing.js';
 import { Hunting } from './gameplay/hunting.js';
@@ -55,6 +61,7 @@ class Session {
     g.player = new Player(g);
     g.player.onStep = (surf, water, sprint) => g.audio.step(surf, water, sprint);
     g.hotrod = new HotRod(g);
+    g.boat = new Boat(g);
     g.scene.add(g.hotrod.group);
     g.viewmodel = new Viewmodel(g);
     g.overlay = { scene: g.viewmodel.scene, camera: g.viewmodel.camera, enabled: false };
@@ -67,6 +74,11 @@ class Session {
     g.scene.add(g.insects.group);
     g.bears = new Bears(g);
     g.hud = new HUD(g);
+    g.announcer = new Announcer(g);
+    g.photo = new PhotoCamera(g);
+    g.areas = new Areas(g);
+    g.jobs = new Jobs(g);
+    g.bigfoot = new Bigfoot(g);
     g.screens = new Screens(g);
     g.onEvent = (ev) => this.onEvent(ev);
     g.save = () => this.save();
@@ -194,7 +206,9 @@ class Session {
     const pk = L.parking.landing;
     g.hotrod.place(pk.x, pk.z, pk.yaw + Math.PI);
     g.hotrod.setPaint(g.state.gear.paint);
+    g.hotrod.setLook(g.state.look);
     g.viewmodel.setBowWood(g.state.gear.yew);
+    g.viewmodel.applyLook(g.state.look);
     const landing = g.world.place('landing');
     const ex = g.hotrod.exitPoint(1);
     g.player.place(ex.x, ex.z, landing.face);
@@ -259,17 +273,21 @@ class Session {
     g.fishing.cancel();
     g.hunting.reset();
     if (g.player.mode === 'drive') this.exitCar(true);
+    if (g.player.mode === 'boat' || g.player.boat) g.boat.leave(true);
     g.audio.stopEngine();
+    g.audio.updateOutboard?.(0, 0, 999, false);
     this.showTitle();
   }
 
   startGame(continueSave) {
     const g = this.game;
     g.audio.unlock();
+    g.announcer.unlock();
     const s = g.state;
     if (continueSave) s.load();
     else {
       s.wipe();
+      g.photo.wipe();
     }
     s.started = true;
     g.started = true;
@@ -280,12 +298,15 @@ class Session {
     g.env.day = s.day;
     g.player.health = s.health || 100;
     g.player.mode = 'foot';
+    g.player.boat = null;
     g.hotrod.occupied = false;
     g.hotrod.driver.visible = false;
     g.player.tool = 'rod';
     g.viewmodel.setTool('rod');
     g.hotrod.setPaint(s.gear.paint);
+    g.hotrod.setLook(s.look);
     g.viewmodel.setBowWood(s.gear.yew);
+    g.viewmodel.applyLook(s.look);
     if (continueSave && s.car) g.hotrod.place(s.car.x, s.car.z, s.car.yaw);
     else this.placeAtStart();
     if (continueSave && s.player) g.player.place(s.player.x, s.player.z, s.player.yaw);
@@ -294,6 +315,9 @@ class Session {
       const landing = g.world.place('landing');
       g.player.place(landing.x, landing.z, landing.face);
     }
+    // the boat: on its trailer behind the car, or moored where you left it
+    g.boat.restore(continueSave ? s.boat : null);
+    if (continueSave && s.player && s.player.aboard && g.boat.where === 'water') g.boat.board();
     this.mode = 'play';
     g.input.resetAll();
     if (!IS_TOUCH) g.input.requestPointerLock();
@@ -419,8 +443,12 @@ class Session {
     s.time = g.env.time;
     s.day = g.env.day;
     s.health = Math.max(30, Math.round(g.player.health));
-    const P = g.player.mode === 'drive' ? g.hotrod.exitPoint(1) : g.player.pos;
-    s.player = { x: P.x, z: P.z, yaw: g.player.yaw };
+    let P = g.player.mode === 'drive' ? g.hotrod.exitPoint(1) : g.player.pos;
+    // out on the boat: remember that, and a spot on the shore to fall back on
+    const aboard = g.player.mode === 'boat' || !!g.player.boat;
+    if (aboard) P = g.boat.shoreSpot() || g.hotrod.exitPoint(1);
+    s.player = { x: P.x, z: P.z, yaw: g.player.yaw, aboard };
+    s.boat = g.boat.toJSON();
     s.car = { x: g.hotrod.pos.x, z: g.hotrod.pos.z, yaw: g.hotrod.yaw };
     const ok = s.save();
     if (ok) g.hud.savedFlash();
@@ -455,6 +483,84 @@ class Session {
     this.fadeBusy = false;
   }
 
+  // A soak in the hot pool: an hour gone, every ache with it.
+  soak() {
+    const g = this.game;
+    const lines = [
+      'Ahhh. Ruben forgets he ever drove a hot rod',
+      'Your back stops aching. Your fingers go wrinkly',
+      'A moose watches you soak. It looks jealous',
+      'Pure bliss, with a faint smell of eggs',
+    ];
+    this.withFade('Ahhh…', () => {
+      g.env.setTime(g.env.time + 1);
+      g.player.health = g.player.maxHealth;
+      g.bears.clearThreat();
+      g.hud.toast(lines[Math.floor(Math.random() * lines.length)], 'good');
+      g.onEvent({ type: 'soak' });
+      g.jobs.onEvent('soak');
+      this.save();
+    });
+  }
+
+  // The machine at Mosquito Flats: two hours without the state bird.
+  buyBugDope() {
+    const g = this.game;
+    const s = g.state;
+    if (s.money < 15) {
+      g.hud.toast('Fifteen dollars, please. The mosquitoes accept blood', 'bad');
+      return;
+    }
+    s.money -= 15;
+    g.audio.cash();
+    g.bugDopeT = 120;
+    g.hud.toast('Bug dope on. The mosquitoes sulk off to find a tourist', 'good');
+  }
+
+  // The sea chest in the Unsinkable II's wheelhouse.
+  openChest() {
+    const g = this.game;
+    const s = g.state;
+    if (s.flags.chest) return;
+    s.flags.chest = true;
+    s.addMoney(600);
+    g.audio.cash();
+    g.announcer.say('treasure', { sub: '$600!', kind: 'legend' });
+    g.hud.toast("Inside: $600 in soggy bills, a captain's cap and an IOU for one boat, signed 'Gus'", 'money');
+    this.save();
+  }
+
+  // Little things that happen at the newer places.
+  updatePlaces(dt) {
+    const g = this.game;
+    const P = g.player;
+    if (P.mode !== 'foot') return;
+    // aboard the Unsinkable II
+    const D = g.props.wreckDeck;
+    if (D && P.onDeck && !g.state.flags.deck && Math.hypot(P.pos.x - D.x, P.pos.z - D.z) < 14) {
+      g.state.flags.deck = true;
+      g.hud.toast('Welcome aboard the Unsinkable II. Mind the holes', 'good');
+      g.onEvent({ type: 'deck' });
+    }
+    // Mosquito Flats: the state bird has opinions
+    g.bugDopeT = Math.max(0, (g.bugDopeT || 0) - dt);
+    const bog = g.areas.near('flats', 90, 200);
+    if (bog > 0.5 && g.bugDopeT <= 0) {
+      this.mozzieT = (this.mozzieT ?? 12) - dt;
+      if (this.mozzieT <= 0) {
+        this.mozzieT = 35 + Math.random() * 30;
+        const lines = [
+          'A mosquito the size of a sparrow lands on your arm',
+          'Bzzz. Something just drank a cup of your blood',
+          'The mosquitoes have formed a union. They want more Ruben',
+          'Bug dope is sold by the giant mosquito. Coincidence?',
+        ];
+        g.hud.toast(lines[Math.floor(Math.random() * lines.length)]);
+        g.audio.buzz?.();
+      }
+    }
+  }
+
   sleep() {
     const g = this.game;
     this.withFade('Zzz…', () => {
@@ -473,6 +579,10 @@ class Session {
     const p = g.world.place(id);
     const pk = g.props.layout.parking[id];
     if (!p || !pk) return;
+    if (g.player.mode === 'boat' || g.player.boat) {
+      g.hud.toast('Get ashore first. The boat stays where you leave it');
+      return;
+    }
     g.fishing.cancel();
     g.hunting.reset();
     this.withFade(`Driving to ${p.name}…`, () => {
@@ -505,6 +615,7 @@ class Session {
       s.cooler = [];
       s.money -= fee;
       if (g.player.mode === 'drive') this.exitCar(true);
+      if (g.player.mode === 'boat' || g.player.boat) g.boat.leave(true);
       this.placeAtStart();
       g.player.health = 60;
       g.env.setTime(Math.max(8, g.env.time + 3));
@@ -584,6 +695,7 @@ class Session {
       g.paused = true;
       g.player.applyCamera(g.camera);
       if (g.player.mode === 'drive') g.hotrod.applyCamera(g.camera, 0, input);
+      else if (g.player.mode === 'boat') g.boat.applyCamera(g.camera, 0, input);
       input.endFrame();
       return;
     }
@@ -591,21 +703,30 @@ class Session {
     const P = g.player;
     const car = g.hotrod;
 
-    // tool switch: rod, longbow, empty hands (Q cycles, 1 2 3 pick directly)
+    // tool switch: rod, longbow, camera (once bought), empty hands (Q
+    // cycles, 1 2 3 4 pick directly)
     if (P.mode === 'foot' && g.fishing.state === 'idle' && !g.hud.blocking) {
       let next = null;
-      if (input.pressed('tool') || input.keyPressed('KeyQ')) next = P.tool === 'rod' ? 'bow' : P.tool === 'bow' ? 'none' : 'rod';
+      const hasCam = g.photo.owned();
+      if (input.pressed('tool') || input.keyPressed('KeyQ')) next = P.tool === 'rod' ? 'bow' : P.tool === 'bow' ? (hasCam ? 'camera' : 'none') : P.tool === 'camera' ? 'none' : 'rod';
       else if (input.keyPressed('Digit1')) next = 'rod';
       else if (input.keyPressed('Digit2')) next = 'bow';
       else if (input.keyPressed('Digit3')) next = 'none';
+      else if (input.keyPressed('Digit4') && hasCam) next = 'camera';
       if (next && next !== P.tool) {
         P.tool = next;
-        g.viewmodel.setTool(next);
+        // the camera goes up to the eye: no hands in the picture
+        g.viewmodel.setTool(next === 'camera' ? 'none' : next);
         g.hunting.reset();
         g.audio.tick(1);
       }
     }
     if (input.pressed('secondary') && P.mode === 'foot' && P.tool === 'rod' && g.fishing.state === 'idle') g.screens.open('lure');
+    // RUN: tap to run, tap again to walk
+    if (P.mode === 'foot' && input.pressed('run')) {
+      P.running = !P.running;
+      g.audio.tick(1);
+    }
     if (input.pressed('med') || input.keyPressed('KeyX')) {
       if (g.state.gear.medkit > 0 && P.health < P.maxHealth) {
         g.state.gear.medkit--;
@@ -618,12 +739,21 @@ class Session {
     this.updateInteraction();
     const ia = g.interaction;
     if (ia && (input.pressed('interact') || input.keyPressed('KeyE') || input.keyPressed('KeyF'))) ia.act();
+    else if (g.interaction2 && (input.pressed('interact2') || input.keyPressed('KeyV'))) g.interaction2.act();
 
     if (P.mode === 'foot') {
       P.update(dt, input);
       // place the camera now so fishing and hunting use this frame's view
       P.applyCamera(g.camera);
       g.camera.updateMatrixWorld();
+    } else if (P.mode === 'boat') {
+      // at the tiller: the camera button swaps the seat and the chase view
+      if (input.pressed('cam') || input.keyPressed('KeyC')) g.boat.camMode = g.boat.camMode === 'seat' ? 'chase' : 'seat';
+      if (input.pressed('horn') || input.keyPressed('KeyH')) {
+        g.audio.horn();
+        g.wildlife.scare(g.boat.pos.x, g.boat.pos.z, 80);
+      }
+      P.pos.copy(g.boat.pos);
     } else {
       // driving controls
       if (input.pressed('cam') || input.keyPressed('KeyC')) car.camMode = car.camMode === 'cockpit' ? 'chase' : 'cockpit';
@@ -634,23 +764,31 @@ class Session {
       P.pos.copy(car.pos);
     }
     car.update(dt, input, g.state);
+    g.boat.update(dt, input);
     g.audio.updateEngine(car.rpm || 850, car.throttle, P.mode === 'drive' ? 0 : car.pos.distanceTo(g.camera.position), car.occupied);
 
     g.fishing.update(dt);
     g.hunting.update(dt);
+    g.photo.update(dt);
     g.wildlife.update(dt);
     g.fish.update(dt);
     g.insects.update(dt);
+    g.areas.update(dt);
+    g.bigfoot.update(dt);
+    this.updatePlaces(dt);
     g.bears.update(dt);
 
     // camera
     if (P.mode === 'foot') P.applyCamera(g.camera);
+    else if (P.mode === 'boat') g.boat.applyCamera(g.camera, dt, input);
     else car.applyCamera(g.camera, dt, input);
     g.camera.updateMatrixWorld();
-    g.focus = P.mode === 'drive' ? car.pos : P.pos;
+    g.focus = P.mode === 'drive' ? car.pos : P.mode === 'boat' ? g.boat.pos : P.pos;
 
-    // aiming the bow narrows the view, more with the bow sight
-    const zoom = g.hunting.aiming ? (g.state.gear.sight ? 0.5 : 0.66) : 1;
+    // aiming the bow narrows the view, more with the bow sight; the camera
+    // zooms through its lens
+    const camUp = P.mode === 'foot' && P.tool === 'camera';
+    const zoom = camUp ? 1 / g.photo.zoom : g.hunting.aiming ? (g.state.gear.sight ? 0.5 : 0.66) : 1;
     g.zoom = damp(g.zoom || 1, zoom, 14, dt);
     const fov = g.baseFov * g.zoom;
     if (Math.abs(g.camera.fov - fov) > 0.01) {
@@ -709,13 +847,26 @@ class Session {
     const g = this.game;
     const P = g.player;
     const car = g.hotrod;
+    const B = g.boat;
     let ia = null;
+    // a second action beside the first: the boat's launch, load and board
+    let ia2 = null;
     if (g.fishing.state !== 'idle' && g.fishing.state !== 'catch') {
-      g.interaction = null;
+      g.interaction = g.interaction2 = null;
       return;
     }
     if (P.mode === 'drive') {
       ia = { label: 'EXIT', icon: 'car', act: () => this.exitCar() };
+      if (B.canLaunch()) ia2 = { label: 'LAUNCH', icon: 'boat', act: () => B.launch() };
+      else if (B.canLoad()) ia2 = { label: 'LOAD BOAT', icon: 'boat', act: () => B.load() };
+    } else if (P.mode === 'boat') {
+      if (Math.abs(B.speed) < 1.5) ia = { label: 'FISH', icon: 'rod', act: () => B.fishHere() };
+      if (B.canLoad()) ia2 = { label: 'LOAD BOAT', icon: 'boat', act: () => B.load() };
+      else if (Math.abs(B.speed) < 1.5 && B.nearShore()) ia2 = { label: 'ASHORE', icon: 'hand', act: () => B.leave() };
+    } else if (P.boat) {
+      // fishing from the anchored boat
+      ia = { label: 'DRIVE', icon: 'boat', act: () => B.takeHelm() };
+      if (B.nearShore()) ia2 = { label: 'ASHORE', icon: 'hand', act: () => B.leave() };
     } else {
       const dCar = Math.hypot(car.pos.x - P.pos.x, car.pos.z - P.pos.z);
       if (dCar < 3.6) ia = { label: 'DRIVE', icon: 'car', act: () => this.enterCar() };
@@ -723,6 +874,9 @@ class Session {
         const d = Math.hypot(it.x - P.pos.x, it.z - P.pos.z);
         if (d < it.r) {
           if (it.id === 'post') ia = { label: 'TRADE', icon: 'bag', act: () => g.screens.open('shop') };
+          if (it.id === 'soak') ia = { label: 'SOAK', icon: 'hand', act: () => this.soak() };
+          if (it.id === 'bugdope') ia = { label: 'BUG DOPE $15', icon: 'bag', act: () => this.buyBugDope() };
+          if (it.id === 'chest' && Math.abs(P.pos.y - it.y) < 1.6 && !g.state.flags.chest) ia = { label: 'OPEN', icon: 'claim', act: () => this.openChest() };
           if (it.id === 'cabin') {
             const t = g.env.time;
             const canSleep = t > 19.5 || t < 5;
@@ -743,8 +897,17 @@ class Session {
       }
       const claim = g.hunting.claimable();
       if (claim) ia = { label: 'CLAIM', icon: 'claim', act: () => g.hunting.claim(claim) };
+      if (B.canBoard()) ia2 = { label: 'BOARD', icon: 'boat', act: () => B.board() };
+      else if (B.owned) {
+        // standing by the trailer
+        const r = B.rear();
+        const near = Math.hypot(r.x - P.pos.x, r.z - P.pos.z) < 7 || dCar < 6;
+        if (near && B.canLaunch()) ia2 = { label: 'LAUNCH', icon: 'boat', act: () => B.launch() };
+        else if (near && B.canLoad()) ia2 = { label: 'LOAD BOAT', icon: 'boat', act: () => B.load() };
+      }
     }
     g.interaction = ia;
+    g.interaction2 = ia2;
   }
 
   updateTitle(dt) {
