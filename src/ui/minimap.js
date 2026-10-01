@@ -140,7 +140,7 @@ export class Minimap {
         ctx.restore();
       } else dot(q, 3 * unit, '#f4ead6', '#1a1208');
     }
-    if (g.player.mode === 'foot') {
+    if (g.player.mode !== 'drive') {
       const q = at(g.hotrod.pos.x, g.hotrod.pos.z, true);
       if (q) dot(q, 3.6 * unit, '#e8452c', '#1a0804');
     }

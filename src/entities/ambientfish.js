@@ -228,7 +228,8 @@ export class AmbientFish {
       t -= p.w;
       if (t <= 0) return p.id;
     }
-    return pool.length ? pool[0].id : 'pink';
+    // an empty pool (the hot pool): nothing swims there
+    return pool.length ? pool[0].id : null;
   }
 
   addSchool(x, z, radius, place, anchor) {
@@ -236,6 +237,7 @@ export class AmbientFish {
     const w = W.waterAt(x, z);
     if (!w || w.depth < 0.6) return null;
     const species = this.pickSpecies(w, place);
+    if (!species) return null;
     const hab = HABIT[species];
     const run = this.game.state.salmonRun;
     const bonus = run && place && run.place === place.id && species === 'sockeye' ? 5 : 0;

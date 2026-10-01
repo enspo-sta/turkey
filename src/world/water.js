@@ -649,10 +649,16 @@ export class WaterSystem {
             vec3 glass = vec3(0.12, 0.34, 0.33);
             vec3 foam = vec3(0.93, 0.96, 0.97);
             vec3 col = mix(glass, foam, clamp(white, 0.0, 1.0));
-            // light: sun colour and a bright rim where the sheet turns from you
+            // light: sun colour where the sun reaches the falls (not in the
+            // shadow of the gorge or a cloud), and a bright rim where the
+            // sheet turns from you
+            float sunVis = 1.0;
+            #ifdef USE_FOG
+              sunVis = fxShade(vFxWorld).r * fxCloudShadow(vFxWorld);
+            #endif
             float rim = pow(1.0 - abs(dot(normalize(vN), normalize(vView))), 2.0);
-            col *= (0.7 + 0.4 * clamp(length(uSunColor), 0.0, 1.5)) * mix(1.0, 0.25, uNight);
-            col += rim * 0.12 * (1.0 - uNight);
+            col *= (0.7 + 0.4 * clamp(length(uSunColor), 0.0, 1.5) * mix(0.3, 1.0, sunVis)) * mix(1.0, 0.25, uNight);
+            col += rim * 0.12 * (1.0 - uNight) * sunVis;
             col *= mix(1.0, 0.62, uBack);
             float alpha = mix(0.38, 0.95, clamp(white, 0.0, 1.0)) * edge * (1.0 - gap);
             // the run-in is clear water, the falls themselves opaque white

@@ -1,6 +1,7 @@
 // Builds docs/graphics-update.html: a self-contained dark report of the
 // graphics update with downscaled screenshots embedded as data URLs.
-// Usage: node tools/report/make-graphics-report.cjs
+// Usage: node tools/report/make-graphics-report.cjs [data.json] [out.html]
+// (by default graphics-report.json into docs/graphics-update.html)
 const fs = require('fs');
 const path = require('path');
 let chromium;
@@ -11,7 +12,8 @@ try {
 }
 const root = path.resolve(__dirname, '../..');
 const out = path.join(root, 'tools/out');
-const data = JSON.parse(fs.readFileSync(path.join(__dirname, 'graphics-report.json'), 'utf8'));
+const data = JSON.parse(fs.readFileSync(path.resolve(process.argv[2] || path.join(__dirname, 'graphics-report.json')), 'utf8'));
+const destFile = path.resolve(process.argv[3] || path.join(root, 'docs/graphics-update.html'));
 
 (async () => {
   const browser = await chromium.launch();
@@ -113,7 +115,7 @@ ${sections}
 <footer>${data.footer}</footer>
 </div></body></html>
 `;
-  const dest = path.join(root, 'docs/graphics-update.html');
+  const dest = destFile;
   fs.writeFileSync(dest, html);
   console.log('wrote', dest, Math.round(html.length / 1024), 'KB');
 })();

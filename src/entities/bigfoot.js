@@ -79,6 +79,15 @@ export class Bigfoot {
       const z = P.pos.z - Math.cos(a + Math.PI) * d;
       if (!W.inBounds(x, z, 40) || W.waterAt(x, z) || W.slopeAt(x, z) > 0.5) continue;
       if (W.forest && W.forest[W.cellIndex(x, z)] < 60) continue;
+      // somewhere you could actually see it from: no hill in between
+      const eyeY = P.pos.y + 1.7;
+      const y = W.heightAt(x, z) + 1.4;
+      let hidden = false;
+      for (let i = 1; i < 12 && !hidden; i++) {
+        const t = i / 12;
+        hidden = W.heightAt(P.pos.x + (x - P.pos.x) * t, P.pos.z + (z - P.pos.z) * t) > eyeY + (y - eyeY) * t + 0.3;
+      }
+      if (hidden) continue;
       this.pos.set(x, W.heightAt(x, z), z);
       // stroll across your view, a little away from you
       const away = Math.atan2(x - P.pos.x, z - P.pos.z);
@@ -97,8 +106,8 @@ export class Bigfoot {
     if (!this.active) {
       this.cooldown -= dt;
       if (this.cooldown <= 0 && this.eligible() && Math.random() < dt / 200) {
-        this.cooldown = 600 + Math.random() * 600;
-        this.spawn();
+        // a long rest after a sighting; nowhere to walk this time: try again soon
+        this.cooldown = this.spawn() ? 600 + Math.random() * 600 : 20;
       }
       return;
     }

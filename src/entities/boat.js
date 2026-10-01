@@ -204,6 +204,8 @@ export class Boat {
       this.boatMesh.geometry = buildBoat(motor);
     }
     this.group.visible = owned;
+    // no boat, nothing to tow (a new game after one with a boat)
+    if (!owned && this.game.hotrod) this.game.hotrod.towing = false;
   }
 
   // The hitch ball behind the hot rod's bumper.
@@ -231,6 +233,7 @@ export class Boat {
   // Water deep enough to float the boat behind (or beside) the trailer.
   launchSpot() {
     const W = this.game.world;
+    const carY = this.game.hotrod.pos.y;
     const r = this.rear();
     for (let d = 0; d <= 12; d += 1) {
       for (const off of [0, 0.5, -0.5, 1, -1]) {
@@ -238,7 +241,8 @@ export class Boat {
         const x = r.x + Math.sin(a) * d;
         const z = r.z + Math.cos(a) * d;
         const w = W.waterAt(x, z);
-        if (w && w.depth > 0.8) return { x, z, w, yaw: this.tYaw + Math.PI };
+        // about level with the car: not off a bridge or down a cliff
+        if (w && w.depth > 0.8 && w.level > carY - 2 && W.inBounds(x, z, 30)) return { x, z, w, yaw: this.tYaw + Math.PI };
       }
     }
     return null;
@@ -250,7 +254,7 @@ export class Boat {
 
   // The boat close enough to the trailer to winch it back on.
   canLoad() {
-    if (!this.owned || this.where !== 'water' || Math.abs(this.speed) > 1.5) return false;
+    if (!this.owned || this.where !== 'water' || Math.abs(this.speed) > 1.5 || Math.abs(this.game.hotrod.speed) > 1.2) return false;
     const r = this.rear();
     return Math.hypot(this.pos.x - r.x, this.pos.z - r.z) < 14;
   }
@@ -291,7 +295,9 @@ export class Boat {
   canBoard() {
     const g = this.game;
     if (!this.owned || this.where !== 'water' || g.player.mode !== 'foot' || g.player.boat) return false;
-    return Math.hypot(this.pos.x - g.player.pos.x, this.pos.z - g.player.pos.z) < 6;
+    // as far as ASHORE may have put you, and not from a bridge or a pier above
+    if (Math.abs(g.player.pos.y - this.pos.y) > 2) return false;
+    return Math.hypot(this.pos.x - g.player.pos.x, this.pos.z - g.player.pos.z) < 7.5;
   }
 
   board() {
@@ -421,15 +427,14 @@ export class Boat {
     this.tYaw = yaw;
     this.spin += (this.axle.distanceTo(before) / 0.3) * Math.sign(car.speed || 1);
     const W = g.world;
-    const ay = Math.max(W.heightAt(this.axle.x, this.axle.y), -2.5);
-    this.tPitch = Math.atan2(h.y - 0.45 - ay, TONGUE);
+    const ay = Math.max(car.groundAtPoint(this.axle.x, this.axle.y, h.y), -2.5);
+    this.tPitch = clamp(Math.atan2(h.y - 0.45 - ay, TONGUE), -0.4, 0.4);
     this.trailerGroup.position.set(h.x, h.y - 0.45, h.z);
     this.trailerGroup.rotation.set(0, 0, 0);
     this.trailerGroup.rotation.order = 'YXZ';
     this.trailerGroup.rotation.y = yaw;
     this.trailerGroup.rotation.x = -this.tPitch;
     for (const w of this.wheels) w.rotation.x = this.spin;
-    car.towing = this.where === 'trailer';
 
     if (this.slide) this.updateSlide(dt);
     else if (this.where === 'trailer') {
@@ -446,6 +451,8 @@ export class Boat {
       this.wasAfloat = true;
       this.updateAfloat(dt, input);
     }
+    // after the winch: towing from the frame the boat is back on
+    car.towing = this.where === 'trailer';
     this.boatMesh.position.copy(this.pos);
     this.boatMesh.rotation.set(0, 0, 0);
     this.boatMesh.rotation.order = 'YXZ';
@@ -457,6 +464,7 @@ export class Boat {
   updateSlide(dt) {
     const S = this.slide;
     S.t += dt;
+    if (S.then === 'trailer') S.to = this.boatOnTrailer();
     const u = clamp(S.t / S.dur, 0, 1);
     const e = u * u * (3 - 2 * u);
     this.pos.set(lerp(S.from.x, S.to.x, e), lerp(S.from.y, S.to.y, e) + Math.sin(u * Math.PI) * 0.25, lerp(S.from.z, S.to.z, e));
@@ -506,13 +514,50 @@ export class Boat {
     // the river carries you while you drive; moored or anchored she stays put
     const here = W.waterAt(this.pos.x, this.pos.z);
     if (here && this.occupied) {
-      nx += (here.flowX || 0) * 0.7 * dt;
-      nz += (here.flowZ || 0) * 0.7 * dt;
+      const fl = Math.hypot(here.flowX || 0, here.flowZ || 0);
+      const k = (0.7 * Math.min(fl, 3)) / (fl || 1);
+      nx += (here.flowX || 0) * k * dt;
+      nz += (here.flowZ || 0) * k * dt;
     }
     // shallows: the skeg touches bottom and the boat stops
     const bow = W.waterAt(nx + fx * 2.4 * Math.sign(this.speed || 1), nz + fz * 2.4 * Math.sign(this.speed || 1));
+    // piers, pilings, the bridge pier and the wreck: three circles along
+    // the hull push her clear, and she scrapes along instead of stopping dead
+    const lvl0 = here ? here.level : this.pos.y;
+    let px = 0;
+    let pz = 0;
+    let hit = false;
+    for (const lz of [1.6, 0, -1.6]) {
+      const cx = nx + fx * lz;
+      const cz = nz + fz * lz;
+      const r = g.colliders.resolve(cx, cz, 0.85, lvl0 - 0.4, 1.5);
+      if (r.hit) {
+        hit = true;
+        px += r.x - cx;
+        pz += r.z - cz;
+      }
+    }
+    if (hit) {
+      nx += px;
+      nz += pz;
+      if (Math.abs(this.speed) > 2.5 && g.time - (this.bumpT ?? -9) > 0.8) {
+        this.bumpT = g.time;
+        g.audio?.thud?.(Math.min(1, Math.abs(this.speed) / 10));
+        g.player.shake = Math.min(1, Math.abs(this.speed) / 8);
+        if (this.occupied && g.time - this.warnT > 4) {
+          this.warnT = g.time;
+          g.hud.toast('Bonk. Mind the paint');
+        }
+      }
+      this.speed *= Math.pow(0.05, dt);
+    }
     const w = W.waterAt(nx, nz);
-    if (!w || w.depth < 0.45 || !bow || bow.depth < 0.3) {
+    // and no going over (or up) a waterfall, or off the edge of the map
+    const drop = w && here && Math.abs(w.level - here.level) > 0.8;
+    // the sea goes on past the map: stay 30 m inside its edge (a boat left
+    // further out by an older version may still come back in)
+    const edge = (!W.inBounds(nx, nz, 30) && W.inBounds(this.pos.x, this.pos.z, 30)) || !W.inBounds(nx, nz, 4);
+    if (!w || w.depth < 0.45 || !bow || bow.depth < 0.3 || drop || edge) {
       nx = this.pos.x;
       nz = this.pos.z;
       if (Math.abs(this.speed) > 2.5) {
@@ -521,7 +566,7 @@ export class Boat {
       }
       if (this.occupied && g.time - this.warnT > 4) {
         this.warnT = g.time;
-        g.hud.toast(this.shoreSpot() ? 'Too shallow. Tap ASHORE to step off here' : 'Too shallow for the outboard');
+        g.hud.toast(edge ? 'The open sea is no place for a sixteen-foot skiff' : drop ? 'Not over the falls. Not today' : this.shoreSpot() ? 'Too shallow. Tap ASHORE to step off here' : 'Too shallow for the outboard');
       }
       this.speed *= -0.2;
     }
@@ -590,8 +635,10 @@ export class Boat {
     this.speed = 0;
     this.resetTrailer();
     if (d && d.owned && d.afloat) {
-      const w = this.game.world.waterAt(d.x, d.z);
-      if (w && w.depth > 0.4) {
+      const W = this.game.world;
+      const w = W.waterAt(d.x, d.z);
+      // afloat where it can float and move; otherwise back on its trailer
+      if (w && w.depth > 0.4 && W.inBounds(d.x, d.z, 30)) {
         this.where = 'water';
         this.pos.set(d.x, w.level, d.z);
         this.yaw = d.yaw || 0;

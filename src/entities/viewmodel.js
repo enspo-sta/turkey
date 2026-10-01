@@ -114,22 +114,30 @@ function buildHand(c) {
 // Bare hand and flannel sleeve for holding up a catch. Built in the fish
 // rig's frame (x right, y up, z toward the camera) with the grip point at the
 // origin: side 1 grips the tail wrist, side -1 cradles the belly.
+// Hand colours for the wardrobe's gloves: leather covers palm and fingers,
+// fingerless wool the palm only.
+function handColors(c) {
+  const palm = c.gloves === 'none' ? c.skin : c.glove;
+  const leather = c.gloves === 'leather';
+  return { palm, finger: leather ? c.glove : c.skin, crease: leather ? c.glove : c.crease };
+}
+
 function buildFishArm(side, c) {
   const b = new ModelBuilder();
   const skin = c.skin;
-  const crease = c.crease;
+  const h = handColors(c);
   if (side > 0) {
     // fist closed around the tail wrist, knuckles toward the camera
-    b.box(0.068, 0.084, 0.07, { pos: [0, 0, 0], color: skin });
-    for (let i = 0; i < 4; i++) b.box(0.064, 0.019, 0.024, { pos: [-0.004, 0.031 - i * 0.021, 0.04], color: i % 2 ? skin : crease });
+    b.box(0.068, 0.084, 0.07, { pos: [0, 0, 0], color: h.palm });
+    for (let i = 0; i < 4; i++) b.box(0.064, 0.019, 0.024, { pos: [-0.004, 0.031 - i * 0.021, 0.04], color: i % 2 ? h.finger : h.crease });
     // thumb hooked over the top
-    b.box(0.052, 0.022, 0.028, { pos: [-0.026, 0.05, 0.016], rot: [0, 0, 0.22], color: skin });
+    b.box(0.052, 0.022, 0.028, { pos: [-0.026, 0.05, 0.016], rot: [0, 0, 0.22], color: h.finger });
   } else {
     // flat palm under the belly, fingers reaching round the far side
-    b.box(0.1, 0.03, 0.085, { pos: [0, -0.004, 0], color: skin });
-    for (let i = 0; i < 4; i++) b.box(0.02, 0.052, 0.02, { pos: [-0.036 + i * 0.024, 0.02, -0.042], color: i % 2 ? crease : skin });
+    b.box(0.1, 0.03, 0.085, { pos: [0, -0.004, 0], color: h.palm });
+    for (let i = 0; i < 4; i++) b.box(0.02, 0.052, 0.02, { pos: [-0.036 + i * 0.024, 0.02, -0.042], color: i % 2 ? h.crease : h.finger });
     // thumb along the near side
-    b.box(0.022, 0.046, 0.022, { pos: [0.046, 0.018, 0.036], rot: [0, 0, -0.3], color: skin });
+    b.box(0.022, 0.046, 0.022, { pos: [0.046, 0.018, 0.036], rot: [0, 0, -0.3], color: h.finger });
   }
   // forearm running down and out of view toward the camera
   const dir = side > 0 ? [0.3, -0.62, 0.72] : [-0.36, -0.58, 0.72];
@@ -210,10 +218,10 @@ function bowTip(bend, side, out) {
 function buildBowArm(c) {
   const b = new ModelBuilder();
   const skin = c.skin;
-  const crease = c.crease;
-  b.box(0.05, 0.09, 0.05, { pos: [-0.008, -0.004, 0.024], color: skin });
-  for (let i = 0; i < 4; i++) b.box(0.056, 0.02, 0.022, { pos: [-0.006, 0.03 - i * 0.021, -0.024], color: i % 2 ? crease : skin });
-  b.box(0.022, 0.05, 0.024, { pos: [0.024, 0.02, 0.02], rot: [0, 0, -0.35], color: skin });
+  const h = handColors(c);
+  b.box(0.05, 0.09, 0.05, { pos: [-0.008, -0.004, 0.024], color: h.palm });
+  for (let i = 0; i < 4; i++) b.box(0.056, 0.02, 0.022, { pos: [-0.006, 0.03 - i * 0.021, -0.024], color: i % 2 ? h.crease : h.finger });
+  b.box(0.022, 0.05, 0.024, { pos: [0.024, 0.02, 0.02], rot: [0, 0, -0.35], color: h.finger });
   const dir = [-0.42, -0.46, 0.78];
   const n = Math.hypot(dir[0], dir[1], dir[2]);
   const at = (t, o = [0, 0, 0]) => [o[0] + (dir[0] / n) * t, o[1] + (dir[1] / n) * t, o[2] + (dir[2] / n) * t];
@@ -232,10 +240,10 @@ function buildBowArm(c) {
 function buildDrawArm(c) {
   const b = new ModelBuilder();
   const skin = c.skin;
-  const crease = c.crease;
-  for (let i = 0; i < 3; i++) b.box(0.02, 0.018, 0.05, { pos: [-0.004, 0.022 - i * 0.022, -0.004], color: i % 2 ? crease : skin });
-  b.box(0.05, 0.07, 0.06, { pos: [0.022, 0.0, 0.036], color: skin });
-  b.box(0.02, 0.02, 0.05, { pos: [0.036, 0.034, 0.012], rot: [0.3, 0, 0], color: skin });
+  const h = handColors(c);
+  for (let i = 0; i < 3; i++) b.box(0.02, 0.018, 0.05, { pos: [-0.004, 0.022 - i * 0.022, -0.004], color: i % 2 ? h.crease : h.finger });
+  b.box(0.05, 0.07, 0.06, { pos: [0.022, 0.0, 0.036], color: h.palm });
+  b.box(0.02, 0.02, 0.05, { pos: [0.036, 0.034, 0.012], rot: [0.3, 0, 0], color: h.finger });
   const dir = [0.42, -0.1, 0.9];
   const n = Math.hypot(dir[0], dir[1], dir[2]);
   const at = (t, o) => [o[0] + (dir[0] / n) * t, o[1] + (dir[1] / n) * t, o[2] + (dir[2] / n) * t];

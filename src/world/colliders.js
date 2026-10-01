@@ -82,6 +82,8 @@ export class Colliders {
         const arr = this.grid.get(this.key(i, j));
         if (!arr) continue;
         for (const c of arr) {
+          // over the top of it (a boat over a rock on the bottom)
+          if (c.top !== undefined && y > c.top) continue;
           const dx = x - c.x;
           const dz = z - c.z;
           const rr = c.r + radius;

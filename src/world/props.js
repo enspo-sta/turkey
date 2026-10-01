@@ -134,11 +134,14 @@ export class Props {
       return { id, x: p.x - d.x * 5.5 + d.z * 3, z: p.z - d.z * 5.5 - d.x * 3 };
     });
     for (const p of W.places) {
-      const n = this.nearestRoad(p.x, p.z);
+      // (at the wreck the stand is out on her deck: park by the beach)
+      const ax = p.parkX ?? p.x;
+      const az = p.parkZ ?? p.z;
+      const n = this.nearestRoad(ax, az);
       if (!n) continue;
       // parking bay beside the road, on the side facing the place
-      let sx = p.x - n.x;
-      let sz = p.z - n.z;
+      let sx = ax - n.x;
+      let sz = az - n.z;
       const l = Math.hypot(sx, sz) || 1;
       sx /= l;
       sz /= l;
@@ -177,7 +180,8 @@ export class Props {
     const keep = new Set([this.lantern, this.flag, this.beam, ...(this.bobbers || [])]);
     const groups = new Map();
     for (const m of [...this.group.children]) {
-      if (!m.isMesh || keep.has(m) || m.matrixAutoUpdate) continue;
+      // signs carry one material per face: merging them would draw nothing
+      if (!m.isMesh || keep.has(m) || m.matrixAutoUpdate || Array.isArray(m.material)) continue;
       const g = m.geometry;
       const key = [
         m.material.uuid,
@@ -501,6 +505,8 @@ export class Props {
       this.colliders.addBox(cx + ox * c, cz - ox * s, 0.25, len / 2, yaw, deck - 1, deck + 6);
     }
     this.colliders.addDeck(cx, cz, hw, len / 2 + 0.5, yaw, deck + 0.08, { bridge: true });
+    // the middle pier, solid below the deck: the boat goes round it
+    this.colliders.addBox(cx, cz, 1.1, 1.1, yaw, -50, deck - 0.6);
   }
 
   // ------------------------------------------------------------ docks
@@ -535,6 +541,8 @@ export class Props {
     b.box(0.08, 0.45, 0.35, { pos: [0.6, 0.22, len / 2 - 1.5], color: WOOD_DARK });
     this.addMesh(b.build(), cx, d.top, cz, yaw);
     this.colliders.addDeck(cx, cz, d.width / 2, len / 2, yaw, d.top);
+    // too low to pass under: the boat moors alongside instead
+    this.colliders.addBox(cx, cz, d.width / 2, len / 2, yaw, -50, d.top - 1.0);
     // small rowboat tied alongside
     const [bx, bz] = f.to(d.width / 2 + 1.2, len / 2 - 5);
     const lvl = this.world.lakeById[p.water] ? this.world.lakeById[p.water].level : 0;
@@ -610,6 +618,13 @@ export class Props {
     }
     this.addMesh(lamps.build(), cx, d.top, cz, yaw, this.lampMat, { shadow: false });
     this.colliders.addDeck(cx, cz, d.width / 2 + 0.1, len / 2, yaw, d.top);
+    // the pilings, below the deck: the boat threads between them
+    for (let i = 0; i <= posts; i++) {
+      for (const side of [-1, 1]) {
+        const [wx, wz] = f.to(side * (d.width / 2 + 0.1), -len / 2 + i * 4);
+        this.colliders.addBox(wx, wz, 0.25, 0.25, yaw, -50, d.top - 1.2);
+      }
+    }
     for (const side of [-1, 1]) {
       const [wx, wz] = f.to(side * (d.width / 2 + 0.35), 0);
       this.colliders.addBox(wx, wz, 0.2, len / 2 - 1.5, yaw, d.top - 1, d.top + 2);

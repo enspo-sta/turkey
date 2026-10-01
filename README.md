@@ -101,9 +101,9 @@ compressed).
     Mosquito (Alaska's unofficial state bird) and a machine that sells bug dope,
     which keeps the swarms and their opinions away for a while.
   - Shipwreck Cove: the Unsinkable II, a rusty trawler aground off the beach
-    since 1987. Walk the gangplank onto her deck, fish the deep water from it
-    for rockfish, lingcod and the wolf eel, open the sea chest in her wheelhouse,
-    and look out at the sea stacks.
+    since 1987. Walk the gangplank onto her deck and fish the deep water off
+    her stern for rockfish, lingcod and the wolf eel, open the sea chest in her
+    wheelhouse, and look out at the sea stacks.
 - A fishing boat on a trailer (at the garage): a sixteen-foot aluminium skiff
   with an outboard. It hitches to the hot rod and follows it round the map. Stop
   near any lake, the river or the bay and tap **LAUNCH**; walk up and **BOARD**
@@ -111,7 +111,8 @@ compressed).
   **FISH** drops anchor so you can cast all round the boat (bears cannot reach
   you out there); **ASHORE** steps off where the water meets the land, and
   **LOAD BOAT** winches it back onto the trailer. A bigger outboard makes it
-  half again as fast.
+  half again as fast. The boat bumps off piers, docks, the bridge pier and the
+  wreck, the river carries it along, and it will not go over Bear Falls.
 - Arcade driving with cockpit and chase cameras, a horn, engine sound that
   follows the revs, and upgrades: Flathead V8, Small-block 350 and a blown
   big-block, all-terrain tires, and four paint jobs.
@@ -193,7 +194,11 @@ compressed).
 - Lighting: sun shadows that reach about 250 metres, mountains that throw the
   valleys into shadow at dawn and dusk, darker gullies and forest floors, haze
   that thins with height and takes the colour of the sky, and leaves that glow
-  when the sun is behind them.
+  when the sun is behind them. Steam, spray, mist and smoke take the light of
+  the hour (dim and blue by moonlight, warm at dawn) and glow with a low sun
+  behind them; Bear Falls and the geyser darken in a mountain's or a cloud's
+  shadow; and the eye adapts, opening up a little under the trees and on grey
+  days and closing down when you look into a low sun.
 - Ground detail by surface: pebbles on gravel bars and river beds, layered rock
   on cliffs, sand and snow ripples and needles on the forest floor, with bump
   lighting. Curved grass blades in shades from lush green to dry straw,
@@ -209,7 +214,13 @@ compressed).
 - Mountains with rounded summits and rock bands, forest climbing their flanks
   to about 150 metres and snow on the high peaks (lower on the north faces), a
   steaming volcano across the inlet, a great snow massif to the north, clouds
-  clinging to the summits and cascades pouring down the cliffs.
+  clinging to the summits and cascades pouring down the cliffs. The nearest
+  ranges are modelled at 20-metre detail, and far away their steep faces get
+  crags and gullies that hold shade and old snow.
+- Bear Falls: the river runs to a lip and pours over it in two curved sheets,
+  split into three falls by boulders, white as it drops, with a foam pool,
+  wet rocks, spray and mist. The ground and water textures are at twice the
+  resolution they were, so the ground stays sharp at your feet.
 - Weather you can see on the land: cloud shadows drift over the meadows, the
   forest, the water and the far mountains (and when one covers you, a cloud
   hides the sun); gusts of wind roll across the grass in paler waves, bend the
@@ -425,13 +436,19 @@ node tools/shot.mjs tools/scenarios/bears-arrows.json # bears leave you alone wi
 node tools/shot.mjs tools/scenarios/announcer-bite.json # the bite readout at midday and at dawn with a front coming, its tap, the announcer's banners and the bite on the map
 node tools/shot.mjs tools/scenarios/wardrobe.json     # the T-shirt button, buying and wearing clothes, the sleeves in first person, Ruben at the wheel, the save
 node tools/shot.mjs tools/scenarios/camera.json       # buying the camera, the viewfinder on a moose, a three-star shot, the catch photo and the album
-node tools/shot.mjs tools/scenarios/boat.json         # buying the boat, the trailer, LAUNCH, BOARD, driving, the chase camera, fishing from the boat and LOAD BOAT
-node tools/shot.mjs tools/scenarios/areas.json        # Steaming Springs with the geyser blowing and the hot pool, Mosquito Flats, and Shipwreck Cove from the beach and the deck
+node tools/shot.mjs tools/scenarios/boat.json         # buying the boat, the trailer, LAUNCH, BOARD, driving, the chase camera, full gas at the bridge pier and at the lip of Bear Falls, fishing from the boat and LOAD BOAT
+node tools/shot.mjs tools/scenarios/areas.json        # Steaming Springs with the geyser blowing and a soak past midnight, Bear Falls, Mosquito Flats, and Shipwreck Cove from the beach, the deck and the fishing spot on her stern
+node tools/shot.mjs tools/scenarios/jobs-bigfoot.json # the odd jobs board, a picture of Bigfoot for the radio show, the cannery's three sockeye and the album
+node tools/shot.mjs tools/scenarios/layout-ipad.json  # the top bar, compass and bite readout on an iPad-sized screen
+node tools/shot.mjs tools/scenarios/layout-phone-small.json # the same on a small phone
 node tools/shot.mjs tools/scenarios/fish-species.json # lands each of the twelve newer fish, then shows the journal by rarity and the tackle box
 node tools/shot.mjs tools/scenarios/minimap.json      # the small map on foot and driving, its goal marker, and a tap to the full map
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot
 node tools/shot.mjs tools/scenarios/fish-views.json   # fish schools, a fish approaching the float and the fight
 node tools/shot.mjs tools/scenarios/light-views.json  # morning, noon, evening, sunset and night lighting
+node tools/shot.mjs tools/scenarios/light-compare.json # steam against a low sun and at night, Old Faceful at dusk, Bear Falls in the evening and the forest at noon
+node tools/shot.mjs tools/scenarios/before-after.json # Bear Falls and three mountain views, for comparing with an older build
+node tools/shot.mjs tools/scenarios/perf-new-places.json # draw calls, triangles and frame time at the three new places
 node tools/shot.mjs tools/scenarios/animals.json      # poses each of the newer animals and birds in front of the camera
 node tools/shot.mjs tools/scenarios/trees.json        # balsam poplar, quaking aspen, black spruce and coastal spruce up close
 node tools/shot.mjs tools/scenarios/plants.json       # the native ground plants up close

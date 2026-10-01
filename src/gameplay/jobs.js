@@ -15,7 +15,7 @@ export const JOBS = [
   { id: 'scientist', who: 'A fisheries scientist', text: 'wants a Sheefish from Mosquito Flats for her study. She promises it will barely notice.', kind: 'fish', species: 'sheefish', reward: 520 },
   { id: 'orcas', who: 'Captain Gus', text: 'wants a picture of the orcas to prove the Unsinkable II never sailed alone.', kind: 'photo', subject: 'orca', stars: 1, reward: 350 },
   { id: 'dryfly', who: 'The fly-fishing club', text: 'bets you cannot catch an Arctic Grayling on the Mosquito Dry Fly. Prove them wrong.', kind: 'fish', species: 'grayling', lure: 'dryfly', reward: 180 },
-  { id: 'ranger', who: 'The campground ranger', text: 'needs a grizzly moved along without anyone getting hurt. A bear whistler arrow should do it.', kind: 'event', event: 'scareOff', reward: 300 },
+  { id: 'ranger', who: 'The campground ranger', text: 'needs a bear moved along without anyone getting hurt. A bear whistler arrow should do it.', kind: 'event', event: 'scareOff', reward: 300 },
   { id: 'spa', who: 'Your aching back', text: 'demands a soak in the hot pool at Steaming Springs. It is not asking.', kind: 'event', event: 'soak', reward: 80 },
   { id: 'kings', who: 'The Bear Falls fish counter', text: 'needs a King Salmon over 20 kg to settle a bet with the bears.', kind: 'fish', species: 'king', minKg: 20, reward: 650 },
   { id: 'wolfeel', who: 'The aquarium in Seward', text: 'would love a Wolf Eel. Its face, mostly. Bring one from Shipwreck Cove.', kind: 'fish', species: 'wolfeel', reward: 900 },
@@ -60,7 +60,7 @@ export class Jobs {
     if (!open.length) return [];
     const day = this.game.env.day;
     const out = [];
-    for (let i = 0; i < Math.min(3, open.length); i++) out.push(open[(day * 5 + i * 7) % open.length]);
+    for (let i = 0; i < Math.min(3, open.length); i++) out.push(open[(day * 5 + i) % open.length]);
     return [...new Set(out)];
   }
 
@@ -76,16 +76,26 @@ export class Jobs {
     this.state.job = null;
   }
 
-  // The cooler fish that would do for a fish job (indices).
+  // The cooler fish that would do for a fish job (indices), the least
+  // valuable first: a legend is never handed over while a plain fish will do.
   matching(j) {
     const out = [];
-    this.state.cooler.forEach((f, i) => {
+    const C = this.state.cooler;
+    C.forEach((f, i) => {
       if (f.species !== j.species) return;
       if (j.minKg && f.weight < j.minKg) return;
       if (j.lure && f.lure !== j.lure) return;
       out.push(i);
     });
-    return out;
+    return out.sort((a, b) => (C[a].legend ? 1 : 0) - (C[b].legend ? 1 : 0) || (C[a].value || 0) - (C[b].value || 0));
+  }
+
+  // The fish a turn-in would hand over, for the Collect button.
+  handOver(j) {
+    const C = this.state.cooler;
+    return this.matching(j)
+      .slice(0, j.count || 1)
+      .map((i) => `${C[i].name} ${C[i].weight.toFixed(1)} kg`);
   }
 
   ready() {
@@ -117,7 +127,7 @@ export class Jobs {
 
   finish() {
     const s = this.state;
-    if (!s.job || s.job.done) return;
+    if (!s.job || s.job.done || !this.current()) return;
     s.job.done = true;
     const j = this.current();
     this.game.hud.toast(`Job done: ${jobGoal(j)}. Collect from ${j.who} at the Trading Post`, 'good');

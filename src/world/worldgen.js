@@ -533,7 +533,16 @@ export class World {
           }
         }
 
-        // lakes
+        // lakes. Only the nearest lake shapes a cell's shore: a small pool's
+        // rim must not fill in the bed of a bigger lake next to it
+        let sdNear = Infinity;
+        for (let li = 0; li < this.lakes.length; li++) {
+          const lake = this.lakes[li];
+          const dx = x - lake.x;
+          const dz = z - lake.z;
+          if (dx * dx + dz * dz > (lake.r * 1.5 + 170) ** 2) continue;
+          sdNear = Math.min(sdNear, this.lakeSD(lake, x, z));
+        }
         for (let li = 0; li < this.lakes.length; li++) {
           const lake = this.lakes[li];
           const dx = x - lake.x;
@@ -541,6 +550,7 @@ export class World {
           if (dx * dx + dz * dz > (lake.r * 1.5 + 170) ** 2) continue;
           const sd = this.lakeSD(lake, x, z);
           const L = lake.level;
+          if (sd >= 0 && sd > sdNear) continue;
           if (sd < 0) {
             const rr = this.lakeRadius(lake, Math.atan2(dz, dx));
             const u = smoothstep(0, rr * 0.75, -sd);
@@ -1061,13 +1071,27 @@ export class World {
           bx += g.x * (4 - c) * 0.8;
           bz += g.z * (4 - c) * 0.8;
         }
-        p.x = bx;
-        p.z = bz;
-        p.face = yawTo(-g.x, -g.z);
-        // she ran in bow first and swung a little on the falling tide
-        p.wreckAt = { x: bx - g.x * 24, z: bz - g.z * 24, yaw: Math.atan2(g.x, g.z) + 0.35 };
-        p.waterX = bx - g.x * 60;
-        p.waterZ = bz - g.z * 60;
+        // she ran in bow first and swung a little on the falling tide; she
+        // sits on the bottom, bow up a little
+        const wx = bx - g.x * 24;
+        const wz = bz - g.z * 24;
+        const yaw = Math.atan2(g.x, g.z) + 0.35;
+        const pitch = 0.05;
+        const deckTop = Math.min(this.heightAt(wx, wz), -0.6) - 0.35 + 4.12;
+        p.wreckAt = { x: wx, z: wz, yaw, pitch, deckTop };
+        // the gangplank, the parking bay and the signs stay on the beach
+        p.beachX = bx;
+        p.beachZ = bz;
+        p.parkX = bx;
+        p.parkZ = bz;
+        // fish off her stern, out over open water and clear of the hull
+        const sl = -10.2;
+        p.x = wx + Math.sin(yaw) * sl;
+        p.z = wz + Math.cos(yaw) * sl;
+        p.standY = deckTop + sl * pitch;
+        p.face = yaw;
+        p.waterX = p.x - Math.sin(yaw) * 30;
+        p.waterZ = p.z - Math.cos(yaw) * 30;
       } else if (p.kind === 'fishing' && p.water === 'ocean') {
         // pier from the beach out to deep water
         const g = this.coastGradient(p.x, p.z);
@@ -1089,7 +1113,7 @@ export class World {
         p.waterX = bx - g.x * (len + 30);
         p.waterZ = bz - g.z * (len + 30);
       }
-      p.y = p.dock ? p.dock.top : this.heightAt(p.x, p.z);
+      p.y = p.dock ? p.dock.top : p.standY ?? this.heightAt(p.x, p.z);
       return p;
     });
   }

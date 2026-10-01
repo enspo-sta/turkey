@@ -203,7 +203,8 @@ export class HUD {
   biteNow() {
     const g = this.game;
     const F = g.fishing;
-    const water = F.water?.kind || F.hotPlace?.water || null;
+    // the water of a cast in progress, else the nearest fishing place's
+    const water = (F.state !== 'idle' && F.water?.kind) || F.hotPlace?.water || null;
     return biteOutlook(g.env, water);
   }
 
@@ -528,7 +529,8 @@ export class HUD {
     el.speedo.hidden = !driving;
     el.primary.hidden = driving || catchOpen || tool === 'none';
     el.tool.hidden = driving || catchOpen || (fishing && fishing.state !== 'idle');
-    el.run.hidden = !onFoot || catchOpen;
+    // no running in a boat
+    el.run.hidden = !onFoot || catchOpen || !!P.boat;
     set('running', !!P.running, (v) => {
       el.run.classList.toggle('on', v);
       el.run.setAttribute('aria-pressed', String(v));
@@ -629,6 +631,11 @@ export class HUD {
       set('vfLabel', lbl, (v) => (el.vfLabel.textContent = v));
       set('vfZoom', g.photo.zoom, (v) => (el.vfZoom.textContent = v + '×'));
       el.viewfinder.classList.toggle('lock', !!(f && f.stars > 0));
+      const cr = g.photo.crop();
+      set('vfBox', `${(cr.fx * 100).toFixed(1)}|${(cr.fy * 100).toFixed(1)}`, () => {
+        el.viewfinder.style.setProperty('--vfw', (cr.fx * 100).toFixed(1) + '%');
+        el.viewfinder.style.setProperty('--vfh', (cr.fy * 100).toFixed(1) + '%');
+      });
     }
     set('xhair', tool === 'bow' && onFoot ? 'bow' : '', (v) => (el.crosshair.className = v));
 

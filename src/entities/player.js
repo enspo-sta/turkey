@@ -70,9 +70,18 @@ export class Player {
     this.health = Math.min(this.maxHealth, this.health + amount);
   }
 
+  // Healing and the camera shake settle in the car and the boat too.
+  tick(dt) {
+    if (this.game.time - this.lastHurt > 6 && this.health < this.maxHealth && this.health > 0) this.heal(3 * dt);
+    this.shake = Math.max(0, this.shake - dt * 1.6);
+    this.shakeT += dt;
+    this.kick = damp(this.kick, 0, 7, dt);
+  }
+
   update(dt, input) {
     const game = this.game;
     const W = game.world;
+    this.tick(dt);
     if (this.mode !== 'foot') return;
 
     // look
@@ -206,13 +215,6 @@ export class Player {
       const after = Math.floor(this.bobPhase / Math.PI);
       if (after !== before && this.onStep) this.onStep(this.surface, this.water, sprint);
     }
-
-    // health regeneration
-    if (game.time - this.lastHurt > 6 && this.health < this.maxHealth && this.health > 0) this.heal(3 * dt);
-
-    this.shake = Math.max(0, this.shake - dt * 1.6);
-    this.shakeT += dt;
-    this.kick = damp(this.kick, 0, 7, dt);
   }
 
   applyCamera(cam) {

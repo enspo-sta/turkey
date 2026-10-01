@@ -33,6 +33,7 @@ export const QUALITY = {
 };
 
 const _c = new THREE.Color();
+const _v3 = new THREE.Vector3();
 // cloud shadows: wind speed (m/s) and the size of one repeat of the cloud
 // texture on the ground (m, as in fxCloudShadow in worldfx.js); valley mist
 // density at sea level (per m)
@@ -133,6 +134,11 @@ export class Game {
     // mountain shadows and sky occlusion maps
     this.lighting = new TerrainLighting(renderer, this.world, this.wtex, this.farTerrain.userData.grid, IS_TOUCH ? 768 : 1024);
     this.lastLight = new THREE.Vector3(0, -1, 0);
+    // the eye's adaptation (see updateExposure)
+    this.exposure = 1;
+    this.canopy = 0;
+    this.canopyT = 0;
+    this.lastEye = new THREE.Vector3(1e9, 0, 0);
 
     this.water = new WaterSystem(this.world, this.wtex, this.textures.waterNormal, this.env, renderer);
     this.scene.add(this.water.group);
@@ -314,6 +320,7 @@ export class Game {
     this.effects?.update(dt);
     const rain = this.env.weather.rain;
     this.updateFx();
+    this.updateExposure(dt);
     this.water.update(dt, rain, cam, this.scene);
     this.scenery.update(dt);
     this.floaters.update(dt);
@@ -362,6 +369,47 @@ export class Game {
       .copy(hemi.color)
       .multiplyScalar(hemi.intensity * 0.7)
       .add(_c.copy(sun.color).multiplyScalar(sun.intensity * up * 0.3));
+  }
+
+  // The eye adapts, as it does outdoors: under the trees, in a cloud's
+  // shadow and on a grey day the view opens up a little; looking into a low
+  // sun it closes down. Kept to a narrow range so the tuned look of noon and
+  // of the night stays as it was. One number for the tone mapping: no extra
+  // work for the graphics processor.
+  updateExposure(dt) {
+    const env = this.env;
+    const cam = this.camera;
+    const p = cam.position;
+    const S = THREE.MathUtils.smoothstep;
+    // trees close round the camera, counted a few times a second
+    this.canopyT -= dt;
+    if (this.canopyT <= 0) {
+      this.canopyT = 0.25;
+      let n = 0;
+      for (const c of this.colliders.circlesNear(p.x, p.z, 9)) {
+        if (c.tag === 'tree' && (c.x - p.x) ** 2 + (c.z - p.z) ** 2 < 81) n++;
+      }
+      this.canopy = S(n, 1, 6);
+    }
+    const day = 1 - env.night;
+    let t = 1;
+    if (day > 0) {
+      const w = env.weather;
+      const grey = S(w.cloud, 0.5, 0.9);
+      const shade = 1 - this.cloudShadowAt(p);
+      t += day * (0.15 * this.canopy + 0.06 * shade + 0.05 * grey);
+      const e = env.sunElevation;
+      const low = S(e, -1, 4) * (1 - S(e, 15, 35));
+      cam.getWorldDirection(_v3);
+      const into = Math.max(0, _v3.dot(env.sunDir));
+      t -= day * 0.12 * into ** 6 * low * (1 - grey) * (1 - 0.7 * this.canopy);
+    }
+    t = Math.min(1.18, Math.max(0.88, t));
+    // after a jump (a fast travel, a new game) start adapted
+    if (this.lastEye.distanceToSquared(p) > 30 * 30) this.exposure = t;
+    else this.exposure += (t - this.exposure) * Math.min(1, dt * (t < this.exposure ? 2.5 : 0.9));
+    this.lastEye.copy(p);
+    this.renderer.toneMappingExposure = this.exposure;
   }
 
   render() {

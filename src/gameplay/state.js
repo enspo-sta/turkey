@@ -1,6 +1,7 @@
 // Persistent game state (money, gear, cooler, journal, challenges) with
 // localStorage save/load and challenge evaluation.
 import { CHALLENGES, SPECIES_IDS, COOLERS, RODS, FISH, ARROWS, ARROW_ORDER, QUIVER, LOOKS, LOOK_DEFAULT } from './data.js';
+import { JOBS } from './jobs.js';
 
 const SAVE_KEY = 'rubenHotrodFishing.save.v1';
 const SETTINGS_KEY = 'rubenHotrodFishing.settings.v1';
@@ -73,6 +74,8 @@ export class GameState {
     // the odd job in hand ({ id, done, n }) and the ones finished
     this.job = null;
     this.jobsDone = [];
+    // species whose first picture the magazine has bought
+    this.photoSold = {};
     this.challenges = {};
     this.stats = { casts: 0, perfects: 0, caught: 0, released: 0, snapped: 0, bearsSurvived: 0, bearsKilled: 0, hunted: 0, earned: 0 };
     this.time = 6.5;
@@ -241,6 +244,7 @@ export class GameState {
       flags: this.flags,
       job: this.job,
       jobsDone: this.jobsDone,
+      photoSold: this.photoSold,
       discovered: this.discovered,
       challenges: this.challenges,
       stats: this.stats,
@@ -302,6 +306,7 @@ export class GameState {
         flags: d.flags && typeof d.flags === 'object' ? d.flags : {},
         job: d.job && typeof d.job === 'object' ? d.job : null,
         jobsDone: Array.isArray(d.jobsDone) ? d.jobsDone : [],
+        photoSold: d.photoSold && typeof d.photoSold === 'object' ? d.photoSold : {},
         challenges: d.challenges || {},
         stats: { ...this.stats, ...(d.stats || {}) },
         time: d.time ?? this.time,
@@ -322,6 +327,8 @@ export class GameState {
       if (!d.gear || !d.gear.quiver) this.gear.quiver = { cedar: this.gear.arrows ?? 18 };
       this.gear.quiver = { ...this.gear.quiver };
       if (!ARROWS[this.gear.arrow]) this.gear.arrow = 'cedar';
+      // a job from an older version that no longer exists
+      if (this.job && !JOBS.some((j) => j.id === this.job.id)) this.job = null;
       for (const part of Object.keys(LOOK_DEFAULT)) if (!LOOKS[part].some((x) => x.id === this.look[part])) this.look[part] = LOOK_DEFAULT[part];
       delete this.gear.arrows;
       delete this.gear.scope;

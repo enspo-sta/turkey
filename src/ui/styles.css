@@ -109,8 +109,8 @@ svg { width: 1em; height: 1em; display: block; }
 .top-icons { display: flex; gap: 8px; }
 .top-status { display: flex; gap: 6px; align-items: center; }
 .clock { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 15px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 4px 10px; font-variant-numeric: tabular-nums; }
-/* wide screens: the clock and the bite sit beside the buttons */
-@media (min-width: 1100px) and (min-height: 600px) {
+/* very wide screens have room for the clock and the bite beside the buttons */
+@media (min-width: 1500px) and (min-height: 600px) {
   .top-right { flex-direction: row-reverse; align-items: center; gap: 8px; }
   .clock { font-size: 16px; padding: 6px 10px; }
 }
@@ -175,7 +175,8 @@ svg { width: 1em; height: 1em; display: block; }
 #place-title.show { animation: placeIn 3.6s ease forwards; }
 @keyframes placeIn { 0% { opacity: 0; transform: translate(-50%, 10px); } 15%, 75% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
 
-#viewfinder { position: absolute; inset: calc(var(--sat) + 70px) calc(var(--sar) + 150px) calc(var(--sab) + 40px) calc(var(--sal) + 110px); pointer-events: none; }
+/* the corners frame exactly what the picture keeps (set from the camera) */
+#viewfinder { position: absolute; left: 50%; top: 50%; width: var(--vfw, 70%); height: var(--vfh, 60%); transform: translate(-50%, -50%); pointer-events: none; }
 #viewfinder .vf-c { position: absolute; width: 34px; height: 34px; border: 3px solid rgba(255,255,255,.85); filter: drop-shadow(0 0 2px rgba(0,0,0,.7)); }
 #viewfinder .tl { left: 0; top: 0; border-right: 0; border-bottom: 0; }
 #viewfinder .tr { right: 0; top: 0; border-left: 0; border-bottom: 0; }
@@ -190,7 +191,6 @@ svg { width: 1em; height: 1em; display: block; }
 #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 30; }
 #flash.on { animation: flashOut .45s ease-out forwards; }
 @keyframes flashOut { from { opacity: .9; } to { opacity: 0; } }
-@media (max-height: 430px) { #viewfinder { inset: calc(var(--sat) + 96px) calc(var(--sar) + 120px) calc(var(--sab) + 30px) calc(var(--sal) + 100px); } }
 #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; transform: translate(-50%, -50%); }
 #crosshair i { position: absolute; inset: 0; border-radius: 50%; background: rgba(255,255,255,.85); box-shadow: 0 0 3px rgba(0,0,0,.8); }
 #crosshair.bow { width: 22px; height: 22px; border: 1.5px solid rgba(255,255,255,.45); border-radius: 50%; box-shadow: 0 0 3px rgba(0,0,0,.5); }
@@ -375,6 +375,11 @@ svg { width: 1em; height: 1em; display: block; }
 .map-card .place-info { background: rgba(13,26,31,.9); }
 .map-tools { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
 .map-tools .btn.icon { width: 44px; height: 44px; font-size: 22px; font-weight: 800; }
+@media (max-height: 430px) {
+  .map-tools { gap: 6px; top: 8px; right: 8px; }
+  .map-tools .btn.icon { width: 38px; height: 38px; font-size: 19px; }
+  .map-tools #map-list-btn { padding: 6px 10px; font-size: 13px; }
+}
 .map-list { position: absolute; right: 64px; top: 10px; width: min(240px, 40%); max-height: calc(100% - 20px); overflow: auto; display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 14px; background: rgba(13,26,31,.92); border: 1px solid var(--line); }
 .place-fish small { display: block; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 4px; }
 .bite-now { font-size: 12px; margin: 0 0 6px; color: var(--ink); opacity: .9; }
@@ -399,6 +404,7 @@ svg { width: 1em; height: 1em; display: block; }
 .job h4 { margin: 0; font-size: 18px; }
 .job p { margin: 0; font-size: 14px; line-height: 1.35; color: var(--ink-dim); }
 .job p.goal { color: var(--ink); font-weight: 700; }
+.job p.give { color: var(--flame-2); font-weight: 700; }
 .job .row { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
 .job .row .price { margin-right: auto; font-weight: 800; color: var(--flame-2); font-size: 17px; }
 .wardrobe { display: flex; gap: 16px; align-items: flex-start; }
@@ -502,7 +508,9 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
 }
 @media (max-width: 700px) {
   .map-card { width: min(300px, 62%); }
-  #compass { width: 52vw; }
+  /* a narrower compass, a little left of centre, clear of the top buttons */
+  #compass { width: 40vw; left: 44%; }
+  #objective { left: 44%; max-width: 52vw; }
 }
 @media (orientation: portrait) {
   #catch { left: 50%; right: auto; top: auto; bottom: calc(var(--sab) + 16px); transform: translateX(-50%); width: min(420px, 92vw); animation: none; }

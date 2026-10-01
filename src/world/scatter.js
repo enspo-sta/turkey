@@ -1252,7 +1252,8 @@ export class Scatter {
         const g = 0.75 + rand() * 0.3;
         const tint = [g * 0.4, g * 0.4, g * 0.41];
         T.rock.add(x, y - 0.25 * s, z, rand() * 6.28, s, tint, 0.8 + rand() * 0.6, 0.8 + rand() * 0.6, 0.25);
-        if (s > 0.6) this.colliders.addCircle(x, z, s * 0.85, 'rock');
+        // a boat floats over one deep enough on the bottom
+        if (s > 0.6) this.colliders.addCircle(x, z, s * 0.85, 'rock').top = y + 0.9 * s;
       }
     }
 

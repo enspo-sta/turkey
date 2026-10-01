@@ -30,14 +30,16 @@ function frame(x, z, yaw) {
 
 // Places the vegetation should leave clear.
 export function areaAvoid(W) {
-  const out = [{ x: GEYSER.x, z: GEYSER.z, r: 9 }];
+  // the geyser, its vents and mud pots all lie within about 32 m of it
+  const out = [{ x: GEYSER.x, z: GEYSER.z, r: 34 }];
   const hp = W.lakeById.hotpool;
   if (hp) out.push({ x: hp.x, z: hp.z, r: hp.r + 6 });
   const fl = W.place('flats');
   if (fl) out.push({ x: fl.x, z: fl.z, r: 10 });
   const wr = W.place('wreck');
   if (wr) {
-    out.push({ x: wr.x, z: wr.z, r: 12 });
+    // the foot of the gangplank on the beach, and the hull itself
+    out.push({ x: wr.beachX ?? wr.x, z: wr.beachZ ?? wr.z, r: 12 });
     if (wr.wreckAt) out.push({ x: wr.wreckAt.x, z: wr.wreckAt.z, r: 16 });
   }
   return out;
@@ -283,7 +285,7 @@ function buildFlats(P, L) {
     const r = 25 + rand() * 90;
     const x = p.x + Math.cos(a) * r;
     const z = p.z + Math.sin(a) * r;
-    if (W.waterAt(x, z) || W.roadDistance?.(x, z) < 8) continue;
+    if (W.waterAt(x, z) || W.roadD[W.cellIndex(x, z)] < 8) continue;
     const y = W.heightAt(x, z);
     const h = 4 + rand() * 5;
     snag.beam([x - p.x, y - p.y, z - p.z], [x - p.x + (rand() - 0.5) * 0.4, y - p.y + h, z - p.z + (rand() - 0.5) * 0.4], 0.12 + rand() * 0.06, 5, { r2: 0.03, color: 0x8c8880 });
@@ -352,17 +354,83 @@ function hull(sections, inner, colorAt) {
   return g;
 }
 
+// What you walk on and bump into at the wreck (also used by the tests in
+// node): her deck, the wheelhouse, a rail along her sides and across the
+// stern, the hatch, the crab pots, the sea chest and the mast; the hull
+// below the deck for boats and anyone wading; and the gangplank.
+export function addWreckColliders(C, W, p) {
+  const w = p.wreckAt;
+  const f = frame(w.x, w.z, w.yaw);
+  const deckTop = w.deckTop;
+  const pitch = w.pitch;
+  const at = (lz) => deckTop + lz * pitch;
+  C.addDeck(w.x, w.z, 3.1, 11.5, w.yaw, deckTop, { slope: pitch, wreck: true });
+  const [hx, hz] = f.to(0, -6.2);
+  C.addBox(hx, hz, 2.3, 2.1, w.yaw, deckTop - 1, deckTop + 3);
+  // the rails follow her sides in short pieces, so the walk past the
+  // wheelhouse stays as wide as it looks (about 0.85 m)
+  const beam = (lz) => {
+    for (let i = 0; i < WRECK.length - 1; i++) {
+      const [z0, g0] = WRECK[i];
+      const [z1, g1] = WRECK[i + 1];
+      if (lz >= z0 && lz <= z1) return g0 + ((g1 - g0) * (lz - z0)) / (z1 - z0);
+    }
+    return 0.1;
+  };
+  for (const sd of [-1, 1]) {
+    for (let z = -12; z < 12; z += 1.5) {
+      const zm = z + 0.75;
+      const [rx, rz] = f.to(sd * (beam(zm) - 0.12), zm);
+      C.addBox(rx, rz, 0.12, 0.8, w.yaw, deckTop - 1, deckTop + 2);
+    }
+  }
+  // across the stern
+  const [tx, tz] = f.to(0, -11.8);
+  C.addBox(tx, tz, 3.0, 0.2, w.yaw, deckTop - 1, deckTop + 2);
+  // the hatch is a step up; the crab pots, the sea chest and the mast are in the way
+  const [ax, az] = f.to(0, 3.2);
+  C.addDeck(ax, az, 1.3, 1.3, w.yaw, at(3.2) + 0.44, { slope: pitch });
+  const [px, pz] = f.to(-1.7, 6.8);
+  C.addBox(px, pz, 0.95, 0.68, w.yaw, deckTop - 1, deckTop + 1.6);
+  const [cx, cz] = f.to(1.2, -3.6);
+  C.addBox(cx, cz, 0.47, 0.3, w.yaw + 0.2, deckTop - 1, deckTop + 0.7);
+  const [mx, mz] = f.to(0, 1.5);
+  C.addBox(mx, mz, 0.2, 0.2, w.yaw, deckTop - 1, deckTop + 9);
+  // the hull below the deck: boats bump it, and nobody wades through it
+  const [bx, bz] = f.to(0, -1.5);
+  C.addBox(bx, bz, 3.4, 10.5, w.yaw, -50, deckTop - 1.2);
+  const [ux, uz] = f.to(0, 11.5);
+  C.addBox(ux, uz, 1.9, 2.5, w.yaw, -50, deckTop - 1.2);
+  // the gangplank from the beach up to the bow
+  const [gx1, gz1] = f.to(0, 10);
+  const gy1 = at(10);
+  const sx = p.beachX;
+  const sz = p.beachZ;
+  const sy = W.heightAt(sx, sz);
+  const len = Math.hypot(gx1 - sx, gz1 - sz);
+  const gyaw = Math.atan2(gx1 - sx, gz1 - sz);
+  const gf = frame((sx + gx1) / 2, (sz + gz1) / 2, gyaw);
+  C.addDeck((sx + gx1) / 2, (sz + gz1) / 2, 0.75, len / 2, gyaw, (sy + gy1) / 2, { slope: (gy1 - sy) / len });
+  // and its rope rails
+  for (const sd of [-1, 1]) {
+    const [rx, rz] = gf.to(sd * 0.82, 0);
+    C.addBox(rx, rz, 0.08, len / 2, gyaw, Math.min(sy, gy1) - 0.4, Math.max(sy, gy1) + 1.5);
+  }
+  return deckTop;
+}
+
 function buildWreck(P) {
   const W = P.world;
   const p = W.place('wreck');
   if (!p || !p.wreckAt) return;
   const w = p.wreckAt;
   const rand = mulberry32(1987);
-  // she rests on the bottom, bow up a little and listing to port
-  const bed = Math.min(W.heightAt(w.x, w.z), -0.6);
-  const baseY = bed - 0.35;
-  const pitch = 0.05;
-  const roll = 0.1;
+  // she rests on the bottom, bow up a little; no list, so the deck you see
+  // is the deck you walk on
+  const deckTop = w.deckTop;
+  const baseY = deckTop - 4.12;
+  const pitch = w.pitch;
+  const roll = 0;
   const b = new ModelBuilder();
   // rust below the old waterline, black topsides, a white band, rust streaks
   b.add(
@@ -414,11 +482,7 @@ function buildWreck(P) {
     plate.rotation.set(0, w.yaw + (sd > 0 ? Math.PI / 2 - 0.25 : -Math.PI / 2 + 0.25), 0);
     P.group.add(plate);
   }
-  // a walkable deck (bow up), and the hull and wheelhouse keep you aboard
-  const deckTop = baseY + 4.12;
-  P.colliders.addDeck(w.x, w.z, 3.1, 11.5, w.yaw, deckTop, { slope: pitch, wreck: true });
-  const [hx, hz] = f.to(0, -6.2);
-  P.colliders.addBox(hx, hz, 2.3, 2.1, w.yaw, deckTop - 1, deckTop + 3);
+  addWreckColliders(P.colliders, W, p);
   P.wreckDeck = { x: w.x, z: w.z, yaw: w.yaw, top: deckTop };
   // the sea chest, wedged in the wheelhouse door
   const [cx, cz] = f.to(1.2, -3.6);
@@ -432,8 +496,8 @@ function buildWreck(P) {
   // the gangplank from the beach up to the bow
   const [bx, bz] = f.to(0, 10);
   const by = deckTop + 10 * pitch;
-  const sx = p.x;
-  const sz = p.z;
+  const sx = p.beachX;
+  const sz = p.beachZ;
   const sy = W.heightAt(sx, sz);
   const len = Math.hypot(bx - sx, bz - sz);
   const gyaw = Math.atan2(bx - sx, bz - sz);
@@ -445,16 +509,15 @@ function buildWreck(P) {
   for (let i = 0; i < n; i++) plank.box(1.3, 0.07, len / n - 0.05, { pos: [0, -0.03 + (i + 0.5 - n / 2) * (len / n) * slope, -len / 2 + (i + 0.5) * (len / n)], color: i % 3 ? WOOD_LIGHT : WOOD });
   for (const sd of [-1, 1]) plank.beam([sd * 0.7, 0.9 - (len / 2) * slope, -len / 2], [sd * 0.7, 0.9 + (len / 2) * slope, len / 2], 0.04, 4, { color: WOOD_DARK });
   P.addMesh(plank.build(), gx, (sy + by) / 2, gz, gyaw);
-  P.colliders.addDeck(gx, gz, 0.75, len / 2, gyaw, (sy + by) / 2, { slope });
   // sea stacks off the cove, white with birds
-  const g = W.coastGradient(p.x, p.z);
+  const g = W.coastGradient(sx, sz);
   for (let i = 0; i < 3; i++) {
     const d = 70 + i * 26 + rand() * 20;
     const a = (i - 1) * 0.45;
     const tx = -g.x * Math.cos(a) + g.z * Math.sin(a);
     const tz = -g.z * Math.cos(a) - g.x * Math.sin(a);
-    const x = p.x + tx * d;
-    const z = p.z + tz * d;
+    const x = sx + tx * d;
+    const z = sz + tz * d;
     const st = new ModelBuilder();
     const h = 9 + rand() * 9;
     let r = 3.6 + rand() * 2;
@@ -541,7 +604,15 @@ export class Areas {
           float top = 1.0 - smoothstep(0.55, 1.0, vUv.y);
           float a = (0.35 + body * 0.65) * mix(0.35, 1.0, top) * smoothstep(0.0, 0.5, vFacing) * uPower;
           a *= 1.0 - smoothstep(0.75, 1.0, vUv.y) * (1.0 - body);
-          vec3 col = vec3(0.95, 0.97, 0.98) * (0.72 + 0.35 * clamp(length(uSun), 0.0, 1.5)) * mix(1.0, 0.3, uNight);
+          // lit by the sun where it reaches, and glowing with the sun behind it
+          float sunVis = 1.0;
+          float fwd = 0.0;
+          #ifdef USE_FOG
+            sunVis = fxShade(vFxWorld).r * fxCloudShadow(vFxWorld);
+            fwd = pow(max(dot(normalize(vFxWorld - cameraPosition), uFxSunDir), 0.0), 5.0);
+          #endif
+          vec3 col = vec3(0.95, 0.97, 0.98) * (0.72 + 0.35 * clamp(length(uSun), 0.0, 1.5) * mix(0.35, 1.0, sunVis)) * mix(1.0, 0.3, uNight);
+          col += uSun * fwd * 0.5 * sunVis * (1.0 - uNight);
           gl_FragColor = vec4(col, clamp(a, 0.0, 1.0));
           #include <tonemapping_fragment>
           #include <colorspace_fragment>
@@ -646,7 +717,10 @@ export class Areas {
         this.column.material.uniforms.uPower.value = Math.min(1, h * 1.4);
       }
       if (d < 600) {
-        const n = Math.floor(dt * 90);
+        // the same spray at any frame rate
+        this.acc += dt * 90;
+        const n = Math.floor(this.acc);
+        this.acc -= n;
         const power = this.t > 6 ? 1 : this.t / 6;
         for (let i = 0; i < n; i++) {
           const a = Math.random() * Math.PI * 2;

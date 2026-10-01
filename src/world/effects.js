@@ -3,6 +3,8 @@
 import * as THREE from 'three';
 import { makeSoftDotTexture } from '../util/textures.js';
 
+const _lc = new THREE.Color();
+
 const pVert = /* glsl */ `
 #include <common>
 #include <fog_pars_vertex>
@@ -32,8 +34,27 @@ void main() {
   #include <fog_fragment>
 }`;
 
+// Steam, spray, mist, dust and smoke take the light of the hour: the sky's
+// and the sun's colour (dim and blue by moonlight, warm at dawn), and they
+// glow when the sun is behind them, as droplets do. Worked out once per
+// particle in the vertex stage.
+const litVert = pVert
+  .replace(
+    'uniform float uScale;',
+    `uniform float uScale;
+uniform vec3 uLight;
+uniform vec3 uGlow;
+uniform vec3 uLightDir;`
+  )
+  .replace(
+    'vColor = aColor;',
+    `vec3 wp = (modelMatrix * vec4(position, 1.0)).xyz;
+  float fwd = pow(max(dot(normalize(wp - cameraPosition), uLightDir), 0.0), 5.0);
+  vColor = vec4(aColor.rgb * (uLight + uGlow * fwd), aColor.a);`
+  );
+
 class ParticlePool {
-  constructor(max, tex, additive) {
+  constructor(max, tex, additive, lit = false) {
     this.max = max;
     this.count = 0;
     this.pos = new Float32Array(max * 3);
@@ -55,8 +76,15 @@ class ParticlePool {
     g.setAttribute('aColor', this.aColor);
     g.setDrawRange(0, 0);
     this.material = new THREE.ShaderMaterial({
-      uniforms: { uTex: { value: tex }, uScale: { value: 400 }, ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog) },
-      vertexShader: pVert,
+      uniforms: {
+        uTex: { value: tex },
+        uScale: { value: 400 },
+        uLight: { value: new THREE.Color(1, 1, 1) },
+        uGlow: { value: new THREE.Color(0, 0, 0) },
+        uLightDir: { value: new THREE.Vector3(0, 1, 0) },
+        ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
+      },
+      vertexShader: lit ? litVert : pVert,
       fragmentShader: pFrag,
       transparent: true,
       depthWrite: false,
@@ -316,7 +344,8 @@ export class Effects {
     this.group = new THREE.Group();
     this.group.name = 'effects';
     const tex = makeSoftDotTexture();
-    this.soft = new ParticlePool(2400, tex, false);
+    // soft: lit by the sun and the sky; glow: sparks and flames, their own light
+    this.soft = new ParticlePool(2400, tex, false, true);
     this.glow = new ParticlePool(600, tex, true);
     this.ripples = new Ripples();
     this.rain = new Rain();
@@ -456,6 +485,12 @@ export class Effects {
         if (Math.random() < 0.25) this.soft.emit(f.x, f.y + 0.9, f.z, 0.2, 0.9, 0.1, 4, 0.4, 2.2, 0.5, 0.5, 0.52, 0.16, -0.05, 0.2);
       }
     }
+    // the light of the hour, scaled so the noon look is unchanged
+    const env = g.env;
+    const u = this.soft.material.uniforms;
+    u.uLight.value.copy(env.sun.color).multiplyScalar(env.sun.intensity * 0.24).add(_lc.copy(env.hemi.color).multiplyScalar(env.hemi.intensity * 0.36));
+    u.uGlow.value.copy(env.sun.color).multiplyScalar(env.sun.intensity * 0.4);
+    u.uLightDir.value.copy(env.lightDir);
     this.soft.update(dt);
     this.glow.update(dt);
     this.ripples.update(dt);

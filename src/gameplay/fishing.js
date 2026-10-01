@@ -1495,7 +1495,7 @@ export class Fishing {
       const x = pl.x - Math.sin(a) * d;
       const z = pl.z - Math.cos(a) * d;
       const w = W.waterAt(x, z);
-      if (!w || w.depth < 0.9) continue;
+      if (!w || w.depth < 0.9 || w.kind === 'hotpool') continue;
       let clash = false;
       for (const h of this.hotspots) if (Math.hypot(h.x - x, h.z - z) < 9) clash = true;
       if (clash) continue;

@@ -428,6 +428,11 @@ function drawPortrait(canvas, look) {
   }
 }
 
+// What a part pack of arrows costs: the pack price for the share that fits.
+function arrowCost(A, add) {
+  return Math.ceil((A.price * add) / A.pack);
+}
+
 export class Screens {
   constructor(game) {
     this.game = game;
@@ -888,10 +893,13 @@ export class Screens {
       v.max = 4 * dpr;
       v.scale = clamp(v.scale, v.min, v.max);
     }
-    // keep some of the map on screen
+    // keep the map filling the screen when it is bigger than the screen, and
+    // centred when it is smaller: no empty strips beyond the edge of the world
     const half = SIZE / 2;
-    v.cx = clamp(v.cx, -half, half);
-    v.cz = clamp(v.cz, -half, half);
+    const hx = W / 2 / v.scale;
+    const hz = H / 2 / v.scale;
+    v.cx = hx < half ? clamp(v.cx, -half + hx, half - hx) : 0;
+    v.cz = hz < half ? clamp(v.cz, -half + hz, half - hz) : 0;
     const sx = (x) => (x - v.cx) * v.scale + W / 2;
     const sy = (z) => (z - v.cz) * v.scale + H / 2;
     const ctx = canvas.getContext('2d');
@@ -977,15 +985,15 @@ export class Screens {
     ctx.lineWidth = 2.5 * k;
     ctx.stroke();
     ctx.restore();
-    // north
+    // north is up: a small mark in the bottom left, clear of the buttons
     ctx.fillStyle = 'rgba(13,26,31,0.75)';
     ctx.beginPath();
-    ctx.arc(W - 30 * k, H - 30 * k, 20 * k, 0, Math.PI * 2);
+    ctx.arc(26 * k, H - 26 * k, 17 * k, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#f4ead6';
-    ctx.font = `800 ${18 * k}px "Barlow Condensed", sans-serif`;
+    ctx.font = `800 ${16 * k}px "Barlow Condensed", sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText('N', W - 30 * k, H - 23 * k);
+    ctx.fillText('N', 26 * k, H - 20 * k);
   }
 
   // -------------------------------------------------------------- journal
@@ -1119,7 +1127,8 @@ export class Screens {
       let html = '';
       if (cur) {
         const ok = J.ready();
-        html += `<div class="job current"><small>Your job</small><h4>${esc(cur.who)}</h4><p>${esc(cur.text)}</p><p class="goal">${esc(jobGoal(cur))}</p><div class="row"><span class="price">${formatMoney(cur.reward)}</span><button class="btn ghost" data-job="drop">Give up</button><button class="btn ${ok ? 'hot' : ''}" data-job="turnin" ${ok ? '' : 'disabled'}>${ok ? 'Collect' : 'Not done yet'}</button></div></div>`;
+        const give = ok && cur.kind === 'fish' ? `<p class="give">You hand over: ${esc(J.handOver(cur).join(', '))}</p>` : '';
+        html += `<div class="job current"><small>Your job</small><h4>${esc(cur.who)}</h4><p>${esc(cur.text)}</p><p class="goal">${esc(jobGoal(cur))}</p>${give}<div class="row"><span class="price">${formatMoney(cur.reward)}</span><button class="btn ghost" data-job="drop">Give up</button><button class="btn ${ok ? 'hot' : ''}" data-job="turnin" ${ok ? '' : 'disabled'}>${ok ? 'Collect' : 'Not done yet'}</button></div></div>`;
       } else {
         const offers = J.offers();
         html += offers.length
@@ -1191,17 +1200,20 @@ export class Screens {
       for (const [id, l] of Object.entries(LURES).sort((a, b) => a[1].price - b[1].price))
         card(id, l.name, l.desc, l.price, s.gear.lures.includes(id), s.gear.lure === id, 'lure', `<div class="swatch" style="background:${hex(l.color)}"></div>`);
     } else if (tab === 'gear') {
-      const consumable = (id, title, desc, price, have, max, extra = '') => {
+      const consumable = (id, title, desc, price, have, max, extra = '', label = 'Buy') => {
         const can = s.money >= price && have < max;
         cards.push(
           `<div class="item">${extra}<h4>${esc(title)}</h4><p>${esc(desc)}</p><div class="row"><span class="price">${formatMoney(price)}</span><span class="tag">Have ${have}${
             max < 999 ? '/' + max : ''
-          }</span><button class="btn ${can ? 'hot' : ''}" data-act="buy-item" data-id="${id}" ${can ? '' : 'disabled'}>Buy</button></div></div>`
+          }</span><button class="btn ${can ? 'hot' : ''}" data-act="buy-item" data-id="${id}" ${can ? '' : 'disabled'}>${label}</button></div></div>`
         );
       };
       for (const k of ARROW_ORDER) {
         const A = ARROWS[k];
-        consumable('arrow-' + k, `${A.name} (${A.pack})`, A.desc, A.price, s.arrowsLeft(k), s.arrowCap(k), `<div class="swatch" style="background:${hex(A.tint)}"></div>`);
+        // a nearly full quiver tops up at the price of what fits
+        const add = Math.max(0, Math.min(A.pack, s.arrowCap(k) - s.arrowsLeft(k)));
+        const cost = add ? arrowCost(A, add) : A.price;
+        consumable('arrow-' + k, `${A.name} (${A.pack})`, A.desc, cost, s.arrowsLeft(k), s.arrowCap(k), `<div class="swatch" style="background:${hex(A.tint)}"></div>`, add && add < A.pack ? `Buy ${add}` : 'Buy');
       }
       consumable('spray', GEAR.spray.name, GEAR.spray.desc, GEAR.spray.price, s.gear.spray, 2);
       consumable('medkit', GEAR.medkit.name, GEAR.medkit.desc, GEAR.medkit.price, s.gear.medkit, 3);
@@ -1270,8 +1282,9 @@ export class Screens {
           const k = id.slice(6);
           const A = ARROWS[k];
           if (!A || s.arrowsLeft(k) >= s.arrowCap(k)) break;
-          if (pay(A.price)) {
-            s.gear.quiver[k] = Math.min(s.arrowCap(k), s.arrowsLeft(k) + A.pack);
+          const add = Math.min(A.pack, s.arrowCap(k) - s.arrowsLeft(k));
+          if (pay(arrowCost(A, add))) {
+            s.gear.quiver[k] = s.arrowsLeft(k) + add;
             // an empty string takes the new arrows straight away
             if (s.arrowsLeft() <= 0) s.gear.arrow = k;
             g.hud.toast(`${A.name} in the quiver`, 'good');
@@ -1485,6 +1498,8 @@ export class Screens {
         b.addEventListener('click', () => {
           st[key] = b.dataset.v === '1';
           g.state.saveSettings();
+          // switching the voice off cuts the line it is saying
+          if (key === 'announcer' && !st[key]) g.announcer?.stop();
           this.render();
         })
       );
@@ -1532,7 +1547,7 @@ export class Screens {
         <div class="demo-meter"><i style="left:30%;width:40%;background:rgba(95,200,192,.3)"></i><i style="left:52%;width:9%;background:#ffcc3a"></i></div>
         <p><b>Timing:</b> a white marker sweeps back and forth across the timing bar. Tap when it is on the dark green line in the middle.</p>
         <div class="demo-meter timing" style="background:${timingGradient()}"><i class="demo-cursor" style="left:48%"></i></div>
-        <ul><li>The dark green line: a <b>PERFECT CAST</b> into the ring and better bites.</li><li>Green: the lure lands in the ring.</li><li>Orange: left of the line hooks it left, right of it slices it right, and it falls short.</li><li>Red: a backlash to untangle.</li></ul></section>
+        <ul><li>The dark green line: a <b>PERFECT CAST</b> into the ring and better bites. When the meter shows a gold hotspot, the power must be in the gold too.</li><li>Green: the lure lands in the ring.</li><li>Orange: left of the line hooks it left, right of it slices it right, and it falls short.</li><li>Red: a backlash to untangle.</li></ul></section>
       <section><h4>Bites</h4><p>Watch the float. Small twitches are nibbles, so wait. When it plunges under, tap <b>HOOK!</b> fast.</p><p>The <b>BITE</b> readout under the map button says how hungry the fish are: <b>SLOW</b>, <b>FAIR</b>, <b>GOOD</b> or <b>HOT</b>. Tap it to hear why. Fish feed hardest at dawn and dusk, when a front rolls in and with rain on the water; they sulk under a bright midday sun and go quiet at night. On the sea, fish a running tide. The map shows the bite at each place and when each fish bites best.</p><p>Tap <b>REEL</b> while waiting to twitch the lure, hold it to retrieve. The line only comes in when you reel: the current carries the float along but never back to your feet, and a lure that lands on the bank stays there until you hold <b>REEL</b>.</p></section>
       <section><h4>Rare fish</h4><p>Every fish is <b>common</b>, <b>uncommon</b>, <b>rare</b> or <b>epic</b>. Rarer fish bite less often and sell for more. A cast to a gold hotspot or a <b>PERFECT CAST</b> raises the odds of a rare one, and the right lure matters: each lure in the Trading Post says what it catches. The epic big skate and salmon shark live off Halibut Pier.</p></section>
       <section><h4>The fight</h4><ul><li>Hold <b>REEL</b> to bring the fish in. Keep the needle in the green. Only reeling brings it closer: let go and it stays out.</li><li>When it runs, let go before the line snaps, then reel again.</li><li>Steer the rod against the run: ${touch ? 'drag left or right on the left side' : 'press <kbd>A</kbd> or <kbd>D</kbd>'}.</li><li>When it jumps, release REEL or it throws the hook.</li></ul></section>

@@ -1196,7 +1196,7 @@ export const GAME = {
 export const CHALLENGES = [
   { id: 'first', text: 'Catch your first fish at Hotrod Landing', reward: 50 },
   { id: 'sell', text: 'Drive the hot rod to the Trading Post and sell your catch', reward: 75 },
-  { id: 'perfect', text: 'Make a PERFECT cast (hit both marks on the meter)', reward: 60 },
+  { id: 'perfect', text: 'Make a PERFECT cast (the dark green line, and the gold when the meter shows a hotspot)', reward: 60 },
   { id: 'sockeye', text: 'Catch a Sockeye Salmon at Salmon Bend', reward: 150 },
   { id: 'lure', text: 'Buy a new lure at the Trading Post', reward: 50 },
   { id: 'falls', text: 'Find Bear Falls up the River Road', reward: 100 },

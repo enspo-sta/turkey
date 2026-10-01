@@ -276,6 +276,9 @@ class Session {
     if (g.player.mode === 'boat' || g.player.boat) g.boat.leave(true);
     g.audio.stopEngine();
     g.audio.updateOutboard?.(0, 0, 999, false);
+    g.announcer.stop();
+    clearTimeout(this.koRetry);
+    this.koRetry = null;
     this.showTitle();
   }
 
@@ -317,7 +320,15 @@ class Session {
     }
     // the boat: on its trailer behind the car, or moored where you left it
     g.boat.restore(continueSave ? s.boat : null);
-    if (continueSave && s.player && s.player.aboard && g.boat.where === 'water') g.boat.board();
+    if (continueSave && s.player && s.player.aboard) {
+      if (g.boat.where === 'water') g.boat.board();
+      else {
+        // the boat could not stay where it was (it is back on its trailer):
+        // carry on beside the car instead of in deep water
+        const ex = g.hotrod.exitPoint(1);
+        g.player.place(ex.x, ex.z, g.hotrod.yaw);
+      }
+    }
     this.mode = 'play';
     g.input.resetAll();
     if (!IS_TOUCH) g.input.requestPointerLock();
@@ -377,6 +388,7 @@ class Session {
       if (document.hidden) {
         if (this.mode === 'play' && !g.screens.isOpen && !g.hud.blocking) g.screens.open('pause');
         g.audio.suspend();
+        g.announcer.stop();
         this.save();
       } else g.audio.resume();
     });
@@ -494,6 +506,7 @@ class Session {
     ];
     this.withFade('Ahhh…', () => {
       g.env.setTime(g.env.time + 1);
+      if (g.env.time < 1) g.env.day++;
       g.player.health = g.player.maxHealth;
       g.bears.clearThreat();
       g.hud.toast(lines[Math.floor(Math.random() * lines.length)], 'good');
@@ -534,6 +547,8 @@ class Session {
   updatePlaces(dt) {
     const g = this.game;
     const P = g.player;
+    // bug dope wears off whether you walk, drive or float
+    g.bugDopeT = Math.max(0, (g.bugDopeT || 0) - dt);
     if (P.mode !== 'foot') return;
     // aboard the Unsinkable II
     const D = g.props.wreckDeck;
@@ -543,7 +558,6 @@ class Session {
       g.onEvent({ type: 'deck' });
     }
     // Mosquito Flats: the state bird has opinions
-    g.bugDopeT = Math.max(0, (g.bugDopeT || 0) - dt);
     const bog = g.areas.near('flats', 90, 200);
     if (bog > 0.5 && g.bugDopeT <= 0) {
       this.mozzieT = (this.mozzieT ?? 12) - dt;
@@ -605,6 +619,15 @@ class Session {
   knockedOut() {
     const g = this.game;
     if (this.koBusy) return;
+    // another fade is running (a soak, a fast travel): try again once it is over
+    if (this.fadeBusy) {
+      if (!this.koRetry)
+        this.koRetry = setTimeout(() => {
+          this.koRetry = null;
+          if (this.mode === 'play' && g.player.health <= 0) this.knockedOut();
+        }, 400);
+      return;
+    }
     this.koBusy = true;
     g.fishing.cancel();
     g.hunting.reset();
@@ -618,7 +641,10 @@ class Session {
       if (g.player.mode === 'boat' || g.player.boat) g.boat.leave(true);
       this.placeAtStart();
       g.player.health = 60;
-      g.env.setTime(Math.max(8, g.env.time + 3));
+      // three hours out cold, and no waking before eight
+      const t = g.env.time + 3;
+      if (t >= 24) g.env.day++;
+      g.env.setTime(Math.max(8, t % 24));
       g.bears.clearThreat();
       this.koBusy = false;
       g.hud.toast(`A ranger patched you up. Lost ${lost} fish and paid ${formatMoney(fee)}`, 'bad');
@@ -754,6 +780,7 @@ class Session {
         g.wildlife.scare(g.boat.pos.x, g.boat.pos.z, 80);
       }
       P.pos.copy(g.boat.pos);
+      P.tick(dt);
     } else {
       // driving controls
       if (input.pressed('cam') || input.keyPressed('KeyC')) car.camMode = car.camMode === 'cockpit' ? 'chase' : 'cockpit';
@@ -762,6 +789,7 @@ class Session {
         g.wildlife.scare(car.pos.x, car.pos.z, 80);
       }
       P.pos.copy(car.pos);
+      P.tick(dt);
     }
     car.update(dt, input, g.state);
     g.boat.update(dt, input);
@@ -851,7 +879,8 @@ class Session {
     let ia = null;
     // a second action beside the first: the boat's launch, load and board
     let ia2 = null;
-    if (g.fishing.state !== 'idle' && g.fishing.state !== 'catch') {
+    // nothing to do mid-cast, mid-fight or with the catch card up
+    if ((g.fishing.state !== 'idle' && g.fishing.state !== 'catch') || g.hud.blocking) {
       g.interaction = g.interaction2 = null;
       return;
     }

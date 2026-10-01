@@ -137,7 +137,7 @@ export class PhotoCamera {
     for (const o of W.orcas || []) if (o.y > -1.2 && o.x !== undefined) add('orca', o.x, Math.max(0, o.y + 0.8), o.z);
     for (const o of W.otters) add('otter', o.x, 0.15, o.z);
     for (const s of W.seaLions || []) add('sealion', s.x, (s.y ?? 0.5) + 0.4, s.z);
-    for (const s of W.seals || []) if (s.up) add('seal', s.x, 0.2, s.z);
+    for (const s of W.seals || []) if (s.up && (s.y ?? 0) > -0.9) add('seal', s.x, 0.2, s.z);
     for (const b of W.beavers || []) if (!(b.under > 0)) add('beaver', b.x, (b.lake ? b.lake.level : 0) + 0.15, b.z);
     // something big and hairy at the edge of the trees
     const B = g.bigfoot;
@@ -148,13 +148,25 @@ export class PhotoCamera {
     return out;
   }
 
-  // The subject the shot would be of, with its star rating (0 to 3).
+  // The part of the screen a picture keeps: a 16:9 frame in the middle,
+  // as fractions of the screen's width and height.
+  crop() {
+    const c = this.game.renderer.domElement;
+    const sw = c.width || 1;
+    const sh = c.height || 1;
+    const k = Math.min((sw * 0.86) / THUMB_W, (sh * 0.64) / THUMB_H);
+    return { fx: (THUMB_W * k) / sw, fy: (THUMB_H * k) / sh, k };
+  }
+
+  // The subject the shot would be of, with its star rating (0 to 3). Only
+  // what lands inside the picture's frame counts.
   evaluate() {
     const g = this.game;
     const cam = g.camera;
     const W = g.world;
     const eye = cam.position;
     const tanHalf = Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2);
+    const { fx, fy } = this.crop();
     let best = null;
     for (const s of this.subjects()) {
       const dx = s.x - eye.x;
@@ -163,10 +175,10 @@ export class PhotoCamera {
       const d = Math.hypot(dx, dy, dz);
       if (d < 1.5 || d > 600) continue;
       _v.set(s.x, s.y, s.z).project(cam);
-      if (_v.z > 1 || Math.abs(_v.x) > 0.9 || Math.abs(_v.y) > 0.9) continue;
-      // how much of the frame height it fills
-      const frac = s.size / (2 * d * tanHalf);
-      const off = Math.max(Math.abs(_v.x), Math.abs(_v.y));
+      if (_v.z > 1 || Math.abs(_v.x) > fx * 0.96 || Math.abs(_v.y) > fy * 0.96) continue;
+      // how much of the picture's height it fills, and how far off centre
+      const frac = s.size / (2 * d * tanHalf) / fy;
+      const off = Math.max(Math.abs(_v.x) / fx, Math.abs(_v.y) / fy);
       // the ground in the way?
       let blocked = false;
       for (let i = 1; i < 10; i++) {
@@ -243,7 +255,15 @@ export class PhotoCamera {
       const k = Math.min((sw * 0.86) / THUMB_W, (sh * 0.64) / THUMB_H);
       const w = THUMB_W * k;
       const h = THUMB_H * k;
-      ctx.drawImage(src, (sw - w) / 2, (sh - h) / 2, w, h, 0, 0, THUMB_W, THUMB_H);
+      if (blur && !('filter' in ctx)) {
+        // no canvas filters (older Safari): shrink and stretch back instead
+        const t = document.createElement('canvas');
+        t.width = Math.round(THUMB_W / (1 + blur * 1.6));
+        t.height = Math.round(THUMB_H / (1 + blur * 1.6));
+        t.getContext('2d').drawImage(src, (sw - w) / 2, (sh - h) / 2, w, h, 0, 0, t.width, t.height);
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(t, 0, 0, THUMB_W, THUMB_H);
+      } else ctx.drawImage(src, (sw - w) / 2, (sh - h) / 2, w, h, 0, 0, THUMB_W, THUMB_H);
       return c.toDataURL('image/jpeg', 0.72);
     } catch (e) {
       return null;
@@ -269,18 +289,19 @@ export class PhotoCamera {
     if (!old || subject.stars >= old.stars) {
       A.shots[subject.id] = { img, stars: subject.stars, dist: Math.round(subject.d || 0), ...when };
       const saved = this.persist();
-      if (!saved) {
-        g.hud.toast('The album is full on this device', 'bad');
-        return;
-      }
-      if (!old) {
+      // the sale is kept in the save game, so a lost album never sells twice
+      const sold = g.state.photoSold;
+      if (!sold[subject.id]) {
+        sold[subject.id] = subject.stars;
         // the magazine buys a first shot of anything that is not a fish
         const pay = info.value ? Math.round((info.value * subject.stars) / 3 / 5) * 5 : 0;
         if (pay > 0) g.state.addMoney(pay);
         g.hud.toast(`${stars} ${info.name}: new in the album${pay ? `. Alaska Outdoors buys it for $${pay}` : ''}`, 'good');
-        const animals = Object.keys(this.album.shots).filter((id) => !id.startsWith('fish:') && PHOTO_SUBJECTS[id] && PHOTO_SUBJECTS[id].group !== 'moments').length;
+        const animals = Object.keys(sold).filter((id) => !id.startsWith('fish:') && PHOTO_SUBJECTS[id] && PHOTO_SUBJECTS[id].group !== 'moments').length;
         g.onEvent({ type: 'photo', id: subject.id, stars: subject.stars, animals });
-      } else g.hud.toast(`${stars} ${info.name}: a better shot for the album`, 'good');
+      } else if (!old) g.hud.toast(`${stars} ${info.name}: back in the album`, 'good');
+      else g.hud.toast(`${stars} ${info.name}: a better shot for the album`, 'good');
+      if (!saved) g.hud.toast("This device's storage is full or blocked: the picture may not be kept", 'bad');
       if (subject.id === 'bigfoot') {
         g.announcer?.say('bigfoot', { sub: 'BLURRY, AS TRADITION DEMANDS', kind: 'legend' });
         g.onEvent({ type: 'bigfoot' });
