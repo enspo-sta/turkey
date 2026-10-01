@@ -811,6 +811,7 @@ export class Fishing {
     F.tension = damp(F.tension, Math.max(0, target), F.state === 'run' ? 9 : 6, dt);
 
     // line distance
+    const lineBefore = F.dist;
     const runSpeed = F.state === 'run' ? 2.0 + F.power * 0.018 : F.state === 'swim' ? 0.45 : F.state === 'jump' ? 0.6 : 0;
     if (reeling) {
       const gain = 1.55 * rod.reel * (1 + 20 / (F.power + 10)) * (F.state === 'run' ? 0.12 : F.state === 'swim' ? 0.62 : F.state === 'jump' ? 0.2 : 1.0);
@@ -821,28 +822,57 @@ export class Fishing {
 
     // lateral movement, kept on water
     const angSpeed = F.state === 'run' ? 0.5 : F.state === 'swim' ? 0.16 : 0.02;
-    let newAngle = F.angle + (F.dir * angSpeed * dt * 10) / Math.max(F.dist, 6);
-    newAngle = clamp(newAngle, -1.1, 1.1);
-    const yaw = F.baseYaw + newAngle;
-    const fx = P.pos.x - Math.sin(yaw) * F.dist;
-    const fz = P.pos.z - Math.cos(yaw) * F.dist;
-    const w = W.waterAt(fx, fz);
-    if (w && w.depth > 0.35) {
-      F.angle = newAngle;
-      F.pos.set(fx, w.level - 0.35, fz);
-      F.level = w.level;
-    } else {
+    const step = (F.dir * angSpeed * dt * 10) / Math.max(F.dist, 6);
+    const newAngle = clamp(F.angle + step, -1.1, 1.1);
+    const waterOut = (ang, d, minDepth) => {
+      const yw = F.baseYaw + ang;
+      const x = P.pos.x - Math.sin(yw) * d;
+      const z = P.pos.z - Math.cos(yw) * d;
+      const w = W.waterAt(x, z);
+      return w && w.depth > minDepth ? { x, z, w } : null;
+    };
+    let spot = waterOut(newAngle, F.dist, 0.35);
+    if (spot) F.angle = newAngle;
+    else if (reeling) {
+      // reeled into the shallows: it comes in toward the last good spot
       F.dir = -F.dir;
-      // pull the fish back toward the last good spot
       F.dist = Math.max(1.2, F.dist - 0.8 * dt * 10);
-      const yaw2 = F.baseYaw + F.angle;
-      const x2 = P.pos.x - Math.sin(yaw2) * F.dist;
-      const z2 = P.pos.z - Math.cos(yaw2) * F.dist;
-      const w3 = W.waterAt(x2, z2);
-      if (w3) {
-        F.pos.set(x2, w3.level - 0.35, z2);
-        F.level = w3.level;
+      spot = waterOut(F.angle, F.dist, 0);
+    } else {
+      // run aground with nobody reeling: it swims along the bank or turns
+      // back, through the shallows if it must, but never closer than it
+      // was, since only reeling brings it in (at the edge of its arc it
+      // can only turn back)
+      spot = newAngle !== F.angle ? waterOut(newAngle, lineBefore, 0.35) : null;
+      if (spot) {
+        F.angle = newAngle;
+        F.dist = lineBefore;
+      } else {
+        F.dir = -F.dir;
+        const backAngle = clamp(F.angle - step, -1.1, 1.1);
+        const tries = [
+          [F.angle, F.dist, 0.35],
+          [backAngle, lineBefore, 0.35],
+          [newAngle, F.dist, 0.1],
+          [backAngle, lineBefore, 0.1],
+          [newAngle, lineBefore, 0.1],
+          [F.angle, F.dist, 0.1],
+        ];
+        for (const [a, d, minDepth] of tries) {
+          if (a === F.angle && d === lineBefore) continue; // where it already is
+          spot = waterOut(a, d, minDepth);
+          if (spot) {
+            F.angle = a;
+            F.dist = d;
+            break;
+          }
+        }
+        if (!spot) F.dist = lineBefore;
       }
+    }
+    if (spot) {
+      F.pos.set(spot.x, spot.w.level - 0.35, spot.z);
+      F.level = spot.w.level;
     }
 
     // stamina
@@ -866,9 +896,14 @@ export class Fishing {
       }
     }
 
-    // land when close and tired
+    // land when close and tired, as you reel it in
     if (F.dist < 3.2) {
-      if (F.stamina < 0.4) {
+      if (F.stamina >= 0.4) {
+        F.state = 'run';
+        F.stateT = 1.5;
+        F.dir = Math.random() < 0.5 ? -1 : 1;
+        g.hud.toast('Still too green to land. Wear it out');
+      } else if (reeling) {
         this.state = 'landing';
         this.landT = 0;
         g.viewmodel.rodPoseTarget.reeling = 0;
@@ -878,10 +913,6 @@ export class Fishing {
         g.effects.splash(F.pos.x, F.level, F.pos.z, 0.9);
         return;
       }
-      F.state = 'run';
-      F.stateT = 1.5;
-      F.dir = Math.random() < 0.5 ? -1 : 1;
-      g.hud.toast('Still too green to land. Wear it out');
     }
 
     // visuals: splashes, jumper, rod pose, camera assist
