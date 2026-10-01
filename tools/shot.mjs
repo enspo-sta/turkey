@@ -90,6 +90,21 @@ for (const s of steps) {
   if (s.keydown) await page.keyboard.down(s.keydown);
   if (s.keyup) await page.keyboard.up(s.keyup);
   if (s.shot) {
+    // the software renderer runs at about one frame a second, too slow for
+    // the game's two terrain chunks a frame after a jump: finish the ground
+    // around the camera and wait for two frames that show it
+    if (!s.noSettle) {
+      try {
+        await page.evaluate(async () => {
+          const r = window.__rhf;
+          if (!r || !r.settle || !r.game) return;
+          r.settle();
+          await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
+        });
+      } catch (e) {
+        console.log('settle error:', e.message);
+      }
+    }
     try {
       // a name ending in .jpg saves a compressed JPEG (for docs), anything else a PNG
       const jpg = s.shot.endsWith('.jpg');

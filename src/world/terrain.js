@@ -181,7 +181,6 @@ export class Terrain {
   }
 
   update(camX, camZ, force = false) {
-    let built = 0;
     for (const c of this.chunks) {
       const dx = Math.max(c.x0 - camX, 0, camX - c.x1);
       const dz = Math.max(c.z0 - camZ, 0, camZ - c.z1);
@@ -194,7 +193,14 @@ export class Terrain {
           break;
         }
       }
-      if (lod !== c.lod) {
+      c.want = lod;
+    }
+    // finest levels first: after a jump the ground around the camera gets
+    // its detail before the distant chunks
+    let built = 0;
+    for (let lod = 0; lod < LOD_STEP.length; lod++) {
+      for (const c of this.chunks) {
+        if (c.want !== lod || c.lod === lod) continue;
         // limit geometry builds per frame to keep frames smooth
         if (!c.geos[lod] && !force && built >= 2 && c.lod >= 0) continue;
         if (!c.geos[lod]) {

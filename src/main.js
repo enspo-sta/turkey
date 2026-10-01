@@ -445,6 +445,11 @@ class Session {
     this.fade(true, text);
     await new Promise((r) => setTimeout(r, 700));
     await fn();
+    // after a jump, finish the ground detail while the screen is dark
+    // instead of two chunks a frame after the fade has lifted
+    const g = this.game;
+    const at = g.player.mode === 'drive' ? g.hotrod.pos : g.player.pos;
+    g.terrain.prime(at.x, at.z);
     await new Promise((r) => setTimeout(r, 900));
     this.fade(false);
     this.fadeBusy = false;
@@ -804,6 +809,8 @@ async function boot() {
         game.player.place(p.x, p.z, p.face ?? 0);
       },
       time: (h) => game.env.setTime(h),
+      // finish the ground detail around the camera (screenshots after a jump)
+      settle: () => game.terrain.prime(game.camera.position.x, game.camera.position.z),
       god: (on = true) => (game.godMode = on),
       press: (name) => {
         const b = game.input.button(name);
