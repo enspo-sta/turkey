@@ -350,22 +350,27 @@ export class Wildlife {
     this.seaLions = [];
     const g = pier.dock ? { x: pier.dock.x0 - pier.dock.x1, z: pier.dock.z0 - pier.dock.z1 } : { x: 0, z: -1 };
     const gl = Math.hypot(g.x, g.z) || 1;
-    let haul = null;
-    for (let t = 0; t < 400 && !haul; t++) {
-      const a = this.rand() * Math.PI * 2;
-      const d = 130 + this.rand() * 280;
-      const x = pier.x + Math.cos(a) * d;
-      const z = pier.z + Math.sin(a) * d;
-      if (!W.inBounds(x, z, 30)) continue;
-      const hh = W.heightAt(x, z);
-      if (hh < 0.4 || hh > 2.8 || W.slopeAt(x, z) > 0.4) continue;
-      // with the sea right next to it
-      const sx = x - (g.x / gl) * 14;
-      const sz = z - (g.z / gl) * 14;
-      const w = W.waterAt(sx, sz);
-      if (!w || w.kind !== 'ocean' || w.depth < 1) continue;
-      haul = { x, z, sx, sz };
+    // only about one spot in five hundred qualifies, so random tries could
+    // miss them all and leave the bay without sea lions: gather every spot
+    // on a ring round the pier, then pick one
+    const spots = [];
+    for (let ai = 0; ai < 180; ai++) {
+      const a = (ai / 180) * Math.PI * 2;
+      for (let d = 130; d <= 410; d += 5) {
+        const x = pier.x + Math.cos(a) * d;
+        const z = pier.z + Math.sin(a) * d;
+        if (!W.inBounds(x, z, 30)) continue;
+        const hh = W.heightAt(x, z);
+        if (hh < 0.4 || hh > 2.8 || W.slopeAt(x, z) > 0.4) continue;
+        // with the sea right next to it
+        const sx = x - (g.x / gl) * 14;
+        const sz = z - (g.z / gl) * 14;
+        const w = W.waterAt(sx, sz);
+        if (!w || w.kind !== 'ocean' || w.depth < 1) continue;
+        spots.push({ x, z, sx, sz });
+      }
     }
+    const haul = spots.length ? spots[Math.floor(this.rand() * spots.length)] : null;
     if (haul) {
       this.haulOut = haul;
       for (let i = 0; i < 6; i++) {

@@ -1,0 +1,6 @@
+{"width":640,"height":360,"timeout":300000,"steps":[
+{"wait":1500},
+{"eval":"__rhf.start(false)"},
+{"wait":4000},
+{"eval":"(()=>{const w=__rhf.game.wildlife; const sp={}; for(const a of w.animals) sp[a.species]=(sp[a.species]||0)+1; const bs={}; for(const b of w.birds) bs[b.sp]=(bs[b.sp]||0)+1; const miss=[]; if(!w.haulOut||!w.seaLions.length) miss.push('sea lions'); if(!w.seals.length) miss.push('seals'); if(!w.beavers.length) miss.push('beavers'); if(!w.orcas||!w.orcas.length) miss.push('orcas'); if(!w.otters||!w.otters.length) miss.push('sea otters'); for(const s of ['moose','caribou','deer','sheep','wolf','fox','hare','blackbear','goat','muskox','porcupine','lynx','squirrel']) if(!sp[s]) miss.push(s); for(const s of ['eagle','raven','gull','duck','loon','puffin','ptarmigan','swan','crane','magpie','kingfisher']) if(!bs[s]) miss.push(s); return (miss.length?'FAIL: missing '+miss.join(', ')+' | ':'every species present | ')+'sea lions '+w.seaLions.length+(w.haulOut?' on the haul-out at '+Math.round(w.haulOut.x)+','+Math.round(w.haulOut.z):'')+', seals '+w.seals.length+', orcas '+(w.orcas?w.orcas.length:0)+', sea otters '+(w.otters?w.otters.length:0)+', beavers '+w.beavers.length+' | animals '+JSON.stringify(sp)+' | birds '+JSON.stringify(bs);})()"}
+]}
