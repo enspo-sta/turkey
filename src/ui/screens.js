@@ -806,7 +806,7 @@ export class Screens {
     const touch = g.input.usingTouch || /iPhone|iPad|Android/i.test(navigator.userAgent);
     this.body.innerHTML = `<div class="howto">
       <section><h4>Get around</h4><p>${touch ? 'Drag on the left side of the screen to walk. Push far to jog. Drag on the right side to look around.' : 'Move with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>, hold <kbd>Shift</kbd> to jog, drag the mouse to look (click the view to lock the mouse).'}</p><p>Walk up to the hot rod and tap <b>DRIVE</b>. The compass shows places, your car and your current goal.</p><p>The small map in the top left corner turns with you and shows the land around you, the places you know, your car and your goal. Tap it to open the full map.</p></section>
-      <section><h4>Casting</h4><p>Face the water with the rod out and tap <b>CAST</b>. A dotted line over the water marks out the throw, with a ring where the lure will land.</p>
+      <section><h4>Casting</h4><p>Face the water with the rod out and tap <b>CAST</b>. A dashed line on the water marks out the throw, with a ring where the lure will land.</p>
         <p><b>Power:</b> a needle runs along the meter and the ring moves out over the water. Blue on the meter is water, gold is a fish hotspot. Tap to set the distance.</p>
         <div class="demo-meter"><i style="left:30%;width:40%;background:rgba(95,200,192,.3)"></i><i style="left:52%;width:9%;background:#ffcc3a"></i></div>
         <p><b>Timing:</b> a white marker sweeps across the timing bar. Tap when it is on the dark line in the middle.</p>
