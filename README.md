@@ -36,7 +36,9 @@ compressed).
   **PERFECT CAST** and better bites; miss the green completely and you get a
   backlash to untangle.
 - Watch the float: nibbles are twitches, a real bite pulls it under and you have
-  a moment to tap **HOOK!**
+  a moment to tap **HOOK!** The line only comes in when you reel: the current
+  carries the float along but never back to your feet, and a lure that lands on
+  the bank stays there until you hold **REEL**.
 - The fight: hold **REEL** while keeping the tension needle in the green, let
   go when the fish runs, steer the rod against its runs, and stop reeling when
   it jumps or it throws the hook. Lines snap, go slack and get spooled.
@@ -322,6 +324,7 @@ node tools/shot.mjs tools/scenarios/mobile.json  # phone-sized touch layout
 node tools/shot.mjs tools/scenarios/catch-touch.json  # real taps on KEEP and RELEASE on a phone-sized touch screen
 node tools/shot.mjs tools/scenarios/catch-mouse.json  # real clicks and keys on the catch card with the mouse locked to the view
 node tools/shot.mjs tools/scenarios/reel-stuck.json   # a held REEL button always lets go, and nothing reels unless you press
+node tools/shot.mjs tools/scenarios/line-stays.json   # a lure on the bank and a float in the current stay out until you hold REEL
 node tools/shot.mjs tools/scenarios/fish-species.json # lands each of the twelve newer fish, then shows the journal by rarity and the tackle box
 node tools/shot.mjs tools/scenarios/minimap.json      # the small map on foot and driving, its goal marker, and a tap to the full map
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot

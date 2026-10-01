@@ -460,6 +460,8 @@ export class Viewmodel {
       const shake = P.shake ? (Math.sin(game.time * 43) + Math.sin(game.time * 27)) * 0.004 * P.shake : 0;
       this.rodRig.position.set(this.rodBase.x + this.swayX + bobX, this.rodBase.y + bob + this.swayY - lowered + breathe, this.rodBase.z);
       this.rodPivot.rotation.set(P.pitch + castPitch + shake, P.side * 0.55 + 0.06, -P.side * 0.25 + shake);
+      // the handle turns only while you reel
+      P.reeling = damp(P.reeling, T.reeling || 0, 12, dt);
       this.reelSpin += dt * P.reeling * 18;
       this.reel.userData.handle.rotation.x = this.reelSpin;
     }

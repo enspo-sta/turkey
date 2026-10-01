@@ -35,6 +35,8 @@ export class Fishing {
     this.catchInfo = null;
     this.retrieveHold = 0;
     this.pressTime = 0;
+    this.snag = false;
+    this.snagPull = 0;
 
     // float (bobber)
     const fb = new THREE.Group();
@@ -157,6 +159,7 @@ export class Fishing {
     const g = this.game;
     this.settleCatch();
     this.state = 'idle';
+    this.snag = false;
     this.encounter = null;
     this.fight = null;
     this.float.visible = false;
@@ -336,13 +339,24 @@ export class Fishing {
     this.lurePos.y += apex * 4 * u * (1 - u);
     this.lureMesh.position.copy(this.lurePos);
     if (u >= 1) {
-      this.lureMesh.visible = false;
-      if (!this.water || this.water.depth < 0.25) {
-        g.hud.toast('Snagged on the bank. Reeling in');
+      // only the player's own reeling brings the line in: on the bank or in
+      // the shallows the lure stays where it fell until REEL is held
+      this.snag = !this.water || this.water.depth < 0.25;
+      this.pressTime = Infinity;
+      this.snagPull = 0;
+      if (this.snag) {
+        this.lureMesh.position.copy(this.lureEnd);
+        this.float.position.copy(this.lureEnd);
+        this.floatBase = this.lureEnd.y;
+        this.state = 'waiting';
+        this.waitT = 0;
+        this.encounter = null;
+        g.player.moveLocked = true;
+        g.hud.toast('Snagged on the bank. Hold REEL to reel in');
         g.audio?.snag();
-        this.cancel();
         return;
       }
+      this.lureMesh.visible = false;
       g.effects.splash(this.lureEnd.x, this.water.level, this.lureEnd.z, 0.35);
       g.fish?.scare(this.lureEnd.x, this.lureEnd.z, 2.5);
       g.audio?.plop(0.6);
@@ -445,12 +459,37 @@ export class Fishing {
     const P = g.player;
     const fl = this.float.position;
     this.waitT += dt;
-    // drift with the current, stay on water
+    if (pressed) this.pressTime = this.t;
+    const reeling = held && this.t - this.pressTime > 0.25;
+    // snagged on the bank: nothing bites, nothing moves until you reel in
+    if (this.snag) {
+      g.viewmodel.rodPoseTarget.reeling = reeling ? 1 : 0;
+      g.audio?.reel(reeling, 0.6);
+      if (reeling) {
+        this.snagPull += dt;
+        if (this.snagPull > 0.6) this.cancel('Reeled in');
+      }
+      g.hud.setWaitingHint(false);
+      return;
+    }
+    // drift with the current and stay on water, but never back to your
+    // feet: only reeling brings the float in
     if (this.water && this.water.kind === 'river') {
       const w = g.world.waterAt(fl.x, fl.z);
       if (w && w.depth > 0.3) {
-        const nx = fl.x + w.flowX * 0.35 * dt;
-        const nz = fl.z + w.flowZ * 0.35 * dt;
+        let mx = w.flowX * 0.35 * dt;
+        let mz = w.flowZ * 0.35 * dt;
+        // within a few metres of you the float slides past instead of closer
+        const rx = fl.x - P.pos.x;
+        const rz = fl.z - P.pos.z;
+        const rl = Math.hypot(rx, rz) || 1;
+        const inward = -(mx * rx + mz * rz) / rl;
+        if (rl < 4.5 && inward > 0) {
+          mx += (rx / rl) * inward;
+          mz += (rz / rl) * inward;
+        }
+        const nx = fl.x + mx;
+        const nz = fl.z + mz;
         const w2 = g.world.waterAt(nx, nz);
         if (w2 && w2.depth > 0.3) {
           fl.x = nx;
@@ -462,7 +501,6 @@ export class Fishing {
     // retrieve when holding (and not a bite response)
     const enc = this.encounter;
     if (pressed) {
-      this.pressTime = this.t;
       if (enc && enc.phase === 'bite') {
         this.hook();
         return;
@@ -473,13 +511,14 @@ export class Fishing {
         this.spook();
       } else {
         // twitch
-        this.pullFloat(0.45);
+        this.pullFloat(0.45, false);
         g.effects.ripples.add(fl.x, this.floatBase, fl.z, 0.8, 0.8);
         this.nextApproach = Math.max(0.5, this.nextApproach * 0.85);
       }
     }
-    if (held && this.t - this.pressTime > 0.25) {
+    if (reeling) {
       this.pullFloat(1.7 * this.rod().reel * dt);
+      if (this.state !== 'waiting') return;
       g.viewmodel.rodPoseTarget.reeling = 1;
       g.audio?.reel(true, 0.4);
       if (enc && enc.phase === 'approach' && Math.random() < dt * 0.6) enc.skipNibble = true;
@@ -487,8 +526,9 @@ export class Fishing {
       g.viewmodel.rodPoseTarget.reeling = 0;
       g.audio?.reel(false);
     }
+    // reeled all the way in (a twitch or a hold, never the current)
     const toPlayer = Math.hypot(fl.x - P.pos.x, fl.z - P.pos.z);
-    if (toPlayer < 2.6) {
+    if (toPlayer < 2.6 && (reeling || pressed)) {
       this.cancel();
       return;
     }
@@ -507,7 +547,9 @@ export class Fishing {
     g.hud.setWaitingHint(enc && enc.phase === 'bite');
   }
 
-  pullFloat(d) {
+  // Pull the float toward the player. Reeling it into the shallows brings
+  // the line in; a twitch (finish false) just stops short of them.
+  pullFloat(d, finish = true) {
     const g = this.game;
     const P = g.player;
     const fl = this.float.position;
@@ -518,7 +560,7 @@ export class Fishing {
     const nz = fl.z + (dz / l) * d;
     const w = g.world.waterAt(nx, nz);
     if (!w || w.depth < 0.15) {
-      this.cancel();
+      if (finish) this.cancel();
       return;
     }
     fl.x = nx;
@@ -829,6 +871,7 @@ export class Fishing {
       if (F.stamina < 0.4) {
         this.state = 'landing';
         this.landT = 0;
+        g.viewmodel.rodPoseTarget.reeling = 0;
         g.hud.hideFight();
         g.audio?.reelScream(false);
         g.audio?.stopReel();
