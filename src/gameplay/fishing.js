@@ -1,24 +1,30 @@
-// Fishing: aim at water, a golf-style 3-tap cast meter (power then accuracy),
-// lure flight, float with nibbles and bites, hook timing, a tension/stamina
-// fight with rod steering and jumps, landing and the catch card.
+// Fishing: aim at water, a 3-tap cast (power, then a timing bar) with the
+// throw marked out over the water, lure flight, float with nibbles and bites,
+// hook timing, a tension/stamina fight with rod steering and jumps, landing
+// and the catch card.
 import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
-import { FISH, LURES, LEGENDS, RARITY, speciesPool } from './data.js';
+import { FISH, LURES, LEGENDS, RARITY, TIMING, speciesPool } from './data.js';
 import { lengthFor, makeFishModel } from '../entities/fishmodels.js';
 import { clamp, lerp, damp, weightedPick, randRange, angleDiff, smoothstep } from '../util/math.js';
 
 const MIN_CAST = 4;
-const ACC_TARGET = 0.07;
 const LINE_PTS = 18;
+const AIM_PTS = 26;
+// the throw line: on water, on a hotspot, short of the water, then the
+// timing bar's own colours under the marker
+const AIM_COLORS = { water: 0xfff3d6, hot: 0xffcc3a, bank: 0xff5a4a, green: 0x45f03c, orange: 0xff8c00, red: 0xff2a1a };
 
 export class Fishing {
   constructor(game) {
     this.game = game;
     this.state = 'idle';
     this.t = 0;
-    this.meter = { phase: 0, t: 0, needle: 0, power: 0, acc: 0 };
+    this.meter = { phase: 0, t: 0, needle: 0, cursor: 0, power: 0, acc: 0 };
+    // the timing bar's zones, for the HUD and the tests
+    this.timing = TIMING;
     this.aim = { yaw: 0, waterBands: [], hotBand: null, hasWater: false, hotspot: null };
     this.lurePos = new THREE.Vector3();
     this.lureStart = new THREE.Vector3();
@@ -65,6 +71,60 @@ export class Fishing {
     this.line.renderOrder = 4;
     game.scene.add(this.line);
 
+    // the throw marked out over the water while the meter is up: a dashed
+    // line on the surface and a ring where the lure lands if the timing is right
+    this.aimPos = new Float32Array(AIM_PTS * 3);
+    this.aimGeo = new LineGeometry();
+    this.aimGeo.setPositions(this.aimPos);
+    this.aimMat = new LineMaterial({
+      color: AIM_COLORS.water,
+      linewidth: 2.6,
+      transparent: true,
+      opacity: 0.95,
+      worldUnits: false,
+      dashed: true,
+      dashSize: 0.55,
+      gapSize: 0.4,
+      depthWrite: false,
+      toneMapped: false,
+    });
+    this.aimLine = new Line2(this.aimGeo, this.aimMat);
+    this.aimLine.frustumCulled = false;
+    this.aimLine.renderOrder = 5;
+    // a dark edge under the line and the ring keeps them clear on bright water
+    this.aimEdgeMat = new LineMaterial({
+      color: 0x0c1418,
+      linewidth: 5,
+      transparent: true,
+      opacity: 0.4,
+      worldUnits: false,
+      dashed: true,
+      dashSize: 0.55,
+      gapSize: 0.4,
+      depthWrite: false,
+      toneMapped: false,
+    });
+    const edge = new Line2(this.aimGeo, this.aimEdgeMat);
+    edge.frustumCulled = false;
+    edge.renderOrder = 4;
+    const ringGeo = new THREE.RingGeometry(0.5, 0.85, 40);
+    ringGeo.rotateX(-Math.PI / 2);
+    this.aimRingMat = new THREE.MeshBasicMaterial({ color: AIM_COLORS.water, transparent: true, opacity: 0.95, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+    const ring = new THREE.Mesh(ringGeo, this.aimRingMat);
+    ring.renderOrder = 5;
+    const ringEdgeGeo = new THREE.RingGeometry(0.42, 0.93, 40);
+    ringEdgeGeo.rotateX(-Math.PI / 2);
+    const ringEdge = new THREE.Mesh(ringEdgeGeo, new THREE.MeshBasicMaterial({ color: 0x0c1418, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+    ringEdge.renderOrder = 4;
+    this.aimRing = new THREE.Group();
+    this.aimRing.add(ringEdge, ring);
+    this.aimRing.visible = false;
+    this.aimGroup = new THREE.Group();
+    this.aimGroup.add(edge, this.aimLine);
+    this.aimGroup.visible = false;
+    game.scene.add(this.aimGroup, this.aimRing);
+    this.aimEnd = new THREE.Vector3();
+
     // hooked fish model shown when it jumps / is landed
     this.jumper = null;
     this.jumperId = null;
@@ -72,6 +132,8 @@ export class Fishing {
 
   resize(w, h) {
     this.lineMat.resolution.set(w, h);
+    this.aimMat.resolution.set(w, h);
+    this.aimEdgeMat.resolution.set(w, h);
   }
 
   get busy() {
@@ -147,7 +209,7 @@ export class Fishing {
       return;
     }
     this.state = 'meter';
-    this.meter = { phase: 0, t: 0, needle: 0, power: 0, acc: 0 };
+    this.meter = { phase: 0, t: 0, needle: 0, cursor: 0, power: 0, acc: 0 };
     // the lure on the line in the colour of the one tied on
     const lure = LURES[g.state.gear.lure];
     if (lure) this.lureMesh.material.color.setHex(lure.color);
@@ -186,6 +248,7 @@ export class Fishing {
     if (!onFoot && this.state !== 'idle' && this.state !== 'catch') this.cancel();
     if (!onFoot) {
       this.updateLine(dt);
+      this.updateAim(dt);
       return;
     }
     if (this.watchT > 0) {
@@ -235,6 +298,7 @@ export class Fishing {
         break;
     }
     this.updateLine(dt);
+    this.updateAim(dt);
   }
 
   // ------------------------------------------------------------------ meter
@@ -251,59 +315,80 @@ export class Fishing {
         g.audio?.tick(1);
       }
     } else if (m.phase === 1) {
-      m.needle = m.power - m.t * 1.25;
+      // the white marker sweeps across the timing bar: tap it on the middle line
+      m.cursor = m.t * TIMING.speed;
       if (tap) {
-        m.acc = m.needle - ACC_TARGET;
+        m.acc = m.cursor - 0.5;
         g.audio?.tick(2);
-        this.releaseCast();
+        if (Math.abs(m.acc) > TIMING.orange) this.backlash();
+        else this.releaseCast();
         return;
       }
-      if (m.needle < -0.09) {
-        // backlash: bird's nest in the reel
-        g.hud.hideMeter();
-        g.hud.banner("Backlash! Bird's nest in the reel", 'bad');
-        g.audio?.snag();
-        this.state = 'tangle';
-        this.t2 = 2.4;
+      if (m.cursor > 1) {
+        this.backlash();
         return;
       }
     }
     g.hud.showMeter({
       needle: m.needle,
+      cursor: m.cursor,
       phase: m.phase,
-      power: m.phase > 0 ? m.power : null,
       water: this.aim.waterBands,
       hot: this.aim.hotBand,
-      accTarget: ACC_TARGET,
+      timing: TIMING,
     });
+  }
+
+  // A tap in the red, or none at all: a bird's nest in the reel.
+  backlash() {
+    const g = this.game;
+    g.hud.hideMeter();
+    g.hud.banner("Backlash! Bird's nest in the reel", 'bad');
+    g.audio?.snag();
+    this.state = 'tangle';
+    this.t2 = 2.4;
+  }
+
+  // Where a cast at this power lands, turned by yawErr (positive is to the
+  // left) and shortened by k. The throw line and the real cast both use it,
+  // so a well-timed cast lands in the ring. Returns the water there, if any.
+  landingAt(power, yawErr = 0, k = 1, out = this.aimEnd) {
+    const g = this.game;
+    const P = g.player;
+    const dist = this.castDist(power) * k;
+    const yaw = this.aim.yaw + yawErr;
+    const x = P.pos.x - Math.sin(yaw) * dist;
+    const z = P.pos.z - Math.cos(yaw) * dist;
+    const w = g.world.waterAt(x, z);
+    out.set(x, w ? w.level : g.world.heightAt(x, z) + 0.05, z);
+    return w;
   }
 
   releaseCast() {
     const g = this.game;
-    const P = g.player;
     const m = this.meter;
+    // how far the marker was from the middle line when you tapped, early below zero
     const err = m.acc;
     const aerr = Math.abs(err);
     let quality;
-    if (aerr < 0.022) quality = 'perfect';
-    else if (aerr < 0.06) quality = 'good';
+    if (aerr <= TIMING.perfect) quality = 'perfect';
+    else if (aerr <= TIMING.green) quality = 'good';
     else quality = 'poor';
     const inHot = this.aim.hotBand && m.power >= this.aim.hotBand.p0 - 0.015 && m.power <= this.aim.hotBand.p1 + 0.015;
     this.perfect = quality === 'perfect' && (inHot || !this.aim.hotBand);
-    const yawErr = quality === 'perfect' ? 0 : clamp(err * 2.4, -0.4, 0.4) * (quality === 'good' ? 0.35 : 1);
-    let dist = this.castDist(m.power);
-    if (quality === 'poor') dist *= 0.85;
-    const yaw = this.aim.yaw + yawErr;
-    const dx = -Math.sin(yaw);
-    const dz = -Math.cos(yaw);
-    const ex = P.pos.x + dx * dist;
-    const ez = P.pos.z + dz * dist;
-    const w = g.world.waterAt(ex, ez);
-    this.water = w;
-    const ey = w ? w.level : g.world.heightAt(ex, ez) + 0.05;
+    // in the green the lure lands in the ring; in the orange an early tap
+    // hooks it left and a late one slices it right, and it falls short
+    let yawErr = 0;
+    let k = 1;
+    if (quality === 'poor') {
+      const into = clamp((aerr - TIMING.green) / (TIMING.orange - TIMING.green), 0, 1);
+      yawErr = -Math.sign(err) * (0.14 + 0.26 * into);
+      k = 0.85;
+    }
+    const dist = this.castDist(m.power) * k;
+    this.water = this.landingAt(m.power, yawErr, k, this.lureEnd);
     g.viewmodel.cast();
     g.audio?.whoosh();
-    this.lureEnd.set(ex, ey, ez);
     this.flightT = -0.3; // wind-up before the lure leaves the tip
     this.flightDur = 0.55 + dist * 0.018;
     this.state = 'flight';
@@ -315,7 +400,7 @@ export class Fishing {
       g.audio?.chime();
       g.onEvent({ type: 'perfect' });
     } else if (quality === 'poor') {
-      g.hud.toast(err > 0 ? 'Hooked it left' : 'Sliced it right');
+      g.hud.toast(err < 0 ? 'Hooked it left' : 'Sliced it right');
     }
     this.castHot = inHot ? this.aim.hotBand.h : null;
   }
@@ -1204,6 +1289,62 @@ export class Fishing {
     this.catchInfo = null;
     this.cancel();
     g.save();
+  }
+
+  // ------------------------------------------------------------- the throw
+  // While the meter is up the throw is marked out over the water: a dashed
+  // line on the surface from just ahead of you and a ring where the lure
+  // lands if the timing is right. It follows the power needle, then takes
+  // the colour of the timing bar under the marker.
+  updateAim(dt) {
+    const g = this.game;
+    const show = this.state === 'meter';
+    this.aimGroup.visible = show;
+    this.aimRing.visible = show;
+    if (!show) return;
+    const m = this.meter;
+    const power = m.phase === 0 ? m.needle : m.power;
+    const w = this.landingAt(power);
+    const end = this.aimEnd;
+    let color;
+    if (m.phase === 0) {
+      const hb = this.aim.hotBand;
+      const hot = hb && power >= hb.p0 - 0.015 && power <= hb.p1 + 0.015;
+      color = !w || w.depth < 0.25 ? AIM_COLORS.bank : hot ? AIM_COLORS.hot : AIM_COLORS.water;
+    } else {
+      const e = Math.abs(m.cursor - 0.5);
+      color = e <= TIMING.green ? AIM_COLORS.green : e <= TIMING.orange ? AIM_COLORS.orange : AIM_COLORS.red;
+    }
+    this.aimMat.color.setHex(color);
+    this.aimRingMat.color.setHex(color);
+    // along the surface, water or bank, from a step ahead of you to the ring
+    // (the flight arc itself points straight away from the eye and reads as
+    // a pole, so the line lies on the water)
+    const W = g.world;
+    const P = g.player;
+    const p = this.aimPos;
+    for (let i = 0; i < AIM_PTS; i++) {
+      const u = 0.06 + (0.94 * i) / (AIM_PTS - 1);
+      const x = lerp(P.pos.x, end.x, u);
+      const z = lerp(P.pos.z, end.z, u);
+      const wa = W.waterAt(x, z);
+      p[i * 3] = x;
+      p[i * 3 + 1] = wa ? wa.level + 0.05 : W.heightAt(x, z) + 0.1;
+      p[i * 3 + 2] = z;
+    }
+    this.aimGeo.setPositions(p);
+    this.aimLine.computeLineDistances();
+    this.aimMat.dashOffset -= dt * 1.6;
+    this.aimEdgeMat.dashOffset = this.aimMat.dashOffset;
+    this.aimMat.resolution.set(g.renderer.domElement.width, g.renderer.domElement.height);
+    this.aimEdgeMat.resolution.copy(this.aimMat.resolution);
+    this.aimMat.linewidth = 2.6 * (g.dpr || 1);
+    this.aimEdgeMat.linewidth = 5 * (g.dpr || 1);
+    // the ring grows with the distance so it stays easy to see, and swells on the middle line
+    const perfectNow = m.phase === 1 && Math.abs(m.cursor - 0.5) <= TIMING.perfect;
+    const size = clamp(this.castDist(power) / 12, 1, 2.5) * (1 + Math.sin(this.t * 7) * 0.06) * (perfectNow ? 1.3 : 1);
+    this.aimRing.position.set(end.x, end.y + 0.05, end.z);
+    this.aimRing.scale.setScalar(size);
   }
 
   // ----------------------------------------------------------------- line

@@ -178,8 +178,10 @@ svg { width: 1em; height: 1em; display: block; }
 #meter-water .w { position: absolute; top: 0; bottom: 0; background: rgba(95,200,192,.28); border-left: 1px solid rgba(95,200,192,.6); border-right: 1px solid rgba(95,200,192,.6); }
 .band { position: absolute; top: 0; bottom: 0; }
 .band.hot { background: repeating-linear-gradient(135deg, rgba(255,204,58,.75) 0 6px, rgba(255,150,40,.75) 6px 12px); box-shadow: 0 0 10px rgba(255,204,58,.7); }
-.band.acc { background: rgba(143,191,90,.9); box-shadow: 0 0 10px rgba(143,191,90,.9); }
-.mark { position: absolute; top: -2px; bottom: -2px; width: 3px; background: #fff; box-shadow: 0 0 4px #000; }
+/* the timing bar: red, orange and green with a dark middle line (zones set from the game data), and a white marker */
+.timing-track { position: relative; height: 30px; }
+.timing-zones { position: absolute; inset: 0; border-radius: 9px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.18); }
+#timing-cursor { position: absolute; top: -5px; bottom: -5px; width: clamp(8px, 2.2%, 13px); transform: translateX(-50%); background: #fff; border-radius: 3px; box-shadow: 0 0 0 2px rgba(0,0,0,.7), 0 0 10px rgba(255,255,255,.7); }
 .needle { position: absolute; top: -3px; bottom: -3px; width: 4px; margin-left: -2px; background: var(--flame); border-radius: 2px; box-shadow: 0 0 6px rgba(255,122,26,.9), 0 0 2px #000; }
 .ticks { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(255,255,255,.15) calc(10% - 1px) 10%); pointer-events: none; }
 
@@ -348,6 +350,8 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
 .howto kbd { font-family: var(--ui); font-weight: 800; font-size: 13px; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--line); background: rgba(255,255,255,.08); }
 .demo-meter { position: relative; height: 18px; border-radius: 6px; background: #1e3236; margin: 8px 0; overflow: hidden; }
 .demo-meter i { position: absolute; top: 0; bottom: 0; }
+.demo-meter.timing { overflow: visible; }
+.demo-meter .demo-cursor { top: -3px; bottom: -3px; width: 7px; transform: translateX(-50%); background: #fff; border-radius: 2px; box-shadow: 0 0 0 1.5px rgba(0,0,0,.7); }
 .dialog-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
 .lure-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
 .swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4); flex: 0 0 26px; }

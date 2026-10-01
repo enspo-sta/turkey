@@ -30,11 +30,14 @@ compressed).
 
 **Fishing**
 
-- A three-tap casting meter at the bottom of the screen: tap to start, tap to
-  set power (blue shows where the water is, gold marks a fish hotspot), then tap
-  again on the green mark as the needle swings back. Hit both for a
-  **PERFECT CAST** and better bites; miss the green completely and you get a
-  backlash to untangle.
+- A three-tap cast: tap **CAST** to start, tap to set the power (blue on the
+  meter shows where the water is, gold marks a fish hotspot), then tap the
+  timing. While you cast, a dashed line on the water marks out the throw and a
+  ring shows where the lure will land. The timing bar has red ends, orange,
+  green and a dark line in the middle, and a white marker sweeps across it: tap
+  on the dark line for a **PERFECT CAST** and better bites; anywhere in the
+  green the lure lands in the ring; orange hooks it left or slices it right and
+  falls short; red, or no tap at all, gives you a backlash to untangle.
 - Watch the float: nibbles are twitches, a real bite pulls it under and you have
   a moment to tap **HOOK!** The line only comes in when you reel: the current
   carries the float along but never back to your feet, and a lure that lands on
@@ -328,6 +331,7 @@ node tools/shot.mjs tools/scenarios/catch-mouse.json  # real clicks and keys on 
 node tools/shot.mjs tools/scenarios/reel-stuck.json   # a held REEL button always lets go, and nothing reels unless you press
 node tools/shot.mjs tools/scenarios/line-stays.json   # a lure on the bank and a float in the current stay out until you hold REEL
 node tools/shot.mjs tools/scenarios/fight-stays.json  # hooked fish at every fishing place: none comes closer unless you reel, and careful reeling lands them
+node tools/shot.mjs tools/scenarios/timing-bar.json   # the timing bar and the throw line on a phone-sized screen, and where a tap in each zone sends the lure
 node tools/shot.mjs tools/scenarios/fish-species.json # lands each of the twelve newer fish, then shows the journal by rarity and the tackle box
 node tools/shot.mjs tools/scenarios/minimap.json      # the small map on foot and driving, its goal marker, and a tap to the full map
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot

@@ -853,6 +853,28 @@ export const RODS = [
   },
 ];
 
+// The timing bar of the cast, laid out like a player's own drawing of it: a
+// white marker sweeps left to right over red, orange and green with a dark
+// green line in the middle. Half-widths from the middle, in bar widths: the
+// line is a perfect cast, green lands where the throw line shows, orange
+// hooks it left or slices it right, and red is a backlash. speed is bar
+// widths a second.
+export const TIMING = { speed: 0.9, perfect: 0.025, green: 0.125, orange: 0.355 };
+
+// The timing bar as a CSS background, from the same zones the cast uses.
+export function timingGradient(T = TIMING) {
+  const zones = [
+    ['#f0261a', 0, 0.5 - T.orange],
+    ['#ff8a00', 0.5 - T.orange, 0.5 - T.green],
+    ['#2fe02a', 0.5 - T.green, 0.5 - T.perfect],
+    ['#0c5a12', 0.5 - T.perfect, 0.5 + T.perfect],
+    ['#2fe02a', 0.5 + T.perfect, 0.5 + T.green],
+    ['#ff8a00', 0.5 + T.green, 0.5 + T.orange],
+    ['#f0261a', 0.5 + T.orange, 1],
+  ];
+  return `linear-gradient(90deg, ${zones.map(([c, a, b]) => `${c} ${(a * 100).toFixed(1)}% ${(b * 100).toFixed(1)}%`).join(', ')})`;
+}
+
 export const COOLERS = [
   { cap: 8, price: 0, name: '48-quart cooler' },
   { cap: 14, price: 300, name: '120-quart cooler' },

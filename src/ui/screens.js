@@ -1,6 +1,6 @@
 // Menu sheets: map with fast travel, journal (fish, trophies, challenges),
 // Trading Post shop, lure picker, pause/settings, how-to-play and dialogs.
-import { FISH, SPECIES_IDS, LEGENDS, LURES, RODS, COOLERS, ENGINES, TIRES, PAINTS, GEAR, GAME, CHALLENGES, QUIVER, RARITY, RARITY_ORDER } from '../gameplay/data.js';
+import { FISH, SPECIES_IDS, LEGENDS, LURES, RODS, COOLERS, ENGINES, TIRES, PAINTS, GEAR, GAME, CHALLENGES, QUIVER, RARITY, RARITY_ORDER, timingGradient } from '../gameplay/data.js';
 import { formatMoney, formatTime, clamp } from '../util/math.js';
 import { privacyHTML, PRIVACY_UPDATED } from './privacy.js';
 import { renderMapRGBA, worldToMap } from '../world/maprender.js';
@@ -806,9 +806,12 @@ export class Screens {
     const touch = g.input.usingTouch || /iPhone|iPad|Android/i.test(navigator.userAgent);
     this.body.innerHTML = `<div class="howto">
       <section><h4>Get around</h4><p>${touch ? 'Drag on the left side of the screen to walk. Push far to jog. Drag on the right side to look around.' : 'Move with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>, hold <kbd>Shift</kbd> to jog, drag the mouse to look (click the view to lock the mouse).'}</p><p>Walk up to the hot rod and tap <b>DRIVE</b>. The compass shows places, your car and your current goal.</p><p>The small map in the top left corner turns with you and shows the land around you, the places you know, your car and your goal. Tap it to open the full map.</p></section>
-      <section><h4>Casting</h4><p>Face the water with the rod out and tap <b>CAST</b>. A needle runs along the meter at the bottom:</p>
-        <div class="demo-meter"><i style="left:30%;width:40%;background:rgba(95,200,192,.3)"></i><i style="left:52%;width:9%;background:#ffcc3a"></i><i style="left:4.8%;width:4.4%;background:#8fbf5a"></i></div>
-        <ul><li>Tap once to set <b>power</b>. Blue shows where water is. Gold is a fish hotspot.</li><li>The needle swings back. Tap again on the <b>green mark</b> for accuracy.</li><li>Hit both for a <b>PERFECT CAST</b> and better bites. Miss the green completely and you get a backlash.</li></ul></section>
+      <section><h4>Casting</h4><p>Face the water with the rod out and tap <b>CAST</b>. A dotted line over the water marks out the throw, with a ring where the lure will land.</p>
+        <p><b>Power:</b> a needle runs along the meter and the ring moves out over the water. Blue on the meter is water, gold is a fish hotspot. Tap to set the distance.</p>
+        <div class="demo-meter"><i style="left:30%;width:40%;background:rgba(95,200,192,.3)"></i><i style="left:52%;width:9%;background:#ffcc3a"></i></div>
+        <p><b>Timing:</b> a white marker sweeps across the timing bar. Tap when it is on the dark line in the middle.</p>
+        <div class="demo-meter timing" style="background:${timingGradient()}"><i class="demo-cursor" style="left:48%"></i></div>
+        <ul><li>The dark line: a <b>PERFECT CAST</b> into the ring and better bites.</li><li>Green: the lure lands in the ring.</li><li>Orange: too early hooks it left, too late slices it right, and it falls short.</li><li>Red, or no tap at all: a backlash to untangle.</li></ul></section>
       <section><h4>Bites</h4><p>Watch the float. Small twitches are nibbles, so wait. When it plunges under, tap <b>HOOK!</b> fast.</p><p>Tap <b>REEL</b> while waiting to twitch the lure, hold it to retrieve. The line only comes in when you reel: the current carries the float along but never back to your feet, and a lure that lands on the bank stays there until you hold <b>REEL</b>.</p></section>
       <section><h4>Rare fish</h4><p>Every fish is <b>common</b>, <b>uncommon</b>, <b>rare</b> or <b>epic</b>. Rarer fish bite less often and sell for more. A cast to a gold hotspot or a <b>PERFECT CAST</b> raises the odds of a rare one, and the right lure matters: each lure in the Trading Post says what it catches. The epic big skate and salmon shark live off Halibut Pier.</p></section>
       <section><h4>The fight</h4><ul><li>Hold <b>REEL</b> to bring the fish in. Keep the needle in the green. Only reeling brings it closer: let go and it stays out.</li><li>When it runs, let go before the line snaps, then reel again.</li><li>Steer the rod against the run: ${touch ? 'drag left or right on the left side' : 'press <kbd>A</kbd> or <kbd>D</kbd>'}.</li><li>When it jumps, release REEL or it throws the hook.</li></ul></section>

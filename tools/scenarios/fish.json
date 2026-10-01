@@ -1,7 +1,7 @@
 {"width":960,"height":540,"steps":[{"wait":1500},{"eval":"__rhf.start(false)"},{"wait":6000},
 {"eval":"__rhf.press('primary'); 'cast'"},{"wait":700},{"shot":"f1-meter"},
 {"eval":"__rhf.press('primary'); 'power'"},{"wait":300},
-{"eval":"(async()=>{const f=__rhf.game.fishing; for(let i=0;i<200;i++){ if(f.state!=='meter') break; if(f.meter.phase===1 && f.meter.needle<0.09){ __rhf.press('primary'); break;} await new Promise(r=>setTimeout(r,16)); } return 'acc '+f.meter.acc+' state '+f.state})()"},
+{"eval":"(async()=>{const f=__rhf.game.fishing; const t0=performance.now(); while(performance.now()-t0<120000){ if(f.state!=='meter') break; if(f.meter.phase===1 && f.meter.cursor>0.42){ __rhf.press('primary'); break;} await new Promise(r=>setTimeout(r,16)); } while(f.state==='meter' && performance.now()-t0<180000) await new Promise(r=>setTimeout(r,50)); return 'acc '+f.meter.acc.toFixed(3)+' state '+f.state})()"},
 {"wait":2500},{"shot":"f2-waiting"},
 {"eval":"(()=>{const f=__rhf.game.fishing; f.nextApproach=0.1; return f.state})()"},
 {"eval":"(async()=>{const f=__rhf.game.fishing; for(let i=0;i<600;i++){ if(f.encounter && f.encounter.phase==='bite'){ __rhf.press('primary'); return 'hooked at '+i; } await new Promise(r=>setTimeout(r,20)); } return 'no bite '+f.state+' '+JSON.stringify(f.encounter&&f.encounter.phase)})()"},

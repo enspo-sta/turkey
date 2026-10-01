@@ -68,13 +68,15 @@
     <!-- cast meter / fight meter -->
     <div id="meter" hidden>
       <div class="meter-label"><span id="meter-step">POWER</span><span id="meter-help">Tap to set power</span></div>
-      <div class="meter-track">
+      <div class="meter-track" id="meter-power-track">
         <div id="meter-water"></div>
         <div id="meter-hot" class="band hot"></div>
-        <div id="meter-acc" class="band acc"></div>
-        <div id="meter-power" class="mark"></div>
         <div id="meter-needle" class="needle"></div>
         <div class="ticks"></div>
+      </div>
+      <div class="timing-track" id="meter-timing" hidden>
+        <div class="timing-zones" id="timing-zones"></div>
+        <div id="timing-cursor"></div>
       </div>
     </div>
     <div id="fight" hidden>

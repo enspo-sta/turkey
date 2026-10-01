@@ -52,7 +52,7 @@
 "wait": 30000
 },
 {
-"eval": "(()=>{__rhf.press('primary'); return 'meter'})()"
+"eval": "(async()=>{const g=__rhf.game, f=g.fishing; const until=async(fn,ms)=>{ const t0=performance.now(); while(performance.now()-t0<ms){ if(fn()) return true; await new Promise(r=>setTimeout(r,50)); } return false; }; __rhf.press('primary'); if(!await until(()=>f.state==='meter',60000)) return 'no meter: '+f.state; const um=f.updateMeter.bind(f); window.__unfreeze=()=>{ f.updateMeter=um; }; f.updateMeter=(dt,tap)=>um(0,tap); const hb=f.aim.hotBand, wb=f.aim.waterBands.slice().sort((a,b)=>(b.p1-b.p0)-(a.p1-a.p0))[0]; const pw=hb?(hb.p0+hb.p1)/2:(wb.p0+wb.p1)/2; f.meter.t=1.15*Math.pow(pw,1/1.3); await until(()=>Math.abs(f.meter.needle-pw)<1e-6,60000); __rhf.press('primary'); await until(()=>f.meter.phase===1,60000); f.meter.t=0.46/f.timing.speed; await until(()=>Math.abs(f.meter.cursor-0.46)<1e-6,60000); return 'timing bar held with the marker at '+f.meter.cursor.toFixed(2)+', power '+pw.toFixed(2)+(hb?' on the hotspot':' in open water'); })()"
 },
 {
 "wait": 10000
@@ -69,7 +69,7 @@
 "shotTimeout": 900000
 },
 {
-"eval": "(()=>{__rhf.game.fishing.cancel(); return 'cancel'})()"
+"eval": "(()=>{window.__unfreeze&&__unfreeze(); __rhf.game.fishing.cancel(); return 'cancel'})()"
 },
 {
 "eval": "(()=>{const g=__rhf.game; const r=g.world.roads.find(r=>r.id==='river'); const P=r.path; const p=P.sample(P.length*0.3); const c=g.hotrod; c.place(p.x,p.z,Math.atan2(p.tx,p.tz)); const e=c.exitPoint(1); g.player.place(e.x,e.z,c.yaw); g.env.setTime(17.8); return 'car'})()"

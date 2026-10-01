@@ -1,7 +1,7 @@
 // In-game HUD: stats, compass, objective, contextual touch controls, cast and
 // fight meters, speedometer, toasts, banners, prompts and the catch card.
 import { formatMoney, formatTime, clamp, wrapAngle } from '../util/math.js';
-import { LURES, FISH, CHALLENGES, RARITY } from '../gameplay/data.js';
+import { LURES, FISH, CHALLENGES, RARITY, timingGradient } from '../gameplay/data.js';
 import { Minimap } from './minimap.js';
 
 const $ = (id) => document.getElementById(id);
@@ -51,9 +51,11 @@ export class HUD {
       meterHelp: $('meter-help'),
       meterWater: $('meter-water'),
       meterHot: $('meter-hot'),
-      meterAcc: $('meter-acc'),
-      meterPower: $('meter-power'),
       meterNeedle: $('meter-needle'),
+      meterPowerTrack: $('meter-power-track'),
+      meterTiming: $('meter-timing'),
+      timingZones: $('timing-zones'),
+      timingCursor: $('timing-cursor'),
       fight: $('fight'),
       fightStamina: $('fight-stamina'),
       fightDist: $('fight-dist'),
@@ -267,16 +269,30 @@ export class HUD {
     B.style.opacity = String(back * intensity * pulse);
   }
 
-  // ---- cast meter
+  // ---- cast meter: the power needle, then the timing bar
   showMeter(m) {
     const el = this.el;
     el.meter.hidden = false;
     el.fight.hidden = true;
     const pct = (v) => `${clamp(v, -0.1, 1.02) * 100}%`;
+    const timing = m.phase === 1;
+    el.meterPowerTrack.hidden = timing;
+    el.meterTiming.hidden = !timing;
+    el.meterStep.textContent = timing ? 'TIMING' : 'POWER';
+    el.meterHelp.textContent = timing
+      ? 'Tap when the marker is on the middle line'
+      : m.hot
+        ? 'Stop the needle in the gold zone'
+        : 'Tap to set casting power';
+    if (timing) {
+      if (this.cache.timingZones !== m.timing) {
+        this.cache.timingZones = m.timing;
+        el.timingZones.style.background = timingGradient(m.timing);
+      }
+      el.timingCursor.style.left = `${clamp(m.cursor, 0, 1) * 100}%`;
+      return;
+    }
     el.meterNeedle.style.left = pct(Math.max(m.needle, -0.02));
-    el.meterStep.textContent = m.phase === 0 ? 'POWER' : 'ACCURACY';
-    el.meterHelp.textContent =
-      m.phase === 0 ? (m.hot ? 'Stop the needle in the gold zone' : 'Tap to set casting power') : 'Tap again on the green mark';
     const key = JSON.stringify(m.water) + (m.hot ? m.hot.p0.toFixed(3) + m.hot.p1.toFixed(3) : '');
     if (this.cache.meterKey !== key) {
       this.cache.meterKey = key;
@@ -288,14 +304,7 @@ export class HUD {
         el.meterHot.style.left = pct(m.hot.p0);
         el.meterHot.style.width = `${Math.max(1.2, (m.hot.p1 - m.hot.p0) * 100)}%`;
       } else el.meterHot.hidden = true;
-      el.meterAcc.style.left = `${(m.accTarget - 0.022) * 100}%`;
-      el.meterAcc.style.width = `${0.044 * 100}%`;
     }
-    if (m.power !== null) {
-      el.meterPower.hidden = false;
-      el.meterPower.style.left = pct(m.power);
-    } else el.meterPower.hidden = true;
-    el.meterAcc.style.opacity = m.phase === 1 ? '1' : '0.45';
   }
 
   hideMeter() {
