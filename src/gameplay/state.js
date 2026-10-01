@@ -76,6 +76,8 @@ export class GameState {
     this.jobsDone = [];
     // species whose first picture the magazine has bought
     this.photoSold = {};
+    // a save from before the sales were kept (see startGame in main.js)
+    this.photoSoldMissing = false;
     this.challenges = {};
     this.stats = { casts: 0, perfects: 0, caught: 0, released: 0, snapped: 0, bearsSurvived: 0, bearsKilled: 0, hunted: 0, earned: 0 };
     this.time = 6.5;
@@ -329,6 +331,7 @@ export class GameState {
       if (!ARROWS[this.gear.arrow]) this.gear.arrow = 'cedar';
       // a job from an older version that no longer exists
       if (this.job && !JOBS.some((j) => j.id === this.job.id)) this.job = null;
+      this.photoSoldMissing = !(d.photoSold && typeof d.photoSold === 'object');
       for (const part of Object.keys(LOOK_DEFAULT)) if (!LOOKS[part].some((x) => x.id === this.look[part])) this.look[part] = LOOK_DEFAULT[part];
       delete this.gear.arrows;
       delete this.gear.scope;

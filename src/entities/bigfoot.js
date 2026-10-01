@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { ModelBuilder } from '../util/builder.js';
 import { clamp, wrapAngle } from '../util/math.js';
+import { treesInTheWay, plantsInTheWay } from '../gameplay/camera.js';
 
 const FUR = 0x3a2a1e;
 const FUR_DARK = 0x2a1d14;
@@ -87,7 +88,8 @@ export class Bigfoot {
         const t = i / 12;
         hidden = W.heightAt(P.pos.x + (x - P.pos.x) * t, P.pos.z + (z - P.pos.z) * t) > eyeY + (y - eyeY) * t + 0.3;
       }
-      if (hidden) continue;
+      // and no tree or bush in front of it either
+      if (hidden || treesInTheWay(g, P.pos.x, eyeY, P.pos.z, x, y, z) || plantsInTheWay(g, P.pos.x, eyeY, P.pos.z, x, y, z)) continue;
       this.pos.set(x, W.heightAt(x, z), z);
       // stroll across your view, a little away from you
       const away = Math.atan2(x - P.pos.x, z - P.pos.z);

@@ -67,6 +67,11 @@ for (const s of steps) {
       console.log('saveEval error:', e.message);
     }
   }
+  // resize the page (a phone turned, another device)
+  if (s.viewport) {
+    await page.setViewportSize({ width: s.viewport[0], height: s.viewport[1] });
+    console.log('viewport', s.viewport.join(' by '));
+  }
   if (s.wait) await page.waitForTimeout(s.wait);
   if (s.tap) await page.touchscreen.tap(s.tap[0], s.tap[1]);
   if (s.click) await page.mouse.click(s.click[0], s.click[1]);

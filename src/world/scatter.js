@@ -974,6 +974,34 @@ class ScatterType {
     this.cells = cells.map((a) => Int32Array.from(a));
     this.list = null;
   }
+
+  // Whether fn(i) holds for any instance within r metres of (x, z).
+  someNear(x, z, r, fn) {
+    if (!this.cells) return false;
+    const i0 = clamp(Math.floor((x - r + HALF) / CELL), 0, GRID - 1);
+    const i1 = clamp(Math.floor((x + r + HALF) / CELL), 0, GRID - 1);
+    const j0 = clamp(Math.floor((z - r + HALF) / CELL), 0, GRID - 1);
+    const j1 = clamp(Math.floor((z + r + HALF) / CELL), 0, GRID - 1);
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        for (const k of this.cells[j * GRID + i]) {
+          const dx = this.x[k] - x;
+          const dz = this.z[k] - z;
+          if (dx * dx + dz * dz < r * r && fn(k)) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // An instance's scale up and across, from its matrix.
+  scaleY(k) {
+    return Math.hypot(this.m[k * 12 + 3], this.m[k * 12 + 4], this.m[k * 12 + 5]);
+  }
+
+  scaleX(k) {
+    return Math.hypot(this.m[k * 12], this.m[k * 12 + 1], this.m[k * 12 + 2]);
+  }
 }
 
 export class Scatter {
@@ -1113,6 +1141,17 @@ export class Scatter {
       const w = W.waterAt(x, z);
       return w && w.depth > -0.2;
     };
+    // a tree's trunk to walk into, and its crown for what it hides from a
+    // camera (treesInTheWay in gameplay/camera.js): from lo to hi metres up
+    // and cr metres round, a spruce's cone or a broadleaf's round crown, as
+    // the tree models are built; a bare snag has only its trunk
+    const tree = (x, z, r, lo, hi, cr, cone) => {
+      const c = this.colliders.addCircle(x, z, r, 'tree');
+      c.lo = lo;
+      c.hi = hi;
+      c.cr = cr;
+      c.cone = cone;
+    };
 
     const lakeSD = (x, z) => {
       let m = 1e9;
@@ -1150,18 +1189,18 @@ export class Scatter {
           const gold = rand() < 0.1;
           const g = 0.85 + rand() * 0.3;
           T.aspen.add(x, y - 0.15, z, rot, s, gold ? [1.5, 1.15, 0.35] : [g, g * (1 + rand() * 0.1), g * 0.85], 0.85 + rand() * 0.3, 0.85 + rand() * 0.3);
-          this.colliders.addCircle(x, z, 0.14 * s, 'tree');
+          tree(x, z, 0.14 * s, 7 * s, 12 * s, 1.6 * s, false);
         } else if ((wet && rand() < 0.8) || (north && rand() < 0.45) || (W.surf[k] === SURF.TUNDRA && rand() < 0.6)) {
           const s = 0.6 + rand() * 0.55;
           const v = 0.8 + rand() * 0.3;
           T.blackSpruce.add(x, y - 0.1, z, rot, s, [v * 0.95, v, v * (0.95 + rand() * 0.15)], 0.7 + rand() * 0.45, 0.7 + rand() * 0.45);
-          this.colliders.addCircle(x, z, 0.1 * s, 'tree');
+          tree(x, z, 0.1 * s, 0.7 * s, 8.6 * s, 0.8 * s, true);
         } else if (low && (birchN > 0.25 || rand() < 0.08)) {
           const s = 0.75 + rand() * 0.55;
           const autumn = rand() < 0.14;
           const tint = autumn ? [1.3, 1.0, 0.45] : [0.8 + rand() * 0.2, 0.82 + rand() * 0.2, 0.78 + rand() * 0.2];
           T.birch.add(x, y - 0.15, z, rot, s, tint, 0.8 + rand() * 0.4, 0.8 + rand() * 0.4);
-          this.colliders.addCircle(x, z, 0.22 * s, 'tree');
+          tree(x, z, 0.22 * s, 4 * s, 8.4 * s, 2 * s, false);
         } else {
           const coast = smoothstep(260, 60, W.coastD[k]);
           const s = (0.5 + rand() * 0.85 + (rand() < 0.1 ? 0.35 : 0)) * (1 + coast * 0.35);
@@ -1170,7 +1209,7 @@ export class Scatter {
           const w = 0.8 + rand() * 0.45;
           const tint = [v * (1 - coast * 0.12), v * (0.95 + rand() * 0.1), v * (0.9 + rand() * 0.15 + coast * 0.2)];
           T.spruce.add(x, y - 0.2, z, rot, s, tint, w, w * (0.9 + rand() * 0.2));
-          this.colliders.addCircle(x, z, 0.3 * s, 'tree');
+          tree(x, z, 0.3 * s, 1.2 * s, 11 * s, 2.1 * s * w, true);
         }
       }
     }
@@ -1197,7 +1236,7 @@ export class Scatter {
         const s = 0.8 + rand() * 0.45;
         const g = 0.85 + rand() * 0.3;
         T.poplar.add(x, y - 0.25, z, rand() * Math.PI * 2, s, [g, g * (0.95 + rand() * 0.12), g * 0.9], 0.8 + rand() * 0.45, 0.8 + rand() * 0.45);
-        this.colliders.addCircle(x, z, 0.4 * s, 'tree');
+        tree(x, z, 0.4 * s, 7 * s, 14.5 * s, 3.8 * s, false);
       }
     }
 
@@ -1252,8 +1291,13 @@ export class Scatter {
         const g = 0.75 + rand() * 0.3;
         const tint = [g * 0.4, g * 0.4, g * 0.41];
         T.rock.add(x, y - 0.25 * s, z, rand() * 6.28, s, tint, 0.8 + rand() * 0.6, 0.8 + rand() * 0.6, 0.25);
-        // a boat floats over one deep enough on the bottom
-        if (s > 0.6) this.colliders.addCircle(x, z, s * 0.85, 'rock').top = y + 0.9 * s;
+        if (s > 0.6) {
+          const c = this.colliders.addCircle(x, z, s * 0.85, 'rock');
+          // one under water has a top, so a boat floats over it when it lies
+          // deep enough on the bottom; on land a rock stops everything
+          const w = W.waterAt(x, z);
+          if (w && y + 0.9 * s < w.level) c.top = y + 0.9 * s;
+        }
       }
     }
 
@@ -1362,7 +1406,12 @@ export class Scatter {
         const tint = rand() < 0.4 ? [g * 0.85, g, g * 0.8] : [g, g * 1.02, g * 0.9];
         const sc = 0.8 + rand() * 0.6;
         T.willow.add(x, W.heightAt(x, z) - 0.1, z, rand() * 6.28, sc, tint);
-        this.colliders.addCircle(x, z, 0.5 * sc, 'shrub');
+        // its leaves, for what it hides from a camera (as a tree's crown)
+        const c = this.colliders.addCircle(x, z, 0.5 * sc, 'shrub');
+        c.lo = 0.5 * sc;
+        c.hi = 3.6 * sc;
+        c.cr = 1.4 * sc;
+        c.cone = false;
       }
     }
 
@@ -1411,7 +1460,7 @@ export class Scatter {
       const y = W.heightAt(x, z);
       const sc = 0.8 + rand() * 0.5;
       T.snag.add(x, y - 0.2, z, rand() * 6.28, sc, null);
-      this.colliders.addCircle(x, z, 0.25 * sc, 'tree');
+      tree(x, z, 0.25 * sc, 0, 9 * sc, 0, false);
       this.snags.push({ x, y: y + 8.6 * sc, z });
     }
 

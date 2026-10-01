@@ -327,16 +327,23 @@ export class Terrain {
 }
 
 // Distant mountains and far shore beyond the playable square.
-export function buildFarTerrain(world, material) {
+// near: the spacing in the band round the playable square (20 m for the
+// view, 40 m for the water's reflection, where finer detail cannot show);
+// from: the height grid of a finer copy to take the heights from
+export function buildFarTerrain(world, material, near = 20, from = null) {
   // denser near the playable square so nearby slopes stay smooth
   const coords = [];
   const R = 6400;
   const NEAR = HALF + 700;
-  // 20 m round the playable square, where the nearest mountains rise
+  // finest round the playable square, where the nearest mountains rise
   for (let v = -R; v < -NEAR; v += 100) coords.push(v);
-  for (let v = -NEAR; v <= NEAR; v += 20) coords.push(v);
+  for (let v = -NEAR; v <= NEAR; v += near) coords.push(v);
   for (let v = NEAR + 100; v <= R; v += 100) coords.push(v);
-  // make sure the square edge lines exist exactly
+  // make sure the square edge lines exist exactly (700 m is not a whole
+  // number of 40 m steps), or the cells across the edge overlap the
+  // playable ground
+  for (const v of [-HALF, HALF]) if (!coords.includes(v)) coords.push(v);
+  coords.sort((a, b) => a - b);
   const n = coords.length;
   const pos = [];
   const col = [];
@@ -347,7 +354,17 @@ export function buildFarTerrain(world, material) {
     return world.farHeight(x, z);
   };
   const H = new Float32Array(n * n);
-  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) H[j * n + i] = hAt(coords[i], coords[j]);
+  // the finer copy has every line this one has: look its heights up
+  // rather than working out the far heights again
+  const at = from ? new Map(from.coords.map((v, i) => [v, i])) : null;
+  const fn = from ? from.coords.length : 0;
+  for (let j = 0; j < n; j++) {
+    for (let i = 0; i < n; i++) {
+      const fi = at?.get(coords[i]);
+      const fj = at?.get(coords[j]);
+      H[j * n + i] = fi !== undefined && fj !== undefined ? from.H[fj * fn + fi] : hAt(coords[i], coords[j]);
+    }
+  }
   const idx = [];
   for (let j = 0; j < n; j++) {
     for (let i = 0; i < n; i++) {

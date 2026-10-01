@@ -74,6 +74,85 @@ function loadAlbum() {
   return { shots: {}, roll: [] };
 }
 
+// Tree crowns across a line of sight, from a to b. Each tree's collider
+// carries its crown (see the tree helper in world/scatter.js): from lo to hi
+// metres above the ground, cr metres round, a spruce's cone or a broadleaf's
+// round crown; a bare snag is only its trunk, and a willow counts like a
+// tree. A line under a birch's crown or over a tree's top is clear, and the
+// outer fifth of a crown lets the view through. Trees within near metres of
+// b stand beside the subject, not in front of it.
+export function treesInTheWay(game, ax, ay, az, bx, by, bz, near = 5) {
+  const C = game.colliders;
+  const W = game.world;
+  const dx = bx - ax;
+  const dz = bz - az;
+  const D = Math.hypot(dx, dz);
+  if (D < 1) return false;
+  const seen = new Set();
+  for (let t = 0; t <= D; t += 6) {
+    const px = ax + (dx / D) * t;
+    const pz = az + (dz / D) * t;
+    // 6 m reaches the widest crowns (a big coastal spruce's 4.8 m) between
+    // steps
+    for (const c of C.circlesNear(px, pz, 6)) {
+      if ((c.tag !== 'tree' && c.tag !== 'shrub') || seen.has(c)) continue;
+      seen.add(c);
+      // how far along the line, how far off it, and how high it passes
+      const u = ((c.x - ax) * dx + (c.z - az) * dz) / (D * D);
+      if (u <= 0 || u * D > D - near) continue;
+      const off = Math.abs((c.x - ax) * dz - (c.z - az) * dx) / D;
+      if (off > 5) continue;
+      const h = ay + (by - ay) * u - W.heightAt(c.x, c.z);
+      if (h > (c.hi ?? 14)) continue;
+      let reach = c.r + 0.15;
+      if (c.cr && h >= c.lo) {
+        const f = (h - c.lo) / (c.hi - c.lo);
+        const k = c.cone ? 1 - f : Math.sqrt(Math.max(0, 1 - (2 * f - 1) ** 2));
+        reach = Math.max(reach, c.cr * k * 0.8);
+      }
+      if (off < reach) return true;
+    }
+  }
+  return false;
+}
+
+// Bushes, fireweed and ferns along the first 60 m of a line of sight: at a
+// long zoom a bush a few metres off hides as much as a forest far away.
+// Their height and radius at scale 1, as the models are built.
+const PLANTS = [
+  ['bush', 1.4, 0.9],
+  ['fireweed', 1.45, 0.3],
+  ['fern', 0.8, 0.9],
+];
+export function plantsInTheWay(game, ax, ay, az, bx, by, bz) {
+  const T = game.scatter?.types;
+  if (!T) return false;
+  const dx = bx - ax;
+  const dz = bz - az;
+  const D = Math.hypot(dx, dz);
+  const reach = Math.min(60, D - 3);
+  if (reach < 1) return false;
+  const mx = ax + (dx / D) * (reach / 2);
+  const mz = az + (dz / D) * (reach / 2);
+  for (const [name, h0, r0] of PLANTS) {
+    const S = T[name];
+    const hit =
+      S &&
+      S.someNear(mx, mz, reach / 2 + 2, (k) => {
+        const px = S.x[k] - ax;
+        const pz = S.z[k] - az;
+        // how far along the line (not the one you stand in), how far off it
+        const along = (px * dx + pz * dz) / D;
+        if (along < 0.6 || along > reach) return false;
+        if (Math.abs(px * dz - pz * dx) / D > S.scaleX(k) * r0 * 0.8) return false;
+        // and whether the line passes under its top
+        return ay + ((by - ay) * along) / D < S.y[k] + S.scaleY(k) * h0;
+      });
+    if (hit) return true;
+  }
+  return false;
+}
+
 export class PhotoCamera {
   constructor(game) {
     this.game = game;
@@ -191,6 +270,9 @@ export class PhotoCamera {
         }
       }
       if (blocked) continue;
+      // or a tree, or a bush close in front (far subjects are at sea or in
+      // the sky)
+      if (d < 300 && (treesInTheWay(g, eye.x, eye.y, eye.z, s.x, s.y, s.z) || plantsInTheWay(g, eye.x, eye.y, eye.z, s.x, s.y, s.z))) continue;
       let stars = frac >= 0.2 ? 3 : frac >= 0.09 ? 2 : frac >= 0.035 ? 1 : 0;
       if (stars > 1 && off > 0.4) stars--;
       const score = frac * (1.4 - off);
@@ -247,7 +329,10 @@ export class PhotoCamera {
       c.width = THUMB_W;
       c.height = THUMB_H;
       const ctx = c.getContext('2d');
-      if (blur) ctx.filter = `blur(${blur}px)`;
+      // ask before setting it: setting it where it is not supported makes
+      // a plain property that then looks like support
+      const filters = 'filter' in ctx;
+      if (blur && filters) ctx.filter = `blur(${blur}px)`;
       // a 16:9 frame from the middle of the screen, about as tall as the
       // viewfinder, so the subject fills the picture as it filled the frame
       const sw = src.width;
@@ -255,7 +340,7 @@ export class PhotoCamera {
       const k = Math.min((sw * 0.86) / THUMB_W, (sh * 0.64) / THUMB_H);
       const w = THUMB_W * k;
       const h = THUMB_H * k;
-      if (blur && !('filter' in ctx)) {
+      if (blur && !filters) {
         // no canvas filters (older Safari): shrink and stretch back instead
         const t = document.createElement('canvas');
         t.width = Math.round(THUMB_W / (1 + blur * 1.6));

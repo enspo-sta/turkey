@@ -292,6 +292,11 @@ class Session {
       s.wipe();
       g.photo.wipe();
     }
+    // a save from before the magazine's sales were kept: what is in the
+    // album was sold then, so it does not sell twice
+    if (continueSave && s.photoSoldMissing) {
+      for (const [id, shot] of Object.entries(g.photo.album.shots)) s.photoSold[id] ??= shot.stars;
+    }
     s.started = true;
     g.started = true;
     $('title').hidden = true;
@@ -324,9 +329,10 @@ class Session {
       if (g.boat.where === 'water') g.boat.board();
       else {
         // the boat could not stay where it was (it is back on its trailer):
-        // carry on beside the car instead of in deep water
-        const ex = g.hotrod.exitPoint(1);
-        g.player.place(ex.x, ex.z, g.hotrod.yaw);
+        // carry on beside the car instead of in deep water, as if you had
+        // just stepped out of it
+        const ex = this.exitSpot();
+        g.player.place(ex.x, ex.z, g.hotrod.yaw + Math.PI);
       }
     }
     this.mode = 'play';
@@ -665,6 +671,21 @@ class Session {
     g.hud.hint(IS_TOUCH ? 'Hold GAS, steer by dragging on the left. Camera button for the outside view.' : 'W gas, S brake, A/D steer, C camera, H horn, E to get out.', 5);
   }
 
+  // Where to step out of the car: the driver's side, or the other side when
+  // that is deep water or blocked.
+  exitSpot() {
+    const g = this.game;
+    const car = g.hotrod;
+    for (const side of [1, -1]) {
+      const e = car.exitPoint(side);
+      const w = g.world.waterAt(e.x, e.z);
+      if (w && w.depth > 0.8) continue;
+      const r = g.colliders.resolve(e.x, e.z, 0.4, car.pos.y, 1.8);
+      if (Math.hypot(r.x - e.x, r.z - e.z) < 0.3) return e;
+    }
+    return car.exitPoint(1);
+  }
+
   exitCar(force = false) {
     const g = this.game;
     const car = g.hotrod;
@@ -673,18 +694,7 @@ class Session {
       g.hud.toast('Stop the car first');
       return;
     }
-    let spot = null;
-    for (const side of [1, -1]) {
-      const e = car.exitPoint(side);
-      const w = g.world.waterAt(e.x, e.z);
-      if (w && w.depth > 0.8) continue;
-      const r = g.colliders.resolve(e.x, e.z, 0.4, car.pos.y, 1.8);
-      if (Math.hypot(r.x - e.x, r.z - e.z) < 0.3) {
-        spot = e;
-        break;
-      }
-    }
-    if (!spot) spot = car.exitPoint(1);
+    const spot = this.exitSpot();
     car.occupied = false;
     car.speed = 0;
     g.player.mode = 'foot';

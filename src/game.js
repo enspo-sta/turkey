@@ -125,7 +125,9 @@ export class Game {
     this.scene.add(this.terrain.group);
     this.farTerrain = buildFarTerrain(this.world, this.terrainMaterial);
     this.scene.add(this.farTerrain);
-    const farReflect = new THREE.Mesh(this.farTerrain.geometry, terrainReflect);
+    // the reflection gets a coarser copy: a cube face 128 to 256 pixels
+    // across cannot show the 20 m detail, and it is drawn every frame
+    const farReflect = new THREE.Mesh(buildFarTerrain(this.world, terrainReflect, 40, this.farTerrain.userData.grid).geometry, terrainReflect);
     farReflect.frustumCulled = false;
     farReflect.layers.set(REFLECT_LAYER);
     this.farTerrain.add(farReflect);
@@ -381,13 +383,14 @@ export class Game {
     const cam = this.camera;
     const p = cam.position;
     const S = THREE.MathUtils.smoothstep;
-    // trees close round the camera, counted a few times a second
+    // trees in leaf close round the camera (not bare snags), counted a few
+    // times a second
     this.canopyT -= dt;
     if (this.canopyT <= 0) {
       this.canopyT = 0.25;
       let n = 0;
       for (const c of this.colliders.circlesNear(p.x, p.z, 9)) {
-        if (c.tag === 'tree' && (c.x - p.x) ** 2 + (c.z - p.z) ** 2 < 81) n++;
+        if (c.tag === 'tree' && c.cr && (c.x - p.x) ** 2 + (c.z - p.z) ** 2 < 81) n++;
       }
       this.canopy = S(n, 2, 9);
     }

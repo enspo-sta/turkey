@@ -199,7 +199,7 @@ What changed in the latest round, with pictures, the audit and the tests:
   valleys into shadow at dawn and dusk, darker gullies and forest floors, haze
   that thins with height and takes the colour of the sky, and leaves that glow
   when the sun is behind them. Steam, spray, mist and smoke take the light of
-  the hour (dim and blue by moonlight, warm at dawn) and glow with a low sun
+  the hour (dark at night, warm at dawn) and glow with a low sun
   behind them; Bear Falls and the geyser darken in a mountain's or a cloud's
   shadow; and the eye adapts, opening up a little under the trees and on grey
   days and closing down when you look into a low sun.
@@ -445,6 +445,8 @@ node tools/shot.mjs tools/scenarios/areas.json        # Steaming Springs with th
 node tools/shot.mjs tools/scenarios/jobs-bigfoot.json # the odd jobs board, a picture of Bigfoot for the radio show, the cannery's three sockeye and the album
 node tools/shot.mjs tools/scenarios/layout-ipad.json  # the top bar, compass and bite readout on an iPad-sized screen
 node tools/shot.mjs tools/scenarios/layout-phone-small.json # the same on a small phone
+node tools/shot.mjs tools/scenarios/layout-sizes.json # the top bar with the longest goal at ten screen sizes, phones upright and sideways (with the notch), iPads and desktops
+node tools/shot.mjs tools/scenarios/bigfoot-forest.json # Bigfoot from deep in the forest at dusk: he only steps out where no tree hides him
 node tools/shot.mjs tools/scenarios/fish-species.json # lands each of the twelve newer fish, then shows the journal by rarity and the tackle box
 node tools/shot.mjs tools/scenarios/minimap.json      # the small map on foot and driving, its goal marker, and a tap to the full map
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot

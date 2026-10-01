@@ -130,7 +130,7 @@ svg { width: 1em; height: 1em; display: block; }
 .saved-note.show { opacity: 1; }
 #hud-day { color: var(--ink-dim); font-weight: 600; font-size: 13px; }
 
-#compass { position: absolute; top: calc(var(--sat) + 10px); left: 50%; width: min(420px, 38vw); height: 30px; transform: translateX(-50%); overflow: hidden;
+#compass { position: absolute; top: calc(var(--sat) + 10px); left: 50%; width: min(420px, 38vw, 100vw - 452px - 2 * max(var(--sal), var(--sar))); height: 30px; transform: translateX(-50%); overflow: hidden;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); }
 #compass-strip { position: absolute; inset: 0; }
 #compass-strip span { position: absolute; top: 5px; transform: translateX(-50%); font-weight: 800; font-size: 14px; letter-spacing: 0.06em; text-shadow: 0 1px 3px rgba(0,0,0,.8); white-space: nowrap; }
@@ -140,7 +140,7 @@ svg { width: 1em; height: 1em; display: block; }
 #compass-strip span.marker.goal { color: var(--glacier); }
 #compass-strip span.marker.bear { color: #ff5a4a; }
 .compass-needle { position: absolute; left: 50%; bottom: 0; width: 2px; height: 7px; background: var(--flame); transform: translateX(-50%); }
-#objective { position: absolute; top: calc(var(--sat) + 44px); left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: 600; letter-spacing: 0.04em; color: var(--ink); text-shadow: 0 1px 4px rgba(0,0,0,.85); white-space: nowrap; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; }
+#objective { position: absolute; top: calc(var(--sat) + 44px); left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: 600; letter-spacing: 0.04em; color: var(--ink); text-shadow: 0 1px 4px rgba(0,0,0,.85); white-space: nowrap; max-width: min(60vw, 100vw - 452px - 2 * max(var(--sal), var(--sar))); overflow: hidden; text-overflow: ellipsis; }
 #objective b { color: var(--flame-2); font-weight: 800; letter-spacing: 0.1em; margin-right: 6px; }
 
 #toasts { position: absolute; top: calc(var(--sat) + 70px); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(560px, 80vw); }
@@ -508,10 +508,30 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
 }
 @media (max-width: 700px) {
   .map-card { width: min(300px, 62%); }
-  /* a narrower compass, a little left of centre, clear of the top buttons */
-  #compass { width: 40vw; left: 44%; }
-  /* the goal keeps to the free space between the money and the bite readout */
-  #objective { left: 45%; max-width: calc(90vw - 330px); font-size: 13px; }
+  #objective { font-size: 13px; }
+}
+/* The compass and the goal keep to the gap between the health bar and the
+   top buttons: 12 px margin, the buttons and 6 px clear on each side, with
+   the safe area of a notch. The buttons are smaller on short screens. */
+@media (max-height: 430px) {
+  #compass { width: min(420px, 38vw, 100vw - 408px - 2 * max(var(--sal), var(--sar))); }
+  #objective { max-width: min(60vw, 100vw - 408px - 2 * max(var(--sal), var(--sar))); }
+}
+/* very wide screens have the clock and the bite beside the buttons too */
+@media (min-width: 1500px) and (min-height: 600px) {
+  #objective { max-width: min(60vw, 100vw - 940px - 2 * max(var(--sal), var(--sar))); }
+}
+/* too narrow for a gap (a phone held upright, a narrow split view on an
+   iPad): smaller top buttons clear of the health bar, the bite readout over
+   the clock clear of the chips, and the compass and the goal under them
+   (and under the SAVED note and the driving buttons), right of the small
+   map */
+@media (max-width: 599px) {
+  .top-icons { gap: 6px; }
+  .top-icons .btn.icon { width: 42px; height: 42px; }
+  .top-status { flex-direction: column; align-items: flex-end; }
+  #compass { top: calc(var(--sat) + 146px); left: calc(var(--sal) + 148px); right: calc(var(--sar) + 12px); width: auto; transform: none; }
+  #objective { top: calc(var(--sat) + 182px); left: calc(var(--sal) + 148px); right: calc(var(--sar) + 12px); max-width: none; transform: none; text-align: center; }
 }
 @media (orientation: portrait) {
   #catch { left: 50%; right: auto; top: auto; bottom: calc(var(--sab) + 16px); transform: translateX(-50%); width: min(420px, 92vw); animation: none; }
