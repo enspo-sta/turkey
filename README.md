@@ -11,7 +11,7 @@ in your cooler.
 Everything you see and hear is generated in code at start-up: the terrain,
 rivers, glacier, forests, animals, the hot rod, the fish, the sky, the weather,
 the sound effects and the music. There are no downloaded models, textures or
-audio files, so the whole game is a single 1.2 MB HTML file (about 410 KB
+audio files, so the whole game is a single 1.2 MB HTML file (about 420 KB
 compressed).
 
 | | |
@@ -23,6 +23,8 @@ compressed).
 | ![The steaming volcano across the inlet](docs/screenshots/volcano.jpg) | ![Snow on the high peaks](docs/screenshots/peaks.jpg) |
 | ![Butterflies over a fireweed meadow](docs/screenshots/meadow.jpg) | ![Yellow pond lilies on Moose Lake](docs/screenshots/lilies.jpg) |
 | ![Driftwood riding the river](docs/screenshots/driftwood.jpg) | ![A cascade down the cliffs](docs/screenshots/cascade.jpg) |
+| ![A rainbow over Ruben's cabin as an evening shower passes](docs/screenshots/rainbow.jpg) | ![Morning mist over the river at Hotrod Landing](docs/screenshots/mist.jpg) |
+| ![Puddles and wet ground after rain by the Trading Post](docs/screenshots/puddles.jpg) | ![An epic salmon shark landed at Halibut Pier, with the small map in the corner](docs/screenshots/shark.jpg) |
 
 ## What is in the game
 
@@ -131,9 +133,10 @@ compressed).
   hides the sun); gusts of wind roll across the grass in paler waves, bend the
   trees and ruffle the lakes; mist lies in the valleys and over the water at
   dawn, in the evening and after rain, with the peaks clear above it; after a
-  shower the ground is dark and glossy, puddles on the roads and gravel bars
-  mirror the sky and the trees, the low sun glints off the wet ground, and a
-  rainbow can stand opposite the sun while the last rain falls.
+  shower the ground is dark and glossy, puddles in the flat hollows (most of
+  all on the roads and gravel bars) mirror the sky and the trees, the low sun
+  glints off the wet ground, and a rainbow can stand opposite the sun while
+  the last rain falls.
 - Insects: butterflies over the meadows, bumblebees on the fireweed,
   dragonflies over the shallows, mosquito swarms at dusk, moths round the lights
   at night, and cottonwood fluff drifting over the rivers.
@@ -304,7 +307,10 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 `tools/shot.mjs` loads the built game in headless Chromium through
 [Playwright](https://playwright.dev/), runs a scripted scenario and saves
 screenshots to `tools/out/`. Scenarios drive the game through the `window.__rhf`
-debug interface (`start`, `press`, `hold`, `tp`, `time`, `god`), for example:
+debug interface (`start`, `press`, `hold`, `tp`, `time`, `god`, `settle`). Before
+each screenshot the harness calls `settle`, which finishes the ground detail
+around the camera: the software renderer draws about one frame a second, far
+too slow for the game's two ground squares a frame after a jump. For example:
 
 ```sh
 node tools/shot.mjs tools/scenarios/catch.json   # cast, hook, fight and land a fish, then open the journal, map and shop
@@ -330,8 +336,10 @@ node tools/shot.mjs tools/scenarios/floaters.json     # driftwood and branches o
 node tools/shot.mjs tools/scenarios/post.json         # bloom, sun rays and the colour grade, with and without
 node tools/shot.mjs tools/scenarios/mountains.json    # Mount Ruben, the tundra and Sawtooth Ridge: gentler slopes and the higher tree line
 node tools/shot.mjs tools/scenarios/tricks.json       # cloud shadows, valley mist, wet ground and puddles, a rainbow and gusts of wind
+node tools/shot.mjs tools/scenarios/travel-lod.json   # after a fast travel the ground has its full detail as the fade lifts
 node tools/shot.mjs tools/scenarios/perf-breakdown.json  # draw calls and triangles per rendering pass
 node tools/shot.mjs tools/scenarios/perf-views.json   # draw calls, triangles and frame time at eight places (perf-views-medium.json for Medium)
+node tools/shot.mjs tools/scenarios/perf-tricks.json  # rendering time and draws at eight places with the weather effects off, on and soaked
 node tools/shot.mjs tools/scenarios/fps-readout.json  # the frame rate readout, the automatic step-down and its switch
 node tools/shot.mjs tools/scenarios/shader-switches.json  # counts shader variant switches per frame (0 when nothing flips back and forth)
 node tools/shot.mjs tools/scenarios/shade-debug.json  # saves the mountain shadow and sky visibility maps as an image

@@ -1,7 +1,7 @@
 {
   "kicker": "Ruben Hotrod Fishing · graphics update",
-  "title": "Real water, better light and more wildlife",
-  "lede": "The water is now clear enough to see stones and fish through it, the light comes from a sun that throws long shadows and lets mountains darken the valleys at dawn and dusk, the ground and forests carry far more detail, and fourteen new kinds of animals and birds live around you. Quality presets, dynamic resolution and an automatic step-down keep the frame rate up on older phones.",
+  "title": "Cloud shadows, valley mist, a minimap and 28 fish",
+  "lede": "This round fixes the rod that sometimes reeled by itself, adds five low-cost effects (cloud shadows that drift over the land, mist in the valleys, gusts of wind through the grass and trees, wet ground with puddles after rain, and rainbows), puts a small map on screen at all times, makes the mountains a few degrees gentler with forest reaching higher, and brings twelve more fish in four tiers of rarity and seven more lures. A review of the pictures also turned up coarse ground straight after a fast travel and sea lions missing from the bay, both now fixed. The earlier rounds of the update follow further down.",
   "links": [
     {
       "label": "Play the new build",
@@ -18,8 +18,384 @@
   ],
   "sections": [
     {
+      "id": "reel",
+      "kicker": "Fishing controls",
+      "title": "The rod no longer reels by itself",
+      "html": "<p>Four separate faults could leave the reel turning with no finger on the button. All four are fixed, and a new test holds each of them down:</p><ul><li><b>The button changed under the finger.</b> When a bite came, the big button's label switched from <b>HOOK!</b> to <b>REEL</b> by replacing its text, which removed the very element the finger was touching. A browser keeps sending a finger's events to the element it first touched even after that element has left the page, so they no longer reach the button (see <a href=\"https://developer.mozilla.org/en-US/docs/Web/API/Touch/target\">Touch.target on MDN</a>). The finger's release never arrived, the button stayed held and the reel kept turning. The label is now changed in place inside the button, and nothing inside a button can take a touch.</li><li><b>A finger that left without a release.</b> A notification, a system swipe or a finger sliding off the screen can end a touch without telling the button. Every touch on the page now checks which fingers are really still down and lets go of any button, the walking stick or the look drag whose finger is gone, and everything is let go when the game loses focus or goes to the background.</li><li><b>A press left over from the cast.</b> A finger still on the button when the float landed counted as reeling. Reeling now only starts from a press made after the float is in the water.</li><li><b>A mouse drag to look around.</b> Without the pointer locked to the view, dragging with the left button to look around reeled at the same time. The mouse button now acts only while the pointer is locked, and losing the lock lets go of it.</li></ul><p>The test (<code>tools/scenarios/reel-stuck.json</code>) runs on a phone-sized touch screen with real touch events. On the build before the fix it fails at the first check; on this build:</p><div class=\"tablewrap\"><table><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody><tr><td>The label changes from HOOK! to REEL while the finger is down</td><td>the button keeps its label element (yes)</td></tr><tr><td>The finger lifts after the label changed</td><td>the button lets go</td></tr><tr><td>A button held by a finger that is no longer on the screen</td><td>let go by the next touch on the page</td></tr><tr><td>A press held from the cast until after the float lands</td><td>no reeling: the float moved 0.00 m in 2.6 s</td></tr><tr><td>A new press and hold after the float lands</td><td>reels: the float came in 2.52 m</td></tr><tr><td>A left-button mouse drag to look around, pointer not locked</td><td>no reeling: the float moved 0.00 m</td></tr></tbody></table></div>",
+      "figs": [
+        {
+          "file": "regress/reel-stuck.png",
+          "caption": "The end of the test on a phone-sized screen: the float still where it landed after the mouse drag"
+        }
+      ]
+    },
+    {
+      "id": "tricks",
+      "kicker": "Graphics",
+      "title": "Cloud shadows, valley mist, gusts, wet ground and rainbows",
+      "html": "<p>Five effects that make the land look alive, each a few lines in the shading that every material already shares, driven by the weather and the time of day, and chosen because they cost a phone very little:</p><ul><li><b>Cloud shadows.</b> The sky's own cloud pattern is laid over the land as if on a cloud deck 1.4 km up and drifts with the wind at 9 metres a second, so patches of shade sweep over the meadows, the forest, the water and the far mountains. Each shadow is found along the sun's ray, so it slants and stretches with a low sun. The cloudier the sky, the more ground is in shade; under a full overcast the sun is dimmed as a whole instead, and at night there are none. Sun glints vanish from the water in a cloud's shadow, and when one covers you, a cloud moves over the sun in the sky, its rays fade and your hands and rod fall into shade too.</li><li><b>Valley mist.</b> Mist that is thickest at sea level and thins quickly with height (a third as thick 20 metres up) fills the valleys and lies over the rivers and lakes at dawn, lifts by late morning, and comes back in the evening and for a while after rain, with the peaks standing clear above it. The amount along each line of sight is worked out exactly from the heights at its two ends, then broken into drifting banks by a noise pattern. From the tundra you look down on it filling the lowland.</li><li><b>Gusts of wind.</b> Curved gust fronts about 90 metres apart roll downwind at about 11 metres a second. The grass is laid over and turns paler as a gust passes, so waves run across the meadows; trees, shrubs and plants lean downwind and sway harder; and dark cat's paws ruffle the lakes and the sea. One shared formula drives all three, so the grass, the trees and the water move with the same gust. In rain the gusts blow harder.</li><li><b>Wet after rain.</b> A shower soaks the ground in about half a minute, and it dries over a few minutes, faster in sunshine. Wet rock, gravel, roads and bark turn darker and glossy, mirroring the sky and catching the low sun, while grass and tundra only darken. Puddles form in flat hollows, most of all on the roads and gravel bars and fewer in the meadows, grow the longer it rains, and mirror the real surroundings (trees, mountains and sky) from the water's reflection map.</li><li><b>Rainbows.</b> When light rain falls with the sun out behind you, a rainbow stands opposite the sun at the true angles: the main bow 42 degrees from the point opposite the sun with red on the outside, a fainter second bow at 51 degrees with its colours reversed, brighter sky inside the main bow and a darker band between the two. Because the bow sits 42 degrees from the point opposite the sun, it only clears the horizon when the sun is lower than 42 degrees: before about ten in the morning and after about five in the afternoon.</li></ul>",
+      "pairs": [
+        {
+          "before": {
+            "file": "tricks/tr-clouds-off.jpg",
+            "caption": "Hotrod Landing and Mount Ruben from 180 metres up at 14:00, half cloudy, without cloud shadows"
+          },
+          "after": {
+            "file": "tricks/tr-clouds-on.jpg",
+            "caption": "The same moment with cloud shadows on the land"
+          }
+        },
+        {
+          "before": {
+            "file": "tricks/tr-mist-off.jpg",
+            "caption": "Hotrod Landing at 6:30 without the mist"
+          },
+          "after": {
+            "file": "tricks/tr-mist-on.jpg",
+            "caption": "The same morning with mist in the valley"
+          }
+        },
+        {
+          "before": {
+            "file": "tricks/tr-wet-off.jpg",
+            "caption": "By the Trading Post at 19:00 after rain, without the wet look"
+          },
+          "after": {
+            "file": "tricks/tr-wet-on.jpg",
+            "caption": "The same view: darker, glossy ground, puddles and glints from the low sun"
+          }
+        }
+      ],
+      "figs": [
+        {
+          "file": "tricks/tr-rainbow.jpg",
+          "caption": "A rainbow over Hotrod Landing as an evening shower passes"
+        },
+        {
+          "file": "tricks/tr-mist-tundra.jpg",
+          "caption": "Looking down from Caribou Tundra at 7:00 onto mist in the lowland"
+        },
+        {
+          "file": "tricks/tr-clouds-landing.jpg",
+          "caption": "Cloud shadows on Mount Ruben, seen from Hotrod Landing"
+        },
+        {
+          "file": "tricks/tr-gusts.jpg",
+          "caption": "A gust crossing the meadow at Salmon Bend: the grass it lays over turns paler (the effect is in the motion)"
+        }
+      ]
+    },
+    {
+      "id": "minimap",
+      "kicker": "Navigation",
+      "title": "A small map always on screen",
+      "html": "<ul><li>A round map in the top left corner, under the money and the cooler count, 124 points across (100 on short screens). It turns with you, so the way you face is always up, and a small <b>N</b> on the rim shows north.</li><li>It shows the land from the full map (water, roads, forest and rock), the places you have found, the hot rod when you are on foot, your current goal as a pulsing diamond (held at the rim when it is far away) and a charging grizzly in red.</li><li>On foot it covers 320 metres; while you drive it zooms out to 760 metres so you can see the road ahead.</li><li>A tap opens the full map with fast travel.</li><li>It costs almost nothing: the map image is made once while the game loads, and the small map is drawn with the browser's ordinary 2D drawing, at most fifteen times a second and only when you have moved or turned.</li></ul>",
+      "figs": [
+        {
+          "file": "minimap/mm-landing.png",
+          "caption": "At Hotrod Landing on a phone: the small map in the top left corner"
+        },
+        {
+          "file": "minimap/mm-falls-turned.png",
+          "caption": "At Bear Falls, turned round: the map turns with the view"
+        },
+        {
+          "file": "minimap/mm-drive.png",
+          "caption": "Driving: the map zooms out to show the road ahead"
+        },
+        {
+          "file": "minimap/mm-map-open.png",
+          "caption": "A tap opens the full map"
+        }
+      ]
+    },
+    {
+      "id": "mountains",
+      "kicker": "Mountains",
+      "title": "Gentler slopes, and forest higher up",
+      "html": "<ul><li><b>Rounder summits and softer ridges.</b> Each mountain now rises as a dome that is steepest half way up instead of at the top, and its ridges are wider and less sharp. The ranges round the edge of the map and the far mountains beyond it got the same treatment.</li><li><b>The tree line moved up from about 112 metres to about 150</b>, still wavering with the terrain, and trees now keep growing on steeper ground before they give way to rock.</li><li><b>Caribou Tundra stays open.</b> The raised plateau in the north-east keeps its own tree line at about 112 metres, so the caribou still graze on brown, treeless tundra. (A first version tied the tundra to the new tree line and let forest cover most of the plateau; the tests caught it, and the published game has the fix.)</li><li>The five waterfalls, the glacier and every fishing spot are where they were.</li></ul><p>Measured over the whole playable area, before and after:</p><div class=\"tablewrap\"><table><thead><tr><th>Measure</th><th class=\"n\">Before</th><th class=\"n\">After</th></tr></thead><tbody><tr><td>Slope of ground above 150 m: median</td><td class=\"n\">58.6°</td><td class=\"n\">51.3°</td></tr><tr><td>Slope above 150 m: the steepest quarter starts at</td><td class=\"n\">69.6°</td><td class=\"n\">63.1°</td></tr><tr><td>Slope above 150 m: the steepest tenth starts at</td><td class=\"n\">76.0°</td><td class=\"n\">70.3°</td></tr><tr><td>Slope of ground above 80 m: median</td><td class=\"n\">45.5°</td><td class=\"n\">40.7°</td></tr><tr><td>Outer ranges above 150 m: median slope</td><td class=\"n\">67.9°</td><td class=\"n\">63.0°</td></tr><tr><td>Outer ranges: the steepest quarter starts at</td><td class=\"n\">75.5°</td><td class=\"n\">71.9°</td></tr><tr><td>Outer ranges: the steepest tenth starts at</td><td class=\"n\">79.5°</td><td class=\"n\">76.8°</td></tr><tr><td>Height below which 95 % of the forest grows</td><td class=\"n\">92 m</td><td class=\"n\">121 m</td></tr><tr><td>Highest forest</td><td class=\"n\">117 m</td><td class=\"n\">156 m</td></tr><tr><td>Forested ground (cells with more than 25 % forest)</td><td class=\"n\">173 236</td><td class=\"n\">182 308</td></tr><tr><td>Highest point of the playable area</td><td class=\"n\">591 m</td><td class=\"n\">559 m</td></tr></tbody></table></div>",
+      "pairs": [
+        {
+          "before": {
+            "file": "mtn/m-ruben-before.jpg",
+            "caption": "Mount Ruben from Hotrod Landing, before"
+          },
+          "after": {
+            "file": "mtn/m-ruben.jpg",
+            "caption": "The same view now: a rounder mountain, forest higher on its flanks"
+          }
+        },
+        {
+          "before": {
+            "file": "mtn/m-sawtooth-before.jpg",
+            "caption": "Sawtooth Ridge from Moose Lake, before"
+          },
+          "after": {
+            "file": "mtn/m-sawtooth.jpg",
+            "caption": "The same view now"
+          }
+        }
+      ],
+      "figs": [
+        {
+          "file": "mtn/m-north.jpg",
+          "caption": "Looking north from Caribou Tundra"
+        },
+        {
+          "file": "mtn/m-ruben-bend.jpg",
+          "caption": "Mount Ruben from Salmon Bend"
+        }
+      ]
+    },
+    {
+      "id": "fishes",
+      "kicker": "Fish and lures",
+      "title": "Twelve more fish in four tiers of rarity, and seven new lures",
+      "html": "<p>Every fish now has a tier of rarity. A rarer fish bites less often and sells for more: the bite odds below scale how often it takes the bait compared with a common fish in the same water, and the price factor multiplies its own price per kilo. A cast to a hotspot and a perfect cast raise the odds of a rare fish, and more still of an epic one. The tier shows on the catch card and in the Fish Journal, which is now sorted by it.</p><div class=\"tablewrap\"><table><thead><tr><th>Tier</th><th class=\"n\">Species</th><th class=\"n\">Bite odds (common = 1)</th><th class=\"n\">Price factor</th></tr></thead><tbody><tr><td>Common</td><td class=\"n\">10</td><td class=\"n\">1</td><td class=\"n\">1</td></tr><tr><td>Uncommon</td><td class=\"n\">12</td><td class=\"n\">0.6</td><td class=\"n\">1.1</td></tr><tr><td>Rare</td><td class=\"n\">4</td><td class=\"n\">0.28</td><td class=\"n\">1.3</td></tr><tr><td>Epic</td><td class=\"n\">2</td><td class=\"n\">0.14</td><td class=\"n\">1.6</td></tr></tbody></table></div><h3>The new fish</h3><div class=\"tablewrap\"><table><thead><tr><th>Species</th><th>Tier</th><th class=\"n\">Weight (kg)</th><th>Where</th><th>Best lures</th></tr></thead><tbody><tr><td>Steelhead</td><td>Rare</td><td class=\"n\">2.5 to 10</td><td>River below Bear Falls</td><td>Glo Bead, Woolly Bugger, Egg-Sucking Leech</td></tr><tr><td>Coastal Cutthroat Trout</td><td>Uncommon</td><td class=\"n\">0.3 to 3.5</td><td>Middle and lower river</td><td>Mosquito Dry Fly, Woolly Bugger</td></tr><tr><td>Round Whitefish</td><td>Common</td><td class=\"n\">0.3 to 2.2</td><td>Upper river, Glacier Lake</td><td>Mosquito Dry Fly, Glo Bead</td></tr><tr><td>Kokanee</td><td>Uncommon</td><td class=\"n\">0.2 to 1.6</td><td>Moose Lake</td><td>Hotrod Spinner, Flash Spoon</td></tr><tr><td>Black Rockfish</td><td>Common</td><td class=\"n\">0.5 to 4.5</td><td>Halibut Pier</td><td>Paddle-tail Swimbait, Herring Jig</td></tr><tr><td>Quillback Rockfish</td><td>Rare</td><td class=\"n\">0.5 to 3.2</td><td>Halibut Pier</td><td>Herring Jig, Paddle-tail Swimbait</td></tr><tr><td>Kelp Greenling</td><td>Common</td><td class=\"n\">0.4 to 2</td><td>Halibut Pier</td><td>Paddle-tail Swimbait, Herring Jig</td></tr><tr><td>Starry Flounder</td><td>Uncommon</td><td class=\"n\">0.5 to 4.5</td><td>Halibut Pier, the river mouth</td><td>Circle Hook and Squid</td></tr><tr><td>Pacific Staghorn Sculpin</td><td>Common</td><td class=\"n\">0.1 to 0.9</td><td>Halibut Pier, the river mouth</td><td>Circle Hook and Squid, Herring Jig</td></tr><tr><td>Spiny Dogfish</td><td>Uncommon</td><td class=\"n\">1.5 to 9</td><td>Halibut Pier</td><td>Circle Hook and Squid, Herring Jig</td></tr><tr><td>Big Skate</td><td>Epic</td><td class=\"n\">8 to 60</td><td>Halibut Pier</td><td>Circle Hook and Squid, Herring Jig</td></tr><tr><td>Salmon Shark</td><td>Epic</td><td class=\"n\">40 to 175</td><td>Halibut Pier</td><td>Octopus Hoochie, Herring Jig, Circle Hook and Squid</td></tr></tbody></table></div><p>Each has its own model: a steelhead with its pink stripe, a cutthroat with the red slash under its jaw, a whitefish with big scales, rockfish with spiny fins, a flounder with barred fins, a sculpin with wide pectoral fins, a dogfish and a salmon shark with the long upper tail lobe of a shark, and a big skate shaped like a diamond with an eyespot on each wing. A salmon shark needs the Hotrod Big Block rod and a light hand on <b>REEL</b> while it runs. Three new challenges pay in-game dollars for a rare fish (450), an epic fish (1 400) and 20 species (1 600), and completing the journal now means all 28 species.</p><h3>The new lures</h3><div class=\"tablewrap\"><table><thead><tr><th>Lure</th><th class=\"n\">Price (in-game dollars)</th><th>For</th></tr></thead><tbody><tr><td>Glo Bead</td><td class=\"n\">45</td><td>Drifts like a salmon egg: Dolly Varden, rainbows, char and steelhead</td></tr><tr><td>Mosquito Dry Fly</td><td class=\"n\">50</td><td>Floats on the surface: grayling, trout and whitefish</td></tr><tr><td>Woolly Bugger</td><td class=\"n\">70</td><td>Swims like a leech or a small fish: rainbows, steelhead, cutthroat and coho</td></tr><tr><td>Paddle-tail Swimbait</td><td class=\"n\">110</td><td>A soft herring with a kicking tail: lingcod, rockfish, greenling and pike</td></tr><tr><td>Pike Popper</td><td class=\"n\">120</td><td>Pops and splashes across the lily pads: pike</td></tr><tr><td>Octopus Hoochie</td><td class=\"n\">150</td><td>The classic salmon trolling rig: kings, coho and chum, and salmon sharks</td></tr><tr><td>Circle Hook and Squid</td><td class=\"n\">160</td><td>Fished on the bottom: halibut, skates, dogfish, flounder and sculpins</td></tr></tbody></table></div><p>The tackle box and the Trading Post list the twelve lures from the cheapest up.</p>",
+      "figs": [
+        {
+          "file": "fish/fs-salmonshark.jpg",
+          "caption": "An epic catch: a 96 kg salmon shark"
+        },
+        {
+          "file": "fish/fs-skate.jpg",
+          "caption": "An epic big skate, 34 kg"
+        },
+        {
+          "file": "fish/fs-steelhead.jpg",
+          "caption": "A rare steelhead"
+        },
+        {
+          "file": "fish/fs-quillback.jpg",
+          "caption": "A rare quillback rockfish"
+        },
+        {
+          "file": "fish/fs-cutthroat.jpg",
+          "caption": "A coastal cutthroat trout with its red throat slash"
+        },
+        {
+          "file": "fish/fs-flounder.jpg",
+          "caption": "A starry flounder"
+        },
+        {
+          "file": "fish/fs-journal.jpg",
+          "caption": "The Fish Journal, sorted by rarity"
+        },
+        {
+          "file": "fish/fs-tackle.jpg",
+          "caption": "The tackle box with the new lures"
+        }
+      ]
+    },
+    {
+      "id": "travel",
+      "kicker": "Found in review",
+      "title": "Full ground detail straight after a fast travel",
+      "html": "<p>While checking this round's screenshots, the Bear Falls picture showed a hole in the wall of the gorge, with a slab of coarse ground across it. The ground there has hardly changed: within 30 metres of that spot it is exactly as before, and 50 metres away the new mountains move it by about a metre. The cause was the way the game fills in ground detail after a jump.</p><ul><li><b>How the ground is drawn.</b> The land is split into 144 squares of 200 by 200 metres. Each is drawn at one of four levels of detail by its distance, from a point every 3.1 metres close by to one every 25 metres far away, and a square's shape at a level is built the first time it is needed. To keep frames smooth, the game builds at most two a frame.</li><li><b>What went wrong.</b> After a jump the game went through the squares row by row, so the ones right next to you could be among the last to get their detail. The first fast travel to a place needs up to 97 new shapes (Caribou Tundra from Hotrod Landing), which takes 49 frames. The screen stays dark for 0.9 seconds after the jump: enough at 60 frames a second, but at 30 frames a second the ground near you could stay coarse, with gaps where coarse and fine squares meet, for up to about 0.7 seconds after the fade lifted.</li><li><b>The fix.</b> The ground is now finished while the screen is still dark, after every fast travel and after a grizzly knocks you out. The first trip to Bear Falls took 32 milliseconds of that dark time on this computer's processor. During play, the rebuilding now goes from the finest, nearest squares outwards.</li><li><b>The screenshots.</b> The software renderer that takes the pictures draws about one frame a second, so the test harness now also finishes the ground around the camera before each picture, as a phone would long since have done.</li></ul><p>Measured on the build before the fix and on this build, each from a fresh start (<code>tools/scenarios/travel-lod.json</code>). In the software renderer the 0.9 seconds of fade last only a frame or two, which is why so much was missing before; a phone would have had fewer squares left, but the same order.</p><div class=\"tablewrap\"><table><thead><tr><th>Measure</th><th class=\"n\">Before</th><th class=\"n\">After</th></tr></thead><tbody><tr><td>Squares at the wrong level of detail as the fade lifts, after a fast travel from Caribou Tundra to Bear Falls (of 144)</td><td class=\"n\">62&nbsp;(15&nbsp;within&nbsp;400&nbsp;m)</td><td class=\"n\">0</td></tr><tr><td>The same, three frames later</td><td class=\"n\">35&nbsp;(13&nbsp;within&nbsp;400&nbsp;m)</td><td class=\"n\">0</td></tr><tr><td>The same, thirteen frames later</td><td class=\"n\">15&nbsp;(2&nbsp;within&nbsp;400&nbsp;m)</td><td class=\"n\">0</td></tr><tr><td>Frames until the ground within 400 m has its detail, after a jump from Hotrod Landing to Caribou Tundra without a fade</td><td class=\"n\">23</td><td class=\"n\">11</td></tr><tr><td>Frames until every square has its detail after that jump</td><td class=\"n\">49</td><td class=\"n\">49</td></tr></tbody></table></div><p>Every square has to be built either way, so the last one is done in the same number of frames or fewer; what changed is that the ground near you comes first.</p>",
+      "pairs": [
+        {
+          "before": {
+            "file": "travel/falls-before.jpg",
+            "caption": "The Bear Falls gallery picture as first taken, six frames after the jump: a coarse slab and a hole in the gorge wall"
+          },
+          "after": {
+            "file": "gallery-new/falls.jpg",
+            "caption": "The same view with the ground finished"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sealions",
+      "kicker": "Found in review",
+      "title": "The sea lions are back on their beach",
+      "html": "<p>While the animal pictures were being taken again, the sea lion picture showed only the orcas: the game had no sea lions at all.</p><ul><li><b>Why.</b> At start-up the game picks the beach where the sea lions haul out by up to 400 random tries round Halibut Pier, and only about one spot in five hundred qualifies: low, gentle ground 0.4 to 2.8 metres above the sea with deep water right beside it. So whether any try found one came down to chance, and about every other world came out without sea lions. The Caribou Tundra fix in this round changed the world just enough to make this one of them, so the game as published since that fix had none; the version published now has them back.</li><li><b>The fix.</b> The game now gathers every spot that qualifies on a ring 130 to 410 metres round the pier and picks one of them, so the sea lions are always there.</li><li><b>A new test</b> (<code>tools/scenarios/wildlife.json</code>) counts every species at start-up and fails if one is missing.</li></ul><div class=\"tablewrap\"><table><thead><tr><th>Build</th><th class=\"n\">Sea lions</th><th>Every other species</th></tr></thead><tbody><tr><td>The small map (before the mountains)</td><td class=\"n\">6</td><td>all there</td></tr><tr><td>Gentler mountains</td><td class=\"n\">6</td><td>all there</td></tr><tr><td>Weather effects</td><td class=\"n\">6</td><td>all there</td></tr><tr><td>Caribou Tundra fix, as published until now</td><td class=\"n\">0</td><td>all there</td></tr><tr><td>This build</td><td class=\"n\">6</td><td>all there</td></tr></tbody></table></div>",
+      "figs": [
+        {
+          "file": "animals2/a-sealion.jpg",
+          "caption": "Six Steller sea lions on their beach near Halibut Pier"
+        }
+      ]
+    },
+    {
+      "id": "trees",
+      "kicker": "Earlier in the update · Trees",
+      "title": "Five kinds of tree, each in its own place",
+      "html": "<ul><li><b>Black spruce</b> (<a href=\"https://en.wikipedia.org/wiki/Picea_mariana\">Picea mariana</a>): thin, ragged and often crooked, with a club of branches at the top. It grows where real black spruce does: in the wet lowlands and muskeg round Moose Lake, on north-facing slopes and scattered over the tundra.</li><li><b>Balsam poplar</b> (<a href=\"https://en.wikipedia.org/wiki/Populus_balsamifera\">Populus balsamifera</a>): the big broad-crowned tree of the river flats, with a furrowed grey trunk, planted along the river and the lake shores.</li><li><b>Quaking aspen</b> (<a href=\"https://en.wikipedia.org/wiki/Populus_tremuloides\">Populus tremuloides</a>): slim pale trunks with black scars and light, trembling crowns, in groves on sunny south-facing slopes between 12 and 120 metres up.</li><li><b>White spruce and paper birch</b> keep their detailed models from the last round; spruce grow bigger and bluer towards the coast.</li><li>Every species has three models: a detailed one up close, a simpler one in the middle distance and a light one far away (black spruce 60, 130 and 650 metres; balsam poplar 75, 180 and 720; aspen 55, 115 and 560). Each is one instanced draw per model, with size, lean and colour varied per tree.</li></ul>",
+      "figs": [
+        {
+          "file": "report-new/t-poplar.jpg",
+          "caption": "Balsam poplars along the river at Salmon Bend"
+        },
+        {
+          "file": "report-new/t-aspen.jpg",
+          "caption": "A quaking aspen grove on a sunny slope above the landing"
+        },
+        {
+          "file": "report-new/t-blackspruce.jpg",
+          "caption": "Ragged black spruce in the muskeg by Moose Lake"
+        },
+        {
+          "file": "report-new/t-coastspruce.jpg",
+          "caption": "Big blue-green spruce on the coast by Halibut Pier"
+        }
+      ]
+    },
+    {
+      "id": "peaks",
+      "kicker": "Earlier in the update · Mountains",
+      "title": "Snow on the high peaks, a volcano and a great massif",
+      "html": "<ul><li><b>Snow caps.</b> Snow starts around 300 metres, with the line broken up by drifts and ragged edges (up to 70 metres either way), lying lower on north faces and clinging to steeper rock the higher it goes. Steep cliffs stay bare, and rock bands stripe the high walls.</li><li><b>A steaming volcano</b> 2 100 metres high stands across the inlet to the south-west, with a crater at the top and a plume of steam drifting away on the wind, like the volcanoes across Cook Inlet (<a href=\"https://en.wikipedia.org/wiki/Mount_Redoubt\">Mount Redoubt</a>, <a href=\"https://en.wikipedia.org/wiki/Mount_Iliamna\">Mount Iliamna</a>).</li><li><b>A snow massif</b> 2 600 metres high fills the northern skyline, and the ring of far mountains has taller, less even peaks.</li><li><b>Clouds cling to the summits</b> of the highest peaks, lit by the sun and the sky of the hour.</li><li><b>Cascades</b> pour down five cliffs near the fishing spots, each dropping at least 55 metres, with mist where they land.</li></ul>",
+      "figs": [
+        {
+          "file": "report-new/v-volcano-pier.jpg",
+          "caption": "The volcano and its steam plume across the inlet from Halibut Pier"
+        },
+        {
+          "file": "report-new/v-volcano-evening.jpg",
+          "caption": "Evening at the landing with the snow massif in the last light"
+        },
+        {
+          "file": "report-new/v-massif.jpg",
+          "caption": "The snow massif to the north over Caribou Tundra"
+        },
+        {
+          "file": "report-new/v-glacier.jpg",
+          "caption": "Glacier Lake under snow-capped peaks at midday"
+        },
+        {
+          "file": "report-new/v-cascade.jpg",
+          "caption": "A cascade pouring down the cliffs"
+        }
+      ]
+    },
+    {
+      "id": "plants",
+      "kicker": "Earlier in the update · Ground detail",
+      "title": "Native plants and detailed shrubs",
+      "html": "<p>Seven plants native to south-central Alaska now cover the ground, each where it really grows, each swaying in the wind and shaded by the shadows of the trees:</p><ul><li><b>Devil's club</b> (<a href=\"https://en.wikipedia.org/wiki/Oplopanax_horridus\">Oplopanax horridus</a>): huge maple-like leaves on spiny stems with red berry clusters, in wet forest near water.</li><li><b>Alaska blueberry</b> (<a href=\"https://en.wikipedia.org/wiki/Vaccinium_ovalifolium\">Vaccinium ovalifolium</a>): low bushes with berries in open forest and on the tundra, some already turning red.</li><li><b>Labrador tea</b> (<a href=\"https://en.wikipedia.org/wiki/Rhododendron_groenlandicum\">Rhododendron groenlandicum</a>): leathery leaves and white flower heads in the muskeg.</li><li><b>Cotton grass</b> (<a href=\"https://en.wikipedia.org/wiki/Eriophorum\">Eriophorum</a>): white tufts on thin stems across the tundra and wet flats.</li><li><b>Horsetail</b> (<a href=\"https://en.wikipedia.org/wiki/Equisetum\">Equisetum</a>): jointed stems with whorls of fine branches on the river banks.</li><li><b>Western skunk cabbage</b> (<a href=\"https://en.wikipedia.org/wiki/Lysichiton_americanus\">Lysichiton americanus</a>): big glossy leaves and yellow hoods in the swampy forest.</li><li><b>Mushrooms</b> on the dense forest floor.</li></ul><p>The shrubs have a new close-up model with separate leaf clusters within 40 metres.</p>",
+      "figs": [
+        {
+          "file": "report-new/p-devilsclub.jpg",
+          "caption": "Devil's club in the forest by Bear Falls"
+        },
+        {
+          "file": "report-new/p-cottongrass.jpg",
+          "caption": "Cotton grass on Caribou Tundra"
+        },
+        {
+          "file": "report-new/p-horsetail.jpg",
+          "caption": "Horsetail on the bank at Salmon Bend"
+        },
+        {
+          "file": "report-new/p-labradortea.jpg",
+          "caption": "Labrador tea in the muskeg by Moose Lake"
+        },
+        {
+          "file": "report-new/p-skunkcabbage.jpg",
+          "caption": "Skunk cabbage in the swamp"
+        },
+        {
+          "file": "report-new/p-mushroom.jpg",
+          "caption": "Mushrooms on the forest floor"
+        }
+      ]
+    },
+    {
+      "id": "insects",
+      "kicker": "Earlier in the update · Insects",
+      "title": "Butterflies, bees, dragonflies and moths",
+      "html": "<ul><li><b>Butterflies</b> over flowers and meadows by day: the <a href=\"https://en.wikipedia.org/wiki/Papilio_canadensis\">Canadian tiger swallowtail</a>, an <a href=\"https://en.wikipedia.org/wiki/Boloria_chariclea\">Arctic fritillary</a>, the <a href=\"https://en.wikipedia.org/wiki/Pieris_marginalis\">margined white</a> and the <a href=\"https://en.wikipedia.org/wiki/Nymphalis_antiopa\">mourning cloak</a>, fluttering in loops and gliding between wing beats.</li><li><b>Bumblebees</b> hopping from flower to flower on the fireweed.</li><li><b>Dragonflies</b> (<a href=\"https://en.wikipedia.org/wiki/Anax_junius\">darners</a> and red <a href=\"https://en.wikipedia.org/wiki/Sympetrum\">meadowhawks</a>) hovering over the shallows, then darting to a new spot.</li><li><b>Mosquito swarms</b> dancing at head height near water and in the forest at dusk.</li><li><b>Moths</b> circling the lit windows of the cabin and the Trading Post, the pier lamps and the campfires at night, lit warm by the light they circle.</li><li><b>Cottonwood fluff</b> from the balsam poplars drifting on the breeze over the rivers by day.</li></ul><p>All of them fly on the graphics processor like the grass: each kind lives in a patch that moves with you, shows only where its habitat is and at its time of day, and stays home in rain. Six draws in all, with no work for the main processor. They are drawn a little larger than life so they read on a phone screen.</p>",
+      "figs": [
+        {
+          "file": "report-new/i-meadow.jpg",
+          "caption": "Butterflies over a fireweed meadow near the landing"
+        },
+        {
+          "file": "report-new/i-moths.jpg",
+          "caption": "Moths round the lit window of Ruben's cabin at night"
+        }
+      ]
+    },
+    {
+      "id": "floating",
+      "kicker": "Earlier in the update · On the water",
+      "title": "Logs, flowers and vegetation that float",
+      "html": "<ul><li><b>River drift.</b> Bleached driftwood logs with root wads, poles, spruce branches, leafy twigs and fallen fireweed stalks ride the current past you at the speed of the water, turning slowly (logs swing round to lie along the current), bobbing and rolling a little, and easing off the banks. They appear upstream and float by, fading in and out out of sight.</li><li><b>Petals and leaves.</b> Fireweed petals, yellowing birch and willow leaves, green and brown leaves and tufts of cottonwood fluff float on the rivers and lakes around you, following the current or drifting with the wind.</li><li><b>Pond lilies.</b> Beds of <a href=\"https://en.wikipedia.org/wiki/Nuphar_polysepala\">yellow pond lily</a> cover the shallows of Moose Lake: about a thousand glossy notched pads, some turning bronze, with cup-shaped yellow flowers, and beds of <a href=\"https://en.wikipedia.org/wiki/Potamogeton_natans\">floating pondweed</a> between them.</li><li><b>Ice floes.</b> Small floes drift slowly round Glacier Lake beside the icebergs the glacier calves.</li></ul>",
+      "figs": [
+        {
+          "file": "report-new/f-log.jpg",
+          "caption": "A driftwood log with its root wad riding the river"
+        },
+        {
+          "file": "report-new/f-branch.jpg",
+          "caption": "A spruce branch, a leafy twig and a fireweed stalk floating by, with a red meadowhawk"
+        },
+        {
+          "file": "report-new/f-lilies.jpg",
+          "caption": "Yellow pond lilies on Moose Lake"
+        },
+        {
+          "file": "report-new/f-floes.jpg",
+          "caption": "Ice floes on Glacier Lake"
+        }
+      ]
+    },
+    {
+      "id": "bow",
+      "kicker": "Earlier in the update · Hunting",
+      "title": "A longbow instead of the rifle, and the rod put away",
+      "html": "<ul><li><b>Hold to draw, let go to loose.</b> Full draw takes under a second; a stronger draw flies faster and flatter. Arrows fly in a real arc, so aim a little high for distance. A full draw held more than three seconds starts to shake.</li><li><b>Aim</b> brings the view closer; the bow sight and stabiliser from the Trading Post steady the hold and bring it closer still. The yew longbow shoots faster, flatter arrows that hit harder.</li><li><b>Arrows are real objects.</b> They stick in trees and the ground, glance off rock, sink in water, and you walk over the ones that missed to pick them up. The quiver holds 36; more cedar arrows are sold at the Trading Post.</li><li><b>Quiet hunting.</b> Loosing an arrow only startles animals close to you, and a miss startles what stands near where it lands, so a careful archer gets a second chance.</li><li><b>Hit zones</b> as before: head, vitals and body. A grizzly takes a good hit to the chest to stop.</li><li><b>Put the rod away.</b> The tool button cycles the rod, the longbow and empty hands (<kbd>Q</kbd>, or <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> on a keyboard). With empty hands the big button disappears and the view is clear for looking around.</li><li>Older saves carry over: a bought rifle scope becomes the bow sight.</li></ul>",
+      "figs": [
+        {
+          "file": "gallery-new/bow.jpg",
+          "caption": "Full draw on a caribou on the tundra"
+        },
+        {
+          "file": "gallery-new/grizzly.jpg",
+          "caption": "Holding a full draw as a grizzly charges"
+        },
+        {
+          "file": "regress/hands-free.png",
+          "caption": "Empty hands: the rod put away and the view clear"
+        },
+        {
+          "file": "regress/bow-after.png",
+          "caption": "The arrow went in; the caribou is down"
+        }
+      ]
+    },
+    {
+      "id": "finish",
+      "kicker": "Earlier in the update · High preset",
+      "title": "A cinematic finish for iPhone 13 and newer",
+      "html": "<p>With iPhone 13 as the oldest supported device, every device now starts on <b>High</b>. On top of the longest shadows and densest forests, High draws the world and your hands into a high dynamic range buffer and finishes the picture:</p><ul><li><b>Bloom.</b> Light brighter than white (the sun, glints on the water, sunlit snow and ice, lit windows and lamps at night) spreads into a soft glow. It is built from a chain of half-size steps down to a thirty-second of the screen and back up, blurred on the way, so it costs a handful of small passes.</li><li><b>Sun rays</b> stream through gaps in the trees and over ridges when the sun is in view, strongest at a low sun, weaker under cloud and gone in rain, at night and under water. They are a radial blur of the bright sky towards the sun at a quarter of the screen size (the method in <a href=\"https://developer.nvidia.com/gpugems/gpugems3/part-ii-light-and-shadows/chapter-13-volumetric-light-scattering-post-process\">GPU Gems 3, chapter 13</a>).</li><li><b>A gentle colour grade:</b> slightly richer colour, cool shadows and warm highlights, a soft S-curve, a light vignette, and fine noise that stops banding in the sky.</li></ul><p>Medium and Low draw straight to the screen as before and stay available in Settings, where a note explains what High adds.</p>",
+      "pairs": [
+        {
+          "before": {
+            "file": "report-new/p-snow-off.jpg",
+            "caption": "Glacier Lake at noon without the finish"
+          },
+          "after": {
+            "file": "report-new/p-snow-on.jpg",
+            "caption": "The same view on High: glowing ice, deeper colour"
+          }
+        }
+      ],
+      "figs": [
+        {
+          "file": "report-new/p-forest-on.jpg",
+          "caption": "Evening sun streaming through the trees above Bear Falls"
+        },
+        {
+          "file": "report-new/p-night-on.jpg",
+          "caption": "A lit window glowing at the Trading Post under the northern lights"
+        }
+      ]
+    },
+    {
       "id": "water",
-      "kicker": "Water",
+      "kicker": "Earlier in the update · Water",
       "title": "Water you can see into",
       "html": "<p>The old surface was a coloured sheet that hid everything under it. Now the surface only adds what really sits on water: reflections of the surroundings, glints from the sun and moon, and foam. Everything below it (the bed, the stones, the fish, a wading moose) is lit through the water by the objects themselves, with light absorbed along the bent path it takes through the water.</p><ul><li><b>Colour by depth and kind of water.</b> Shallow gravel stays clear; deeper pools turn green-blue in the river, tea-green in Moose Lake, milky turquoise in Glacier Lake (the upper river carries some of that silt) and blue-green at sea.</li><li><b>Caustics.</b> Bright rippling light lines on the bottom in sunlight, fading with depth.</li><li><b>Real reflections.</b> A small cube map of the sky, mountains, terrain and forests is captured from the water surface near you, one face per frame, so the far bank, peaks, sunsets, the moon and the northern lights all reflect, lit by the same sun and sky as everything else.</li><li><b>Moving water.</b> Waves come from a small texture animated every frame with deep-water wave physics (long waves travel faster). The river flows along its course, rapids get rougher and whiter, lakes show calm and wind-ruffled patches, and a thin line of foam laps at the shore.</li><li><b>Wet ground.</b> Stones and banks darken just above the waterline, and the pebble pattern on the river bed sways with the waves above it, like refraction.</li></ul>",
       "pairs": [
@@ -61,7 +437,7 @@
     },
     {
       "id": "fish",
-      "kicker": "Fish",
+      "kicker": "Earlier in the update · Fish",
       "title": "Fish you can spot",
       "html": "<ul><li>Small schools hold in the current at the fishing hotspots and in nearby pools, noses upstream in the river and cruising in the lakes. Their species come from the same list the bites use, so a school of red sockeye means a sockeye can bite there.</li><li>They scatter when your float lands on them and drift back a moment later.</li><li>The fish that takes the bait is the real model: you watch it swim in under the float, nibble and turn away with the bait, and during the fight it runs and rolls under the surface at the end of your line.</li><li>During a salmon run the river fills with red sockeye.</li></ul>",
       "figs": [
@@ -77,7 +453,7 @@
     },
     {
       "id": "light",
-      "kicker": "Lighting",
+      "kicker": "Earlier in the update · Lighting",
       "title": "Better light",
       "html": "<ul><li><b>Shadows much further out.</b> The sun now casts two shadow layers fitted to what you see: sharp shadows up close and tree shadows out to about 250 metres (190 on Medium), where before they stopped at 70 metres.</li><li><b>Mountain shadows.</b> A map on the graphics processor works out where the sun clears the mountains, refreshed a strip at a time as the sun moves, so valleys fall into shade at dawn and dusk while the peaks still glow.</li><li><b>Sky occlusion.</b> Gullies, the foot of cliffs and the forest floor get less light from the sky, which gives the land depth.</li><li><b>Haze that matches the sky.</b> The air thins with altitude and takes the colour of the sky in each direction, warm toward the sun, so distant ranges melt into the horizon instead of ending against a flat fog colour.</li><li><b>Leaves glow</b> when the sun is behind them, and <b>grass</b> now falls into the shade of trees and mountains.</li><li><b>Neutral tone mapping</b> for truer, clearer colours than before.</li></ul>",
       "figs": [
@@ -97,7 +473,7 @@
     },
     {
       "id": "detail",
-      "kicker": "World detail",
+      "kicker": "Earlier in the update · World detail",
       "title": "More detail everywhere you look",
       "html": "<ul><li><b>Ground by surface:</b> rounded pebbles on gravel bars and river beds, layered and cracked rock on cliffs, ripples in sand and snow, needles and moss on the forest floor, all with bump lighting that catches the sun.</li><li><b>Trees:</b> a new close-up spruce with drooping, ragged branch whorls and a closed underside, and a birch with forked limbs and a fuller crown, with the old models kept for the middle distance.</li><li><b>New plants:</b> willow and alder thickets along the water, ferns under the trees, fireweed stands in the meadows and patches of lupine along roads and banks.</li><li><b>Dead wood:</b> fallen logs with root plates, stumps, and bleached driftwood on gravel bars and beaches.</li><li><b>Boulders</b> with rock texture and moss and lichen on their tops.</li><li><b>Grass:</b> each blade is now two segments that stand up at the base and arch outward to a point, thinner than before and five to a tuft, with every blade its own shade from lush green to dry straw. Far from you the blades widen a little so they do not flicker.</li></ul>",
       "figs": [
@@ -113,25 +489,82 @@
     },
     {
       "id": "animals",
-      "kicker": "Wildlife",
+      "kicker": "Earlier in the update · Wildlife",
       "title": "Fourteen new animals and birds",
-      "html": "<div class=\"tablewrap\"><table><thead><tr><th>Animal</th><th>Where</th><th>What it does</th></tr></thead><tbody><tr><td>Black bear</td><td>Forests below 100 m</td><td>Wanders and forages, runs from you. Can be hunted.</td></tr><tr><td>Mountain goat</td><td>Cliffs of Mount Ruben</td><td>Small herds on slopes too steep for anything else. Can be hunted.</td></tr><tr><td>Musk ox</td><td>Caribou Tundra</td><td>A herd grazing the flats in long shaggy coats.</td></tr><tr><td>Porcupine</td><td>Forests</td><td>Waddles along slowly and barely bothers to move away.</td></tr><tr><td>Lynx</td><td>Forest edges</td><td>Rare and quick to vanish.</td></tr><tr><td>Arctic ground squirrel</td><td>Meadows and tundra</td><td>Colonies that sit up like fence posts and whistle an alarm as they scatter.</td></tr><tr><td>Beaver</td><td>Moose Lake, with its stick lodge</td><td>Swims out from the lodge trailing a V of ripples, slaps its tail and dives if you come close.</td></tr><tr><td>Trumpeter swan</td><td>Moose Lake</td><td>Swims, takes off when disturbed and lands again.</td></tr><tr><td>Sandhill crane</td><td>Meadows by the lake and river flats</td><td>Stalks in small groups, bugles, and flies off if you get near.</td></tr><tr><td>Black-billed magpie</td><td>Around Ruben's cabin</td><td>Hops about chattering and flies off when you approach.</td></tr><tr><td>Belted kingfisher</td><td>The river near you</td><td>Flies the river, hovers, plunges in with a splash and rattles.</td></tr><tr><td>Steller sea lion</td><td>A rocky shore near Halibut Pier</td><td>A haul-out that barks, and slides into the sea if you walk up.</td></tr><tr><td>Harbour seal</td><td>Around the pier</td><td>Heads pop up, look around and sink again.</td></tr><tr><td>Orca</td><td>The bay</td><td>A pod travels together, surfacing in turn with tall dorsal fins and a blow.</td></tr></tbody></table></div><p>Each has its own low-poly model and animation, and the calls are synthesised like the rest of the sound.</p>",
-      "figs": []
+      "html": "<div class=\"tablewrap\"><table><thead><tr><th>Animal</th><th>Where</th><th>What it does</th></tr></thead><tbody><tr><td>Black bear</td><td>Forests below 100 m</td><td>Wanders and forages, runs from you. Can be hunted.</td></tr><tr><td>Mountain goat</td><td>Cliffs of Mount Ruben</td><td>Small herds on slopes too steep for anything else. Can be hunted.</td></tr><tr><td>Musk ox</td><td>Caribou Tundra</td><td>A herd grazing the flats in long shaggy coats.</td></tr><tr><td>Porcupine</td><td>Forests</td><td>Waddles along slowly and barely bothers to move away.</td></tr><tr><td>Lynx</td><td>Forest edges</td><td>Rare and quick to vanish.</td></tr><tr><td>Arctic ground squirrel</td><td>Meadows and tundra</td><td>Colonies that sit up like fence posts and whistle an alarm as they scatter.</td></tr><tr><td>Beaver</td><td>Moose Lake, with its stick lodge</td><td>Swims out from the lodge trailing a V of ripples, slaps its tail and dives if you come close.</td></tr><tr><td>Trumpeter swan</td><td>Moose Lake</td><td>Swims, takes off when disturbed and lands again.</td></tr><tr><td>Sandhill crane</td><td>Meadows by the lake and river flats</td><td>Stalks in small groups, bugles, and flies off if you get near.</td></tr><tr><td>Black-billed magpie</td><td>Around Ruben's cabin</td><td>Hops about chattering and flies off when you approach.</td></tr><tr><td>Belted kingfisher</td><td>The river near you</td><td>Flies the river, hovers, plunges in with a splash and rattles.</td></tr><tr><td>Steller sea lion</td><td>A low beach near Halibut Pier</td><td>A haul-out that barks, and slides into the sea if you walk up.</td></tr><tr><td>Harbour seal</td><td>Around the pier</td><td>Heads pop up, look around and sink again.</td></tr><tr><td>Orca</td><td>The bay</td><td>A pod travels together, surfacing in turn with tall dorsal fins and a blow.</td></tr></tbody></table></div><p>Each has its own low-poly model and animation, and the calls are synthesised like the rest of the sound.</p><p>For the photos below each animal was placed a few metres from the camera, which uses the game's own wide view; the beavers, twenty metres off across the water, and the kingfisher, about a hand long, were taken through a longer lens. In play they keep their distance and move off, dive or fly away when you come close.</p>",
+      "figs": [
+        {
+          "file": "animals2/a-blackbear.jpg",
+          "caption": "Black bear in the forest"
+        },
+        {
+          "file": "animals2/a-goat.jpg",
+          "caption": "Mountain goats on the cliffs of Mount Ruben"
+        },
+        {
+          "file": "animals2/a-muskox.jpg",
+          "caption": "Musk oxen grazing on Caribou Tundra"
+        },
+        {
+          "file": "animals2/a-porcupine.jpg",
+          "caption": "Porcupine under the trees"
+        },
+        {
+          "file": "animals2/a-lynx.jpg",
+          "caption": "Lynx at the forest edge"
+        },
+        {
+          "file": "animals2/a-squirrel.jpg",
+          "caption": "An Arctic ground squirrel sitting up"
+        },
+        {
+          "file": "animals2/a-beaver.jpg",
+          "caption": "Beavers swimming out from their lodge on Moose Lake"
+        },
+        {
+          "file": "animals2/a-swan.jpg",
+          "caption": "Trumpeter swans on Moose Lake"
+        },
+        {
+          "file": "animals2/a-crane.jpg",
+          "caption": "Sandhill cranes in a meadow"
+        },
+        {
+          "file": "animals2/a-magpie.jpg",
+          "caption": "Black-billed magpies on a gravel bar by the river"
+        },
+        {
+          "file": "animals2/a-kingfisher.jpg",
+          "caption": "Belted kingfisher hovering over the river"
+        },
+        {
+          "file": "animals2/a-sealion.jpg",
+          "caption": "Steller sea lions hauled out on a beach near Halibut Pier"
+        },
+        {
+          "file": "animals2/a-seal.jpg",
+          "caption": "Harbour seals by the pier"
+        },
+        {
+          "file": "animals2/a-orca.jpg",
+          "caption": "Orcas surfacing in the bay"
+        }
+      ]
     },
     {
       "id": "performance",
       "kicker": "Performance",
       "title": "Built to hold 60 frames per second",
-      "html": "<p>The target is a steady 60 frames per second on iPhone and iPad, where the game starts on the <b>Medium</b> preset. The new effects were built around what phones do cheaply:</p><ul><li><b>Work spread over frames.</b> The reflection cube renders one of its five useful faces per frame at 128 pixels (256 on High). The mountain-shadow map refreshes one strip of sixteen per frame. The wave texture is 256 pixels square.</li><li><b>Cheap stand-ins where detail cannot be seen.</b> Reflections draw trees with their simplest model and a coarse, chunked copy of the terrain. That cut the triangles drawn for a reflection face at the landing from about 205 000 to about 96 000.</li><li><b>Fewer draw calls.</b> Static buildings, docks and bridges are merged by material into one mesh per 160-metre cell (45 shadow-casting meshes became 27). Every animal species, every plant type and the fish are one instanced draw each.</li><li><b>Levels of detail.</b> The detailed spruce and birch appear only within about 55 metres; ferns within 55 m and flowers within 70 to 85 m. All of these distances shrink on the lower presets.</li><li><b>Shaders compiled at startup</b>, including the fish, so the first bite or the first bear does not stutter.</li><li><b>No shader switching from frame to frame.</b> The reflection cube draws its own copies of the sky, terrain and tree materials and sees the same lights as the main view, and instanced shadow casters have their own depth materials. Before this fix the renderer looked up a different shader variant 38 times in every frame at Hotrod Landing; now it looks up none, which saves processor time and memory churn on phones.</li></ul><h3>Presets</h3><div class=\"tablewrap\"><table><thead><tr><th>Setting</th><th>Low</th><th>Medium (iPhone, iPad)</th><th>High (computers)</th></tr></thead><tbody><tr><td>Resolution (pixels per point)</td><td class=\"n\">1.0</td><td class=\"n\">up to 1.5</td><td class=\"n\">up to 2.0</td></tr><tr><td>Sun shadows</td><td>off</td><td>2 cascades of 1024 px, to 190 m</td><td>2 cascades of 2048 px, to 260 m, distant trees included</td></tr><tr><td>Water reflections</td><td>sky colour only</td><td>cube map, 128 px</td><td>cube map, 256 px</td></tr><tr><td>Plants and rocks drawn out to</td><td class=\"n\">60 %</td><td class=\"n\">85 %</td><td class=\"n\">100 %</td></tr><tr><td>Grass density</td><td class=\"n\">45 %</td><td class=\"n\">75 %</td><td class=\"n\">100 %</td></tr><tr><td>Visible fish</td><td class=\"n\">50 %</td><td class=\"n\">80 %</td><td class=\"n\">100 %</td></tr></tbody></table></div><h3>Safeguards while you play</h3><ul><li><b>Dynamic resolution</b> lowers the pixel density in steps when frames take longer than 1/40 of a second and raises it again when there is room.</li><li><b>Automatic step-down (new).</b> If frames are still slow at the lowest resolution for three checks in a row, the game moves to the next lower preset and says so. Settings has an <i>Adjust graphics automatically</i> switch to turn this off.</li><li><b>Frame rate readout (new).</b> <i>Settings › Show frame rate</i> puts the frames per second, the preset and the resolution under the clock (amber below 50, red below 35), so you can check it on your own device.</li></ul><h3>Rendering cost per view</h3><p>Draw calls and triangles per frame, including the shadow passes and the reflection face, measured at 960 × 540 with the scripted views in <code>tools/scenarios/perf-views.json</code>. The same views before the update are the baseline.</p><div class=\"tablewrap\"><table><thead><tr><th>View</th><th class=\"n\">Before: calls</th><th class=\"n\">Before: triangles</th><th class=\"n\">High: calls</th><th class=\"n\">High: triangles</th><th class=\"n\">Medium: calls</th><th class=\"n\">Medium: triangles</th></tr></thead><tbody><!--ROWS--></tbody></table></div><p>These counts come from a software renderer on the build machine, because no iPhone or iPad was available to measure on. Its frame times say nothing about a phone, so they are left out. The counts show how much more work each frame asks for; the actual frame rate still has to be read on a device with the readout above.</p>",
+      "html": "<p>The target is a steady 60 frames per second on iPhone 13 and newer, where the game now starts on the <b>High</b> preset. The new effects were built around what phones do cheaply:</p><ul><li><b>Work spread over frames.</b> The reflection cube renders one of its five useful faces per frame at 128 pixels (256 on High). The mountain-shadow map refreshes one strip of sixteen per frame. The wave texture is 256 pixels square.</li><li><b>Cheap stand-ins where detail cannot be seen.</b> Reflections draw trees with their simplest model and a coarse, chunked copy of the terrain. That cut the triangles drawn for a reflection face at the landing from about 205 000 to about 96 000.</li><li><b>Fewer draw calls.</b> Static buildings, docks and bridges are merged by material into one mesh per 160-metre cell (45 shadow-casting meshes became 27). Every animal species, every plant type and the fish are one instanced draw each.</li><li><b>Levels of detail.</b> The detailed spruce and birch appear only within about 55 metres; ferns within 55 m and flowers within 70 to 85 m. All of these distances shrink on the lower presets.</li><li><b>Insects without main-processor work.</b> About 680 insects and seed tufts are six instanced draws; their flight, habitat and time of day are worked out in the vertex shader from the same terrain maps the grass uses.</li><li><b>Floating objects near you only.</b> The river drift runs while you are within 250 metres of the river and petals float within 30 metres; about 200 positions are updated per frame and drawn in ten instanced draws. The lily and pondweed beds are fixed and drawn as three instanced meshes that the camera culls as a whole.</li><li><b>New trees and plants</b> use the same three-level scheme as before, each level one instanced draw.</li><li><b>The High finish</b> adds about a dozen draws: the scene into a 4x multisampled half-float buffer, five bloom steps down and four up at a half to a thirty-second of the screen, the sun rays at a quarter, and the final picture. On Apple graphics processors the multisampled buffer is resolved in on-chip tile memory.</li><li><b>The weather effects add no draws and no shader variants.</b> They are a few lines in the shading every material already shares and switch off by value (dry ground, no mist, no cloud shadows), not by compiling other shaders, so a change in the weather never stalls a frame. Per pixel of lit surface the cloud shadow adds one texture read; the mist adds about twenty arithmetic operations, plus one texture read only where it is far enough away to show; the wet look is skipped entirely while the ground is dry and adds one more read in puddles. The gusts are three sine waves per vertex of grass and plants, with no texture reads, and the rainbow only touches sky pixels while it shows.</li><li><b>The small map</b> is drawn with the browser's 2D canvas, at most fifteen times a second and only after you move or turn; the map image behind it is made once while the game loads.</li><li><b>Shaders compiled at startup</b>, including the fish, so the first bite or the first bear does not stutter.</li><li><b>No shader switching from frame to frame.</b> The reflection cube draws its own copies of the sky, terrain and tree materials and sees the same lights as the main view, and instanced shadow casters have their own depth materials. Before this fix the renderer looked up a different shader variant 38 times in every frame at Hotrod Landing; now it looks up none, which saves processor time and memory churn on phones.</li></ul><h3>Presets</h3><div class=\"tablewrap\"><table><thead><tr><th>Setting</th><th>Low</th><th>Medium</th><th>High (default)</th></tr></thead><tbody><tr><td>Resolution (pixels per point)</td><td>1.0</td><td>up to 1.5</td><td>up to 2.0</td></tr><tr><td>Sun shadows</td><td>off</td><td>2 cascades of 1024 px, to 190 m</td><td>2 cascades of 2048 px, to 260 m, distant trees included</td></tr><tr><td>Water reflections</td><td>sky colour only</td><td>cube map, 128 px</td><td>cube map, 256 px</td></tr><tr><td>Plants and rocks drawn out to</td><td>60 %</td><td>85 %</td><td>100 %</td></tr><tr><td>Grass density</td><td>45 %</td><td>75 %</td><td>100 %</td></tr><tr><td>Visible fish</td><td>50 %</td><td>80 %</td><td>100 %</td></tr><tr><td>Bloom, sun rays and colour grade</td><td>off</td><td>off</td><td>on</td></tr><tr><td>Cloud shadows, valley mist, gusts, wet ground and rainbows</td><td>on</td><td>on</td><td>on</td></tr><tr><td>What puddles mirror</td><td>the sky colour</td><td>the reflection cube</td><td>the reflection cube</td></tr></tbody></table></div><h3>Safeguards while you play</h3><ul><li><b>Dynamic resolution</b> lowers the pixel density in steps when frames take longer than 1/40 of a second and raises it again when there is room.</li><li><b>Automatic step-down (new).</b> If frames are still slow at the lowest resolution for three checks in a row, the game moves to the next lower preset and says so. Settings has an <i>Adjust graphics automatically</i> switch to turn this off.</li><li><b>Frame rate readout (new).</b> <i>Settings › Show frame rate</i> puts the frames per second, the preset and the resolution under the clock (amber below 50, red below 35), so you can check it on your own device.</li></ul><h3>Rendering cost per view</h3><p>Draw calls and triangles per frame, including the shadow passes and the reflection face, measured at 960 × 540 with the scripted views in <code>tools/scenarios/perf-views.json</code>. The same views before the update are the baseline.</p><div class=\"tablewrap\"><table><thead><tr><th>View</th><th class=\"n\">Before: calls</th><th class=\"n\">Before: triangles</th><th class=\"n\">High: calls</th><th class=\"n\">High: triangles</th><th class=\"n\">Medium: calls</th><th class=\"n\">Medium: triangles</th></tr></thead><tbody><tr><td>Hotrod Landing</td><td class=\"n\">112</td><td class=\"n\">287 608</td><td class=\"n\">238</td><td class=\"n\">1 083 778</td><td class=\"n\">203</td><td class=\"n\">832 723</td></tr><tr><td>Salmon Bend</td><td class=\"n\">112</td><td class=\"n\">322 198</td><td class=\"n\">292</td><td class=\"n\">1 140 031</td><td class=\"n\">227</td><td class=\"n\">794 831</td></tr><tr><td>Bear Falls</td><td class=\"n\">95</td><td class=\"n\">301 725</td><td class=\"n\">257</td><td class=\"n\">1 154 088</td><td class=\"n\">204</td><td class=\"n\">789 593</td></tr><tr><td>Glacier Lake</td><td class=\"n\">77</td><td class=\"n\">191 158</td><td class=\"n\">180</td><td class=\"n\">757 413</td><td class=\"n\">149</td><td class=\"n\">599 486</td></tr><tr><td>Moose Lake</td><td class=\"n\">88</td><td class=\"n\">207 574</td><td class=\"n\">223</td><td class=\"n\">985 852</td><td class=\"n\">192</td><td class=\"n\">719 803</td></tr><tr><td>Halibut Pier</td><td class=\"n\">61</td><td class=\"n\">118 206</td><td class=\"n\">146</td><td class=\"n\">478 646</td><td class=\"n\">112</td><td class=\"n\">395 786</td></tr><tr><td>Caribou Tundra</td><td class=\"n\">70</td><td class=\"n\">209 050</td><td class=\"n\">169</td><td class=\"n\">785 751</td><td class=\"n\">130</td><td class=\"n\">624 229</td></tr><tr><td>Deep forest</td><td class=\"n\">161</td><td class=\"n\">357 960</td><td class=\"n\">293</td><td class=\"n\">1 525 355</td><td class=\"n\">255</td><td class=\"n\">1 129 243</td></tr></tbody></table></div><p>These counts come from a software renderer on the build machine, because no iPhone or iPad was available to measure on. Its frame times say nothing about a phone's frame rate, so this table leaves them out; below they are used only to compare builds and settings on the same machine. The counts show how much more work each frame asks for; the actual frame rate still has to be read on a device with the readout above.</p><h3>What the new effects cost</h3><p>Rendering time of one frame in the software renderer at 960 × 540 pixels on High, at 7:30 with the mist at its thickest and half the sky clouded. Each frame is timed until a pixel can be read back from the screen, which waits for the renderer to finish (asking it to finish does not wait in this browser), and the same frame is drawn three times in each setting, the settings taking turns; the table gives the middle time. The first timing column is the build from before the effects; the others are this build with the effects switched off, on, and on with soaked ground. A software renderer runs the shaders on the main processor, so it exaggerates the cost of extra shading compared with a phone's graphics processor and says nothing about a phone's frame rate; it only compares the builds and settings on the same machine. The draws are counted in those same timed frames, every pass included (sun shadows, the view, the hands and the High finish), and the table gives the frame with the effects on; with the effects off, on and soaked, six of the eight views drew exactly the same number of times. At Bear Falls and Halibut Pier the count moved by one draw, because the game moves on by a frame between the timed renders and something moving came into or out of view: drawn again with the game's clock stopped (<code>tools/scenarios/draws-check.json</code>), they draw the same number of times in all three settings (Bear Falls 204, Halibut Pier 121).</p><div class=\"tablewrap\"><table><thead><tr><th>View</th><th class=\"n\">Draws before the effects</th><th class=\"n\">Draws now</th><th class=\"n\">Before the effects (ms)</th><th class=\"n\">Effects off (ms)</th><th class=\"n\">Effects on (ms)</th><th class=\"n\">Wet ground (ms)</th></tr></thead><tbody><tr><td>Hotrod Landing</td><td class=\"n\">222</td><td class=\"n\">218</td><td class=\"n\">4 560</td><td class=\"n\">4 543</td><td class=\"n\">4 909</td><td class=\"n\">4 895</td></tr><tr><td>Salmon Bend</td><td class=\"n\">234</td><td class=\"n\">232</td><td class=\"n\">3 932</td><td class=\"n\">4 242</td><td class=\"n\">4 252</td><td class=\"n\">4 649</td></tr><tr><td>Bear Falls</td><td class=\"n\">208</td><td class=\"n\">201</td><td class=\"n\">4 017</td><td class=\"n\">4 421</td><td class=\"n\">4 460</td><td class=\"n\">4 663</td></tr><tr><td>Glacier Lake</td><td class=\"n\">153</td><td class=\"n\">156</td><td class=\"n\">4 039</td><td class=\"n\">3 930</td><td class=\"n\">3 898</td><td class=\"n\">4 238</td></tr><tr><td>Moose Lake</td><td class=\"n\">186</td><td class=\"n\">182</td><td class=\"n\">4 094</td><td class=\"n\">4 624</td><td class=\"n\">4 676</td><td class=\"n\">4 786</td></tr><tr><td>Halibut Pier</td><td class=\"n\">120</td><td class=\"n\">121</td><td class=\"n\">2 680</td><td class=\"n\">2 958</td><td class=\"n\">2 920</td><td class=\"n\">3 018</td></tr><tr><td>Caribou Tundra</td><td class=\"n\">142</td><td class=\"n\">137</td><td class=\"n\">3 754</td><td class=\"n\">3 734</td><td class=\"n\">3 894</td><td class=\"n\">3 905</td></tr><tr><td>Deep forest</td><td class=\"n\">274</td><td class=\"n\">270</td><td class=\"n\">5 731</td><td class=\"n\">5 256</td><td class=\"n\">5 301</td><td class=\"n\">5 748</td></tr><tr><td><b>All eight views</b></td><td></td><td></td><td class=\"n\"><b>32 807</b></td><td class=\"n\"><b>33 708</b></td><td class=\"n\"><b>34 310</b></td><td class=\"n\"><b>35 902</b></td></tr></tbody></table></div><p>Over the eight views together, the effects as they normally run here (cloud shadows and mist) took 1.8&nbsp;% longer than with them switched off, and soaked ground with puddles 6.5&nbsp;% longer. With everything switched off, this build took 2.7&nbsp;% longer than the build before the effects, which takes in the quick checks every pixel makes to skip them and the other changes between the builds. The same frame drawn three times in a row took between 4.5 and 5.0 seconds in a check at Hotrod Landing, so a difference of a few percent at a single view, such as Glacier Lake and Halibut Pier drawing a little faster with the effects on, is within the noise. Between the two builds the draw counts differ by −7&nbsp;to&nbsp;+3; the effects themselves add none, so that is wildlife moving in and out of view and the other changes between the builds, such as the open tundra.</p>",
       "after": ""
     },
     {
       "id": "conclusion",
       "kicker": "What would change this conclusion",
       "title": "What would change this conclusion",
-      "html": "<ul><li><b>A real device below 60 frames per second on Medium</b> in the heaviest views (deep forest, Bear Falls, Hotrod Landing). The first levers are the Medium shadow distance and map size, the close-up tree distance, and fern and flower density. The automatic step-down already reacts in play, but it drops the whole preset.</li><li><b>A device without half-float render targets.</b> The reflection cube then falls back to 8-bit colour, so bright sky and sun glints in reflections clip and look flatter. Every iPhone and iPad that runs the current iOS should support half floats, but this was not checked on hardware.</li><li><b>Heat on long sessions.</b> Phones slow down when they get warm. If the readout sinks after twenty minutes of play, Low is the right preset for that device.</li><li><b>First launch.</b> Compiling the larger shaders at startup takes longer than before, which lengthens the loading screen on older devices.</li></ul>",
+      "html": "<ul><li><b>An iPhone 13 below 60 frames per second on High</b> in the heaviest views (deep forest, Bear Falls, Hotrod Landing). The first lever is still the High finish (bloom and sun rays), then the shadow distance and the close-up tree distances. The new effects added 1.8&nbsp;% to the frame in the software renderer (6.5&nbsp;% with soaked ground); if a phone's graphics processor shows a larger share, the cloud shadow's texture read on every lit pixel is the first to move to High only.</li><li><b>How the effects read on a real screen.</b> The darkness and size of the cloud shadows, the thickness of the morning mist and the strength of the wet sheen were tuned on a desktop monitor. On a phone outdoors, cloud shadows may need to be darker and the mist thinner. Each is one number.</li><li><b>Rainbows are rare by design.</b> One needs light rain with the sun out and lower than 42 degrees, which in this weather happens for about a minute as a shower starts or clears. If players never see one, the window can be widened.</li><li><b>The reel fix on a real iPhone.</b> The test drives real touch events in a desktop browser engine. The cause (a finger's release going to the removed label instead of the button) was found from the code and the documented behaviour of touch events, not on a device. If the reel still runs on by itself on an iPhone, the next suspect is a touch that iOS cancels during a system gesture, which the new page-wide check should already catch.</li><li><b>Rarity balance.</b> The bite odds per tier (1, 0.6, 0.28 and 0.14 of a common fish) were checked by simulation, not by players. If epic fish feel impossible or too easy, the tier factors are one line each.</li><li><b>The small map's place on screen.</b> It sits in the top left corner under the money and the cooler count. On the smallest phones it may crowd those counts or hide too much of the view on the left; it already shrinks to 100 points on short screens and can be made smaller still.</li><li><b>Heat on long sessions</b> and <b>first launch</b>: phones slow down when warm, and more shaders are compiled at startup than at the start of the update. If the frame rate readout sinks after twenty minutes, Medium is the right preset for that phone.</li><li><b>Frame times.</b> Every count in this report comes from a software renderer, because no iPhone or iPad was available to measure on. A reading on a device with the frame rate readout is the test that settles it.</li><li><b>A slow phone after a fast travel.</b> The ground is now built while the screen is dark: 32 milliseconds on this computer for the first trip to Bear Falls, perhaps a few times that on an older phone, which only keeps the screen dark a little longer. If that pause shows, the building can go back to a few squares a frame after the fade, nearest first.</li></ul>",
       "cls": "conclusion"
     }
   ],
-  "footer": "<p>Built on the <code>claude/ruben-hotrod-fishing</code> branch. The design follows well-known techniques: <a href=\"https://en.wikipedia.org/wiki/Snell%27s_law\">Snell's law</a> for the bent path through the water, <a href=\"https://en.wikipedia.org/wiki/Schlick%27s_approximation\">Schlick's approximation</a> for the share of light the surface reflects, <a href=\"https://en.wikipedia.org/wiki/Dispersion_(water_waves)\">deep-water dispersion</a> for the waves, <a href=\"https://en.wikipedia.org/wiki/Caustic_(optics)\">caustics</a> for the light lines on the bed, <a href=\"https://learn.microsoft.com/en-us/windows/win32/dxtecharticles/cascaded-shadow-maps\">cascaded shadow maps</a> for the sun shadows, and the <a href=\"https://github.com/KhronosGroup/ToneMapping/tree/main/PBR_Neutral\">Khronos PBR Neutral</a> tone mapper as built into <a href=\"https://threejs.org/docs/\">three.js</a>. The build machine's network policy blocks these sites, so the links were written from knowledge and not opened from there.</p>"
+  "footer": "<p>Built on the <code>claude/ruben-hotrod-fishing</code> branch. The design follows well-known techniques: <a href=\"https://en.wikipedia.org/wiki/Snell%27s_law\">Snell's law</a> for the bent path through the water, <a href=\"https://en.wikipedia.org/wiki/Schlick%27s_approximation\">Schlick's approximation</a> for the share of light the surface reflects, <a href=\"https://en.wikipedia.org/wiki/Dispersion_(water_waves)\">deep-water dispersion</a> for the waves, <a href=\"https://en.wikipedia.org/wiki/Caustic_(optics)\">caustics</a> for the light lines on the bed, <a href=\"https://learn.microsoft.com/en-us/windows/win32/dxtecharticles/cascaded-shadow-maps\">cascaded shadow maps</a> for the sun shadows, <a href=\"https://en.wikipedia.org/wiki/Bloom_(shader_effect)\">bloom</a> and <a href=\"https://developer.nvidia.com/gpugems/gpugems3/part-ii-light-and-shadows/chapter-13-volumetric-light-scattering-post-process\">light scattering as a post-process</a> for the High finish, the <a href=\"https://en.wikipedia.org/wiki/Rainbow\">rainbow</a> angles of 42 and 51 degrees, <a href=\"https://en.wikipedia.org/wiki/Fog#Radiation_fog\">radiation fog</a> for the valley mist, and the <a href=\"https://github.com/KhronosGroup/ToneMapping/tree/main/PBR_Neutral\">Khronos PBR Neutral</a> tone mapper as built into <a href=\"https://threejs.org/docs/\">three.js</a>. Species follow what grows and lives in south-central Alaska; the links above go to their encyclopedia pages. The build machine's network policy blocks these sites, so the links were written from knowledge and not opened from there.</p>"
 }
