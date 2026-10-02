@@ -1,0 +1,453 @@
+{
+  "kicker": "Hotrod Outdoor Alaska Fishing · the big update",
+  "title": "A boat, a camera, Bigfoot and three new places",
+  "lede": "Everything on your list is in the build: the game is now <b>Hotrod Outdoor Alaska Fishing</b>, with a fishing boat and outboard on a trailer, nine rods and five kinds of arrows, a wardrobe behind a T-shirt button, an arcade announcer (FISH ON!, IT THREW THE HOOK!, NEW SPECIES!), bites that follow the weather and the time, a full-screen map with the fish of every place you have been, a small map out of the way, a RUN button, bears that come only for the fish in your cooler, a camera and photo album, three new places (Steaming Springs, Mosquito Flats and Shipwreck Cove) with odd jobs, three new legends and a very shy Bigfoot, sharper mountains, a new Bear Falls, textures at twice the resolution, and light that follows the hour. A full audit found 71 problems; all are fixed and tested again. Estimated time left on the list: none. The next steps are at the top.",
+  "links": [
+    {
+      "label": "Play the new build",
+      "href": "https://claude.ai/artifact/3urJEG61Boov67ViABm26A"
+    },
+    {
+      "label": "Code on GitHub",
+      "href": "https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing"
+    },
+    {
+      "label": "README",
+      "href": "https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/README.md"
+    }
+  ],
+  "sections": [
+    {
+      "id": "status",
+      "kicker": "Your questions",
+      "title": "Estimated time left, and the next steps",
+      "html": "<p><b>Estimated time left on this list: none.</b> Everything you asked for in this round is in the build at the link above. Each feature was tested in a browser engine, the whole round was audited by five separate code reviews (the fourth checked the fixes of the first three, the fifth everything fixed after that) and my own checks, and every one of the 71 problems they found is fixed and checked again (the audit and the tests are further down). The reel, which you said now works as intended, was left alone.</p><p>Two things remain, and both wait for you:</p><ul><li><b>Playing it on your iPhone.</b> The web build at the link has everything. The iPhone app in the Xcode project carries its own copy of the game, so it needs building again in Xcode to get this round.</li><li><b>The App Store preparations</b>, skipped as you asked until you say go: new App Store pictures for the 6.9-inch iPhone and the 13-inch iPad showing the new places, the boat and the camera; the store text under the new name; and the publishing guide brought up to date. That is about one working session.</li></ul><h3>Next steps</h3><ol><li><b>Your play test.</b> Tell me what feels off on the phone. The likely candidates are the boat's steering, the timing bar's speed, the announcer's volume against the engine and the river, and how often Bigfoot shows up (rare on purpose).</li><li><b>The App Store round</b>, when you say go.</li><li><b>Ideas for a next round</b>, if you want one:<ul><li>A weekend fishing derby at the Trading Post, with a board of the heaviest fish of the weekend, in the spirit of Alaska's real <a href=\"https://en.wikipedia.org/wiki/Fishing_tournament\">fishing tournaments</a>.</li><li>Winter: <a href=\"https://en.wikipedia.org/wiki/Ice_fishing\">ice fishing</a> on Glacier Lake with an auger and a shanty, snow on the roads and the hot rod on studded tires.</li><li>A trophy wall in the cabin where your biggest fish and the legends you land are mounted.</li><li>A dog that rides in the hot rod and barks when a bear is near.</li><li>Crab pots at Halibut Pier and from the boat: set them, come back the next day, sell the <a href=\"https://en.wikipedia.org/wiki/Dungeness_crab\">Dungeness crab</a>.</li><li>A <a href=\"https://en.wikipedia.org/wiki/Floatplane\">floatplane</a> trip to a remote lake that no road reaches, for a fee.</li></ul></li></ol>"
+    },
+    {
+      "id": "name",
+      "kicker": "The name",
+      "title": "Hotrod Outdoor Alaska Fishing",
+      "html": "<p>The game is now called <b>Hotrod Outdoor Alaska Fishing</b> on the title screen, in the page title, in the web app manifest, on the privacy page and as the iPhone app's name under its icon. Saved games keep their old storage names, so a game in progress carries on under the new name.</p>",
+      "figs": [
+        {
+          "file": "final/ui-check/ui-title.png",
+          "caption": "The title screen with the new name."
+        }
+      ]
+    },
+    {
+      "id": "casting",
+      "kicker": "Casting",
+      "title": "The dark green line is the perfect throw",
+      "html": "<p>The timing bar now reads the way you described it. The <b>dark green line</b> in the middle is the perfect throw; light green either side of it is a good cast, orange a weak one and red at the ends a backlash. The <b>white line</b> is the timing marker, sweeping back and forth across the bar (eight passes at most) until you tap. The perfect window is 56 milliseconds wide and the whole green 278 milliseconds, at 0.9 bar widths a second. The line over the water still shows where the lure will land before you let go.</p>",
+      "figs": [
+        {
+          "file": "final/timing-bar/timing-green.png",
+          "caption": "The white marker sweeping toward the dark green line; the dashed line and ring on the water show where the lure will land."
+        }
+      ]
+    },
+    {
+      "id": "gear",
+      "kicker": "Tackle and the bow",
+      "title": "Nine rods and five kinds of arrows",
+      "html": "<p>Five new rods join the four there were, each with its own feel and a perk. Prices are in the game's dollars.</p><div class=\"tablewrap\"><table><thead><tr><th>Rod</th><th class=\"n\">Price</th><th class=\"n\">Cast</th><th class=\"n\">Line holds</th><th>Perk</th></tr></thead><tbody><tr><td>Hotrod Classic</td><td class=\"n\">start</td><td class=\"n\">30 m</td><td class=\"n\">100</td><td>The rod you start with.</td></tr><tr><td>Willow Whip</td><td class=\"n\">$120</td><td class=\"n\">26 m</td><td class=\"n\">85</td><td>Sensitive tip: a longer moment to set the hook.</td></tr><tr><td>Glacier Glass</td><td class=\"n\">$420</td><td class=\"n\">34 m</td><td class=\"n\">125</td><td>Forgiving fibreglass: a slack line holds on far longer.</td></tr><tr><td>Hotrod Pro</td><td class=\"n\">$650</td><td class=\"n\">40 m</td><td class=\"n\">150</td><td>Graphite and a faster reel. Handles kings.</td></tr><tr><td>Kenai Fly Rod</td><td class=\"n\">$900</td><td class=\"n\">36 m</td><td class=\"n\">105</td><td>Rare and epic fish come to it more often.</td></tr><tr><td>Tidewater Surf Caster</td><td class=\"n\">$1300</td><td class=\"n\">64 m</td><td class=\"n\">185</td><td>Reaches the deep water nobody else can.</td></tr><tr><td>Hotrod Big Block</td><td class=\"n\">$1900</td><td class=\"n\">52 m</td><td class=\"n\">235</td><td>Legends notice it.</td></tr><tr><td>Gus’s Antler Special</td><td class=\"n\">$2600</td><td class=\"n\">46 m</td><td class=\"n\">245</td><td>Legends cannot resist it. Nobody knows why.</td></tr><tr><td>Golden Hotrod</td><td class=\"n\">$6500</td><td class=\"n\">58 m</td><td class=\"n\">320</td><td>Even the timing bar’s dark green line gets wider.</td></tr></tbody></table></div><p>The bow now takes five kinds of arrows from the Bow &amp; gear tab. The quiver holds 36 arrows of each kind (12 whistlers), a nearly full quiver tops up at the price of what fits, and the arrow chip at the top left shows the kind you have nocked and how many are left: tap it to switch.</p><div class=\"tablewrap\"><table><thead><tr><th>Arrows</th><th class=\"n\">Pack</th><th class=\"n\">Price</th><th>What they do</th></tr></thead><tbody><tr><td>Cedar arrows</td><td class=\"n\">12</td><td class=\"n\">$40</td><td>Plain and true.</td></tr><tr><td>Carbon arrows</td><td class=\"n\">12</td><td class=\"n\">$110</td><td>Fast and flat: far less drop at long range.</td></tr><tr><td>Heavy broadheads</td><td class=\"n\">12</td><td class=\"n\">$150</td><td>Hit 70 % harder and drop like a stone. For moose, and for bears.</td></tr><tr><td>Glow-nock arrows</td><td class=\"n\">12</td><td class=\"n\">$70</td><td>A bright nock you can follow in flight and find again in the grass, even at dusk.</td></tr><tr><td>Bear whistlers</td><td class=\"n\">6</td><td class=\"n\">$120</td><td>Shriek in flight: a bear they pass close to turns tail and runs, fish or no fish. At most 12 in the quiver.</td></tr></tbody></table></div>",
+      "figs": [
+        {
+          "file": "final/catch/s4-tackle.png",
+          "caption": "The rods in the Tackle tab, each with its line strength, cast and perk."
+        },
+        {
+          "file": "final/bears-arrows/arrows-shop.png",
+          "caption": "The arrows in the Bow & gear tab."
+        },
+        {
+          "file": "final/bears-arrows/arrows-chip.png",
+          "caption": "Bear whistlers nocked; the chip at the top left switches arrows."
+        }
+      ]
+    },
+    {
+      "id": "boat",
+      "kicker": "On the water",
+      "title": "A boat with an outboard, on a trailer behind the hot rod",
+      "html": "<p>The garage sells a sixteen-foot aluminium skiff with an outboard on a trailer for $1,500. The trailer hitches to the hot rod and follows it round the map, swinging wide on the bends, and you can back it up. Stop near a lake, the river or the bay and tap <b>LAUNCH</b>: the boat slides off the trailer into the water. Walk up to it and tap <b>BOARD</b>, hold <b>GAS</b> and steer as in the car; the camera button switches between the seat at the tiller and a chase view. <b>FISH</b> drops anchor so you can stand and cast all round the boat, and bears cannot reach you out there. <b>ASHORE</b> steps you off where the water meets the land, and <b>LOAD BOAT</b> winches it back onto the trailer. A bigger outboard ($900) takes the top speed from 31 to 49 kilometres an hour.</p><p>The boat bobs on the waves of the bay, lifts its bow when it gets up to speed, leans into turns and leaves a wake. The river carries it along, and after the audit it scrapes off the bridge pier, the pier pilings, the docks and the wreck instead of passing through them, and stops at the lip of Bear Falls instead of going over.</p>",
+      "figs": [
+        {
+          "file": "final/boat/boat-on-trailer.png",
+          "caption": "The boat on its trailer behind the hot rod."
+        },
+        {
+          "file": "final/boat/boat-chase.png",
+          "caption": "Running the river in the chase view."
+        },
+        {
+          "file": "final/boat/boat-fishing.png",
+          "caption": "Anchored and casting from the boat."
+        },
+        {
+          "file": "final/boat/boat-bridge.png",
+          "caption": "Full gas at the bridge: the boat scrapes round the middle pier."
+        },
+        {
+          "file": "final/boat/boat-falls.png",
+          "caption": "Full gas toward the lip of Bear Falls: the boat stops above the drop."
+        }
+      ]
+    },
+    {
+      "id": "bears",
+      "kicker": "Bears",
+      "title": "Grizzlies and black bears come for your fish, not for you",
+      "html": "<p>A bear now only comes for you when there are fish in your cooler or chest freezer. With an empty cooler they leave you alone: they fish at Bear Falls, wander, and move off. With fish aboard, the more you carry the sooner one turns up, and it stalks, bluffs and charges as before.</p><p><b>Black bears</b> now live in the thick forest alongside the grizzlies. They are smaller, swipe lighter, bluff more often and run off when hurt. A <b>bear whistler</b> arrow shrieking past any bear sends it running, which is also the campground ranger's odd job. In the car or out on the boat, no bear can get at you.</p>"
+    },
+    {
+      "id": "maps",
+      "kicker": "Maps and controls",
+      "title": "A small map out of the way, a big map with the fish on it, and RUN",
+      "html": "<p><b>The small map</b> sits in the top left corner, under the money and the cooler and clear of every button. It turns as you do and shows the land, the places you know, the hot rod, the boat, your next goal and a charging bear; it zooms out while you drive, and a tap opens the full map.</p><p><b>The full map</b> now fills the whole screen instead of a small window. Drag it, pinch or use the buttons to zoom. Tap a place, or the lake, river or sea it fishes, to see which fish live there, for example halibut, northern pike and sockeye salmon. Only places you have been to show their fish; the rest say \"Explore to find it\". Each place also shows the bite there right now and the hours when each fish bites best.</p><p><b>RUN</b> is a button on the left: tap it to run, tap it again to walk. It glows while you run, and hides in the car and the boat.</p>",
+      "figs": [
+        {
+          "file": "final/ui-check/ui-hud.png",
+          "caption": "The small map in the top left, clear of the buttons; RUN on the left."
+        },
+        {
+          "file": "final/ui-check/ui-run-on.png",
+          "caption": "RUN switched on."
+        },
+        {
+          "file": "final/ui-check/ui-map.png",
+          "caption": "The full map, filling the screen."
+        },
+        {
+          "file": "final/ui-check/ui-map-moose.png",
+          "caption": "A tap on Moose Lake: the fish that live there, the bite now and the best hours."
+        }
+      ]
+    },
+    {
+      "id": "wardrobe",
+      "kicker": "Ruben",
+      "title": "A wardrobe behind the T-shirt button",
+      "html": "<p>A <b>T-shirt button</b> now sits at the top right next to the map, the journal and pause. It opens the wardrobe, with a portrait of Ruben that changes as you pick. Everything shows on your own sleeves and hands in first person and on Ruben at the wheel of the hot rod.</p><ul><li><b>Shirts (9):</b> red flannel, blue flannel, forest flannel, denim jacket, black hoodie, camo jacket, hi-vis rain jacket, Hawaiian shirt ($120) and the Hotrod racing jacket ($400).</li><li><b>Hats (7):</b> orange cap, trucker cap, wool beanie, bucket hat, cowboy hat, the moose antler hat ($250) and no hat.</li><li><b>Beards (5):</b> full beard, lumberjack beard, handlebar mustache, stubble and clean shaven.</li><li><b>Hair (5):</b> brown, black, blond, ginger and grey.</li><li><b>Skin (5)</b> tones, from pale to dark.</li><li><b>Gloves (3):</b> leather gloves, fingerless wool and bare hands.</li></ul>",
+      "figs": [
+        {
+          "file": "final/wardrobe/wardrobe-dressed.png",
+          "caption": "The wardrobe with the portrait."
+        },
+        {
+          "file": "final/wardrobe/sleeves.png",
+          "caption": "The new sleeves and gloves in first person."
+        },
+        {
+          "file": "final/wardrobe/driver.png",
+          "caption": "Ruben at the wheel in the same clothes."
+        }
+      ]
+    },
+    {
+      "id": "announcer",
+      "kicker": "The announcer",
+      "title": "FISH ON! IT THREW THE HOOK! NEW SPECIES!",
+      "html": "<p>The big moments are now shouted by an arcade announcer, in the spirit of <a href=\"https://en.wikipedia.org/wiki/Sega_Bass_Fishing\">Sega Bass Fishing</a>, with a banner across the screen to match. The voice is the phone's own speech, pitched down and hyped up, so it adds nothing to the download; it can be switched off in Settings, and the banners still show.</p><ul><li><b>Hooked:</b> FISH ON!, FISH ON! FISH ON!, HOOKED UP!, GOT ONE!</li><li><b>During the fight:</b> IT'S A BIG ONE!, MONSTER ON THE LINE!, HOLD ON TIGHT!, IT'S JUMPING!, LOOK AT IT GO!, AIRBORNE!</li><li><b>Lost:</b> IT THREW THE HOOK!, OH NO, THE HOOK CAME OFF!, OH NO! IT SHOOK THE HOOK!, SNAP! THE LINE BROKE!, OH NO! IT BROKE OFF!, SPOOLED! IT TOOK ALL YOUR LINE!, IT GOT AWAY!, AN EAGLE STOLE IT!</li><li><b>Landed:</b> NEW SPECIES! with the name (NEW SPECIES! NORTHERN PIKE!), PERSONAL BEST! with the weight, LEGENDARY! with the legend's name, NICE FISH!, LANDED!, WHAT A CATCH!, BEAUTIFUL!</li><li><b>Casting and the hook set:</b> PERFECT CAST!, BIRD'S NEST! (a backlash), TOO EARLY!, TOO SLOW!, MISSED IT!</li><li><b>The rest:</b> THE BITE IS ON!, LOOK OUT! (a bear), BULLSEYE! (a head shot with the bow), WHAT A SHOT! and FRAME IT! (a three-star picture), TREASURE!, CHA-CHING! and JOB DONE! (odd jobs), and BIGFOOT?!</li></ul>",
+      "figs": [
+        {
+          "file": "final/announcer-bite/ann-fishon.png",
+          "caption": "FISH ON!"
+        },
+        {
+          "file": "final/announcer-bite/ann-newspecies.png",
+          "caption": "NEW SPECIES! NORTHERN PIKE!"
+        },
+        {
+          "file": "final/announcer-bite/ann-hookoff.png",
+          "caption": "OH NO, THE HOOK CAME OFF!"
+        }
+      ]
+    },
+    {
+      "id": "bite",
+      "kicker": "The bite",
+      "title": "Fish bite by the weather and the time of day",
+      "html": "<p>A <b>BITE</b> readout under the top buttons says how hungry the fish are right now: <b>SLOW</b>, <b>FAIR</b>, <b>GOOD</b> or <b>HOT</b>. Tap it and it says why. The rules follow what anglers know:</p><ul><li>The dawn bite (from 4:30 to 8:30) is the best of the day, the evening rise (19:00 to 22:30) nearly as good.</li><li>Under a bright midday sun with a clear sky the fish sulk deep; at night most go quiet, though the burbot prowl the lakes and the dogfish come close in on the sea.</li><li>A <a href=\"https://en.wikipedia.org/wiki/Weather_front\">front</a> rolling in (the clouds or the rain building) switches them on; rain on the water and a grey sky make them bolder; a clearing sky behind the rain slows them again.</li><li>On the sea, the <a href=\"https://en.wikipedia.org/wiki/Tide\">tide</a> matters most: two high tides a day, 12 hours 25 minutes apart, and the fish feed on the moving water either side of slack.</li><li>Each of the 31 species keeps its own hours on top of that: king salmon at dawn, pike in the midday warmth, burbot at night. The full map shows the best hours for every fish at each place.</li></ul><p>The time it takes a fish to bite, and which fish it is, follow the readout.</p>",
+      "figs": [
+        {
+          "file": "final/announcer-bite/bite-hot.png",
+          "caption": "A HOT bite at dawn with a front coming in."
+        },
+        {
+          "file": "final/announcer-bite/bite-tap.png",
+          "caption": "A tap on the readout says why."
+        }
+      ]
+    },
+    {
+      "id": "camera",
+      "kicker": "The camera",
+      "title": "Take pictures of fish, moose and bears, and keep them in an album",
+      "html": "<p>The Trading Post sells a camera for $250. It joins the rod and the bow on the tool button. Raise it and a viewfinder frames exactly what the picture will keep; the zoom button steps through 1, 2, 4 and 8 times, and the viewfinder names what you are pointing at with up to three stars for how well it fills the frame. A hill, tall grass close in front, a tree's crown or a bush between you and the animal spoils the shot, and an animal partly hidden gets a star less for each hidden part; you can shoot under a birch's leaves, not through a spruce.</p><p>Every picture goes into the <b>album</b> in the journal, with a page for each of 65 subjects: 15 land animals, 12 birds, 5 sea mammals, two moments (Old Faceful erupting and Bigfoot) and all 31 fish. The best picture of each is kept, with the time and the place, and the last eight pictures are on a roll. When you land a fish, a camera button on the catch card takes its picture. The magazine Alaska Outdoors buys the first picture of each animal and moment: a three-star shot pays from $10 for a gull to $100 for the orcas, and $300 for Bigfoot; fewer stars pay less. Photographing eight different animals is a challenge worth $400.</p>",
+      "figs": [
+        {
+          "file": "final/camera/viewfinder.png",
+          "caption": "The viewfinder at 4 times on a moose 30 m away: three stars."
+        },
+        {
+          "file": "final/camera/album.png",
+          "caption": "The album, page by page."
+        },
+        {
+          "file": "final/camera/album-view.png",
+          "caption": "A picture opened from the album."
+        },
+        {
+          "file": "final/camera/catch-photo-button.png",
+          "caption": "The camera button on the catch card."
+        }
+      ]
+    },
+    {
+      "id": "places",
+      "kicker": "Three new places",
+      "title": "Steaming Springs, Mosquito Flats and Shipwreck Cove",
+      "html": "<p>Each new place has its own landscape, its own fish, a legendary fish, a road to it, a sign at the parking bay and something silly to do.</p><h3>Steaming Springs</h3><p>A warm, milky green trout pond in a basin of white and orange <a href=\"https://en.wikipedia.org/wiki/Sinter\">sinter</a>, with steam rising off the water, steam vents and bubbling <a href=\"https://en.wikipedia.org/wiki/Mudpot\">mud pots</a>. <b>Old Faceful</b>, a <a href=\"https://en.wikipedia.org/wiki/Geyser\">geyser</a>, rumbles and then blows a column of water and steam every minute or two; its sign says \"Stand back. No, further\". In the hot pool you can <b>SOAK</b>: an hour passes and every ache goes with it. Rainbow trout, grayling, Dolly Varden, char, whitefish and blackfish live in the warm pond, and the legend is Old Steamy, an 11.4-kilogram rainbow. Nothing lives in the hot pool.</p><h3>Mosquito Flats</h3><p>Tea-dark sloughs in the coastal <a href=\"https://en.wikipedia.org/wiki/Muskeg\">muskeg</a> at the end of Muskeg Road, with a boardwalk over the bog to a dock, dead snags and the <b>World's Largest Mosquito</b>, a statue of Alaska's unofficial state bird (\"Please do not feed\"). The mosquitoes swarm and have opinions; a machine by the statue sells bug dope for $15, which keeps them off for two hours. <a href=\"https://en.wikipedia.org/wiki/Northern_pike\">Northern pike</a>, <a href=\"https://en.wikipedia.org/wiki/Inconnu\">sheefish</a> and <a href=\"https://en.wikipedia.org/wiki/Alaska_blackfish\">Alaska blackfish</a> live in the sloughs, and the legend is Sheezilla, a 27-kilogram sheefish.</p><h3>Shipwreck Cove</h3><p>The <b>Unsinkable II</b>, a rusty trawler from Homer, has sat aground off the beach since 1987 (\"She sank in four feet of water\"). Walk the gangplank onto her deck, fish the deep water off her stern for rockfish, lingcod and the <a href=\"https://en.wikipedia.org/wiki/Wolf_eel\">wolf eel</a>, open the sea chest in her wheelhouse, and look out at the sea stacks white with birds. The legend is Davy Jones, a 36-kilogram <a href=\"https://en.wikipedia.org/wiki/Lingcod\">lingcod</a>.</p>",
+      "figs": [
+        {
+          "file": "final/areas/springs-geyser.png",
+          "caption": "Old Faceful blowing over Steaming Springs."
+        },
+        {
+          "file": "final/areas/springs-hotpool.png",
+          "caption": "The hot pool, ready for a SOAK."
+        },
+        {
+          "file": "final/areas/flats-mosquito.png",
+          "caption": "The World's Largest Mosquito at Mosquito Flats."
+        },
+        {
+          "file": "final/areas/flats-boardwalk.png",
+          "caption": "The boardwalk over the bog to the slough."
+        },
+        {
+          "file": "final/areas/wreck-beach.png",
+          "caption": "The Unsinkable II from the beach, with the gangplank."
+        },
+        {
+          "file": "final/areas/wreck-deck.png",
+          "caption": "On her deck."
+        },
+        {
+          "file": "final/areas/wreck-stand.png",
+          "caption": "The fishing spot on her stern, out over open water to the sea stacks."
+        }
+      ]
+    },
+    {
+      "id": "adventure",
+      "kicker": "Adventure, humour and a hairy rumour",
+      "title": "Odd jobs, Bigfoot, a sea chest and three more legends",
+      "html": "<p><b>Odd jobs.</b> The locals at the Kenai Trading Post always want something. A new <b>Odd jobs</b> tab shows three of them a day; take one at a time, do it, and collect the money back at the Trading Post. Fish jobs hand over the cheapest fish that will do, never a legend while a plain fish is there, and the Collect button names the fish first.</p><div class=\"tablewrap\"><table><thead><tr><th>Who</th><th>Wants</th><th class=\"n\">Pays</th></tr></thead><tbody><tr><td>Mrs. Henderson</td><td>A Northern Pike over 6 kg for her famous pike casserole. Nobody has the heart to tell her.</td><td class=\"n\">$260</td></tr><tr><td>The Kenai Gazette</td><td>A three-star picture of a bald eagle for Sunday's front page.</td><td class=\"n\">$200</td></tr><tr><td>Dale from the late-night radio show</td><td>A picture of Bigfoot. Any picture.</td><td class=\"n\">$1000</td></tr><tr><td>The cannery foreman</td><td>Three Sockeye Salmon before the boss notices.</td><td class=\"n\">$300</td></tr><tr><td>Old Earl</td><td>His lucky lure, lost at Salmon Bend in 1974: keep casting there and you might hook it.</td><td class=\"n\">$240</td></tr><tr><td>A tourist from Ohio</td><td>A picture of a moose. \"A real one, not the mosquito.\"</td><td class=\"n\">$150</td></tr><tr><td>Chef Rosa at the lodge</td><td>A Pacific Halibut over 30 kg for the weekend special.</td><td class=\"n\">$480</td></tr><tr><td>A fisheries scientist</td><td>A Sheefish from Mosquito Flats. She promises it will barely notice.</td><td class=\"n\">$520</td></tr><tr><td>Captain Gus</td><td>A picture of the orcas, to prove the Unsinkable II never sailed alone.</td><td class=\"n\">$350</td></tr><tr><td>The fly-fishing club</td><td>An Arctic Grayling on the Mosquito Dry Fly. They bet you cannot.</td><td class=\"n\">$180</td></tr><tr><td>The campground ranger</td><td>A bear moved along without anyone getting hurt: a bear whistler arrow should do it.</td><td class=\"n\">$300</td></tr><tr><td>Your aching back</td><td>A soak in the hot pool at Steaming Springs. It is not asking.</td><td class=\"n\">$80</td></tr><tr><td>The Bear Falls fish counter</td><td>A King Salmon over 20 kg, to settle a bet with the bears.</td><td class=\"n\">$650</td></tr><tr><td>The aquarium in Seward</td><td>A Wolf Eel from Shipwreck Cove. Its face, mostly.</td><td class=\"n\">$900</td></tr></tbody></table></div><p><b>Bigfoot.</b> Very rarely, at dawn or dusk, something big and hairy strolls along the edge of the forest a long way off, and lopes away if you get closer than 45 metres. Every picture of it comes out blurry, as tradition demands, and the announcer shouts BIGFOOT?! A picture is worth up to $300 to the magazine and $1,000 to Dale's radio show.</p><p><b>The sea chest</b> in the Unsinkable II's wheelhouse holds $600 in soggy bills, a captain's cap and an IOU for one boat, signed \"Gus\".</p><p><b>Legends.</b> Three more legendary fish, one at each new place: Old Steamy, Sheezilla and Davy Jones, nine in all.</p><p><b>Challenges.</b> Six more: buy the boat, launch it and land a fish from it; soak in the hot pool; catch a sheefish at Mosquito Flats; walk the gangplank onto the Unsinkable II; land a wolf eel at Shipwreck Cove; and photograph eight different animals.</p><p><b>Humour</b> runs through it: \"The mosquitoes have formed a union. They want more Ruben\"; the hot pool's sign says \"Soak at your own risk · No moose · No boiling your catch\"; a moose watches you soak and looks jealous; the Golden Hotrod is \"Completely unnecessary. Absolutely essential.\"; a bear whistler sends a bear running, \"So does everyone else within a mile.\"</p>",
+      "figs": [
+        {
+          "file": "final/jobs-bigfoot/jobs-board.png",
+          "caption": "The Odd jobs board at the Trading Post."
+        },
+        {
+          "file": "final/jobs-bigfoot/bigfoot-lens.png",
+          "caption": "Something at the edge of the trees, through the 8 times lens."
+        },
+        {
+          "file": "final/jobs-bigfoot/bigfoot-photo.png",
+          "caption": "The Bigfoot picture in the album: blurry, as tradition demands."
+        }
+      ]
+    },
+    {
+      "id": "fidelity",
+      "kicker": "Fidelity",
+      "title": "Sharper mountains, a new Bear Falls and textures at twice the resolution",
+      "html": "<p>The aim was more detail without more work for the phone's graphics processor. Each picture pair below is the same view in the build before this round and in this one.</p><ul><li><b>The mountains.</b> The distant terrain is now twice as fine (a point every 20 metres instead of 40) in the 700-metre band round the playable land where the nearest mountains rise: about 128,000 triangles instead of about 61,000, still drawn in one go. Beyond 140 metres, steep slopes also get crags, gullies and buttresses a few tens of metres across in the lighting alone, more than the mesh could carry, and the gullies hold shade and old snow. That costs two texture reads per pixel, and only on far steep slopes.</li><li><b>Bear Falls</b> was rebuilt: the river now runs flat to a lip and pours over it in two curved sheets of water, a back sheet and a front sheet that bows out in the middle, split into three falls by boulders on the lip. The water speeds up and turns white as it falls, with ragged edges, a foam pool at the foot, rocks that shine wet and more spray and mist. It is four draws.</li><li><b>The new models</b> are built for close looks: the boat's hull is lofted from seven cross sections, with a painted stripe, gunwale rails, three benches, floorboards, a fuel tank, a cooler, a rod in its holder and an outboard with its tiller, skeg and propeller; the trailer has its winch post, carpeted bunks and tail lights. The Unsinkable II's hull is lofted the same way, rust below her old waterline and streaks down her black sides, with a wheelhouse, a mast and rigging, crab pots and a life ring. Ruben now sits at the wheel of the hot rod in your clothes. The earlier rounds rebuilt the trees, the animals and the fish.</li><li><b>Textures at twice the resolution:</b> the ground detail (512 texels, was 256), the ripples on the water (512, was 256) and the close-up ground of pebbles, rock beds and needles (1024, was 512), so the ground stays sharp at your feet on a Retina screen. With mipmaps a bigger texture costs the graphics processor about the same to read; the cost is about 6 MB more graphics memory and 0.8 seconds more on the loading screen on the build machine, where the textures are made.</li></ul>",
+      "pairs": [
+        {
+          "before": {
+            "file": "compare/before-falls.jpg",
+            "caption": "Bear Falls before this round."
+          },
+          "after": {
+            "file": "compare/after-falls.jpg",
+            "caption": "Bear Falls now."
+          }
+        },
+        {
+          "before": {
+            "file": "compare/before-falls-far.jpg",
+            "caption": "Bear Falls from further down, before."
+          },
+          "after": {
+            "file": "compare/after-falls-far.jpg",
+            "caption": "Now."
+          }
+        },
+        {
+          "before": {
+            "file": "compare/before-mtn-landing.jpg",
+            "caption": "The mountains from Hotrod Landing, before."
+          },
+          "after": {
+            "file": "compare/after-mtn-landing.jpg",
+            "caption": "Now."
+          }
+        },
+        {
+          "before": {
+            "file": "compare/before-mtn-sawtooth.jpg",
+            "caption": "The range behind Moose Lake, before."
+          },
+          "after": {
+            "file": "compare/after-mtn-sawtooth.jpg",
+            "caption": "Now."
+          }
+        },
+        {
+          "before": {
+            "file": "compare/before-mtn-north.jpg",
+            "caption": "North from the tundra, before."
+          },
+          "after": {
+            "file": "compare/after-mtn-north.jpg",
+            "caption": "Now."
+          }
+        }
+      ]
+    },
+    {
+      "id": "lighting",
+      "kicker": "Lighting",
+      "title": "Light that follows the hour, and an eye that adapts",
+      "html": "<p>The big lighting work was done in the earlier rounds: sun shadows in cascades, mountains that shade the valleys, less sky light in gullies and under the forest, leaves that glow with the sun behind them, cloud shadows, valley mist, wet ground after rain, and bloom and sun rays on the High setting. This round adds four things, none of which costs the graphics processor anything worth measuring:</p><ul><li><b>Steam, spray and mist take the light of the hour.</b> Before, every puff of steam, the spray at Bear Falls, splashes, smoke and dust had a fixed colour, so they glowed white in the middle of the night and stayed white at sunset. Now they are lit by the sky and the sun: dark at night like everything else, warm at dawn and dusk. It is worked out once per particle, not per pixel.</li><li><b>Steam and spray glow with a low sun behind them</b>, as water droplets do, so the hot pool and Old Faceful light up at dusk.</li><li><b>Bear Falls and the geyser fall into shadow.</b> They now darken where a mountain or a cloud shades them, like everything else in the world, instead of shining in full sun in a shaded gorge.</li><li><b>The eye adapts.</b> Under the trees, in a cloud's shadow and on a grey day the view opens up by up to 18 % over a second or two, and looking into a low sun it closes down by up to 12 %, the way your eyes and a camera do. Stepping out of the forest into a sunlit meadow, the light is bright for a moment. The night is left as it was.</li></ul>",
+      "pairs": [
+        {
+          "before": {
+            "file": "compare/light-before-steam-dusk.jpg",
+            "caption": "The hot pool against the setting sun in the last commit: white steam."
+          },
+          "after": {
+            "file": "compare/light-after-steam-dusk.jpg",
+            "caption": "This round: the steam takes the sunset's light. (The audit's other fixes also refilled the trout pond on the left and cleared the trees round the geyser field.)"
+          }
+        },
+        {
+          "before": {
+            "file": "compare/light-before-steam-night.jpg",
+            "caption": "The hot pool at one in the morning in the last commit: the steam glowed white."
+          },
+          "after": {
+            "file": "compare/light-after-steam-night.jpg",
+            "caption": "This round: at night the steam is as dark as the night around it."
+          }
+        },
+        {
+          "before": {
+            "file": "compare/light-before-geyser-dusk.jpg",
+            "caption": "Old Faceful at dusk: the last commit."
+          },
+          "after": {
+            "file": "compare/light-after-geyser-dusk.jpg",
+            "caption": "This round."
+          }
+        },
+        {
+          "before": {
+            "file": "compare/light-before-falls-evening.jpg",
+            "caption": "Bear Falls in the evening: the last commit."
+          },
+          "after": {
+            "file": "compare/light-after-falls-evening.jpg",
+            "caption": "This round."
+          }
+        },
+        {
+          "before": {
+            "file": "compare/light-after-forest-noon-off.jpg",
+            "caption": "Deep in the forest at noon with the eye's adaptation switched off."
+          },
+          "after": {
+            "file": "compare/light-after-forest-noon.jpg",
+            "caption": "The same spot as you see it now: adapted to the shade, 15 % brighter."
+          }
+        }
+      ]
+    },
+    {
+      "id": "layout",
+      "kicker": "Screens",
+      "title": "Laid out for every screen size",
+      "html": "<p>The top bar was measured at ten screen sizes with the longest goal the game has, from the smallest iPhone to a desktop window, and on the common iPhone also with the notch's safe areas. Three rules keep it clear:</p><ul><li>The compass and the goal are as wide as the gap between the health bar and the top buttons allows, the notch included; a goal too long for the gap ends in \"...\". Before, a long goal ran under the health bar and the T-shirt button on the most common iPhone size, 844 by 390 points.</li><li>On screens narrower than 1,500 points the clock and the bite readout sit under the buttons; in one row with them they overlapped the compass on an iPad.</li><li>On a phone held upright, or an iPad in a narrow split view, there is no gap: the buttons are smaller, the bite readout sits over the clock, and the compass and the goal move under them, right of the small map. Before, the goal shrank to nothing there, the compass ran over the buttons, the T-shirt button touched the health bar and the bite readout covered the lure.</li></ul><p>The map's buttons are smaller on short screens, and the full map always fills the screen: you can no longer drag past the edge of the world into an empty strip.</p>",
+      "figs": [
+        {
+          "file": "final/layout-sizes/sizes-phone-notch.png",
+          "caption": "The most common iPhone size sideways, with the notch's safe areas: the long goal ends in \"...\"."
+        },
+        {
+          "file": "final/layout-sizes/sizes-portrait.png",
+          "caption": "The same iPhone held upright."
+        },
+        {
+          "file": "final/layout-sizes/sizes-ipad-portrait.png",
+          "caption": "An iPad held upright."
+        },
+        {
+          "file": "final/layout-ipad/ipad-hud-longgoal.png",
+          "caption": "An iPad sideways: the longest goal fits on one line."
+        },
+        {
+          "file": "final/layout-phone-small/se-hud-longgoal.png",
+          "caption": "The smallest iPhone sideways."
+        },
+        {
+          "file": "final/layout-ipad/ipad-map.png",
+          "caption": "The full map on the iPad."
+        }
+      ]
+    },
+    {
+      "id": "audit",
+      "kicker": "The audit",
+      "title": "Every bug found, and what was done about it",
+      "html": "<p>After the features were in, the whole round was audited. Three separate code reviews each took one part (the camera, the jobs and the screens; the three new places; the boat), and I went through the rest myself and ran every feature in the test browser. A fourth review then checked the fixes themselves, and a fifth everything fixed after that (the signs, the lighting, the top bar and the tree check). Altogether 71 problems were found: 51 by the reviews, 8 in my own checks, 4 by the new layout tests and 8 while building and testing. All are fixed. The last column says how each fix was checked: a test means a browser test that drives the game and checks the result, \"code review\" that the fix was read and reasoned through but not played.</p><div class=\"tablewrap\"><table><thead><tr><th>Where</th><th>What was wrong</th><th>The fix</th><th>Checked by</th></tr></thead><tbody><tr><td>Casting</td><td>The help said the dark green line alone makes a PERFECT CAST, but with a gold hotspot on the meter the power must be in the gold too, and the challenge spoke of \"both marks\".</td><td>The help and the challenge say what the rule is.</td><td>Text</td></tr><tr><td>Controls</td><td>DRIVE, TRADE and the other actions could fire from the keyboard with the catch card open.</td><td>Not while the card is up.</td><td>Code review</td></tr><tr><td>RUN</td><td>The RUN button showed while you fished from the anchored boat.</td><td>Hidden in the boat.</td><td>Code review</td></tr><tr><td>Health</td><td>You did not heal in the car, in the boat or fishing from the boat, and a camera shake froze until you walked again.</td><td>Healing and the shake carry on in every mode.</td><td>Code review</td></tr><tr><td>Small map</td><td>The hot rod disappeared from the small map while you were in the boat.</td><td>It shows whenever you are not driving.</td><td>Code review</td></tr><tr><td>Full map</td><td>On short screens the map's buttons crowded the place list; the north mark sat under them.</td><td>Smaller buttons; the north mark in the bottom left.</td><td>Layout tests</td></tr><tr><td>Full map</td><td>You could drag the map past the edge of the world into empty strips.</td><td>The map always fills the screen.</td><td>Screen test</td></tr><tr><td>iPad</td><td>The bite readout overlapped the compass.</td><td>The clock and the bite sit under the buttons below 1,500 pixels.</td><td>iPad layout test</td></tr><tr><td>Small phone</td><td>The compass ran under the top buttons.</td><td>The compass and the goal are sized to the gap between the health bar and the buttons.</td><td>Small phone layout test</td></tr><tr><td>Top bar</td><td>A long goal (the PERFECT cast one) ran under the health bar and the T-shirt button on the most common phone size, 844 by 390; on a phone held upright, or an iPad in a narrow split view, the goal shrank to nothing and the compass ran over the buttons.</td><td>The compass and the goal are sized to the gap between the health bar and the buttons, the notch included; on narrow screens they sit under the top rows, right of the small map.</td><td>Layout test at ten screen sizes</td></tr><tr><td>Odd jobs</td><td>A fish job could hand over a legendary fish worth thousands while a plain fish of the same kind sat in the cooler.</td><td>The cheapest matching fish goes first and legends last; the Collect button names the fish before you hand it over.</td><td>Jobs test: three sockeye handed in, the pink salmon kept</td></tr><tr><td>Odd jobs</td><td>With 14 or 7 jobs open the board offered the same job two or three times (its formula stepped by 7).</td><td>Three different jobs a day.</td><td>Jobs test: the board offered three different jobs</td></tr><tr><td>Odd jobs</td><td>A save holding a job that a later version no longer has would break the jobs tab.</td><td>Unknown jobs are dropped when the save loads.</td><td>Code review</td></tr><tr><td>Odd jobs</td><td>Finishing a job could run with no job in hand.</td><td>Guarded.</td><td>Code review</td></tr><tr><td>Odd jobs</td><td>The ranger's job said \"a grizzly\", but a black bear counts too.</td><td>\"A bear\".</td><td>Text</td></tr><tr><td>Camera</td><td>The stars counted animals outside the part of the screen the picture keeps, and the viewfinder's corners did not match the picture.</td><td>The rating and the corners follow the picture's 16:9 frame.</td><td>Camera test</td></tr><tr><td>Camera</td><td>After the album was lost (full or cleared storage) the magazine paid again for the same animal; full storage stopped the sale and the challenge altogether.</td><td>Sales are kept in the saved game; full storage only warns that the picture may not be kept.</td><td>Camera test</td></tr><tr><td>Camera</td><td>The blur on Bigfoot pictures needs canvas filters, which older Safari lacks.</td><td>Without filters the picture is shrunk and stretched back instead.</td><td>Code review</td></tr><tr><td>Camera</td><td>A seal that had dived still counted as in the picture.</td><td>Only a surfaced seal counts.</td><td>Code review</td></tr><tr><td>Camera</td><td>Trees did not count: Bigfoot, a moose or a bear behind a spruce still rated three stars, and Bigfoot could appear right behind one.</td><td>A tree crown across the line of sight spoils the shot, and Bigfoot only appears where no tree is in the way.</td><td>Jobs and camera tests; Bigfoot simulated from 24 spots</td></tr><tr><td>Camera</td><td>The blur every Bigfoot picture gets did nothing in browsers without canvas filters: the check for them came after a line that makes them look present.</td><td>The check comes first.</td><td>Code review</td></tr><tr><td>Camera</td><td>A save from the previous build kept its album but had no record of what the magazine had bought, so the same animals would sell again and the eight-animals challenge would start from zero.</td><td>Such a save takes the record from the album.</td><td>Code review</td></tr><tr><td>Camera</td><td>In the tree check, a bare snag counted as a full crown, and a birch, aspen or poplar as if its crown reached the ground, so a moose seen under the leaves did not count; the eye's adaptation also took snags for shade.</td><td>Each tree carries its crown from its model: a spruce from its drooping lowest branches up to the tip, a birch from 4 m, an aspen and a poplar from 7 m, a snag only its trunk; only trees in leaf shade the eye.</td><td>Bigfoot simulated from 24 spots; Bigfoot from deep in the forest, through the lens in the browser</td></tr><tr><td>Camera</td><td>The viewfinder gave three stars to Bigfoot hidden behind bushes and fireweed a few metres in front of the lens: only trees and hills counted.</td><td>Bushes, fireweed and ferns along the first 60 m of the line of sight count too, and willows like trees; Bigfoot only steps out where none of them hides him.</td><td>Bigfoot from deep in the forest, through the lens in the browser; sight lines simulated with the real plants</td></tr><tr><td>Camera</td><td>Measured in the browser, the viewfinder still gave three stars to Bigfoot when the grass close in front or the lowest branches of a spruce hid him: 0, 1 and 7 % of him showed in three such cases.</td><td>The grass counts as the game draws it; spruce crowns reach down to their drooping lowest branches and hide all the way out; three lines to the subject (legs, middle, head) are checked, each hidden part costs a star, and Bigfoot needs all three clear.</td><td>Bigfoot's pixels counted in the real view: in 10 appearances rated three stars, 56 to 100 % of him showed, 73 % or more in 8 of them; where he would be hidden he no longer appears</td></tr><tr><td>Bigfoot</td><td>When Bigfoot found nowhere to appear it still waited 10 to 20 minutes before trying again.</td><td>It tries again in 20 seconds; the long rest follows only a sighting.</td><td>Code review</td></tr><tr><td>Bigfoot</td><td>Bigfoot could appear behind a hill, out of sight, and so waste a rare sighting.</td><td>Only where you could see it.</td><td>Jobs test: a three-star look through the lens</td></tr><tr><td>Bigfoot</td><td>Standing inside the lower branches of a spruce or a willow you could not see out, yet Bigfoot could step out there: the check skipped a tree whose trunk was just behind your eye.</td><td>A crown that reaches over your eye counts.</td><td>Bigfoot from deep in the forest, through the lens in the browser; simulated from 24 spots</td></tr><tr><td>Bite readout</td><td>It showed the water of your last cast while you walked somewhere else.</td><td>The water of a cast in progress, else the nearest fishing place.</td><td>Announcer and bite test</td></tr><tr><td>Announcer</td><td>The voice carried on after going back to the title screen, with the app in the background, or after switching the voice off.</td><td>It stops in all three cases.</td><td>Code review</td></tr><tr><td>Arrows</td><td>Topping up a nearly full quiver charged a full pack.</td><td>You pay for the arrows that fit.</td><td>Bears and arrows test</td></tr><tr><td>Wardrobe</td><td>Gloves showed on the hands holding the rod but not on the hands holding a fish or the bow.</td><td>Gloves on every hand.</td><td>Wardrobe test</td></tr><tr><td>Bears</td><td>A grizzly knocking you down during another fade (a soak, a fast travel) left the knockdown unhandled for good, with your health stuck at zero.</td><td>It waits for the fade to end and then patches you up.</td><td>Code review</td></tr><tr><td>Bears</td><td>Waking up three hours after a knockdown late at night did not start a new day.</td><td>The day turns over.</td><td>Code review</td></tr><tr><td>Bears</td><td>Going back to the title screen while a knockdown waited for a fade let it run on the title screen.</td><td>It only runs in a game in play, and leaving for the title cancels it.</td><td>Code review</td></tr><tr><td>Boat</td><td>The sea goes on past the edge of the map, and so could the boat.</td><td>It stops 30 m inside the edge.</td><td>Code review</td></tr><tr><td>Boat</td><td>The boat could go over Bear Falls, a 13-metre drop, or climb it.</td><td>It will not go where the water level jumps; \"Not over the falls. Not today\".</td><td>Boat test: full gas at the lip</td></tr><tr><td>Boat</td><td>The river's current at the rapids could fling the boat.</td><td>The current carries it at no more than 3 m/s.</td><td>Code review</td></tr><tr><td>Boat</td><td>The boat passed through the bridge's middle pier, the pier's pilings, the lake docks and the wreck.</td><td>All are solid below their decks; the boat scrapes round them, and so does anyone wading.</td><td>Boat test: full gas at the bridge pier</td></tr><tr><td>Boat</td><td>LAUNCH from a bridge or a cliff top dropped the boat into water far below.</td><td>Only into water within 2 m below the car.</td><td>Code review</td></tr><tr><td>Boat</td><td>LOAD BOAT worked with the car moving.</td><td>The car must be stopped.</td><td>Code review</td></tr><tr><td>Boat</td><td>BOARD worked from a bridge or pier above the boat, and ASHORE could leave you 7 m away when BOARD only reached 6 m.</td><td>A height check, and BOARD reaches 7.5 m.</td><td>Code review</td></tr><tr><td>Boat</td><td>The trailer's wheels sank through the bridge deck and pitched wildly at a drop.</td><td>They follow the deck; the pitch is limited.</td><td>Code review</td></tr><tr><td>Boat</td><td>Winching onto the trailer aimed at where the trailer was when you tapped.</td><td>It follows the trailer.</td><td>Code review</td></tr><tr><td>Boat</td><td>LAUNCH was ignored now and then: the parked car crept down the bank, so the button flickered.</td><td>A parked car holds on its brake; LAUNCH needs the car still.</td><td>Boat test</td></tr><tr><td>Boat</td><td>A boat left within 30 m of the map edge by the earlier version could not move at all, and a player saved aboard it was stuck.</td><td>Such a boat is back on its trailer when the game loads and you start beside the car; a boat out there can always head back in.</td><td>Boat simulation in node</td></tr><tr><td>Boat</td><td>Rocks lying deep on the lake and sea bottoms stopped the boat on open water with a \"Bonk\" although nothing showed.</td><td>The boat passes over a rock whose top is below its keel; the 11 that reach up to the keel still stop it.</td><td>Simulation over all 123 rocks in water deep enough for the boat, and the 4,611 on land</td></tr><tr><td>Boat</td><td>The hot rod counted as towing one frame late after the boat was winched on.</td><td>Set after the winch.</td><td>Boat test</td></tr><tr><td>Boat</td><td>The change that lets the boat pass over rocks deep on the bottom also let the hot rod, coming downhill, drive into big rocks on land, and someone walking on steep ground step into them.</td><td>Only a rock under water has a height the boat can pass over; on land every rock stops everything.</td><td>Simulation over the whole map: the 118 rocks with that height are all under water; the boat still passes over the 112 below its keel and stops at the 11 near the surface; all 4,611 rocks on land stop a walker and the hot rod coming from their uphill side</td></tr><tr><td>Boat</td><td>Carrying on a game saved aboard a boat that had to go back on its trailer put you beside the car facing backwards, and could put you in water or against a bush.</td><td>You step out of the car the way you do when you leave it: on the dry, free side, facing forward.</td><td>Code review</td></tr><tr><td>Steaming Springs</td><td>The trout pond was dry: the hot pool's rim raised the ground over it. Big Slough at Mosquito Flats was dry the same way.</td><td>Only the nearest lake shapes a shore.</td><td>World check in node: the pond holds 3,944 m² of water up to 5.3 m deep, the slough 6,344 m², and 45 of 45 points in front of each fishing spot are water</td></tr><tr><td>Steaming Springs</td><td>Fish schools and gold hotspots appeared in the hot pool.</td><td>Nothing lives there.</td><td>Code review and areas test</td></tr><tr><td>Steaming Springs</td><td>Old Faceful threw fewer drops on a 120 Hz screen than on a 60 Hz one.</td><td>The spray is counted per second.</td><td>Code review</td></tr><tr><td>Steaming Springs</td><td>Trees grew in the geyser field.</td><td>The clear area is 34 m across the vents.</td><td>Areas test pictures</td></tr><tr><td>Steaming Springs</td><td>A soak that ran past midnight did not start a new day.</td><td>The day turns over.</td><td>Areas test: a soak at 23:30 ended at 0:30 on day 2</td></tr><tr><td>Steaming Springs</td><td>Old Faceful's column was invisible: its shader clashed with the fog code.</td><td>Fixed.</td><td>Areas test pictures</td></tr><tr><td>Mosquito Flats</td><td>Muskeg Road ran on into the slough once it held water again.</td><td>Its last bend removed.</td><td>World check in node</td></tr><tr><td>Mosquito Flats</td><td>The dead snags were kept off the road by the wrong map.</td><td>The road map is used.</td><td>Code review</td></tr><tr><td>Mosquito Flats</td><td>Bug dope only wore off while you walked.</td><td>It counts down in the car and the boat too.</td><td>Code review</td></tr><tr><td>Shipwreck Cove</td><td>The wreck's hull leaned to one side while the deck you walk on was level, so you floated above or sank into the planks.</td><td>No lean.</td><td>Areas test: up the gangplank and onto the deck</td></tr><tr><td>Shipwreck Cove</td><td>You could walk off her sides and stern into the sea.</td><td>Bulwarks and a stern rail you cannot walk through.</td><td>Areas test</td></tr><tr><td>Shipwreck Cove</td><td>The fishing spot on the beach faced the hull: 57 % of casts crossed the wreck and gold hotspots appeared inside it.</td><td>The fishing spot is now her stern deck, facing open water; the car, the signs and the gangplank stay on the beach.</td><td>Areas test: on the deck, 3 m deep water 25 m ahead, 60 of 60 hotspots in deep water and none in the hull</td></tr><tr><td>Shipwreck Cove</td><td>After the fishing spot moved to her stern, it could not be reached on foot: the gap between the wheelhouse and the rail was 0.55 m, narrower than you are.</td><td>The rail now follows her sides in short pieces, and the walk past the wheelhouse is 0.85 m wide.</td><td>The walk simulated with the game's own player and colliders, from the beach up the gangplank and round both sides of the wheelhouse to the stern; the areas test walks it too</td></tr><tr><td>Shipwreck Cove</td><td>You could walk through the hatch, the crab pots, the sea chest and the mast, and step off the gangplank between its rope rails.</td><td>The hatch is a step up; the pots, the chest and the mast are solid; the rope rails hold.</td><td>Walk simulation</td></tr><tr><td>Signs</td><td>The signs at the new places were invisible: they were merged into one mesh with the wrong material.</td><td>Signs stay out of the merge.</td><td>Areas test pictures</td></tr><tr><td>Signs</td><td>Once the signs showed again, each one was drawn as six separate pieces, one per face of its board, and again in every shadow pass.</td><td>A plain board, merged with the other boards nearby, and one painted face: one draw per sign.</td><td>Draw counts in the performance views</td></tr><tr><td>Mountains</td><td>Since before this round the far terrain overlapped the playable ground by 20 m all round the edge of the map: its 40 m grid never met the edge exactly. The finer grid of this round hid it; the reflection's coarse copy brought it back.</td><td>The grid always has the edge lines; the coarse copy takes its heights from the fine one and is made in half the time.</td><td>Mesh check in node: no cell overlaps the playable ground, and the heights match exactly</td></tr><tr><td>Lighting</td><td>Steam, spray, mist, splashes and smoke glowed white at night and stayed white at sunset.</td><td>Lit by the sky and the sun of the hour.</td><td>Lighting views</td></tr><tr><td>Lighting</td><td>Bear Falls and the geyser shone in full sun when a mountain or a cloud shaded them.</td><td>They darken in shadow.</td><td>Lighting views</td></tr><tr><td>Lighting</td><td>The water's reflection redrew the far mountains at the new fine detail every frame: 65,000 triangles a frame it cannot show.</td><td>The reflection keeps its own coarse copy of the far terrain.</td><td>Draw counts in the performance views</td></tr><tr><td>Sound</td><td>Long sounds (the geyser's roar, the outboard) cut off after two seconds.</td><td>The noise loops.</td><td>Code review</td></tr></tbody></table></div>"
+    },
+    {
+      "id": "tests",
+      "kicker": "The tests",
+      "title": "What was tested on the final build",
+      "html": "<p>Each test is a script in <code>tools/scenarios</code> that drives the game in a browser engine with real taps and checks the result; the numbers below are what the final build reported. They were run one at a time on the build machine's software renderer. All 14 tests passed on the final build. Three tests needed fixing themselves along the way, none because of the game: the announcer’s banners pop and fade within two seconds, quicker than the software renderer draws a frame, so that test now runs with reduced motion and holds each banner; with reduced motion every change of layout is a very short transition that lands a frame or two later, so the screen-size test switches transitions off while it measures; and Bigfoot strolls on while the slow renderer aims, so the two Bigfoot tests hold him still between the look through the lens and the picture. The Bigfoot forest test also checks the lens against the picture itself: it paints him a flat magenta and counts how many of his pixels the real view shows.</p><div class=\"tablewrap\"><table><thead><tr><th>Test</th><th>What it does</th><th>What the final build did</th></tr></thead><tbody><tr><td><code>areas</code></td><td>Steaming Springs with Old Faceful blowing, a soak in the hot pool at 23:30, Bear Falls, the mountains, Mosquito Flats and its boardwalk, Shipwreck Cove from the beach, up the gangplank, round the wheelhouse to the stern, and 60 gold hotspots from the stern.</td><td>Passed. 9 steam vents and 2 mud pots at Steaming Springs and the geyser blowing; SOAK at 23:30 ended at 0:30 on day 2 with full health and the challenge paid; the mosquitoes swarmed at the Flats; up the gangplank onto the wreck (the deck challenge paid), then round the wheelhouse to the stern in five legs, ending 0.36 m from the fishing spot at deck height 2.66 m; water 3.0 m deep 25 m ahead; 60 of 60 gold hotspots in deep water and none inside the hull; the cast aim found water.</td></tr><tr><td><code>boat</code></td><td>Buying the boat, LAUNCH from the trailer, BOARD, four seconds of gas, the chase camera, full gas at the bridge pier and at the lip of Bear Falls, FISH at anchor, LOAD BOAT and the save.</td><td>Passed. The boat cost $1,500; LAUNCH from the trailer put it in 0.86 m of water; BOARD from the bank 2.3 m away; four seconds of gas reached 7.6 m/s (27 km/h); the chase camera; full gas from 26 m at the bridge pier: the boat came no closer than 3.28 m to its middle and scraped round it; full gas toward Bear Falls: it stopped 1.2 m short of the 13.1 m drop; FISH anchored it with the rod out, DRIVE offered and no bear able to reach you; LOAD BOAT winched it on and the car was towing it at once; the save kept it on the trailer.</td></tr><tr><td><code>jobs-bigfoot</code></td><td>The odd jobs board, the Bigfoot job, Bigfoot through the 8 times lens, the picture, the reward, the cannery's three sockeye and the album.</td><td>Passed. The board offered three different jobs (a tourist from Ohio, Chef Rosa and a fisheries scientist); with the Bigfoot job taken, from a meadow by the forest at dusk, Bigfoot stepped out 95 m away with no hill, grass, tree or bush between; through the 8 times lens he filled 30 % of the picture for three stars; the picture went into the album, the job was done and paid $1,000; the cannery’s job was not ready with two sockeye and ready with three, and it took the sockeye and left the pink salmon in the cooler.</td></tr><tr><td><code>bigfoot-forest</code></td><td>Bigfoot from three spots deep in the forest at dusk, through the 8 times lens: does he step out only where you can see him?</td><td>Passed. At dusk, from two of the three spots deep in the forest Bigfoot stepped out, 101 m and 125 m away, and the lens gave three stars with all three sight lines clear; painted a flat magenta and counted, 97 % and 62 % of his pixels showed in the frame. From the third spot, with 46 spruce within 30 m, he found no clear spot and did not appear.</td></tr><tr><td><code>ui-check</code></td><td>The title, the small map clear of the buttons, RUN on and off, the full map filling the screen, a tap on Moose Lake, on the river and on Salmon Bend, and the fit button.</td><td>Passed. The small map (80 by 80 points at the top left) does not overlap RUN; RUN lit on the first tap and went out on the second; the full map filled 820 by 370 points of the 844 by 390 screen; Moose Lake showed its six fish with their best hours and the bite there; a tap on the river picked Salmon Bend, 70 m away; the fit button showed the whole map.</td></tr><tr><td><code>timing-bar</code></td><td>The power needle and the ring over the water, the timing marker on the dark green line (a perfect cast into the ring), the orange (hooked left) and the red (a backlash).</td><td>Passed. The ring sat where a cast at that power lands (11.8 m at 30 % power, 19.6 m at 60 %), gold over the hotspot; the white marker swept the timing bar; a tap on the dark green line made a perfect cast that landed 0.00 m from the centre of the ring; a tap in the red at the left end was a backlash. The throw line costs 6 draws and 620 triangles.</td></tr><tr><td><code>bears-arrows</code></td><td>Bears with an empty cooler and with a fish in it, black bears, selling the fish mid-charge, the arrow shop, the arrows chip and a bear whistler past a charging bear.</td><td>Passed. 7 grizzlies and 3 black bears. With an empty cooler a roaming grizzly kept roaming and a stalking one backed off; with one sockeye in the cooler it went alert, charged and attacked; selling the fish mid-alert sent it away. A black bear did the same, and fled after an arrow. All five arrow kinds were on sale; whistlers stopped at 12; a tap on the chip nocked a whistler, and one loosed past a charging bear sent it running. The 7 arrows in a save from before became 7 cedar arrows.</td></tr><tr><td><code>announcer-bite</code></td><td>The bite readout at midday and at dawn with a front and rain, a tap on it, the FISH ON!, NEW SPECIES!, long name and hook-off banners, and the bite on the map.</td><td>Passed. At midday in sunshine the readout said SLOW; at dawn with a front and rain it said HOT, glowed, and the announcer called THE BITE IS ON!; a tap on it explained: Dawn bite, A front is rolling in, Rain on the water. The banners FISH ON!, NEW SPECIES! NORTHERN PIKE!, a long species name and OH NO, THE HOOK CAME OFF! all showed, and are in the pictures. Halibut Pier on the map listed its 16 fish with their best times (running tide, dawn, night, rain) and the bite there.</td></tr><tr><td><code>wardrobe</code></td><td>The T-shirt button and the top bar, buying and wearing clothes, not enough money, the sleeves and gloves in first person, Ruben at the wheel and the save.</td><td>Passed. The T-shirt button sits with the map, journal and pause buttons, the bite readout and clock under them; the wardrobe offered 34 options; the Hawaiian shirt cost $120; the antler hat was refused with $30 left and bought after; the whole look (shirt, brown skin, antler hat, handlebar mustache, ginger hair, fingerless wool gloves) showed on the portrait, on 96 of the 396 sleeve vertices in first person and on Ruben at the wheel, and survived a save.</td></tr><tr><td><code>camera</code></td><td>Buying the camera, the viewfinder on a moose at 4 and 1 times, a three-star picture and its sale, the catch card's camera button and the album.</td><td>Passed. The camera cost $250; at 4 times the viewfinder named the moose 30 m away, with three stars once the lens had zoomed in; the picture went into the album with three stars and Alaska Outdoors paid $40 for it; the catch card’s camera button took a three-star picture of a sockeye and then greyed out; the album showed 65 pages, two with pictures; the stored album took 21 KB.</td></tr><tr><td><code>catch</code></td><td>A whole catch with real taps: cast, bite, hook, fight and land, then the journal, the map, the shop and the tackle tab.</td><td>Passed. CAST, power set at 60 %, the timing tap, the flight and the landing; a bite, HOOK and the fight; the catch card showed a Dolly Varden; KEEP put it in the cooler and the first challenge paid $50; the journal, the map, the shop and the tackle tab opened.</td></tr><tr><td><code>layout-ipad</code></td><td>The title, the top bar, the map, the wardrobe and the jobs on an iPad-sized screen (1180 by 820).</td><td>Passed. On the 1180 by 820 screen no two controls on the playing screen overlapped, also with the longest goal, which fits on one line (603 points wide); the map filled the screen; the wardrobe showed all 34 options without scrolling, and the jobs board its three jobs side by side.</td></tr><tr><td><code>layout-phone-small</code></td><td>The same on a small phone (667 by 375).</td><td>Passed. On the 667 by 375 screen no two controls on the playing screen overlapped, also with the longest goal: the compass (253 points) and the goal (259 points, ending in \"...\") keep to the gap between the health bar and the top buttons; the map, the wardrobe and the jobs board open as scrolling sheets.</td></tr><tr><td><code>layout-sizes</code></td><td>The top bar with the longest goal at ten screen sizes: the common iPhone sideways (844 by 390), with and without the notch's safe areas; the largest and the smallest iPhone sideways; an iPhone held upright; an iPad Air upright, sideways and in a narrow split view; a 12.9-inch iPad Pro sideways; and desktop windows 1,500 and 1,920 wide.</td><td>Passed. At all ten sizes, and on the common iPhone also with the notch's 59-point safe areas, no two controls on the playing screen overlapped with the longest goal showing. The goal fits on one line on the iPads sideways and 1,920 points wide (603 points) and ends in \"...\" elsewhere, from 230 points on a phone held upright to 560 at 1,500 wide; with the notch the compass and the goal narrow to 318 points between the health bar and the buttons; on the phone held upright and in the narrow split view they sit under the top rows.</td></tr></tbody></table></div><p>Some fixes are about the world's shape and the colliders, which are quicker and more thorough to check in node with the game's own code than by playing:</p><div class=\"tablewrap\"><table><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody><tr><td>The trout pond at Steaming Springs and Big Slough</td><td>Both hold water again: 3,944 m² up to 5.3 m deep, and 6,344 m². 45 of 45 points in front of each new fishing spot are water.</td></tr><tr><td>Casting from Shipwreck Cove</td><td>From the old spot on the beach, 57 % of cast lines crossed the hull. From the stern, every point a cast can reach is water, deep enough for gold hotspots.</td></tr><tr><td>The walk to the stern</td><td>From the beach up the gangplank and round either side of the wheelhouse to the fishing spot, also when weaving; walking into the crab pots is blocked; the hatch is a 0.44 m step up.</td></tr><tr><td>Rocks under the boat and on land</td><td>Only the 118 rocks under water have a height the boat can pass over. 112 of them lie below the keel in water deep enough for the boat, and the boat passes over all of them; the 11 that reach up to the keel still stop it. All 4,611 rocks on land stop someone walking and the hot rod coming at them from their uphill side.</td></tr><tr><td>A boat beyond the margin</td><td>A save with the boat 8 m from the map edge loads with the boat on its trailer. A boat out there drives back inside the margin within 10 seconds; heading out to sea, it stops 30 m inside the edge.</td></tr><tr><td>The bridge pier</td><td>The fourth review drove the boat at the pier from every side offset between 6 m left and 6 m right: it never passed through.</td></tr><tr><td>Bigfoot in sight</td><td>With the real trees, willows, bushes, fireweed, ferns and grass, checked along three lines to him: from 12 meadows by the forest he stepped out at 11 (45 looks in all); at the twelfth you stand in a willow's leaves, where no look is clear. From 12 spots deep in the forest he stepped out at 11 (107 looks); the twelfth is thick spruce. Where he finds no clear spot, the game tries again 20 seconds later.</td></tr><tr><td>Bushes and flowers in the way</td><td>Of 480 random sight lines 40 to 140 m long from a standing eye to something 1.2 m tall, bushes, fireweed or ferns block 22 % from a meadow by the forest and 29 % in deep forest (tree crowns 51 % and 80 %). One check takes about 4 microseconds.</td></tr><tr><td>The far terrain at the map edge</td><td>No cell of the far terrain or of its coarse copy for the reflection overlaps the playable ground. The copy's heights match a fresh calculation exactly, and it is made in half the time.</td></tr><tr><td>The sharper textures</td><td>Made in 1.1 seconds instead of 0.3 on the build machine.</td></tr></tbody></table></div>",
+      "figs": [
+        {
+          "file": "final/bigfoot-forest/forest-1.png",
+          "caption": "Deep in the forest at dusk, 101 m away: three stars, and 97 % of him shows in the frame."
+        },
+        {
+          "file": "final/bigfoot-forest/forest-2.png",
+          "caption": "Among spruce, 125 m away: three stars, and 62 % of him shows."
+        },
+        {
+          "file": "final/layout-sizes/sizes-desktop.png",
+          "caption": "A desktop window 1,920 wide: the longest goal fits on one line."
+        }
+      ]
+    },
+    {
+      "id": "performance",
+      "kicker": "The cost",
+      "title": "What all this costs the phone",
+      "html": "<p>The same eight views as in the earlier rounds, on the High setting, in the build before this round and in this one, plus the three new places. Draw calls and triangles are counted exactly for each frame, but animals, birds and particles move between runs, so the same view varies by up to about 3 % in triangles and a dozen draws from one run to the next; the software renderer's frame times say nothing about a phone and are left out.</p><div class=\"tablewrap\"><table><thead><tr><th>View</th><th class=\"n\">Draws before</th><th class=\"n\">Draws now</th><th class=\"n\">Triangles before</th><th class=\"n\">Triangles now</th><th class=\"n\">Change</th></tr></thead><tbody><tr><td>Hotrod Landing</td><td class=\"n\">238</td><td class=\"n\">241</td><td class=\"n\">1,083,188</td><td class=\"n\">1,142,356</td><td class=\"n\">+5 %</td></tr><tr><td>Salmon Bend</td><td class=\"n\">292</td><td class=\"n\">254</td><td class=\"n\">1,140,739</td><td class=\"n\">1,168,350</td><td class=\"n\">+2 %</td></tr><tr><td>Bear Falls</td><td class=\"n\">236</td><td class=\"n\">226</td><td class=\"n\">1,135,228</td><td class=\"n\">1,193,653</td><td class=\"n\">+5 %</td></tr><tr><td>Glacier Lake</td><td class=\"n\">179</td><td class=\"n\">176</td><td class=\"n\">755,527</td><td class=\"n\">830,919</td><td class=\"n\">+10 %</td></tr><tr><td>Moose Lake</td><td class=\"n\">220</td><td class=\"n\">224</td><td class=\"n\">965,984</td><td class=\"n\">1,092,498</td><td class=\"n\">+13 %</td></tr><tr><td>Halibut Pier</td><td class=\"n\">134</td><td class=\"n\">112</td><td class=\"n\">454,480</td><td class=\"n\">517,232</td><td class=\"n\">+14 %</td></tr><tr><td>Caribou Tundra</td><td class=\"n\">150</td><td class=\"n\">143</td><td class=\"n\">750,073</td><td class=\"n\">808,218</td><td class=\"n\">+8 %</td></tr><tr><td>Deep forest</td><td class=\"n\">290</td><td class=\"n\">280</td><td class=\"n\">1,517,375</td><td class=\"n\">1,571,694</td><td class=\"n\">+4 %</td></tr><tr><td>Steaming Springs (new)</td><td class=\"n\">–</td><td class=\"n\">161</td><td class=\"n\">–</td><td class=\"n\">797,813</td><td class=\"n\">–</td></tr><tr><td>Mosquito Flats (new)</td><td class=\"n\">–</td><td class=\"n\">186</td><td class=\"n\">–</td><td class=\"n\">875,184</td><td class=\"n\">–</td></tr><tr><td>Shipwreck Cove (new)</td><td class=\"n\">–</td><td class=\"n\">156</td><td class=\"n\">–</td><td class=\"n\">551,123</td><td class=\"n\">–</td></tr></tbody></table></div><p>Across the eight views the draws went from 1,739 to 1,656 (-5 %) and the triangles from 7,802,594 to 8,324,920 (+7 %).</p><ul><li><b>The mountains</b> account for most of the extra triangles: the finer band of far terrain is 128,000 triangles instead of 61,488, in the one draw that was there before. The water's reflection, which redraws the surroundings a face at a time every frame, at first got the fine copy too; it now keeps its own coarse copy, since its 128 to 256 pixel faces cannot show the detail. The views already held about 980,000 triangles on average. The crags and gullies are two texture reads per pixel, on far steep slopes only.</li><li><b>Bear Falls</b> is four draws and about 3,000 triangles.</li><li><b>The loading screen</b> is about one second longer on the build machine: the sharper textures take 1.1 seconds to make instead of 0.3 and about 6 MB more graphics memory (reading them costs the same as before), and the reflection's coarse copy of the mountains, which takes its heights from the fine one, about a tenth of a second more.</li><li><b>The new lighting</b> costs nothing measurable: the particles' light is worked out once per particle, the falls and the geyser read the shadow maps every material already reads, and the eye adaptation is one number for the tone mapping, set on the main processor from a count of nearby trees four times a second.</li><li><b>The boat, Bigfoot and the camera</b> draw only when they are there: the boat, the trailer and its two wheels are four draws, Bigfoot five while he walks, and the camera adds nothing until you take a picture, when it copies one frame into a small picture.</li><li><b>The announcer</b> uses the phone's own speech, so it adds nothing to the download.</li></ul>"
+    },
+    {
+      "id": "conclusion",
+      "cls": "conclusion",
+      "kicker": "Limits of these results",
+      "title": "What would change this conclusion",
+      "html": "<p>The conclusion is that everything on your list is done and the audit's bugs are fixed. These would change it:</p><ul><li><b>A real iPhone falling below 60 frames a second</b> at the new places. All measurements here come from a software renderer on the build machine, which counts draws and triangles exactly but says little about a phone's graphics processor. The heaviest new sights are the steam at Steaming Springs and Old Faceful blowing (both share the particle budget the game already had) and the mountains' doubled triangles. If a phone struggles there, the first levers are the far terrain band back to 40 metres on the Medium and Low settings and fewer steam puffs.</li><li><b>The announcer's voice on your phone.</b> It uses the phone's own speech voices, pitched down and sped up, so how it sounds depends on the voices installed. If it sounds flat or robotic, the fix is a set of recorded lines, which would add to the download.</li><li><b>How the boat handles under a thumb.</b> The steering, the speed and the scrape against piers were tuned with test input in a desktop browser engine. Each is one number.</li><li><b>The eye adaptation and the lit steam on a phone screen outdoors.</b> Both were judged on a desktop monitor. The adaptation's range (up to 18 % brighter, 12 % darker) and the steam's glow are each one number.</li><li><b>What a picture counts as hidden.</b> The camera's stars take account of hills, the grass, tree crowns, willows, bushes, fireweed and ferns with the sizes and shapes the game draws, along three lines to the animal, but not fallen logs, rocks or the small flowers. In the browser, where the lens said three stars for Bigfoot, 56 to 100 % of him showed, so a picture can be rated a little generously when an animal is a third hidden. If that bothers you on the phone, more lines can be checked.</li><li><b>The game's balance.</b> The prices of the rods, arrows, boat and camera, the jobs' rewards, how often a bear comes for your fish and how rarely Bigfoot shows up were set by reasoning, not by playing for hours. If Bigfoot never shows for you, it can be made less shy.</li><li><b>The loading screen.</b> The sharper textures and the reflection's copy of the mountains add about one second on the build machine. If it feels long on an older phone, the big ground texture can be made in the background after the game starts.</li><li><b>The iPhone app.</b> It carries its own copy of the game and has not been built again; until it is, it does not have this round.</li></ul>"
+    }
+  ],
+  "footer": "<p>Built on the <code>claude/ruben-hotrod-fishing</code> branch: <a href=\"https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing\">the code on GitHub</a>, the <a href=\"https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/README.md\">README</a> and <a href=\"https://claude.ai/artifact/3urJEG61Boov67ViABm26A\">the playable build</a>. The game runs on <a href=\"https://threejs.org/\">three.js</a> (<a href=\"https://threejs.org/docs/\">documentation</a>). Background reading: <a href=\"https://en.wikipedia.org/wiki/Sega_Bass_Fishing\">Sega Bass Fishing</a> for the announcer, <a href=\"https://en.wikipedia.org/wiki/Geyser\">geysers</a>, <a href=\"https://en.wikipedia.org/wiki/Mudpot\">mud pots</a> and <a href=\"https://en.wikipedia.org/wiki/Sinter\">sinter</a> for Steaming Springs, <a href=\"https://en.wikipedia.org/wiki/Muskeg\">muskeg</a> for Mosquito Flats, <a href=\"https://en.wikipedia.org/wiki/Weather_front\">weather fronts</a> and <a href=\"https://en.wikipedia.org/wiki/Tide\">tides</a> for the bite, <a href=\"https://en.wikipedia.org/wiki/Mipmap\">mipmaps</a> for why bigger textures cost little to draw, and <a href=\"https://en.wikipedia.org/wiki/Adaptation_(eye)\">the eye's adaptation to light</a>. The fish follow what lives in south-central Alaska: <a href=\"https://en.wikipedia.org/wiki/Inconnu\">sheefish</a>, <a href=\"https://en.wikipedia.org/wiki/Alaska_blackfish\">Alaska blackfish</a>, <a href=\"https://en.wikipedia.org/wiki/Wolf_eel\">wolf eel</a>, <a href=\"https://en.wikipedia.org/wiki/Lingcod\">lingcod</a> and <a href=\"https://en.wikipedia.org/wiki/Northern_pike\">northern pike</a>. The build machine's network policy blocks these sites, so the links were written from knowledge and not opened from there. Prices in the game are the game's own dollars.</p>"
+}
