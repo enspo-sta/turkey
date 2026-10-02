@@ -1098,10 +1098,14 @@ export const PAINTS = [
   { id: 'black', name: 'Midnight Black', price: 400, base: '#15161a', a: '#ffcf3a', b: '#ff4a12' },
   { id: 'teal', name: 'Candy Teal', price: 400, base: '#0f6a72', a: '#ffe89a', b: '#ff8a3a' },
   { id: 'orange', name: 'Ruben Orange', price: 400, base: '#d2561a', a: '#fff0a0', b: '#ffd23a' },
+  // not sold: found on Ruben's first hot rod, rusting in the woods (see
+  // world/oddities.js); matte, the flames faded
+  { id: 'rust', name: 'Barn-find Rust', price: 0, found: 'rustbucket', base: '#7a3a1c', a: '#c8a070', b: '#9a5a2a', rough: 0.82, metal: 0.12 },
 ];
 
 // The wardrobe. Shirts show on your sleeves and on Ruben at the wheel; skin,
-// beard and hat show on him too. A few loud pieces cost money.
+// beard and hat show on him too. A few loud pieces cost money, and two hats
+// are not sold at all: they are out in the woods.
 export const LOOKS = {
   shirt: [
     { id: 'red', name: 'Red flannel', main: 0xb2261e, band: 0x7a1812, price: 0 },
@@ -1128,6 +1132,9 @@ export const LOOKS = {
     { id: 'bucket', name: 'Bucket hat', color: 0x8a8a5a, price: 0 },
     { id: 'cowboy', name: 'Cowboy hat', color: 0x6a4a2a, price: 0 },
     { id: 'antler', name: 'Moose antler hat', color: 0x7a5a36, horn: 0xd9c8a0, price: 250 },
+    // not sold: found in the woods (see world/oddities.js)
+    { id: 'tinfoil', name: 'Tinfoil hat', color: 0xc8ccd2, price: 0, found: 'ufo' },
+    { id: 'santa', name: 'Santa hat', color: 0xc4261c, trim: 0xf2efe8, price: 0, found: 'xmastree' },
     { id: 'none', name: 'No hat', price: 0 },
   ],
   beard: [
@@ -1229,8 +1236,10 @@ export const CHALLENGES = [
   { id: 'soak', text: 'Soak in the hot pool at Steaming Springs', reward: 150 },
   { id: 'sheefish', text: 'Catch a Sheefish at Mosquito Flats', reward: 500 },
   { id: 'deck', text: 'Walk the gangplank onto the Unsinkable II at Shipwreck Cove', reward: 120 },
+  { id: 'strange3', text: 'Find 3 strange things in the woods (the Journal keeps the rumours)', reward: 250 },
   { id: 'wolfeel', text: 'Land a Wolf Eel at Shipwreck Cove', reward: 900 },
   { id: 'photo', text: 'Photograph 8 different animals with the camera', reward: 400 },
+  { id: 'strangeall', text: 'Find all 10 strange things in the woods', reward: 1000 },
   { id: 'journal', text: `Complete the Fish Journal (all ${SPECIES_IDS.length} species)`, reward: 5000 },
 ];
 

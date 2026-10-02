@@ -1,0 +1,49 @@
+{
+ "width": 960,
+ "height": 540,
+ "timeout": 240000,
+ "steps": [
+  {
+   "wait": 1500
+  },
+  {
+   "eval": "__rhf.start(false)"
+  },
+  {
+   "wait": 5000
+  },
+  {
+   "eval": "(() => {\n  const g = __rhf.game;\n  g.state.settings.autoQuality = false;\n  g.setQuality('high');\n  g.dpr = 1;\n  g.renderer.setPixelRatio(1);\n  g.resize();\n  g.bears.directorT = 1e9;\n  const we = g.env.weather;\n  we.cloud = we.cloudTarget = 0.25;\n  we.rain = we.rainTarget = 0;\n  we.timer = 1e9;\n  g.env.timeScale = 0;\n  g.env.setTime(10.5);\n  g.hud.firstShown = -1000;\n  g.hud.hint('', 0);\n  g.hud.show(false);\n  __rhf.god(true);\n  g.wildlife.threatPos = () => ({ x: 1e7, z: 1e7, loud: 0 });\n  g.player.tool = 'none';\n  g.viewmodel.setTool('none');\n  // stand dist metres from a point, in the direction ang from its front, and look at it\n  window.__look = (cx, cy, cz, front, ang, dist, time = 10.5) => {\n    const P = g.player;\n    g.env.setTime(time);\n    const x = cx + Math.sin(front + ang) * dist;\n    const z = cz + Math.cos(front + ang) * dist;\n    P.place(x, z, 0);\n    const ey = P.pos.y + 1.66;\n    P.yaw = Math.atan2(-(cx - x), -(cz - z));\n    P.pitch = Math.atan2(cy - ey, Math.hypot(cx - x, cz - z));\n    __rhf.settle();\n    return 'at ' + x.toFixed(1) + ',' + z.toFixed(1) + ',' + P.pos.y.toFixed(2) + ' looking at ' + cx.toFixed(1) + ',' + cz.toFixed(1);\n  };\n  const L = g.props.layout;\n  return 'cabin ' + JSON.stringify(L.cabin) + ' post ' + JSON.stringify(L.post);\n})()"
+  },
+  {
+   "wait": 2000
+  },
+  {
+   "eval": "(() => { const g = __rhf.game; const O = g.props.oddities; const o = O.rustbucket;  return __look(o.x, o.y + 0.8, o.z, o.yaw, 0.75, 6.2, 10.5); })()"
+  },
+  {
+   "wait": 2500
+  },
+  {
+   "shot": "odd-rustbucket.jpg"
+  },
+  {
+   "eval": "(() => { const g = __rhf.game; const O = g.props.oddities; const o = O.payphone;  return __look(o.x, o.y + 1.3, o.z, o.yaw, 0.3, 3.0, 10.5); })()"
+  },
+  {
+   "wait": 2500
+  },
+  {
+   "shot": "odd-payphone.jpg"
+  },
+  {
+   "eval": "(() => { const g = __rhf.game; const O = g.props.oddities; const o = O.stones;  return __look(o.x, o.y + 1.2, o.z, o.yaw, 0.3, 10.5, 10.5); })()"
+  },
+  {
+   "wait": 2500
+  },
+  {
+   "shot": "odd-stones.jpg"
+  }
+ ]
+}

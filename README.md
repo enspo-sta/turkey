@@ -76,6 +76,12 @@ What changed in the latest round, with pictures, the audit and the tests:
   the wreck at Shipwreck Cove. Each has its own
   waters, lure preferences and fighting style. Rarer fish bite less often and
   are worth more, and a cast to a hotspot or a perfect cast raises the odds.
+- The fish you land look wet and alive in your hands and in the catch photo:
+  rounded bodies on each species' own outline with the step of the gill cover,
+  fine scales, the lateral line and the species' own marks painted on, fins of
+  rays with clear membrane between, eyes with a coloured iris and a pupil,
+  barbels on the cod and the burbot, and a wet clear coat with a rainbow sheen
+  on the salmon, the trout and the whitefish.
 - Nine legendary fish, each at its own spot and only on the right lure: Miss
   Dolly, Rusty the Leopard, Old Chrome, The Ice Ghost, Big Bertha, Barn Door,
   Old Steamy, Sheezilla and Davy Jones.
@@ -201,6 +207,11 @@ What changed in the latest round, with pictures, the audit and the tests:
 - Bigfoot. Very rarely, at dawn or dusk, something big and hairy strolls along
   the forest edge a long way off and is gone. Get a picture: the late-night
   radio show pays well. It comes out blurry, as tradition demands.
+- Strange things in the woods, on no map: ten oddities in the forests a short
+  walk off the roads. Walk up to one to find it; the Journal keeps what you
+  found, and a rumour for each one still out there, under Challenges. Some can
+  be opened, answered or knocked on, and a few give you something you cannot
+  buy. Two challenges pay for finding three and for finding all ten.
 - A secret on the mountain, on no map. From Hotrod Landing, the Trading Post
   or Glacier Lake, keep an eye on the high peaks to the west: something up
   there glints in the sun now and then, and glows after dark.
@@ -236,6 +247,34 @@ What changed in the latest round, with pictures, the audit and the tests:
 - A save made in the air keeps the edge you launched from: Continue puts you
   back there with the paraglider.
 
+</details>
+
+<details>
+<summary>The strange things in the woods (spoilers)</summary>
+
+- A fridge humming in the spruce east of the Trading Post, its cord running
+  off into the moss. **OPEN** it once for $40.
+- A fairy ring of red toadstools north-west of Moose Lake whose spots glow at
+  night. Step inside once a day for an hour of fairy luck: the fish bite half
+  as well again (the bite readout says so).
+- A flying saucer nose down in a crater north of Steaming Springs, its rim
+  lights green at night and its hatch open. **LOOK INSIDE** for a tinfoil hat.
+- Bigfoot's hut of whole young trees south-west of Mosquito Flats, with fresh
+  fish bones by the door and very big footprints.
+- Ruben's first hot rod, rusted through, with a spruce growing up through the
+  engine, south-west of the Trading Post. **LOOK** at it and the garage paints
+  yours to match for free: Barn-find Rust.
+- A payphone on a pole in the forest north-east of Halibut Pier. It rings as
+  you come near; **ANSWER** it.
+- Nine standing stones in a ring south-west of Glacier Lake, runes on three of
+  them glowing blue at night.
+- A Christmas tree, decorated and lit all year, west of Steaming Springs.
+  **OPEN PRESENT** for a Santa hat.
+- A garden gnome with a fishing rod south-west of Caribou Tundra. He stands
+  somewhere else every day.
+- A tiny door at the foot of an old spruce south-east of Bear Falls, with two
+  round windows lit at night. **KNOCK** after dark (from about 23:00 to
+  04:00, while its windows are lit).
 </details>
 
 **World and graphics**
@@ -296,9 +335,9 @@ What changed in the latest round, with pictures, the audit and the tests:
   lights, rain showers, a waterfall with mist, a glacier that calves slabs of
   ice into Glacier Lake with a boom and a wave, a lighthouse beam at night, and
   animals that react to where you are.
-- 25 challenges with cash rewards guide you through the game, from "Catch your
-  first fish at Hotrod Landing" through the boat, the springs, the wreck and
-  the camera to "Complete the Fish Journal".
+- 27 challenges with cash rewards guide you through the game, from "Catch your
+  first fish at Hotrod Landing" through the boat, the springs, the wreck, the
+  strange things in the woods and the camera to "Complete the Fish Journal".
 - Progress saves automatically.
 - Graphics presets in Settings. High is the default (the game is made for
   iPhone 13 and newer) and adds a soft bloom on bright light, sun rays through
@@ -455,7 +494,8 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/entities/player.js`, `hotrod.js`, `boat.js`, `viewmodel.js` | Walking, the drivable hot rod, the fishing boat and its trailer, and the first-person rod, longbow and hands in the clothes from the wardrobe |
 | `src/entities/glider.js` | The paraglider: launching from an edge, flying, steering, landing and the wing overhead |
 | `src/world/secret.js` | The secret on the mountain (spoilers): Gus's launch, the cairns, the grotto on the ledge, the chest behind Bear Falls, the glint and the lanterns |
-| `src/entities/wildlife.js`, `animalmodels.js`, `fishmodels.js`, `ambientfish.js` | Animal and bird behaviour and their low-poly models, the 28 fish models, and the fish schools you can see in the water |
+| `src/world/oddities.js` | The strange things in the woods (spoilers): where the ten stand, their models, and finding them, the ringing payphone, the humming, the wandering gnome, the fairy ring's luck and what each gives |
+| `src/entities/wildlife.js`, `animalmodels.js`, `fishmodels.js`, `ambientfish.js` | Animal and bird behaviour and their low-poly models, the 31 fish models, and the fish schools you can see in the water |
 | `src/gameplay/fishing.js` | Casting meter, float and bites, the fight, landing, the eagle, and catches |
 | `src/gameplay/hunting.js`, `bears.js` | The longbow, the five kinds of arrow in flight and their hit zones, and the grizzly and black bear encounters |
 | `src/gameplay/bite.js` | How hungry the fish are: time of day, fronts, rain, sunshine and the tide, and each species' own hours |
@@ -516,6 +556,14 @@ node tools/shot.mjs tools/scenarios/buildings-4.json  # the bait shack and the d
 node tools/shot.mjs tools/scenarios/buildings-5.json  # the keeper's house from the sea side, the tundra lookout, the Bear Falls platform and the Moose Lake dock with its rowboat
 node tools/shot.mjs tools/scenarios/buildings-6.json  # Mosquito Flats and the wreck at Shipwreck Cove
 node tools/shot.mjs tools/scenarios/perf-buildings.json # draw calls, triangles and frame time at the cabin, the Trading Post, Kachemak Light and Halibut Pier
+node tools/shot.mjs tools/scenarios/oddities-1.json  # (spoilers) the fridge, the fairy ring, the crash site and Bigfoot's hut
+node tools/shot.mjs tools/scenarios/oddities-2.json  # (spoilers) Ruben's first car, the payphone and the standing stones
+node tools/shot.mjs tools/scenarios/oddities-3.json  # (spoilers) the Christmas tree, the gnome and the door in the tree
+node tools/shot.mjs tools/scenarios/oddities-4.json  # (spoilers) the fairy ring, the Christmas tree and the stones at night
+node tools/shot.mjs tools/scenarios/oddities-5.json  # (spoilers) the crash site and the door in the tree at night
+node tools/shot.mjs tools/scenarios/oddities-6.json  # (spoilers) the tinfoil and Santa hats in the wardrobe, the Journal's list and the hot rod in Barn-find Rust
+node tools/shot.mjs tools/scenarios/fish-look-1.json # a King Salmon, a Rainbow Trout, a Dolly Varden and a Northern Pike held up close
+node tools/shot.mjs tools/scenarios/fish-look-2.json # a Yelloweye Rockfish, an Arctic Grayling, a Pacific Halibut and a Coastal Cutthroat Trout held up close
 node tools/shot.mjs tools/scenarios/minimap.json      # the small map on foot and driving, its goal marker, and a tap to the full map
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot
 node tools/shot.mjs tools/scenarios/fish-views.json   # fish schools, a fish approaching the float and the fight

@@ -274,7 +274,7 @@ function buildFlats(P, L) {
       const w = new ModelBuilder();
       const tone = new THREE.Color(WOOD_LIGHT).multiplyScalar(0.86 + rand() * 0.2).getHex();
       w.box(1.6, 0.06, seg - 0.02, { pos: [0, -0.03, 0], color: tone, surf: 'deck', jitter: 0.02 });
-      for (const sd of [-1, 1]) w.box(0.08, 0.14, seg - 0.02, { pos: [sd * 0.74, -0.12, 0], color: WOOD_DARK, surf: 'plank' });
+      for (const sd of [-1, 1]) w.box(seg - 0.02, 0.14, 0.08, { pos: [sd * 0.74, -0.12, 0], rot: [0, Math.PI / 2, 0], color: WOOD_DARK, surf: 'plank' });
       for (const sd of [-1, 1]) for (const zz of [-seg / 2 + 0.3, seg / 2 - 0.3]) w.cyl(0.07, 0.08, 0.9, 7, { pos: [sd * 0.7, -0.45, zz], color: WOOD_DARK, surf: 'log' });
       P.addMesh(w.build(), cx, top, cz, yaw);
       P.colliders.addDeck(cx, cz, 0.85, seg / 2 + 0.05, yaw, top);
@@ -497,7 +497,7 @@ function buildWreck(P) {
   const f = frame(w.x, w.z, w.yaw);
   // rusty steel: a little metal, mostly rough (with the finishes: deck
   // planks, the wheelhouse's boards)
-  if (!P.rustMat) P.rustMat = finishMaterial(P.finishTex, { roughness: 0.78, metalness: 0.25, key: 'rust' });
+  if (!P.rustMat) P.rustMat = finishMaterial(P.finishTex, { roughness: 0.78, metalness: 0.25 });
   const m = P.addMesh(b.build(), w.x, baseY, w.z, w.yaw, P.rustMat);
   m.rotation.set(-pitch, w.yaw, roll, 'YXZ');
   m.updateMatrix();
@@ -538,7 +538,7 @@ function buildWreck(P) {
   const ga = Math.atan(slope);
   const gl = Math.hypot(len, len * slope);
   plank.box(1.3, 0.07, gl, { pos: [0, -0.03, 0], rot: [-ga, 0, 0], color: WOOD_LIGHT, surf: 'deck' });
-  for (const sd of [-1, 1]) plank.box(0.08, 0.16, gl, { pos: [sd * 0.6, -0.12, 0], rot: [-ga, 0, 0], color: WOOD_DARK, surf: 'plank' });
+  for (const sd of [-1, 1]) plank.box(gl, 0.16, 0.08, { pos: [sd * 0.6, -0.12, 0], rot: [-ga, Math.PI / 2, 0], color: WOOD_DARK, surf: 'plank' });
   const n = Math.floor(len / 0.45);
   for (let i = 1; i < n; i++) {
     const t = i / n - 0.5;

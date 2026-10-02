@@ -5,6 +5,7 @@ import { PHOTO_SUBJECTS, PHOTO_GROUPS, CAMERA_PRICE } from '../gameplay/camera.j
 import { BOAT } from '../entities/boat.js';
 import { jobGoal } from '../gameplay/jobs.js';
 import { FISH, SPECIES_IDS, LEGENDS, LURES, RODS, COOLERS, ENGINES, TIRES, PAINTS, GEAR, GAME, CHALLENGES, ARROWS, ARROW_ORDER, LOOKS, lookColors, RARITY, RARITY_ORDER, timingGradient, placeSpecies } from '../gameplay/data.js';
+import { ODDITIES } from '../world/oddities.js';
 import { GUS_NOTES } from '../world/secret.js';
 import { formatMoney, formatTime, clamp } from '../util/math.js';
 import { privacyHTML, PRIVACY_UPDATED } from './privacy.js';
@@ -410,6 +411,67 @@ function drawPortrait(canvas, look) {
     g.ellipse(cx, 98, 41, 32, 0, Math.PI, Math.PI * 2);
     g.fill();
     g.fillRect(cx - 41, 94, 82, 8);
+  } else if (Ht.id === 'tinfoil') {
+    // crumpled into a point by hand, every crease catching the light
+    const foil = g.createLinearGradient(cx - 44, 0, cx + 44, 0);
+    foil.addColorStop(0, '#8e949c');
+    foil.addColorStop(0.35, '#eef1f4');
+    foil.addColorStop(0.6, '#b4bac2');
+    foil.addColorStop(1, '#7c828a');
+    g.fillStyle = foil;
+    const edge = [
+      [-44, 102], [-40, 90], [-34, 82], [-30, 70], [-22, 62], [-17, 50], [-9, 42], [-2, 26], [4, 34], [10, 44], [18, 52], [24, 64], [32, 72], [36, 84], [43, 92], [45, 102], [30, 98], [16, 104], [0, 99], [-16, 104], [-30, 98],
+    ];
+    g.beginPath();
+    edge.forEach(([x, y], i) => (i ? g.lineTo(cx + x, y) : g.moveTo(cx + x, y)));
+    g.closePath();
+    g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.75)';
+    g.lineWidth = 1.5;
+    g.beginPath();
+    for (const [x0, y0, x1, y1] of [
+      [-28, 92, -12, 70], [-12, 70, -6, 46], [6, 96, 2, 62], [2, 62, 8, 44], [24, 92, 18, 66], [-36, 98, -24, 84],
+    ]) {
+      g.moveTo(cx + x0, y0);
+      g.lineTo(cx + x1, y1);
+    }
+    g.stroke();
+    g.strokeStyle = 'rgba(60,64,70,.55)';
+    g.beginPath();
+    for (const [x0, y0, x1, y1] of [
+      [-18, 98, -20, 74], [12, 98, 14, 70], [14, 70, 4, 52], [30, 90, 30, 76],
+    ]) {
+      g.moveTo(cx + x0, y0);
+      g.lineTo(cx + x1, y1);
+    }
+    g.stroke();
+  } else if (Ht.id === 'santa') {
+    // the red point flopped over to the side, the fur band and the bobble
+    g.fillStyle = hx(Ht.color);
+    g.beginPath();
+    g.moveTo(cx - 40, 96);
+    g.quadraticCurveTo(cx - 34, 56, cx + 4, 50);
+    g.quadraticCurveTo(cx + 46, 46, cx + 68, 84);
+    g.lineTo(cx + 58, 88);
+    g.quadraticCurveTo(cx + 46, 72, cx + 30, 70);
+    g.quadraticCurveTo(cx + 40, 84, cx + 40, 96);
+    g.closePath();
+    g.fill();
+    g.fillStyle = 'rgba(0,0,0,.18)';
+    g.beginPath();
+    g.moveTo(cx + 30, 70);
+    g.quadraticCurveTo(cx + 46, 72, cx + 58, 88);
+    g.lineTo(cx + 66, 82);
+    g.quadraticCurveTo(cx + 50, 62, cx + 24, 62);
+    g.closePath();
+    g.fill();
+    g.fillStyle = hx(Ht.trim);
+    g.beginPath();
+    g.roundRect ? g.roundRect(cx - 46, 88, 92, 17, 8) : g.rect(cx - 46, 88, 92, 17);
+    g.fill();
+    g.beginPath();
+    g.arc(cx + 64, 90, 11, 0, Math.PI * 2);
+    g.fill();
   }
   // a thumbs up in your gloves
   const gx = cx + 78;
@@ -528,7 +590,9 @@ export class Screens {
     const opt = (part, item, label, swatch) => {
       const on = s.look[part] === item.id;
       const owned = s.ownsLook(part, item.id);
-      const price = !owned && item.price ? `<em>${formatMoney(item.price)}</em>` : '';
+      // a piece found in the woods is not for sale: until you find it
+      // it only says where to look
+      const price = owned ? '' : item.found ? '<em>In the woods</em>' : item.price ? `<em>${formatMoney(item.price)}</em>` : '';
       return `<button class="look-opt${on ? ' on' : ''}${owned ? '' : ' locked'}" data-part="${part}" data-id="${item.id}" aria-pressed="${on}">${
         swatch ? `<i style="background:${swatch}"></i>` : ''
       }${label ? `<span>${esc(label)}</span>` : ''}${price}</button>`;
@@ -551,6 +615,10 @@ export class Screens {
         const part = b.dataset.part;
         const id = b.dataset.id;
         const item = LOOKS[part].find((x) => x.id === id);
+        if (!s.ownsLook(part, id) && item.found) {
+          g.hud.toast(`The ${item.name.toLowerCase()} is not for sale. It is out in the woods somewhere: the Journal keeps the rumours.`, '', 5);
+          return;
+        }
         if (!s.ownsLook(part, id)) {
           if (s.money < item.price) {
             g.hud.toast('Not enough money', 'bad');
@@ -1054,10 +1122,17 @@ export class Screens {
       const gus = notes.length
         ? `<h3 style="margin-top:16px">Gus's notes</h3><div class="list">${notes.map((n) => `<div class="li note"><b>${esc(n.where)}</b><span>${esc(n.text)}</span></div>`).join('')}</div>`
         : '';
+      // the strange things in the woods: what you found, and a rumour for
+      // each one still out there (see world/oddities.js)
+      const odd = (s.flags.odd = s.flags.odd || {});
+      const nOdd = ODDITIES.filter((o) => odd[o.id]).length;
+      const strange = `<h3 style="margin-top:16px">Strange things in the woods ${nOdd}/${ODDITIES.length}</h3><div class="list">${ODDITIES.map((o) =>
+        odd[o.id] ? `<div class="li note"><b>${esc(o.name)}</b><span>${esc(o.find)}</span></div>` : `<div class="li note"><b>???</b><span>${esc(o.rumour)}</span></div>`
+      ).join('')}</div>`;
       this.body.innerHTML = `<div class="list">${CHALLENGES.map((c) => {
         const done = s.challenges[c.id];
         return `<div class="challenge ${done ? 'done' : ''} ${cur && cur.id === c.id ? 'current' : ''}"><div class="check">${done ? '✓' : ''}</div><p>${esc(c.text)}</p><span class="reward">${formatMoney(c.reward)}</span></div>`;
-      }).join('')}</div>${gus}`;
+      }).join('')}</div>${strange}${gus}`;
     } else {
       const st = s.stats;
       const rows = [
@@ -1238,9 +1313,13 @@ export class Screens {
         card('motor', '60-horsepower outboard', 'Swap the outboard for a big one: about half again as fast across the bay.', BOAT.motorPrice, B.motor > 0, B.motor > 0, 'motor');
       ENGINES.forEach((e, i) => card(String(i), e.name, `Top speed ${Math.round(e.top * 3.6)} km/h.`, e.price, s.gear.engine >= i, s.gear.engine === i, 'engine'));
       TIRES.forEach((t, i) => card(String(i), t.name, i ? 'Much better grip off the road, on gravel and tundra.' : 'Grippy on asphalt and gravel roads.', t.price, s.gear.tires >= i, s.gear.tires === i, 'tires'));
-      PAINTS.forEach((p) =>
-        card(p.id, p.name, 'Hot rod paint job with hand-laid flames.', p.price, s.gear.paints.includes(p.id), s.gear.paint === p.id, 'paint', `<div class="swatch" style="background:linear-gradient(135deg, ${p.base} 55%, ${p.b} 55%, ${p.a})"></div>`)
-      );
+      PAINTS.forEach((p) => {
+        const swatch = `<div class="swatch" style="background:linear-gradient(135deg, ${p.base} 55%, ${p.b} 55%, ${p.a})"></div>`;
+        const have = s.gear.paints.includes(p.id);
+        // the barn-find rust is not sold: it is on a car out in the woods
+        if (p.found && !have) cards.push(`<div class="item locked">${swatch}<h4>${esc(p.name)}</h4><p>Not for sale. Ruben's first hot rod wore it, and that car is still out in the woods somewhere.</p><div class="row"><span class="price">In the woods</span></div></div>`);
+        else card(p.id, p.name, p.found ? "Rust and faded flames, like Ruben's first hot rod. Free: you found it." : 'Hot rod paint job with hand-laid flames.', p.price, have, s.gear.paint === p.id, 'paint', swatch);
+      });
     }
     this.body.innerHTML = `${head}<div class="grid">${cards.join('')}</div>`;
     this.body.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => this.shopAction(b.dataset.act, b.dataset.id)));

@@ -71,6 +71,21 @@ export function gable(b, w, h, depth, o) {
   b.add(geo, o);
 }
 
+// Rafters along the two top edges of a gable in the plane z, under a roof
+// whose underside runs down from (0, ridgeY) at rise over run each way: they
+// close the gap between the gable's boards and the roof. out: how far past
+// the gable's corners they run under the eaves.
+export function gableRafters(b, { run, rise, ridgeY, z, w = 0.2, depth = 0.14, out = 0.25, color = WOOD_DARK, matrix }) {
+  const ang = Math.atan2(rise, run);
+  const k = Math.tan(ang);
+  // the rafter's top half a centimetre up into the roof's boards, so no light
+  // shows between them; each runs 0.1 m past the apex, inside the roof
+  const drop = (w / 2 - 0.005) / Math.cos(ang);
+  const sub = new ModelBuilder();
+  for (const sx of [1, -1]) sub.strut([sx * (run + out), ridgeY - k * (run + out) - drop, z], [-sx * 0.1, ridgeY + k * 0.1 - drop, z], w, depth, { color });
+  b.add(sub.build(), { keepColors: true, jitter: 0, matrix });
+}
+
 // Parts of a wall run (along x) left after cutting out openings that cross
 // the band y0..y1: [[x0, x1], ...].
 function runsAround(x0, x1, y0, y1, holes) {
@@ -111,8 +126,9 @@ export function onSide(sd, at, targets, fn) {
 // or along local z (axis 'z', centred at x = at), y0 to y1, cut round its
 // openings (holes: [{ x0, x1, y0, y1 }] along the wall): bands between the
 // openings' heights, each split round the openings it crosses. The finish
-// runs on across the pieces (coordinates from the wall's own origin).
-export function panelWall(b, { a0, a1, y0, y1, at, axis = 'x', thick = 0.2, holes = [], color, surf, surfScale, surfSwap, jitter = 0.03 }) {
+// runs on across the pieces (coordinates from the wall's own origin), and
+// the pieces share one tone, so no seam shows between them.
+export function panelWall(b, { a0, a1, y0, y1, at, axis = 'x', thick = 0.2, holes = [], color, surf, surfScale, surfSwap, jitter = 0 }) {
   const ys = [y0, y1];
   for (const h of holes) for (const y of [h.y0, h.y1]) if (y > y0 && y < y1) ys.push(y);
   ys.sort((p, q) => p - q);
@@ -181,8 +197,9 @@ export function windowPanes(b, glow, { cx, y0, w, h, z, side = 1, rows = 2, cols
   const zf = z + side * 0.025;
   b.box(w, f, 0.05, { pos: [cx, y0 + f / 2, zf], color });
   b.box(w, f, 0.05, { pos: [cx, y0 + h - f / 2, zf], color });
-  b.box(f, h, 0.05, { pos: [cx - w / 2 + f / 2, y0 + h / 2, zf], color });
-  b.box(f, h, 0.05, { pos: [cx + w / 2 - f / 2, y0 + h / 2, zf], color });
+  // (the sides half a centimetre wider, tucked under the casing)
+  b.box(f + 0.005, h, 0.05, { pos: [cx - w / 2 + f / 2 - 0.0025, y0 + h / 2, zf], color });
+  b.box(f + 0.005, h, 0.05, { pos: [cx + w / 2 - f / 2 + 0.0025, y0 + h / 2, zf], color });
   for (let i = 1; i < cols; i++) b.box(0.035, h, 0.04, { pos: [cx - w / 2 + (w * i) / cols, y0 + h / 2, zf + side * 0.005], color });
   for (let j = 1; j < rows; j++) b.box(w, 0.035, 0.04, { pos: [cx, y0 + (h * j) / rows, zf + side * 0.005], color });
   glow.box(w - f, h - f, 0.02, { pos: [cx, y0 + h / 2, z], color: 0xffffff, jitter: 0 });
@@ -222,8 +239,9 @@ export function railX(b, x0, x1, z, y0, { h = 0.95, color = WOOD_LIGHT, gap = 0.
 export function railZ(b, z0, z1, x, y0, { h = 0.95, color = WOOD_LIGHT, gap = 0.16, posts = true } = {}) {
   const len = z1 - z0;
   if (len <= 0.05) return;
-  b.box(0.09, 0.07, len, { pos: [x, y0 + h, (z0 + z1) / 2], color, surf: 'plank' });
-  b.box(0.06, 0.06, len, { pos: [x, y0 + 0.14, (z0 + z1) / 2], color, surf: 'plank' });
+  // (built along x and turned, so the boards run along the rail on every face)
+  b.box(len, 0.07, 0.09, { pos: [x, y0 + h, (z0 + z1) / 2], rot: [0, Math.PI / 2, 0], color, surf: 'plank' });
+  b.box(len, 0.06, 0.06, { pos: [x, y0 + 0.14, (z0 + z1) / 2], rot: [0, Math.PI / 2, 0], color, surf: 'plank' });
   const n = Math.floor(len / gap);
   for (let i = 1; i < n; i++) b.box(0.04, h - 0.2, 0.04, { pos: [x, y0 + h / 2 + 0.07, z0 + (len * i) / n], color, jitter: 0.08 });
   if (posts) for (const z of [z0, z1]) b.box(0.1, h + 0.08, 0.1, { pos: [x, y0 + (h + 0.08) / 2, z], color, surf: 'plank', surfSwap: true });
@@ -310,11 +328,14 @@ export function woodpile(b, { x, y, z, len, rows = 5, depth = 0.55, rand, yaw = 
       const rot = new THREE.Matrix4().makeRotationX(Math.PI / 2).premultiply(new THREE.Matrix4().makeRotationZ((rand() - 0.5) * 0.3));
       const mm = new THREE.Matrix4().makeTranslation(px, py, 0).multiply(rot).premultiply(m);
       const tone = 0.85 + rand() * 0.3;
-      // open pieces, their split ends out (the back ones face the wall)
+      // open pieces with a disc of split end grain on each end, so the
+      // pile reads from either side
       b.add(new THREE.CylinderGeometry(rr, rr, depth, 5, 1, true), { matrix: mm, color: new THREE.Color(0x6a4a30).multiplyScalar(tone).getHex(), surf: 'log', jitter: 0.06 });
-      const e = new THREE.Matrix4().makeTranslation(px, py, depth / 2 + 0.001).multiply(rot).premultiply(m);
-      const disc = new THREE.CircleGeometry(rr + 0.002, 5).rotateX(-Math.PI / 2).rotateY(-Math.PI / 2);
-      b.add(disc, { matrix: e, color: new THREE.Color(0xd8b07a).multiplyScalar(tone).getHex(), jitter: 0.05 });
+      for (const sd of [1, -1]) {
+        const e = new THREE.Matrix4().makeTranslation(px, py, sd * (depth / 2 + 0.001)).multiply(rot).premultiply(m);
+        const disc = new THREE.CircleGeometry(rr + 0.002, 5).rotateX((-sd * Math.PI) / 2).rotateY(-Math.PI / 2);
+        b.add(disc, { matrix: e, color: new THREE.Color(0xd8b07a).multiplyScalar(tone).getHex(), jitter: 0.05 });
+      }
     }
   }
 }
@@ -356,13 +377,16 @@ export function buildCabin(P, c, oh) {
   // (side walls: along the turned frame of onSide, so the right one's
   // window is at z -0.8..0.5, the left one's at z 1.2..2.5, clear of the
   // woodpile)
-  const right = [{ x0: -0.5, x1: 0.8, y0: 0.85, y1: 1.95 }];
-  const left = [{ x0: 1.2, x1: 2.5, y0: 0.85, y1: 1.95 }];
+  // (1.97: the casing's head reaches the first whole log over it)
+  const right = [{ x0: -0.5, x1: 0.8, y0: 0.85, y1: 1.97 }];
+  const left = [{ x0: 1.2, x1: 2.5, y0: 0.85, y1: 1.97 }];
   // front and back walls (logs along x)
   logWall(b, { x0: -W / 2, x1: W / 2, z: zWall, rows: ROWS, rowH: ROWH, r: R, holes: front, side: 1, rand });
   logWall(b, { x0: -W / 2, x1: W / 2, z: -zWall, rows: ROWS, rowH: ROWH, r: R, holes: back, side: -1, rand });
-  // the side walls (logs along z), half a row higher where they cross
+  // the side walls (logs along z), half a row higher where they cross, on a
+  // squared sill beam each
   for (const sd of [1, -1]) {
+    b.box(D + 0.2, 0.2, R * 2, { pos: [sd * (W / 2), 0.1, 0], rot: [0, Math.PI / 2, 0], color: LOG, surf: 'log', surfSwap: true });
     onSide(sd, W / 2, [b], (sb) => logWall(sb, { x0: -D / 2, x1: D / 2, z: 0, y0: ROWH / 2, rows: ROWS, rowH: ROWH, r: R, holes: sd > 0 ? right : left, side: 1, over: 0.3, rand }));
   }
 
@@ -370,6 +394,8 @@ export function buildCabin(P, c, oh) {
   const thick = R * 2 + 0.06;
   opening(b, { cx: 0.85, y0: 0, w: 1.0, h: 2.05, z: zWall, thick, sill: false });
   plankDoor(b, { cx: 0.85, w: 1.0, h: 2.05, z: zWall + 0.02, hingeLeft: false });
+  // a squared header log over the door, up to the next whole log
+  b.box(1.36, 0.12, thick - 0.02, { pos: [0.85, 2.2, zWall], color: LOG, surf: 'log', surfSwap: true });
   const win = (cx, y0, w, h, z, side) => {
     opening(b, { cx, y0, w, h, z, thick, side });
     windowPanes(b, glow, { cx, y0, w, h, z: z - side * 0.02, side });
@@ -425,10 +451,11 @@ export function buildCabin(P, c, oh) {
     // fascia along the eave and barge boards up the gable ends
     const ex = sd * Math.cos(ang) * slope;
     const ey = ridgeY - Math.sin(ang) * slope;
-    b.box(0.06, 0.24, rl + 0.08, { pos: [ex + sd * 0.03, ey + 0.02, rz], color: WOOD_LIGHT, surf: 'plank' });
+    b.box(rl + 0.08, 0.24, 0.06, { pos: [ex + sd * 0.03, ey + 0.02, rz], rot: [0, Math.PI / 2, 0], color: WOOD_LIGHT, surf: 'plank' });
     for (const zz of [zb - 0.03, zf + 0.03]) b.strut([ex, ey - 0.06, zz], [0, ridgeY + 0.06, zz], 0.24, 0.06, { color: WOOD_LIGHT });
   }
   b.box(0.34, 0.12, rl + 0.06, { pos: [0, ridgeY + 0.12, rz], color: 0x4a3a2c, surf: 'plank', surfSwap: true });
+  for (const sd of [1, -1]) gableRafters(b, { run: half, rise, ridgeY, z: sd * (zWall + R - 0.06), color: WOOD_DARK });
 
   // the porch: a deck, its rim, posts down to the ground, an open truss
   // under the roof's front, railings and steps down
@@ -436,7 +463,7 @@ export function buildCabin(P, c, oh) {
   const pw = W + R * 2 + 0.2;
   b.box(pw, 0.12, PORCH, { pos: [0, -0.06, pz], color: 0x8a6a48, surf: 'deck', surfSwap: true });
   b.box(pw + 0.06, 0.26, 0.06, { pos: [0, -0.17, zPorch + 0.03], color: WOOD_DARK, surf: 'plank' });
-  for (const sd of [1, -1]) b.box(0.06, 0.26, PORCH, { pos: [sd * (pw / 2 + 0.03), -0.17, pz], color: WOOD_DARK, surf: 'plank' });
+  for (const sd of [1, -1]) b.box(PORCH, 0.26, 0.06, { pos: [sd * (pw / 2 + 0.03), -0.17, pz], rot: [0, Math.PI / 2, 0], color: WOOD_DARK, surf: 'plank' });
   const postZ = zPorch - 0.12;
   const postXs = [-pw / 2 + 0.12, -W / 6, W / 6, pw / 2 - 0.12];
   const beamY = WALL - 0.3;
@@ -542,7 +569,7 @@ export function buildCabin(P, c, oh) {
     b.box(0.1, 2.25 - lg, 0.1, { pos: [lx - 0.48, (2.25 + lg) / 2, zz], color: WOOD_DARK });
   }
   b.box(1.6, 0.06, 4.1, { pos: [lx - 0.15, 2.18, -0.8], rot: [0, 0, 0.22], color: 0x6a6e70, surf: 'metal', surfSwap: true });
-  woodpile(b, { x: lx - 0.05, y: lg, z: -0.8, len: 3.4, rows: 7, depth: 0.55, rand, yaw: Math.PI / 2 });
+  woodpile(b, { x: lx - 0.05, y: lg, z: -0.8, len: 3.4, rows: 7, depth: 0.55, rand, yaw: -Math.PI / 2 });
   {
     const bx = -W / 2 - 2.1;
     const bz = 2.2;
@@ -616,6 +643,11 @@ export function buildCabin(P, c, oh) {
       P.colliders.addCircle(wx, wz, 0.18).hi = top - g0 + 2.2;
     }
     b.box(2.1, 0.12, 1.9, { pos: [kx, top + 0.06, kz], color: WOOD, surf: 'deck' });
+    {
+      // its body, up on the legs (for the paraglider)
+      const [wx, wz] = f.to(kx, kz);
+      P.colliders.addBox(wx, wz, 1.05, 0.95, c.yaw, base + top - 0.1, base + top + 2.35);
+    }
     const cb = new ModelBuilder();
     logWall(cb, { x0: -0.85, x1: 0.85, z: 0.7, rows: 5, rowH: 0.26, r: 0.13, side: 1, over: 0.18, rand });
     logWall(cb, { x0: -0.85, x1: 0.85, z: -0.7, rows: 5, rowH: 0.26, r: 0.13, side: -1, over: 0.18, rand });
@@ -682,7 +714,13 @@ export function buildCabin(P, c, oh) {
   }
   {
     const [x, z] = f.to(-W / 2 - 0.95, -0.8);
-    P.colliders.addBox(x, z, 0.62, 2.0, c.yaw);
+    P.colliders.addBox(x, z, 0.62, 2.0, c.yaw, -1e9, base + 2.4);
+  }
+  {
+    // the roof over the porch, above head height (for the paraglider)
+    const z0 = D / 2 + 0.35;
+    const [x, z] = f.to(0, (z0 + zf) / 2);
+    P.colliders.addBox(x, z, half + 0.55, (zf - z0) / 2, c.yaw, base + 2.7, base + ridgeY + 0.3);
   }
   for (const [x, z, r, hi] of [
     [-W / 2 - 2.1, 2.2, 0.36, 0.6],
@@ -831,9 +869,9 @@ export function buildTradingPost(P, c) {
   const door = { x0: -0.95, x1: 0.95, y0: 0, y1: 2.95 };
   const winL = { x0: -5.0, x1: -2.4, y0: 0.85, y1: 2.75 };
   const winR = { x0: 2.4, x1: 5.0, y0: 0.85, y1: 2.75 };
-  panelWall(b, { a0: -W / 2, a1: W / 2, y0: 0.07, y1: WALLH, at: zF - T / 2, thick: T, holes: [door, winL, winR], color: BARN_RED, surf: 'plank' });
+  panelWall(b, { a0: -W / 2, a1: W / 2, y0: 0.02, y1: WALLH, at: zF - T / 2, thick: T, holes: [door, winL, winR], color: BARN_RED, surf: 'plank' });
   const winB = { x0: -3.6, x1: -2.4, y0: 1.3, y1: 2.5 };
-  panelWall(b, { a0: -W / 2, a1: W / 2, y0: 0.07, y1: WALLH, at: -zF + T / 2, thick: T, holes: [winB], color: BARN_RED, surf: 'batten' });
+  panelWall(b, { a0: -W / 2, a1: W / 2, y0: 0.02, y1: WALLH, at: -zF + T / 2, thick: T, holes: [winB], color: BARN_RED, surf: 'batten' });
   // side windows (in the turned frame of onSide: along the wall)
   const sideWins = [
     { x0: -2.6, x1: -1.4, y0: 1.2, y1: 2.6 },
@@ -841,7 +879,7 @@ export function buildTradingPost(P, c) {
   ];
   for (const sd of [1, -1]) {
     onSide(sd, W / 2 - T / 2, [b, glow], (sb, sg) => {
-      panelWall(sb, { a0: -D / 2 + T, a1: D / 2 - T, y0: 0.07, y1: WALLH, at: 0, thick: T, holes: sideWins, color: BARN_RED, surf: 'batten' });
+      panelWall(sb, { a0: -D / 2 + T, a1: D / 2 - T, y0: 0.02, y1: WALLH, at: 0, thick: T, holes: sideWins, color: BARN_RED, surf: 'batten' });
       for (const h of sideWins) {
         const cx = (h.x0 + h.x1) / 2;
         opening(sb, { cx, y0: h.y0, w: h.x1 - h.x0, h: h.y1 - h.y0, z: 0.02, thick: T + 0.06, color: TRIM, side: 1 });
@@ -852,8 +890,8 @@ export function buildTradingPost(P, c) {
   // corner boards, a frieze under the eaves and a dark base board
   for (const sx of [-1, 1]) {
     for (const sz of [-1, 1]) b.box(0.24, WALLH - 0.05, 0.24, { pos: [sx * (W / 2 - 0.1), WALLH / 2 + 0.02, sz * (zF - 0.1)], color: TRIM, surf: 'plank', surfSwap: true });
-    b.box(0.06, 0.32, D - 0.1, { pos: [sx * (W / 2 + 0.02), WALLH - 0.2, 0], color: TRIM, surf: 'plank' });
-    b.box(0.06, 0.22, D - 0.1, { pos: [sx * (W / 2 + 0.02), 0.18, 0], color: WOOD_DARK, surf: 'plank' });
+    b.box(D - 0.1, 0.32, 0.06, { pos: [sx * (W / 2 + 0.02), WALLH - 0.2, 0], rot: [0, Math.PI / 2, 0], color: TRIM, surf: 'plank' });
+    b.box(D - 0.1, 0.22, 0.06, { pos: [sx * (W / 2 + 0.02), 0.18, 0], rot: [0, Math.PI / 2, 0], color: WOOD_DARK, surf: 'plank' });
   }
   b.box(W - 0.1, 0.22, 0.06, { pos: [0, 0.18, -zF - 0.02], color: WOOD_DARK, surf: 'plank' });
   b.box(W - 0.1, 0.32, 0.06, { pos: [0, WALLH - 0.2, -zF - 0.02], color: TRIM, surf: 'plank' });
@@ -888,7 +926,9 @@ export function buildTradingPost(P, c) {
     glow.box(0.73, 1.2, 0.02, { pos: [lx, 1.72, zd - 0.01], color: 0xffffff, jitter: 0 });
     b.box(0.5, 0.05, 0.06, { pos: [lx, 1.0, zd + 0.06], color: 0xb08a3a, jitter: 0 });
   }
-  // the transom over the doors and the bar between
+  // the astragal where the leaves meet, the transom over the doors and the
+  // bar between
+  b.box(0.07, 2.45, 0.07, { pos: [0, 1.225, zF - T / 2 + 0.045], color: STORE_GREEN });
   b.box(1.9, 0.1, 0.1, { pos: [0, 2.5, zF - T / 2 + 0.04], color: TRIM });
   windowPanes(b, glow, { cx: 0, y0: 2.55, w: 1.9, h: 0.4, z: zF - T / 2, side: 1, rows: 1, cols: 3, color: TRIM });
   // a door mat
@@ -939,13 +979,14 @@ export function buildTradingPost(P, c) {
     b.box(slope - 0.05, 0.05, rl - 0.05, { pos: [cx + sd * Math.sin(ang) * 0.02, cy + Math.cos(ang) * 0.02, rz], rot: [0, 0, -sd * ang], color: 0x7a6248, surf: 'plank', surfSwap: true });
     const ex = sd * Math.cos(ang) * slope;
     const ey = ridgeY - Math.sin(ang) * slope;
-    b.box(0.06, 0.22, rl + 0.06, { pos: [ex + sd * 0.03, ey + 0.04, rz], color: TRIM, surf: 'plank' });
+    b.box(rl + 0.06, 0.22, 0.06, { pos: [ex + sd * 0.03, ey + 0.04, rz], rot: [0, Math.PI / 2, 0], color: TRIM, surf: 'plank' });
     b.strut([ex, ey - 0.04, zb - 0.03], [0, ridgeY + 0.06, zb - 0.03], 0.22, 0.06, { color: TRIM });
   }
   b.box(0.42, 0.1, rl + 0.04, { pos: [0, ridgeY + 0.1, rz], color: 0x6a6e70, surf: 'metal', jitter: 0.02 });
   // the gables: board and batten at the back, hidden by the false front in front
   gable(b, W, rise, T, { pos: [0, WALLH - 0.02, -zF + T / 2], color: BARN_RED, surf: 'batten' });
   gable(b, W, rise, T, { pos: [0, WALLH - 0.02, zF - T / 2 - 0.1], color: BARN_RED, surf: 'batten' });
+  for (const z of [-zF + T / 2, zF - T / 2 - 0.1]) gableRafters(b, { run: W / 2, rise, ridgeY, z, color: TRIM });
   b.box(0.7, 0.55, 0.06, { pos: [0, WALLH + 0.85, -zF - 0.02], color: WOOD_DARK });
   for (let k = 0; k < 4; k++) b.box(0.6, 0.05, 0.06, { pos: [0, WALLH + 0.66 + k * 0.13, -zF - 0.05], rot: [-0.5, 0, 0], color: 0x2a1e14, jitter: 0 });
   // the stovepipe through the roof, its cap and a little smoke
@@ -961,7 +1002,7 @@ export function buildTradingPost(P, c) {
   const pz = (zF + zP) / 2;
   b.box(pw, 0.12, PORCH, { pos: [0, -0.06, pz], color: 0x8a6a48, surf: 'deck', surfSwap: true });
   b.box(pw + 0.06, 0.26, 0.06, { pos: [0, -0.17, zP + 0.03], color: WOOD_DARK, surf: 'plank' });
-  for (const sd of [1, -1]) b.box(0.06, 0.26, PORCH, { pos: [sd * (pw / 2 + 0.03), -0.17, pz], color: WOOD_DARK, surf: 'plank' });
+  for (const sd of [1, -1]) b.box(PORCH, 0.26, 0.06, { pos: [sd * (pw / 2 + 0.03), -0.17, pz], rot: [0, Math.PI / 2, 0], color: WOOD_DARK, surf: 'plank' });
   // skirting down to the ground where it falls away
   {
     const n = 10;
@@ -1453,9 +1494,9 @@ export function buildLighthouse(P, c) {
   b.cyl(3.25, 3.25, 0.08, 16, { pos: [0, 0.82, 0], color: 0x7a766e });
   // the tower, the red band, a door toward the house and windows up it
   b.cyl(1.7, 2.4, 14, 16, { pos: [0, 7.8, 0], color: 0xf2f0ea, surf: 'concrete', jitter: 0.02 });
-  b.cyl(1.79, 1.9, 2.2, 16, { pos: [0, 10.2, 0], color: KEEPER_RED, surf: 'concrete', jitter: 0.02 });
   // (radius of the tower at height y above its base)
   const rAt = (y) => 2.4 - ((y - 0.8) / 14) * 0.7;
+  b.cyl(rAt(11.3) + 0.02, rAt(9.1) + 0.02, 2.2, 16, { pos: [0, 10.2, 0], color: KEEPER_RED, surf: 'concrete', jitter: 0.02 });
   {
     const r = rAt(1.8) + 0.02;
     b.box(1.05, 2.15, 0.12, { pos: [0, 1.9, r], color: 0xd8d4ca });
@@ -1502,7 +1543,7 @@ export function buildLighthouse(P, c) {
   }
   b.torus(1.43, 0.04, 4, 20, { pos: [0, 16.75, 0], rot: [Math.PI / 2, 0, 0], color: 0x1e1e1e, jitter: 0 });
   b.cyl(1.55, 1.55, 0.2, 16, { pos: [0, 17.8, 0], color: 0x2a2a2a });
-  b.cone(1.75, 1.5, 16, { pos: [0, 18.6, 0], color: KEEPER_RED, surf: 'metal', surfScale: 0.6 });
+  b.cone(1.75, 1.5, 16, { pos: [0, 18.6, 0], color: KEEPER_RED, jitter: 0.03 });
   b.sphere(0.24, 10, 6, { pos: [0, 19.45, 0], color: 0x2a2a2a });
   b.cyl(0.02, 0.02, 1.1, 4, { pos: [0, 20.2, 0], color: 0x2a2a2a });
   P.addMesh(b.build(), best.x, g, best.z, yaw);
@@ -1570,8 +1611,8 @@ function buildKeeperHouse(P, lf, g) {
     { x0: 1.4, x1: 2.4, y0: 0.9, y1: 2.15 },
   ];
   const sw = [{ x0: -0.5, x1: 0.5, y0: 0.9, y1: 2.15 }];
-  panelWall(b, { a0: -W / 2, a1: W / 2, y0: 0.04, y1: WALLH, at: D / 2 - T / 2, thick: T, holes: [door, ...fw], color: KEEPER_WHITE, surf: 'plank' });
-  panelWall(b, { a0: -W / 2, a1: W / 2, y0: 0.04, y1: WALLH, at: -D / 2 + T / 2, thick: T, holes: bw, color: KEEPER_WHITE, surf: 'plank' });
+  panelWall(b, { a0: -W / 2, a1: W / 2, y0: 0.02, y1: WALLH, at: D / 2 - T / 2, thick: T, holes: [door, ...fw], color: KEEPER_WHITE, surf: 'plank' });
+  panelWall(b, { a0: -W / 2, a1: W / 2, y0: 0.02, y1: WALLH, at: -D / 2 + T / 2, thick: T, holes: bw, color: KEEPER_WHITE, surf: 'plank' });
   const win = (bb, gg, h, z, side) => {
     const cx = (h.x0 + h.x1) / 2;
     opening(bb, { cx, y0: h.y0, w: h.x1 - h.x0, h: h.y1 - h.y0, z: z + side * 0.03, thick: T + 0.06, color: KEEPER_WHITE, side });
@@ -1581,7 +1622,7 @@ function buildKeeperHouse(P, lf, g) {
   for (const h of bw) win(b, glow, h, -D / 2 + T / 2, -1);
   for (const sd of [1, -1]) {
     onSide(sd, W / 2 - T / 2, [b, glow], (sb, sg) => {
-      panelWall(sb, { a0: -D / 2 + T, a1: D / 2 - T, y0: 0.04, y1: WALLH, at: 0, thick: T, holes: sw, color: KEEPER_WHITE, surf: 'plank' });
+      panelWall(sb, { a0: -D / 2 + T, a1: D / 2 - T, y0: 0.02, y1: WALLH, at: 0, thick: T, holes: sw, color: KEEPER_WHITE, surf: 'plank' });
       win(sb, sg, sw[0], 0, 1);
     });
   }
@@ -1612,6 +1653,7 @@ function buildKeeperHouse(P, lf, g) {
   }
   b.box(rl + 0.04, 0.1, 0.36, { pos: [0, ridgeY + 0.1, 0], color: 0x7a2418, surf: 'metal' });
   for (const sd of [1, -1]) gable(b, D, rise, T, { pos: [sd * (W / 2 - T / 2), WALLH - 0.02, 0], rot: [0, Math.PI / 2, 0], color: KEEPER_WHITE, surf: 'plank' });
+  for (const sd of [1, -1]) gableRafters(b, { run: D / 2, rise, ridgeY, z: 0, color: 0xf6f4ee, matrix: new THREE.Matrix4().makeRotationY(Math.PI / 2).setPosition(sd * (W / 2 - T / 2), 0, 0) });
   // a round vent in each gable
   for (const sd of [1, -1]) b.cyl(0.22, 0.22, 0.06, 12, { pos: [sd * (W / 2 + 0.01), WALLH + 0.85, 0], rot: [0, 0, Math.PI / 2], color: KEEPER_GREEN });
   // the brick chimney at the ridge
@@ -1710,6 +1752,11 @@ function buildKeeperHouse(P, lf, g) {
   P.smokePoints.push(new THREE.Vector3(cx, base + ridgeY + 1.1, cz));
   P.colliders.addBox(hx, hz, W / 2 + 0.2, D / 2 + 0.2, yaw, -1e9, base + ridgeY + 0.3);
   {
+    // the chimney as tall as its pot (for the paraglider)
+    const [x, z] = f.to(W / 2 - 1.1, -0.2);
+    P.colliders.addBox(x, z, 0.45, 0.4, yaw, -1e9, base + ridgeY + 1.05);
+  }
+  {
     const [x, z] = f.to(0, D / 2 + 0.45);
     P.colliders.addDeck(x, z, 0.7, 0.4, yaw, base - 0.03);
   }
@@ -1790,7 +1837,7 @@ export function buildPier(P, p) {
     b.box(d.width, 0.12, z1 - z0 - 0.01, { pos: [0, -0.06, (z0 + z1) / 2], color: tone, surf: 'deck', jitter: 0.02 });
   }
   // stringers under the deck, along it
-  for (const sx of [-hw + 0.3, 0, hw - 0.3]) b.box(0.2, 0.28, len, { pos: [sx, -0.26, 0], color: 0x4a3c2c, surf: 'plank' });
+  for (const sx of [-hw + 0.3, 0, hw - 0.3]) b.box(len, 0.28, 0.2, { pos: [sx, -0.26, 0], rot: [0, Math.PI / 2, 0], color: 0x4a3c2c, surf: 'plank' });
   // the bents: a pile each side, a cap across, cross bracing down to the
   // water and weed at the tide line
   for (let i = 0; i <= bents; i++) {
@@ -1815,8 +1862,8 @@ export function buildPier(P, p) {
   // railings with rod holders on the top rail at each post
   for (const side of [-1, 1]) {
     const x = side * (hw + 0.1);
-    b.box(0.1, 0.1, len, { pos: [x, 1.05, 0], color: WOOD_LIGHT, surf: 'plank' });
-    b.box(0.08, 0.08, len, { pos: [x, 0.55, 0], color: WOOD_LIGHT, surf: 'plank' });
+    b.box(len, 0.1, 0.1, { pos: [x, 1.05, 0], rot: [0, Math.PI / 2, 0], color: WOOD_LIGHT, surf: 'plank' });
+    b.box(len, 0.08, 0.08, { pos: [x, 0.55, 0], rot: [0, Math.PI / 2, 0], color: WOOD_LIGHT, surf: 'plank' });
     for (let i = 1; i < bents; i += 2) {
       const z = -len / 2 + i * 4;
       b.cyl(0.03, 0.03, 0.26, 6, { pos: [x + side * 0.08, 1.05, z], rot: [-side * 0.35, 0, 0], color: 0x9a9a9a, jitter: 0 });
@@ -1887,7 +1934,19 @@ export function buildPier(P, p) {
     sb.box(SW + 0.45, 0.05, rlen - 0.05, { pos: [0, SH + 0.22, 0], rot: [-ra, 0, 0], color: 0x7a6248, surf: 'plank' });
     sb.box(SW + 0.12, 0.42, 0.1, { pos: [0, SH + 0.21, SD / 2 - 0.05], color: BLUE, surf: 'batten', surfScale: 0.8 });
     sb.box(SW + 0.12, 0.05, 0.1, { pos: [0, SH + 0.03, -SD / 2 + 0.05], color: BLUE });
-    for (const ccx of [-1, 1]) sb.add(new THREE.BoxGeometry(0.1, 0.42, SD), { pos: [ccx * (SW / 2 - 0.05), SH + 0.21, 0], color: BLUE, surf: 'batten', surfScale: 0.8 });
+    // the side boards up to the roof: wedges, high at the door end, under
+    // the roof's boards all along
+    for (const ccx of [-1, 1]) {
+      const wedge = new THREE.Shape();
+      wedge.moveTo(-SD / 2, 0);
+      wedge.lineTo(SD / 2, 0);
+      wedge.lineTo(SD / 2, 0.39);
+      wedge.closePath();
+      const geo = new THREE.ExtrudeGeometry(wedge, { depth: 0.1, bevelEnabled: false });
+      geo.translate(0, 0, -0.05);
+      geo.rotateY(-Math.PI / 2);
+      sb.add(geo, { pos: [ccx * (SW / 2 - 0.05), SH, 0], color: BLUE, surf: 'batten', surfScale: 0.8 });
+    }
     // a lamp over the door, a life ring and a string of floats on the wall,
     // the bait cooler by the window
     sb.box(0.05, 0.22, 0.05, { pos: [0.68, 2.3, SD / 2 + 0.03], color: IRON });
@@ -2040,7 +2099,7 @@ export function buildDock(P, p) {
     const tone = new THREE.Color(WOOD_LIGHT).multiplyScalar(0.88 + rand() * 0.2).getHex();
     b.box(d.width, 0.08, z1 - z0 - 0.01, { pos: [0, -0.04, (z0 + z1) / 2], color: tone, surf: 'deck', jitter: 0.02 });
   }
-  for (const side of [-1, 1]) b.box(0.15, 0.2, len, { pos: [side * (hw - 0.08), -0.18, 0], color: WOOD_DARK, surf: 'plank' });
+  for (const side of [-1, 1]) b.box(len, 0.2, 0.15, { pos: [side * (hw - 0.08), -0.18, 0], rot: [0, Math.PI / 2, 0], color: WOOD_DARK, surf: 'plank' });
   for (let i = 0; i <= bays; i++) {
     const z = Math.min(len / 2 - 0.15, -len / 2 + i * 3);
     for (const side of [-1, 1]) {
@@ -2113,7 +2172,7 @@ function raisedDeck(P, f, b, top, { hx, hz, legs, rails, roofPosts = 0 }) {
   b.box(hx * 2, 0.16, hz * 2, { pos: [0, -0.08, 0], color: WOOD, surf: 'deck', jitter: 0.02 });
   for (const sd of [1, -1]) {
     b.box(hx * 2 + 0.06, 0.24, 0.06, { pos: [0, -0.2, sd * (hz + 0.03)], color: WOOD_DARK, surf: 'plank' });
-    b.box(0.06, 0.24, hz * 2, { pos: [sd * (hx + 0.03), -0.2, 0], color: WOOD_DARK, surf: 'plank' });
+    b.box(hz * 2, 0.24, 0.06, { pos: [sd * (hx + 0.03), -0.2, 0], rot: [0, Math.PI / 2, 0], color: WOOD_DARK, surf: 'plank' });
   }
   const groundAt = (x, z) => Wd.heightAt(...f.to(x, z)) - top;
   for (const [x, z] of legs) {
@@ -2153,7 +2212,7 @@ function rampDown(P, f, b, top, { z0, w, len }) {
   const cy = -drop / 2;
   const cz = z0 - len / 2;
   b.box(w, 0.1, sl, { pos: [0, cy - 0.05, cz], rot: [-ang, 0, 0], color: WOOD, surf: 'deck' });
-  for (const sd of [1, -1]) b.box(0.06, 0.24, sl, { pos: [sd * (w / 2 + 0.03), cy - 0.12, cz], rot: [-ang, 0, 0], color: WOOD_DARK, surf: 'plank' });
+  for (const sd of [1, -1]) b.box(sl, 0.24, 0.06, { pos: [sd * (w / 2 + 0.03), cy - 0.12, cz], rot: [-ang, Math.PI / 2, 0], color: WOOD_DARK, surf: 'plank' });
   const cleats = Math.floor(sl / 0.4);
   for (let k = 1; k < cleats; k++) {
     const t = k / cleats;
@@ -2235,7 +2294,8 @@ export function buildLookout(P, c) {
       [-2, 2],
     ],
     rails: ['front', 'left', 'right', 'backL', 'backR'],
-    roofPosts: 2.0,
+    // (up to the roof's underside over each corner, 0.5 m in from the eave)
+    roofPosts: 2.16,
   });
   // the hip roof of shingles on its four posts, a cap on each hip and a
   // finial
@@ -2256,7 +2316,7 @@ export function buildLookout(P, c) {
     [2, -2],
     [2, 2],
     [-2, 2],
-  ]) b.box(0.3, 0.12, 0.3, { pos: [x, R0 - 0.02, z], color: WOOD_DARK });
+  ]) b.box(0.3, 0.12, 0.3, { pos: [x, R0 + 0.16, z], color: WOOD_DARK });
   b.cone(0.1, 0.4, 6, { pos: [0, R0 + rise + 0.25, 0], color: 0x2a2a2a });
   // a coin binocular viewer at the front rail, and a bench
   {

@@ -77,14 +77,16 @@ export function drawFinishes(size) {
   // 0..2) and gives a value round 0.5: brightness and height together.
 
   // Lap siding: boards 0.2 m tall, each lapping over the one below, with
-  // staggered end joints and grain along the boards.
+  // staggered end joints and grain along the boards. Each board's lower edge
+  // stands proud and catches the light; the top of the board below sits in
+  // its shadow.
   function plank(u, v) {
     const b = Math.floor(v / 0.2);
     const fv = frac(v / 0.2);
     let s = 0.5 + (hash(b, 3, 11) - 0.5) * 0.16;
     s += (fbm((u / TILE) * 6, (v / TILE) * 90, 6, 90, 5, 3) - 0.5) * 0.22;
-    s -= Math.max(0, 1 - fv / 0.14) * 0.3;
-    if (fv > 0.9) s += 0.05;
+    s -= Math.max(0, (fv - 0.86) / 0.14) * 0.3;
+    if (fv < 0.1) s += 0.05;
     for (let k = 0; k < 2; k++) {
       const ju = frac(hash(b, k, 13) * 0.5 + k * 0.5) * TILE;
       if (seam(u - ju, TILE) < 0.007) s -= 0.28;

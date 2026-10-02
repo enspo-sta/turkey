@@ -2,7 +2,7 @@
 // trailhead signs and the campfires, with the buildings themselves in
 // world/buildings.js (Ruben's cabin, the Trading Post, the lighthouse and its
 // keeper's house, the pier, the docks, the Bear Falls platform and the
-// lookout). Each registers colliders, walkable decks and interaction points,
+// lookout) and the strange things in the woods in world/oddities.js. Each registers colliders, walkable decks and interaction points,
 // and the static meshes merge into a few draws (mergeStatic).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -14,6 +14,7 @@ import { buildSecret, secretAvoid } from './secret.js';
 import { makeFinishTextures, finishMaterial, ensureFinishAttributes } from './finish.js';
 import { buildCabin, buildMailbox, buildTradingPost, buildLighthouse, lighthouseSpot, buildPier, buildDock, buildFallsPlatform, buildLookout, signPosts } from './buildings.js';
 import { cabinSite, postSite } from './sites.js';
+import { buildOddities, oddityAvoid } from './oddities.js';
 
 const LOG = 0x7a5534;
 const STEEL = 0x3e6b5a;
@@ -68,6 +69,7 @@ export class Props {
     for (const fr of L.fires) out.push({ x: fr.x, z: fr.z, r: 4 });
     out.push(...areaAvoid(W));
     out.push(...secretAvoid());
+    out.push(...oddityAvoid());
     this.avoid = out;
     return out;
   }
@@ -148,6 +150,7 @@ export class Props {
     this.buildGlacierProps();
     buildAreas(this, L);
     buildSecret(this);
+    buildOddities(this);
     this.mergeStatic();
     return this.group;
   }
@@ -349,7 +352,7 @@ export class Props {
     pole.cyl(0.11, 0.13, 3.9, 9, { pos: [0, 1.8, 0], color: 0x7a5a3a, surf: 'log' });
     pole.cone(0.13, 0.22, 9, { pos: [0, 3.86, 0], color: 0x5a4a3a });
     this.addMesh(pole.build(), jx, jy, jz, 0);
-    this.colliders.addCircle(jx, jz, 0.2).hi = 3.6;
+    this.colliders.addCircle(jx, jz, 0.2).hi = 4.0;
     const arrows = [
       ['↑ Salmon Bend · Bear Falls', 3.25, -0.2, 'river'],
       ['↗ Moose Lake · Tundra', 2.85, 0.2, 'tundra'],
@@ -394,6 +397,8 @@ export class Props {
     const glow = night;
     this.glowMat.color.setRGB(0.13 + glow * 1.43, 0.15 + glow * 0.99, 0.17 + glow * 0.42);
     this.lampMat.color.setRGB(0.3 + night * 2.2, 0.28 + night * 1.9, 0.22 + night * 1.2);
+    // the strange things' own lights: toadstool spots, runes, the saucer
+    if (this.oddGlowMat) this.oddGlowMat.color.setScalar(0.45 + night * 1.5);
     if (this.lantern) this.lantern.material.color.setRGB(0.35 + night * 2.5, 0.38 + night * 2.2, 0.42 + night * 1.4);
     if (this.beam) {
       this.beam.rotation.y = t * 0.6;

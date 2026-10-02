@@ -404,6 +404,70 @@ export class AudioEngine {
     this.noise(8.5, 0.45 * s.vol, { type: 'bandpass', freq: 1400, q: 0.6, f2: 700, pan: s.pan, attack: 0.3 });
     this.noise(6, 0.3 * s.vol, { type: 'lowpass', freq: 260, pan: s.pan, attack: 0.2 });
   }
+  // ---------------------------------------- strange things in the woods
+  // A held tone: fades in, holds and fades out, so hums laid end to end
+  // run on without a seam.
+  drone(type, freq, dur, vol, { pan = 0, dest = this.sfx, fade = 0.3, f2 = null } = {}) {
+    if (!this.ready) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (f2) o.frequency.linearRampToValueAtTime(f2, t + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + fade);
+    g.gain.setValueAtTime(vol, t + dur - fade);
+    g.gain.linearRampToValueAtTime(0, t + dur);
+    const p = ctx.createStereoPanner();
+    p.pan.value = pan;
+    o.connect(g);
+    g.connect(p);
+    p.connect(dest);
+    o.start(t);
+    o.stop(t + dur + 0.05);
+  }
+  // The payphone's bell: two bursts of a hammer on a bell.
+  phoneRing(x, z) {
+    const sp = this.spatial(x, z, 60);
+    if (sp.vol < 0.02) return;
+    for (const w of [0, 0.55]) {
+      for (let i = 0; i < 8; i++) {
+        this.tone('sine', 1250, 0.09, 0.07 * sp.vol, { pan: sp.pan, when: w + i * 0.05 });
+        this.tone('sine', 2950, 0.06, 0.03 * sp.vol, { pan: sp.pan, when: w + i * 0.05 });
+      }
+    }
+  }
+  // A hum for 2.7 seconds (called every 2.4): the fridge's compressor (kind
+  // 0) or the saucer's throb (kind 1).
+  hum(x, z, kind = 0) {
+    const sp = this.spatial(x, z, 30);
+    if (sp.vol < 0.02) return;
+    const o = { pan: sp.pan, dest: this.amb };
+    if (kind) {
+      this.drone('sine', 66, 2.7, 0.07 * sp.vol, { ...o, f2: 60 });
+      this.drone('triangle', 220, 2.7, 0.018 * sp.vol, { ...o, f2: 236 });
+      this.tone('sine', 1760, 0.5, 0.012 * sp.vol, { ...o, f2: 2350, when: 0.9 });
+    } else {
+      this.drone('sawtooth', 50, 2.7, 0.012 * sp.vol, o);
+      this.drone('sine', 100, 2.7, 0.035 * sp.vol, o);
+    }
+  }
+  // The fairies: a sparkle of high bells.
+  fairy() {
+    if (!this.ready) return;
+    [84, 88, 91, 96, 91, 95, 100].forEach((m, i) => this.tone('sine', 440 * Math.pow(2, (m - 69) / 12), 0.7, 0.06, { when: i * 0.06, pan: i % 2 ? 0.4 : -0.4 }));
+    this.noise(1.2, 0.035, { type: 'highpass', freq: 6000, q: 0.5, attack: 0.1 });
+  }
+  // Three small knocks on a tiny wooden door.
+  knock() {
+    if (!this.ready) return;
+    for (let i = 0; i < 3; i++) {
+      this.tone('triangle', 420, 0.07, 0.22, { f2: 260, when: i * 0.18 });
+      this.noise(0.05, 0.15, { freq: 1100, q: 3, when: i * 0.18 });
+    }
+  }
   // A camera shutter: a sharp click, the mirror slap and a short whir.
   shutter() {
     if (!this.ready) return;

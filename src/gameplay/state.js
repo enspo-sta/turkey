@@ -93,10 +93,12 @@ export class GameState {
     this.listeners.push(fn);
   }
 
-  // A wardrobe piece is yours if it is free or bought.
+  // A wardrobe piece is yours if it is free or bought, or found in the woods.
   ownsLook(part, id) {
     const item = LOOKS[part].find((x) => x.id === id);
-    return !!item && (!item.price || this.wardrobe.includes(part + ':' + id));
+    if (!item) return false;
+    if (item.found || item.price) return this.wardrobe.includes(part + ':' + id);
+    return true;
   }
 
   // Arrows of a kind in the quiver (the kind on the string by default).
@@ -209,6 +211,10 @@ export class GameState {
         break;
       case 'deck':
         complete('deck');
+        break;
+      case 'strange':
+        if (ev.count >= 3) complete('strange3');
+        if (ev.count >= 10) complete('strangeall');
         break;
       case 'photo':
         // animals only: fish pictures do not count

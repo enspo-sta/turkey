@@ -1,6 +1,13 @@
 // Parametric fish meshes with canvas-painted skins for every species, plus a
 // flop/swim vertex animation. Models are built at unit length along +z (head
 // at +z) and scaled by the caller.
+//
+// A caught fish is seen close up, in your hands and in the catch photo, so it
+// is made with care: a body with flat flanks, the step of the gill cover and a
+// wet clear coat with a little sheen; a skin with fine scales, the lateral
+// line, the gill cover, the mouth and the species' own marks; fins of rays
+// with clear membrane between (tail, dorsal, adipose, anal, pelvic and
+// pectoral); eyes with an iris and a pupil.
 import * as THREE from 'three';
 import { fxPatch } from '../world/worldfx.js';
 import { FISH } from '../gameplay/data.js';
@@ -47,35 +54,69 @@ function hex(c) {
   return '#' + c.toString(16).padStart(6, '0');
 }
 
-// Skin texture: u along the body (0 head .. 1 tail), v around (0 belly, 0.5 back, 1 belly)
+// Cross-section of each body shape: a superellipse, flatter flanks the
+// higher the power (a trout is a slab, an eel a tube), and the eye's size.
+const SECTION = { salmon: 2.6, trout: 2.5, grayling: 2.5, whitefish: 2.6, pike: 2.2, eel: 2.0, ling: 2.2, rockfish: 2.7, quillback: 2.7, cod: 2.3, greenling: 2.4, sculpin: 2.0, shark: 2.1 };
+const EYE = { rockfish: 0.031, quillback: 0.031, sculpin: 0.03, eel: 0.017, ling: 0.02, cod: 0.026, shark: 0.019, pike: 0.022, flat: 0.02, skate: 0.022 };
+// the iris: silver and gold on the salmon and trout, the yelloweye's own
+// yellow, the pike's and the cod's gold, dark on the sharks and the skate
+const IRIS = { yelloweye: 0xffd21a, pike: 0xd8b030, cod: 0xc8a840, lingcod: 0xb8a060, blackrock: 0x8a6a3a, quillback: 0xd89a40, sculpin: 0xc89040, salmonshark: 0x2a3a30, dogfish: 0x6a8a6a, skate: 0x4a4436, halibut: 0x6a6040, flounder: 0x8a7a40, burbot: 0xa89a60, wolfeel: 0x7a7060, greenling: 0xb07a40, blackfish: 0x8a7a50 };
+
+// Skin texture: u along the body (0 head .. 1 tail), v around (0 belly, 0.5
+// back, 1 belly; the flanks at 0.25 and 0.75), both flanks drawn alike.
 function skinTexture(id) {
   const f = FISH[id];
   const col = f.col;
-  const W = 256;
-  const H = 128;
+  const W = 512;
+  const H = 256;
+  // (the marks were laid out on a skin half this size)
+  const kx = W / 256;
+  const ky = H / 128;
   const c = document.createElement('canvas');
   c.width = W;
   c.height = H;
   const g = c.getContext('2d');
   const grad = g.createLinearGradient(0, 0, 0, H);
   grad.addColorStop(0.0, hex(col.belly));
-  grad.addColorStop(0.2, hex(col.side));
+  grad.addColorStop(0.16, hex(col.belly));
+  grad.addColorStop(0.24, hex(col.side));
   grad.addColorStop(0.38, hex(col.side));
   grad.addColorStop(0.5, hex(col.back));
   grad.addColorStop(0.62, hex(col.side));
-  grad.addColorStop(0.8, hex(col.side));
+  grad.addColorStop(0.76, hex(col.side));
+  grad.addColorStop(0.84, hex(col.belly));
   grad.addColorStop(1.0, hex(col.belly));
   g.fillStyle = grad;
   g.fillRect(0, 0, W, H);
+  // a darker saddle along the back and a pale belly
+  const sg = g.createLinearGradient(0, H * 0.4, 0, H * 0.6);
+  sg.addColorStop(0, 'rgba(0,0,0,0)');
+  sg.addColorStop(0.5, 'rgba(0,0,0,0.22)');
+  sg.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = sg;
+  g.fillRect(0, H * 0.4, W, H * 0.2);
   if (col.head) {
     const hg = g.createLinearGradient(0, 0, W * 0.3, 0);
     hg.addColorStop(0, hex(col.head));
     hg.addColorStop(0.8, hex(col.head));
     hg.addColorStop(1, 'rgba(0,0,0,0)');
     g.fillStyle = hg;
-    g.fillRect(0, 0, W * 0.3, H);
+    g.fillRect(0, H * 0.12, W * 0.3, H * 0.76);
   }
   const rand = mulberry32(id.length * 97 + 13);
+  // a sheen along the flanks: pink on the trout that carry a band, a cool
+  // violet on the silver fish
+  const silver = !col.band && (f.shape === 'salmon' || f.shape === 'whitefish' || id === 'steelhead' || id === 'kokanee');
+  if (silver) {
+    for (const y of [0.3, 0.7]) {
+      const bg = g.createLinearGradient(0, H * (y - 0.08), 0, H * (y + 0.08));
+      bg.addColorStop(0, 'rgba(150,140,220,0)');
+      bg.addColorStop(0.5, 'rgba(150,140,220,0.18)');
+      bg.addColorStop(1, 'rgba(150,140,220,0)');
+      g.fillStyle = bg;
+      g.fillRect(W * 0.15, H * (y - 0.08), W * 0.8, H * 0.16);
+    }
+  }
   if (col.band && id !== 'chum') {
     // lateral stripe on both flanks
     for (const y of [0.3, 0.7]) {
@@ -95,18 +136,37 @@ function skinTexture(id) {
       const x = W * (0.2 + i * 0.075);
       g.beginPath();
       g.moveTo(x, H * 0.12);
-      g.lineTo(x + 10, H * 0.12);
-      g.lineTo(x + 18, H * 0.42);
-      g.lineTo(x + 8, H * 0.42);
+      g.lineTo(x + 10 * kx, H * 0.12);
+      g.lineTo(x + 18 * kx, H * 0.42);
+      g.lineTo(x + 8 * kx, H * 0.42);
       g.fill();
       g.beginPath();
       g.moveTo(x, H * 0.88);
-      g.lineTo(x + 10, H * 0.88);
-      g.lineTo(x + 18, H * 0.58);
-      g.lineTo(x + 8, H * 0.58);
+      g.lineTo(x + 10 * kx, H * 0.88);
+      g.lineTo(x + 18 * kx, H * 0.58);
+      g.lineTo(x + 8 * kx, H * 0.58);
       g.fill();
     }
     g.globalAlpha = 1;
+  }
+  // fine scales over the flanks: a net of small arcs, each catching a little
+  // light on its edge
+  if (!col.scales && f.shape !== 'eel' && f.shape !== 'shark' && f.shape !== 'skate') {
+    const step = f.shape === 'flat' ? 5 : 4;
+    for (let x = W * 0.16; x < W * 0.97; x += step) {
+      for (let y = H * 0.06; y < H * 0.94; y += step * 0.8) {
+        const ox = (Math.round(y / (step * 0.8)) % 2) * step * 0.5;
+        g.strokeStyle = 'rgba(20,24,28,0.13)';
+        g.lineWidth = 0.8;
+        g.beginPath();
+        g.arc(x + ox, y, step * 0.62, -Math.PI * 0.45, Math.PI * 0.45);
+        g.stroke();
+        g.strokeStyle = 'rgba(255,255,255,0.08)';
+        g.beginPath();
+        g.arc(x + ox - 0.8, y, step * 0.62, -Math.PI * 0.4, Math.PI * 0.4);
+        g.stroke();
+      }
+    }
   }
   if (col.spots) {
     g.fillStyle = hex(col.spots);
@@ -128,6 +188,8 @@ function skinTexture(id) {
     }[id] || {};
     const count = SP.n || 70;
     const [r0, r1] = SP.r || [1.4, 3.6];
+    // pale spots (the chars) wear a soft halo
+    const pale = (col.spots >> 16) + ((col.spots >> 8) & 255) + (col.spots & 255) > 360;
     for (let i = 0; i < count; i++) {
       const u = 0.12 + rand() * 0.86;
       let v;
@@ -139,7 +201,13 @@ function skinTexture(id) {
         const up = rand();
         v = up < 0.5 ? 0.3 + rand() * 0.22 : 0.48 + rand() * 0.22;
       }
-      const r = r0 + rand() * (r1 - r0);
+      const r = (r0 + rand() * (r1 - r0)) * kx;
+      if (pale) {
+        g.globalAlpha = 0.18;
+        g.beginPath();
+        g.arc(u * W, v * H, r * 1.8, 0, Math.PI * 2);
+        g.fill();
+      }
       g.globalAlpha = SP.a || 0.85;
       g.beginPath();
       if (id === 'pike') g.ellipse(u * W, v * H, r * 1.8, r, 0, 0, Math.PI * 2);
@@ -150,14 +218,33 @@ function skinTexture(id) {
   }
   // big scales in a net (whitefish)
   if (col.scales) {
-    g.strokeStyle = 'rgba(40,50,55,0.35)';
-    g.lineWidth = 1;
-    for (let x = W * 0.1; x < W * 0.95; x += 7) {
-      for (let y = H * 0.12; y < H * 0.88; y += 6) {
+    for (let x = W * 0.12; x < W * 0.95; x += 7 * kx) {
+      for (let y = H * 0.1; y < H * 0.9; y += 6 * ky) {
+        const ox = ((y / (6 * ky)) % 2) * 3.5 * kx;
+        g.strokeStyle = 'rgba(40,50,55,0.35)';
+        g.lineWidth = 1.4;
         g.beginPath();
-        g.arc(x + ((y / 6) % 2) * 3.5, y, 3.6, -Math.PI * 0.5, Math.PI * 0.5);
+        g.arc(x + ox, y, 3.6 * kx, -Math.PI * 0.5, Math.PI * 0.5);
+        g.stroke();
+        g.strokeStyle = 'rgba(255,255,255,0.14)';
+        g.beginPath();
+        g.arc(x + ox - 1.2, y, 3.6 * kx, -Math.PI * 0.42, Math.PI * 0.42);
         g.stroke();
       }
+    }
+  }
+  // the lateral line along each flank, a little above the middle
+  if (f.shape !== 'skate') {
+    for (const y of [0.3, 0.7]) {
+      g.strokeStyle = 'rgba(20,20,20,0.28)';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(W * 0.2, H * y);
+      g.bezierCurveTo(W * 0.4, H * (y + (y < 0.5 ? 0.025 : -0.025)), W * 0.7, H * y, W * 0.97, H * (y + (y < 0.5 ? -0.03 : 0.03)));
+      g.stroke();
+      g.strokeStyle = 'rgba(255,255,255,0.16)';
+      g.lineWidth = 1;
+      g.stroke();
     }
   }
   // the red slash under the jaw (cutthroat trout)
@@ -176,57 +263,185 @@ function skinTexture(id) {
     for (const v of [0.36, 0.64]) {
       g.fillStyle = hex(col.eyespot);
       g.beginPath();
-      g.arc(W * 0.3, H * v, 7, 0, Math.PI * 2);
+      g.arc(W * 0.3, H * v, 7 * kx, 0, Math.PI * 2);
       g.fill();
       g.fillStyle = '#c8b890';
       g.beginPath();
-      g.arc(W * 0.3, H * v, 3, 0, Math.PI * 2);
+      g.arc(W * 0.3, H * v, 3 * kx, 0, Math.PI * 2);
       g.fill();
     }
   }
-  // subtle scale shimmer
-  g.globalAlpha = 0.08;
+  if (f.shape !== 'flat' && f.shape !== 'skate') {
+    // the gill cover: its edge a dark curve, the cheek before it a touch
+    // lighter
+    for (const [v0, v1] of [
+      [0.1, 0.42],
+      [0.58, 0.9],
+    ]) {
+      const ux = f.shape === 'shark' ? 0.2 : 0.19;
+      g.fillStyle = 'rgba(255,255,255,0.07)';
+      g.fillRect(W * 0.03, H * v0, W * (ux - 0.03), H * (v1 - v0));
+      if (f.shape === 'shark') {
+        // five gill slits instead of a cover
+        g.strokeStyle = 'rgba(10,12,14,0.5)';
+        g.lineWidth = 1.6;
+        for (let k = 0; k < 5; k++) {
+          g.beginPath();
+          g.moveTo(W * (0.17 + k * 0.018), H * (v0 + 0.08));
+          g.lineTo(W * (0.172 + k * 0.018), H * (v1 - 0.08));
+          g.stroke();
+        }
+      } else {
+        g.strokeStyle = 'rgba(12,14,16,0.55)';
+        g.lineWidth = 2.2;
+        g.beginPath();
+        g.moveTo(W * ux, H * v0);
+        g.quadraticCurveTo(W * (ux + 0.035), H * (v0 + v1) * 0.5, W * ux, H * v1);
+        g.stroke();
+        g.strokeStyle = 'rgba(255,255,255,0.2)';
+        g.lineWidth = 1;
+        g.beginPath();
+        g.moveTo(W * (ux - 0.006), H * v0);
+        g.quadraticCurveTo(W * (ux + 0.029), H * (v0 + v1) * 0.5, W * (ux - 0.006), H * v1);
+        g.stroke();
+      }
+    }
+    // the mouth along each side of the snout, under the eye
+    g.strokeStyle = 'rgba(8,8,8,0.7)';
+    g.lineWidth = 2;
+    for (const [v0, v1] of [
+      [0.24, 0.17],
+      [0.76, 0.83],
+    ]) {
+      g.beginPath();
+      g.moveTo(0, H * v0);
+      g.quadraticCurveTo(W * 0.03, H * (v0 + v1) * 0.5, W * (f.shape === 'pike' || f.shape === 'ling' ? 0.1 : 0.065), H * v1);
+      g.stroke();
+    }
+  }
+  // the scales' shimmer
+  g.globalAlpha = 0.09;
   g.fillStyle = '#ffffff';
-  for (let i = 0; i < 400; i++) g.fillRect(rand() * W, H * (0.2 + rand() * 0.6), 2, 1);
+  for (let i = 0; i < 1200; i++) g.fillRect(rand() * W, H * (0.18 + rand() * 0.64), 2, 1);
   g.globalAlpha = 1;
-  // dark head tip and eye patch
-  const eg = g.createLinearGradient(0, 0, W * 0.08, 0);
+  // the dark tip of the snout
+  const eg = g.createLinearGradient(0, 0, W * 0.06, 0);
   eg.addColorStop(0, 'rgba(0,0,0,0.35)');
   eg.addColorStop(1, 'rgba(0,0,0,0)');
   g.fillStyle = eg;
-  g.fillRect(0, 0, W * 0.08, H);
+  g.fillRect(0, 0, W * 0.06, H);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 4;
   return t;
 }
 
-function bodyGeometry(sh) {
-  const ringsN = 20;
-  const around = 12;
+// The fins' rays: u from the fin's base (0) to its edge (1), v across it.
+// Dark rays with lighter membrane between, a little clearer toward the edge.
+let finTex = null;
+function finTexture() {
+  if (finTex) return finTex;
+  const W = 64;
+  const H = 128;
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const g = c.getContext('2d');
+  // the membrane, clearer toward the edge
+  const mg = g.createLinearGradient(0, 0, W, 0);
+  mg.addColorStop(0, 'rgba(236,236,236,0.95)');
+  mg.addColorStop(1, 'rgba(214,214,214,0.6)');
+  g.fillStyle = mg;
+  g.fillRect(0, 0, W, H);
+  // a darker ray on each sixteenth (and on its wrap round at the ends)
+  const rg = g.createLinearGradient(0, 0, W, 0);
+  rg.addColorStop(0, 'rgba(140,140,140,0.97)');
+  rg.addColorStop(1, 'rgba(150,150,150,0.8)');
+  g.fillStyle = rg;
+  for (let k = 0; k <= 16; k++) g.fillRect(0, (k / 16) * H - 1.5, W, 3);
+  finTex = new THREE.CanvasTexture(c);
+  finTex.colorSpace = THREE.SRGBColorSpace;
+  finTex.wrapT = THREE.RepeatWrapping;
+  return finTex;
+}
+
+// An eye in the shape of a ball with its pole looking out: the pupil round
+// the pole, then the iris, then the dark of the eyeball (v from the pole).
+const eyeTex = new Map();
+function eyeTexture(iris) {
+  if (eyeTex.has(iris)) return eyeTex.get(iris);
+  const c = document.createElement('canvas');
+  c.width = 8;
+  c.height = 128;
+  const g = c.getContext('2d');
+  const ic = new THREE.Color(iris);
+  const grad = g.createLinearGradient(0, 0, 0, 128);
+  grad.addColorStop(0.0, '#050505');
+  grad.addColorStop(0.11, '#050505');
+  grad.addColorStop(0.13, '#' + ic.clone().multiplyScalar(0.5).getHexString());
+  grad.addColorStop(0.17, '#' + ic.getHexString());
+  grad.addColorStop(0.26, '#' + ic.clone().multiplyScalar(0.7).getHexString());
+  grad.addColorStop(0.3, '#1a1a18');
+  grad.addColorStop(1.0, '#202020');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 8, 128);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  eyeTex.set(iris, t);
+  return t;
+}
+
+// The cross-section's half width and half height at t along the body.
+function section(sh, t) {
+  const k = profileAt(sh.profile, t);
+  const kw = sh.wprofile ? profileAt(sh.wprofile, t) : k;
+  let hh = sh.h * 0.5 * k;
+  let ww = sh.w * 0.5 * kw;
+  // the snout rounds off rather than ending in a point
+  if (t < 0.035) {
+    const f = 0.4 + 0.6 * Math.sqrt(t / 0.035);
+    hh *= f;
+    ww *= f;
+  }
+  return [hh, ww];
+}
+
+const smooth = (a, b, x) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+
+function bodyGeometry(sh, shape) {
+  const ringsN = 40;
+  const around = 24;
+  const n = SECTION[shape] || 2.4;
   const pos = [];
   const uv = [];
   const idx = [];
   for (let i = 0; i <= ringsN; i++) {
     const t = i / ringsN;
-    const k = profileAt(sh.profile, t);
-    const kw = sh.wprofile ? profileAt(sh.wprofile, t) : k;
     const z = 0.5 - t * 0.82; // head at +0.5, tail base at -0.32
-    let hh = sh.h * 0.5 * k;
-    let ww = sh.w * 0.5 * kw;
-    if (t < 0.02) {
-      hh *= 0.4;
-      ww *= 0.4;
-    }
+    const [hh, ww] = section(sh, t);
+    // the gill cover stands a little proud of the body and drops back to it
+    // at its edge
+    const gill = sh.flat ? 1 : 1 + 0.035 * smooth(0.1, 0.19, t) * (1 - smooth(0.2, 0.225, t));
     for (let j = 0; j <= around; j++) {
       const a = (j / around) * Math.PI * 2 - Math.PI / 2; // start at the belly
-      let y = Math.sin(a) * hh;
-      let x = Math.cos(a) * ww;
+      const ca = Math.cos(a);
+      const sa = Math.sin(a);
+      let x;
+      let y;
       if (sh.flat) {
         // flatfish: flattened disk, slightly domed on top
-        y = Math.sin(a) * hh + (Math.sin(a) > 0 ? hh * 0.3 : 0);
+        x = ca * ww;
+        y = sa * hh + (sa > 0 ? hh * 0.3 : 0);
+      } else {
+        x = Math.sign(ca) * Math.pow(Math.abs(ca), 2 / n) * ww * (Math.abs(ca) > 0.3 ? gill : 1 + (gill - 1) * (Math.abs(ca) / 0.3));
+        y = Math.sign(sa) * Math.pow(Math.abs(sa), 2 / n) * hh;
+        // a fuller belly
+        if (sa < 0) y *= 1.05;
+        if (sh.snout && t < 0.14) y *= 0.7;
       }
-      if (sh.snout && t < 0.14) y *= 0.7;
       pos.push(x, y, z);
       uv.push(t, j / around);
     }
@@ -246,132 +461,225 @@ function bodyGeometry(sh) {
   return g;
 }
 
-function finGeometry(sh, finColor, finBars) {
+// The fins as strips of rays: each ray from a point on the fin's base to a
+// point on its edge, the membrane between neighbouring rays.
+function finGeometry(sh, finColor, finBars, sailColor) {
   const pos = [];
+  const uv = [];
   const col = [];
-  const c = new THREE.Color(finColor);
-  const push = (a, b, cc, tint = c) => {
-    pos.push(...a, ...b, ...cc);
-    for (let i = 0; i < 3; i++) col.push(tint.r, tint.g, tint.b);
-  };
-  const tri2 = (a, b, cc) => {
-    push(a, b, cc);
-    push(a, cc, b);
+  const base = new THREE.Color(finColor);
+  // rays: [[baseX, baseY, baseZ], [edgeX, edgeY, edgeZ], tint?]
+  const strip = (rays) => {
+    for (let i = 0; i + 1 < rays.length; i++) {
+      const [b0, e0, c0 = base] = rays[i];
+      const [b1, e1, c1 = base] = rays[i + 1];
+      // one ray to a sixteenth of the fin texture, so its dark lines fall on
+      // the rays
+      const v0 = i / 16;
+      const v1 = (i + 1) / 16;
+      for (const [p, u, v, cc] of [
+        [b0, 0, v0, c0],
+        [e0, 1, v0, c0],
+        [e1, 1, v1, c1],
+        [b0, 0, v0, c0],
+        [e1, 1, v1, c1],
+        [b1, 0, v1, c1],
+      ]) {
+        pos.push(p[0], p[1], p[2]);
+        uv.push(u, v);
+        col.push(cc.r, cc.g, cc.b);
+      }
+    }
   };
   const H = sh.flat ? sh.w * 0.5 : sh.h * 0.5;
-  // tail fin (vertical, or horizontal for the flatfish look it still reads vertically)
   const tz = -0.32;
   const tl = sh.tail;
   const tw = sh.tail * (sh.flat ? 1.6 : 1.0);
   const fork = sh.fork;
-  if (sh.skate) {
-    // a small fin at the end of the whip-like tail
-    tri2([0, 0, tz], [0, 0.03, tz - tl], [0, 0, tz - tl * 1.4]);
-  } else if (sh.flat) {
-    tri2([0, 0, tz], [tw * 0.9, 0.0, tz - tl], [0, 0, tz - tl * (1 - fork * 0.5)]);
-    tri2([0, 0, tz], [-tw * 0.9, 0.0, tz - tl], [0, 0, tz - tl * (1 - fork * 0.5)]);
-  } else if (sh.heterocercal) {
-    // shark tail: a long upper lobe and a short lower one
-    tri2([0, 0, tz + 0.03], [0, tw * 1.25, tz - tl * 1.05], [0, tw * 0.1, tz - tl * 0.55]);
-    tri2([0, 0, tz + 0.02], [0, -tw * 0.65, tz - tl * 0.62], [0, tw * 0.1, tz - tl * 0.55]);
-  } else {
-    tri2([0, 0, tz + 0.02], [0, tw * 0.95, tz - tl], [0, 0, tz - tl * (1 - fork * 0.6)]);
-    tri2([0, 0, tz + 0.02], [0, -tw * 0.95, tz - tl], [0, 0, tz - tl * (1 - fork * 0.6)]);
+  // ---- the tail
+  {
+    const N = 13;
+    const rays = [];
+    const hb = sh.flat ? sh.w * 0.5 * profileAt(sh.profile, 1) * 0.9 : H * profileAt(sh.profile, 1) * 0.9;
+    for (let i = 0; i < N; i++) {
+      const s = -1 + (2 * i) / (N - 1);
+      const a = Math.abs(s);
+      let len = tl * (0.4 + 0.6 * (1 - fork * 0.62 * (1 - Math.pow(a, 1.5))));
+      // the lobes reach a little past the body's own depth
+      let spread = sh.flat ? hb * 0.7 + tw * 0.95 * Math.pow(a, 0.9) : hb * 0.5 + tw * 0.58 * Math.pow(a, 0.9);
+      if (sh.heterocercal) {
+        len *= s > 0 ? 1.3 : 0.7;
+        spread *= s > 0 ? 1.3 : 0.7;
+      }
+      if (sh.skate) {
+        len = tl * 0.9;
+        spread = 0.03 * s;
+      }
+      const b = sh.flat ? [s * hb, 0, tz + 0.015] : [0, s * hb, tz + 0.015];
+      const e = sh.flat ? [s * spread, 0, tz - len] : [0, Math.sign(s) * spread * (sh.skate ? 1 : 1), tz - len];
+      if (sh.skate) {
+        b[0] = 0;
+        b[1] = 0.004 * s;
+        b[2] = tz - tl * 0.4;
+        e[0] = 0;
+        e[1] = 0.03 * (s + 1) * 0.5;
+        e[2] = tz - tl * (1 + 0.4 * (1 - a));
+      }
+      rays.push([b, e]);
+    }
+    strip(rays);
   }
-  // dorsal fin
+  // ---- dorsal fins
+  const dorsal = (dt, dh, dl, opts = {}) => {
+    const z0 = 0.5 - dt * 0.82;
+    const N = Math.max(6, Math.round(dl * 45));
+    const rays = [];
+    for (let i = 0; i < N; i++) {
+      const q = i / (N - 1);
+      const tt = dt + (q * dl) / 0.82;
+      const top = H * profileAt(sh.profile, Math.min(1, tt)) * 0.95;
+      const z = z0 - q * dl;
+      let hgt;
+      if (opts.sail) hgt = dh * (0.75 + 0.25 * Math.sin(Math.PI * q));
+      else if (opts.long) hgt = dh * (0.55 + 0.45 * Math.sin(Math.PI * Math.min(1, q * 1.1)));
+      else hgt = dh * (q < 0.22 ? 0.75 + 1.1 * q : 1 - 0.78 * ((q - 0.22) / 0.78));
+      // a spiny fin: the membrane notched between its spines
+      if (opts.spiny && i % 2 === 1) hgt *= 0.62;
+      const lean = opts.sail ? 0.55 : 0.4;
+      rays.push([[0, top - 0.004, z], [0, top + hgt * 0.92, z - hgt * lean], opts.tint]);
+    }
+    strip(rays);
+  };
   if (sh.dorsal) {
     const [dt, dh, dl] = sh.dorsal;
-    const z0 = 0.5 - dt * 0.82;
-    const top = H * profileAt(sh.profile, dt) * 0.95;
-    const sail = sh.sail ? new THREE.Color(0x6a4a9a) : c;
-    if (sh.spiny) {
-      for (let i = 0; i < 6; i++) {
-        const z = z0 - i * (dl / 6);
-        push([0, top, z], [0, top + dh * (0.9 - i * 0.08), z - dl / 12], [0, top, z - dl / 6]);
-        push([0, top, z], [0, top, z - dl / 6], [0, top + dh * (0.9 - i * 0.08), z - dl / 12]);
-      }
-    } else {
-      tri2([0, top, z0], [0, top + dh, z0 - dl * 0.35], [0, top * 0.9, z0 - dl]);
-      if (sh.sail) tri2([0, top, z0], [0, top + dh * 0.8, z0 - dl * 0.9], [0, top * 0.9, z0 - dl], sail);
-    }
-    if (sh.dorsal2) {
-      const [t2, h2, l2] = sh.dorsal2;
-      const z2 = 0.5 - t2 * 0.82;
-      const top2 = H * profileAt(sh.profile, t2) * 0.95;
-      tri2([0, top2, z2], [0, top2 + h2, z2 - l2 * 0.45], [0, top2 * 0.9, z2 - l2]);
-    }
+    const sail = sh.sail ? new THREE.Color(sailColor || 0x6a4a9a) : null;
+    dorsal(dt, dh, dl, { sail: !!sh.sail, spiny: !!sh.spiny, long: dl > 0.3, tint: sail || undefined });
+    if (sh.dorsal2) dorsal(...sh.dorsal2);
     if (sh.cod) {
-      tri2([0, top * 0.8, z0 - dl * 1.3], [0, top + dh * 0.8, z0 - dl * 1.6], [0, top * 0.7, z0 - dl * 2.1]);
-      tri2([0, top * 0.6, z0 - dl * 2.3], [0, top + dh * 0.6, z0 - dl * 2.6], [0, top * 0.5, z0 - dl * 3.0]);
+      dorsal(sh.dorsal[0] + 0.2, sh.dorsal[1] * 0.85, 0.13);
+      dorsal(sh.dorsal[0] + 0.38, sh.dorsal[1] * 0.7, 0.12);
     }
   }
+  // ---- the adipose fin: a small rounded flap
   if (sh.adipose) {
-    const z = 0.5 - 0.82 * 0.8;
-    const top = H * profileAt(sh.profile, 0.8) * 0.95;
-    tri2([0, top, z], [0, top + 0.03, z - 0.02], [0, top, z - 0.05]);
+    const rays = [];
+    for (let i = 0; i < 6; i++) {
+      const q = i / 5;
+      const tt = 0.78 + q * 0.06;
+      const top = H * profileAt(sh.profile, tt) * 0.95;
+      const z = 0.5 - tt * 0.82;
+      const hgt = 0.032 * Math.sin(Math.PI * Math.min(1, q * 1.15));
+      rays.push([[0, top - 0.003, z], [0, top + hgt, z - hgt * 0.5]]);
+    }
+    strip(rays);
   }
-  // fringe fins along both edges of a flatfish (bars on the starry flounder)
+  // ---- fringe fins along both edges of a flatfish (bars on the starry
+  // flounder)
   if (sh.flat && !sh.skate) {
     const bars = finBars ? new THREE.Color(finBars) : null;
-    for (let i = 0; i < 16; i++) {
-      const t0 = 0.14 + (i / 16) * 0.72;
-      const t1 = 0.14 + ((i + 1) / 16) * 0.72;
-      const tint = bars && i % 2 ? bars : c;
-      for (const s of [-1, 1]) {
-        const w0 = sh.w * 0.5 * profileAt(sh.profile, t0) * s;
-        const w1 = sh.w * 0.5 * profileAt(sh.profile, t1) * s;
-        const e0 = w0 + 0.05 * s * Math.sin(Math.PI * (t0 - 0.14) / 0.72);
-        const e1 = w1 + 0.05 * s * Math.sin(Math.PI * (t1 - 0.14) / 0.72);
-        tri2([w0 * 0.97, 0, 0.5 - t0 * 0.82], [e0, 0, 0.5 - t0 * 0.82], [w1 * 0.97, 0, 0.5 - t1 * 0.82], tint);
-        tri2([e0, 0, 0.5 - t0 * 0.82], [e1, 0, 0.5 - t1 * 0.82], [w1 * 0.97, 0, 0.5 - t1 * 0.82], tint);
-      }
-    }
-  }
-  // anal fin
-  if (!sh.flat) {
-    const z = 0.5 - 0.82 * 0.7;
-    const bot = -H * profileAt(sh.profile, 0.7) * 0.95;
-    tri2([0, bot, z], [0, bot - sh.h * 0.3, z - 0.05], [0, bot, z - 0.1]);
-  }
-  // pectoral fins (the skate's are its wings, part of the body)
-  if (!sh.skate) {
-    const big = sh.bigPecs ? 2 : 1;
     for (const s of [-1, 1]) {
-      const z = 0.5 - 0.82 * 0.2;
-      const w = sh.w * 0.5 * profileAt(sh.profile, 0.2);
-      const y = sh.flat ? 0 : -sh.h * 0.18;
-      tri2([s * w * 0.9, y, z], [s * (w + 0.07 * big), y - 0.03 * big, z - 0.09 * big], [s * w * 0.9, y, z - 0.08 * big]);
+      const rays = [];
+      for (let i = 0; i <= 24; i++) {
+        const t = 0.12 + (i / 24) * 0.76;
+        const w = sh.w * 0.5 * profileAt(sh.profile, t) * s;
+        const e = w + 0.055 * s * Math.sin((Math.PI * (t - 0.12)) / 0.76);
+        rays.push([[w * 0.96, 0, 0.5 - t * 0.82], [e, -0.004, 0.5 - t * 0.82 - 0.01], bars && Math.floor(i / 2) % 2 ? bars : base]);
+      }
+      strip(rays);
     }
   }
-  // barbel
-  if (sh.barbel) tri2([0, -sh.h * 0.3, 0.46], [0.004, -sh.h * 0.55, 0.44], [0, -sh.h * 0.3, 0.43]);
+  if (!sh.flat) {
+    // ---- the anal fin
+    {
+      const N = 7;
+      const rays = [];
+      for (let i = 0; i < N; i++) {
+        const q = i / (N - 1);
+        const tt = 0.66 + q * 0.11;
+        const bot = -H * profileAt(sh.profile, tt) * 0.95 * 1.05;
+        const z = 0.5 - tt * 0.82;
+        const hgt = sh.h * 0.3 * (q < 0.25 ? 0.8 + 0.8 * q : 1 - 0.75 * ((q - 0.25) / 0.75));
+        rays.push([[0, bot + 0.004, z], [0, bot - hgt * 0.9, z - hgt * 0.45]]);
+      }
+      strip(rays);
+    }
+    // ---- the pelvic fins, a pair under the belly
+    for (const sd of [-1, 1]) {
+      const N = 6;
+      const rays = [];
+      const tt = 0.47;
+      const [hh, ww] = section(sh, tt);
+      for (let i = 0; i < N; i++) {
+        const q = i / (N - 1);
+        const z = 0.5 - (tt + q * 0.05) * 0.82;
+        const bx = sd * ww * 0.35;
+        const by = -hh * 0.98;
+        const len = sh.h * 0.32 * (0.7 + 0.3 * Math.sin(Math.PI * q));
+        rays.push([[bx, by, z], [bx + sd * len * 0.45, by - len * 0.45, z - len * 0.8]]);
+      }
+      strip(rays);
+    }
+  }
+  // ---- the pectoral fins, low behind the gill covers (the skate's are its
+  // wings)
+  if (!sh.skate) {
+    const big = sh.bigPecs ? 1.9 : 1;
+    for (const sd of [-1, 1]) {
+      const N = 8;
+      const rays = [];
+      const tt = 0.215;
+      const [hh, ww] = section(sh, tt);
+      for (let i = 0; i < N; i++) {
+        const q = i / (N - 1);
+        const z = 0.5 - (tt + q * 0.03) * 0.82;
+        const bx = sd * ww * (sh.flat ? 0.95 : 0.93);
+        const by = sh.flat ? 0.004 : -hh * (0.5 - q * 0.22);
+        const len = 0.1 * big * (0.55 + 0.45 * Math.sin(Math.PI * Math.min(1, q * 1.2)));
+        const out = sh.flat ? 0.6 : 0.45;
+        rays.push([[bx, by, z], [bx + sd * len * out, by - len * (sh.flat ? 0 : 0.28), z - len * 0.85]]);
+      }
+      strip(rays);
+    }
+  }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   g.computeVertexNormals();
   return g;
 }
 
-function eyeGeometry(sh) {
-  const g = new THREE.SphereGeometry(0.022, 8, 6);
+// The eyes, each a ball whose pole looks out of the head (see eyeTexture),
+// and the barbel under the chin of the cod and the burbot.
+function eyeGeometry(sh, shape) {
+  const r = EYE[shape] || 0.024;
   const geos = [];
-  const z = 0.43;
-  const k = profileAt(sh.profile, 0.08);
+  const z = 0.41;
+  const t = (0.5 - z) / 0.82;
+  const [hh, ww] = section(sh, t);
   if (sh.flat) {
     // both eyes on the top side
     for (const x of sh.skate ? [-0.05, 0.05] : [-0.035, 0.035]) {
-      const e = g.clone();
-      e.translate(x, sh.h * 0.5 * k + 0.012, z - 0.03);
+      const e = new THREE.SphereGeometry(r, 14, 10);
+      e.translate(x, hh + hh * 0.3 + r * 0.35, z - 0.02);
       geos.push(e);
     }
   } else {
     for (const s of [-1, 1]) {
-      const e = g.clone();
-      e.translate(s * sh.w * 0.5 * k * 0.95, sh.h * 0.12, z - 0.02);
+      const e = new THREE.SphereGeometry(r, 14, 10);
+      e.rotateZ(-s * Math.PI / 2);
+      e.translate(s * (ww * 0.93 - r * 0.25), sh.h * 0.12, z);
       geos.push(e);
     }
   }
   return geos;
+}
+
+function barbelGeometry(sh) {
+  const g = new THREE.ConeGeometry(0.006, sh.h * 0.3, 5);
+  g.rotateX(Math.PI * 0.85);
+  g.translate(0, -sh.h * 0.38, 0.45);
+  return g;
 }
 
 // Material with flop animation (bend along the body).
@@ -398,26 +706,44 @@ const cache = new Map();
 
 export function makeFishModel(id) {
   const f = FISH[id];
-  const sh = SHAPES[f.shape] || SHAPES.salmon;
+  const shape = f.shape || 'salmon';
+  const sh = SHAPES[shape] || SHAPES.salmon;
   const uniforms = { uFlop: { value: 0.6 }, uFlopT: { value: 0 } };
   let base = cache.get(id);
   if (!base) {
     base = {
-      body: bodyGeometry(sh),
-      fins: finGeometry(sh, f.col.fin || f.col.back, f.col.finBars),
-      eyes: eyeGeometry(sh),
+      body: bodyGeometry(sh, shape),
+      fins: finGeometry(sh, f.col.fin || f.col.back, f.col.finBars, id === 'grayling' ? 0x6a4a9a : null),
+      eyes: eyeGeometry(sh, sh.skate ? 'skate' : sh.flat ? 'flat' : shape),
+      // (the wolf eel shares the burbot's long body, not its chin barbel)
+      barbel: sh.barbel && id !== 'wolfeel' ? barbelGeometry(sh) : null,
       skin: skinTexture(id),
+      eye: eyeTexture(IRIS[id] || (shape === 'whitefish' ? 0xd8d8d0 : 0xc8b070)),
     };
     cache.set(id, base);
   }
   const group = new THREE.Group();
-  const bodyMat = flopMaterial(new THREE.MeshStandardMaterial({ map: base.skin, roughness: 0.35, metalness: 0.25 }), uniforms);
-  const finMat = flopMaterial(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, side: THREE.DoubleSide, transparent: true, opacity: 0.92 }), uniforms);
-  const eyeMat = flopMaterial(new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.1, metalness: 0.4 }), uniforms);
+  // wet: a clear coat over the skin, and a little sheen on the scales
+  const bodyMat = flopMaterial(
+    new THREE.MeshPhysicalMaterial({
+      map: base.skin,
+      roughness: 0.36,
+      metalness: 0.18,
+      clearcoat: 0.75,
+      clearcoatRoughness: 0.2,
+      iridescence: shape === 'salmon' || shape === 'trout' || shape === 'whitefish' ? 0.45 : 0.15,
+      iridescenceIOR: 1.3,
+      iridescenceThicknessRange: [250, 600],
+    }),
+    uniforms
+  );
+  const finMat = flopMaterial(new THREE.MeshStandardMaterial({ map: finTexture(), vertexColors: true, roughness: 0.45, side: THREE.DoubleSide, transparent: true }), uniforms);
+  const eyeMat = flopMaterial(new THREE.MeshStandardMaterial({ map: base.eye, roughness: 0.06, metalness: 0.1 }), uniforms);
   const body = new THREE.Mesh(base.body, bodyMat);
   const fins = new THREE.Mesh(base.fins, finMat);
   group.add(body, fins);
   for (const e of base.eyes) group.add(new THREE.Mesh(e, eyeMat));
+  if (base.barbel) group.add(new THREE.Mesh(base.barbel, bodyMat));
   group.traverse((o) => {
     if (o.isMesh) o.castShadow = true;
   });

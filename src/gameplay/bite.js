@@ -87,6 +87,11 @@ export function biteOutlook(env, water = null) {
       reasons.push(tide.height > 0 ? 'Slack high tide' : 'Slack low tide');
     }
   }
+  // an hour of luck from the fairy ring (see world/oddities.js)
+  if (env.luckUntil && env.day * 24 + hour < env.luckUntil) {
+    k *= 1.5;
+    reasons.push('Fairy luck');
+  }
   k = clamp(k, 0.4, 3);
   let level = BITE_LEVELS[0];
   for (const L of BITE_LEVELS) if (k >= L.min) level = L;

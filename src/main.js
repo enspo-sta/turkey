@@ -10,6 +10,7 @@ import { Jobs } from './gameplay/jobs.js';
 import { Bigfoot } from './entities/bigfoot.js';
 import { Glider } from './entities/glider.js';
 import { Secret, GUS_NOTES } from './world/secret.js';
+import { Oddities } from './world/oddities.js';
 import { Screens } from './ui/screens.js';
 import { GameState } from './gameplay/state.js';
 import { Player } from './entities/player.js';
@@ -83,6 +84,7 @@ class Session {
     g.bigfoot = new Bigfoot(g);
     g.glider = new Glider(g);
     g.secret = new Secret(g);
+    g.oddities = new Oddities(g);
     g.screens = new Screens(g);
     g.onEvent = (ev) => this.onEvent(ev);
     g.save = () => this.save();
@@ -889,6 +891,7 @@ class Session {
     g.areas.update(dt);
     g.bigfoot.update(dt);
     g.secret.update(dt);
+    g.oddities.update(dt);
     this.updatePlaces(dt);
     g.bears.update(dt);
 
@@ -999,6 +1002,8 @@ class Session {
           if (it.id === 'glider' && !fl.glider && Math.abs(P.pos.y - it.y) < 2) ia = { label: 'TAKE PARAGLIDER', icon: 'glide', act: () => this.takeGlider() };
           if (it.id === 'key' && !fl.key && Math.abs(P.pos.y - it.y) < 2) ia = { label: 'TAKE KEY', icon: 'key', act: () => this.takeKey() };
           if (it.id === 'goldchest' && !fl.treasure && Math.abs(P.pos.y - it.y) < 1.6) ia = { label: 'OPEN', icon: fl.key ? 'key' : 'claim', act: () => this.openGoldChest() };
+          // the strange things in the woods (see world/oddities.js)
+          if (it.id.startsWith('odd:')) ia = g.oddities.action(it.id.slice(4)) || ia;
           if (it.id === 'cabin') {
             const t = g.env.time;
             const canSleep = t > 19.5 || t < 5;

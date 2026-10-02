@@ -125,6 +125,15 @@ function buildDriver(c) {
       rb.box(0.2, 0.025, 0.12, { pos: [X + sd * 0.36, 1.9, Z - 0.02], rot: [0, 0, sd * 0.35], color: H.horn });
       rb.beam([X + sd * 0.3, 1.88, Z], [X + sd * 0.34, 1.98, Z + 0.03], 0.018, 4, { color: H.horn });
     }
+  } else if (H.id === 'tinfoil') {
+    // crumpled by hand into a point: the jitter is the crinkle
+    rb.cyl(0.125, 0.13, 0.05, 7, { pos: [X, 1.7, Z], color: H.color, jitter: 0.14 });
+    rb.cone(0.125, 0.26, 7, { pos: [X, 1.85, Z], rot: [0.08, 0, -0.06], color: H.color, jitter: 0.16 });
+  } else if (H.id === 'santa') {
+    // a red point flopped back over the white fur band, and the bobble
+    rb.cone(0.115, 0.3, 8, { pos: [X, 1.82, Z - 0.03], rot: [-0.55, 0, 0], color: H.color });
+    rb.cyl(0.13, 0.13, 0.06, 8, { pos: [X, 1.7, Z], color: H.trim, jitter: 0.04 });
+    rb.sphere(0.04, 6, 4, { pos: [X, 1.95, Z - 0.11], color: H.trim, jitter: 0.04 });
   } else rb.box(0.21, 0.05, 0.21, { pos: [X, 1.69, Z], color: c.hair });
   return rb.build();
 }
@@ -398,6 +407,9 @@ export class HotRod {
   setPaint(id) {
     const p = PAINTS.find((q) => q.id === id) || PAINTS[0];
     this.materials.paint.color.set(p.base);
+    // the barn-find rust is matte; the rest shine
+    this.materials.paint.roughness = p.rough ?? 0.26;
+    this.materials.paint.metalness = p.metal ?? 0.35;
     this.flameMat.map?.dispose();
     this.flameMat.map = flameDecal(p.a, p.b);
     this.flameMat.needsUpdate = true;
