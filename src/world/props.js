@@ -442,7 +442,8 @@ export class Props {
     pole.cyl(0.05, 0.08, 9, 6, { pos: [0, 4.5, 0], color: 0xd0d0d0 });
     pole.sphere(0.12, 6, 4, { pos: [0, 9.05, 0], color: 0xd9b23a });
     this.addMesh(pole.build(), fx, fy, fz, 0, this.metalMat);
-    this.colliders.addCircle(fx, fz, 0.15);
+    // (hi: how tall it stands, for the paraglider)
+    this.colliders.addCircle(fx, fz, 0.15).hi = 9.2;
     const flagGeo = new THREE.PlaneGeometry(2.2, 1.4, 12, 4);
     flagGeo.translate(1.1, 0, 0);
     const flag = new THREE.Mesh(
@@ -731,7 +732,7 @@ export class Props {
     const lantern = new ModelBuilder();
     lantern.cyl(1.4, 1.4, 1.8, 12, { pos: [0, 16.8, 0], color: 0xffffff, jitter: 0 });
     this.lantern = this.addMesh(lantern.build(), best.x, g, best.z, 0.4, new THREE.MeshBasicMaterial({ color: 0x556070, toneMapped: false }), { shadow: false });
-    this.colliders.addCircle(best.x, best.z, 3.0);
+    this.colliders.addCircle(best.x, best.z, 3.0).hi = 19;
     const hx = best.x + 7 * Math.cos(0.4) + 1 * Math.sin(0.4);
     const hz = best.z - 7 * Math.sin(0.4) + 1 * Math.cos(0.4);
     this.colliders.addBox(hx, hz, 3.1, 2.6, 0.4);
@@ -806,7 +807,7 @@ export class Props {
     const b = new ModelBuilder();
     b.sphere(1, 10, 6, { pos: [0, 0.3, 0], scale: [0.45, 0.3, 2.3], color: 0xc9731c });
     this.addMesh(b.build(), x, this.world.heightAt(x, z) + 0.05, z, p.face + 0.4);
-    this.colliders.addCircle(x, z, 1.0);
+    this.colliders.addCircle(x, z, 1.0).hi = 0.6;
   }
 
   // ------------------------------------------------------------- signs
@@ -868,7 +869,7 @@ export class Props {
     const pole = new ModelBuilder();
     pole.box(0.18, 3.6, 0.18, { pos: [0, 1.8, 0], color: WOOD_DARK });
     this.addMesh(pole.build(), jx, jy, jz, 0);
-    this.colliders.addCircle(jx, jz, 0.2);
+    this.colliders.addCircle(jx, jz, 0.2).hi = 3.6;
     const arrows = [
       ['↑ Salmon Bend · Bear Falls', 3.25, -0.2, 'river'],
       ['↗ Moose Lake · Tundra', 2.85, 0.2, 'tundra'],
@@ -895,7 +896,7 @@ export class Props {
       // log seat
       b.cyl(0.25, 0.25, 1.8, 7, { pos: [0, 0.22, 2.0], rot: [0, 0.3, Math.PI / 2], color: LOG });
       this.addMesh(b.build(), x, y, z, 0);
-      this.colliders.addCircle(x, z, 0.9);
+      this.colliders.addCircle(x, z, 0.9).hi = 0.6;
       this.fires.push({ x, y, z, id });
       this.nightLights.push(new THREE.Vector3(x, y + 1.4, z));
     }

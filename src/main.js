@@ -268,6 +268,8 @@ class Session {
     const g = this.game;
     this.mode = 'title';
     g.started = false;
+    // no glint or lantern frozen in the title shot
+    g.secret.update(0);
     $('title').hidden = false;
     g.hud.show(false);
     this.refreshTitle();
@@ -673,6 +675,7 @@ class Session {
     g.fishing.cancel();
     g.hunting.reset();
     this.withFade(`Driving to ${p.name}…`, () => {
+      g.glider.end();
       const wasDriving = g.player.mode === 'drive';
       g.hotrod.place(pk.x, pk.z, pk.yaw);
       g.hotrod.speed = 0;
@@ -963,8 +966,9 @@ class Session {
     let ia = null;
     // a second action beside the first: the boat's launch, load and board
     let ia2 = null;
-    // nothing to do mid-cast, mid-fight, with the catch card up or in the air
-    if ((g.fishing.state !== 'idle' && g.fishing.state !== 'catch') || g.hud.blocking || P.mode === 'glide') {
+    // nothing to do mid-cast, mid-fight, with the catch card up, in the air
+    // or while the screen fades (a trip, a sleep, a soak)
+    if ((g.fishing.state !== 'idle' && g.fishing.state !== 'catch') || g.hud.blocking || P.mode === 'glide' || this.fadeBusy) {
       g.interaction = g.interaction2 = null;
       return;
     }

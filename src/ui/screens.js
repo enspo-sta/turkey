@@ -829,7 +829,8 @@ export class Screens {
     const d = Math.hypot(p.x - pos.x, p.z - pos.z);
     const dist = d > 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m';
     const hours = Math.max(0.25, d / 15000 + 0.25);
-    const busy = g.fishing.state !== 'idle' || (g.bears && g.bears.threat) || g.player.mode === 'boat' || !!g.player.boat;
+    const gliding = g.player.mode === 'glide';
+    const busy = g.fishing.state !== 'idle' || (g.bears && g.bears.threat) || g.player.mode === 'boat' || !!g.player.boat || gliding;
     let fish = '';
     if (p.kind === 'fishing') {
       if (known) {
@@ -855,7 +856,7 @@ export class Screens {
     }
     box.innerHTML = `<div class="place-info"><b>${known ? esc(p.name) : 'Undiscovered place'}</b><p>${known ? esc(p.blurb) : 'Explore to find it. Follow the roads and watch the compass.'}</p>${fish}<p>${dist} away</p>${
       known && d > 60
-        ? `<button class="btn hot" id="travel-btn" ${busy ? 'disabled' : ''}>Drive there · about ${hours < 1 ? Math.round(hours * 60) + ' min' : hours.toFixed(1) + ' h'}</button>${busy ? `<p>${g.player.mode === 'boat' || g.player.boat ? 'Get ashore first. The boat stays where you leave it.' : 'Deal with the situation at hand first.'}</p>` : ''}`
+        ? `<button class="btn hot" id="travel-btn" ${busy ? 'disabled' : ''}>Drive there · about ${hours < 1 ? Math.round(hours * 60) + ' min' : hours.toFixed(1) + ' h'}</button>${busy ? `<p>${g.player.mode === 'boat' || g.player.boat ? 'Get ashore first. The boat stays where you leave it.' : gliding ? 'Land first. The hot rod does not fly.' : 'Deal with the situation at hand first.'}</p>` : ''}`
         : ''
     }</div>`;
     const tb = $('travel-btn');

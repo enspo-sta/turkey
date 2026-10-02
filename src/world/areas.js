@@ -94,7 +94,7 @@ function buildSprings(P) {
     b.cyl(0.9 + rand() * 0.6, 1.0 + rand() * 0.6, 0.18, 10, { pos: [Math.cos(a) * r, -0.05, Math.sin(a) * r], color: i % 2 ? 0xe2dccb : 0xcfc7b0 });
   }
   P.addMesh(b.build(), GEYSER.x, gy, GEYSER.z, 0);
-  P.colliders.addCircle(GEYSER.x, GEYSER.z, 2.4);
+  P.colliders.addCircle(GEYSER.x, GEYSER.z, 2.4).hi = 2;
   P.geyser = { x: GEYSER.x, y: gy + 1.6, z: GEYSER.z };
   signBoard(P, 'Old Faceful', 'Erupts every minute or two · Stand back. No, further', GEYSER.x + 7, GEYSER.z + 5, 2.3);
 
@@ -283,7 +283,7 @@ function buildFlats(P, L) {
       const ba = rand() * Math.PI * 2;
       snag.beam([x - p.x, by, z - p.z], [x - p.x + Math.cos(ba) * 0.9, by + 0.25, z - p.z + Math.sin(ba) * 0.9], 0.03, 3, { color: 0x7c7870 });
     }
-    P.colliders.addCircle(x, z, 0.25);
+    P.colliders.addCircle(x, z, 0.25).hi = 1.5;
     placed++;
   }
   if (placed) P.addMesh(snag.build(), p.x, p.y, p.z, 0);
@@ -670,6 +670,8 @@ export class Areas {
     const g = this.game;
     const cam = g.camera.position;
     const d = Math.hypot(G.x - cam.x, G.z - cam.z);
+    // under the paraglider you neither feel the rumble nor get steamed
+    const aloft = g.player.mode === 'glide';
     this.t -= dt;
     const fx = g.effects.soft;
     if (this.cycle === 'rest') {
@@ -679,17 +681,17 @@ export class Areas {
         this.t = 3.2;
         if (d < 160) {
           g.audio?.rumble?.(G.x, G.z);
-          if (d < 60) g.hud?.toast('The ground rumbles under your boots…');
+          if (d < 60 && !aloft) g.hud?.toast('The ground rumbles under your boots…');
         }
       }
     } else if (this.cycle === 'rumble') {
       if (d < 200 && Math.random() < dt * 10) g.effects.ripples.add(G.x + (Math.random() - 0.5) * 2, G.y - 1.4, G.z + (Math.random() - 0.5) * 2, 1, 0.7);
-      if (d < 40) g.player.shake = Math.max(g.player.shake || 0, 0.15);
+      if (d < 40 && !aloft) g.player.shake = Math.max(g.player.shake || 0, 0.15);
       if (this.t <= 0) {
         this.cycle = 'blow';
         this.t = 9;
         if (d < 400) g.audio?.geyser?.(G.x, G.z);
-        if (d < 30) {
+        if (d < 30 && !aloft) {
           g.hud?.toast('Steamed like a dumpling. Maybe stand further back next time', 'bad');
           g.player.hurt?.(4, 0, 0);
         }

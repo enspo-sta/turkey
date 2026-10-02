@@ -186,6 +186,42 @@ What changed in the latest round, with pictures, the audit and the tests:
 - Bigfoot. Very rarely, at dawn or dusk, something big and hairy strolls along
   the forest edge a long way off and is gone. Get a picture: the late-night
   radio show pays well. It comes out blurry, as tradition demands.
+- A secret on the mountain, on no map. From Hotrod Landing, the Trading Post
+  or Glacier Lake, keep an eye on the high peaks to the west: something up
+  there glints in the sun now and then, and glows after dark.
+
+<details>
+<summary>The secret, step by step (spoilers)</summary>
+
+- Gus left his paraglider on a summit in the far west, on a gear box beside a
+  windsock and a sign that says GUS'S LAUNCH (No refunds · Mind the first
+  step). The glint is a tin mirror on the box, the glow a lantern on the
+  windsock's pole. It is a hard walk of about one and a half kilometres up
+  from Bear Falls; cairns mark the steep upper half.
+- **TAKE PARAGLIDER**, then face a long drop (the ground 25 m ahead at least
+  12 m lower and nothing in the way) and tap **GLIDE** (`E` on a keyboard).
+  You run a few steps and the wing lifts you. Steer by dragging on the left
+  half (`A` / `D`), drag up to dive and down to brake (`W` / `S`), and look
+  round with the right half. At trim the wing sinks 1.15 m a second at
+  36 km/h, a glide of about 8.7 to 1; the instruments show your height over
+  the ground, the sink and the speed. You land when your feet touch the
+  ground, a deck or water; a treetop or a roof ends the flight early, and
+  a headwind turns you back at the edge of the map. GLIDE again from any
+  edge.
+- Gus's note points south, to a ledge under an orange tarp that no path
+  reaches. Glide down to it from the launch (about 300 m, half a minute in
+  the air): his camp is in a shallow grotto, with a lantern on a post at its
+  mouth that glows at night, and a tin with a brass key. **TAKE KEY**.
+- The note with the key sends you to Bear Falls. Walk in from the west bank
+  along a stone shelf at the foot of the cliff, behind the falling water: Gus's
+  chest sits in a niche there. **OPEN** it with the key for $5,000 in gold
+  nuggets and Gus's Golden Spoon, a lure every fish takes well and that brings
+  rare and epic fish more often. It is never sold at the Trading Post.
+- Gus's notes are kept in the journal under Goals once you have found them.
+- A save made in the air keeps the edge you launched from: Continue puts you
+  back there with the paraglider.
+
+</details>
 
 **World and graphics**
 
@@ -399,6 +435,8 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/world/post.js` | Bloom, sun rays and the colour grade of the High preset |
 | `src/entities/insects.js` | Butterflies, bumblebees, dragonflies, mosquitoes, moths and cottonwood fluff |
 | `src/entities/player.js`, `hotrod.js`, `boat.js`, `viewmodel.js` | Walking, the drivable hot rod, the fishing boat and its trailer, and the first-person rod, longbow and hands in the clothes from the wardrobe |
+| `src/entities/glider.js` | The paraglider: launching from an edge, flying, steering, landing and the wing overhead |
+| `src/world/secret.js` | The secret on the mountain (spoilers): Gus's launch, the cairns, the grotto on the ledge, the chest behind Bear Falls, the glint and the lanterns |
 | `src/entities/wildlife.js`, `animalmodels.js`, `fishmodels.js`, `ambientfish.js` | Animal and bird behaviour and their low-poly models, the 28 fish models, and the fish schools you can see in the water |
 | `src/gameplay/fishing.js` | Casting meter, float and bites, the fight, landing, the eagle, and catches |
 | `src/gameplay/hunting.js`, `bears.js` | The longbow, the five kinds of arrow in flight and their hit zones, and the grizzly and black bear encounters |
@@ -441,6 +479,7 @@ node tools/shot.mjs tools/scenarios/announcer-bite.json # the bite readout at mi
 node tools/shot.mjs tools/scenarios/wardrobe.json     # the T-shirt button, buying and wearing clothes, the sleeves in first person, Ruben at the wheel, the save
 node tools/shot.mjs tools/scenarios/camera.json       # buying the camera, the viewfinder on a moose, a three-star shot, the catch photo and the album
 node tools/shot.mjs tools/scenarios/boat.json         # buying the boat, the trailer, LAUNCH, BOARD, driving, the chase camera, full gas at the bridge pier and at the lip of Bear Falls, fishing from the boat and LOAD BOAT
+node tools/shot.mjs tools/scenarios/boat-falls.json   # the second half of boat.json on its own (the falls, fishing from the boat, LOAD BOAT): the software renderer can give out before the end of the long run
 node tools/shot.mjs tools/scenarios/areas.json        # Steaming Springs with the geyser blowing and a soak past midnight, Bear Falls, Mosquito Flats, and Shipwreck Cove from the beach, the deck and the fishing spot on her stern
 node tools/shot.mjs tools/scenarios/jobs-bigfoot.json # the odd jobs board, a picture of Bigfoot for the radio show, the cannery's three sockeye and the album
 node tools/shot.mjs tools/scenarios/layout-ipad.json  # the top bar, compass and bite readout on an iPad-sized screen
@@ -448,6 +487,10 @@ node tools/shot.mjs tools/scenarios/layout-phone-small.json # the same on a smal
 node tools/shot.mjs tools/scenarios/layout-sizes.json # the top bar with the longest goal at ten screen sizes, phones upright and sideways (with the notch), iPads and desktops
 node tools/shot.mjs tools/scenarios/bigfoot-forest.json # Bigfoot from deep in the forest at dusk: he only steps out where no tree or bush hides him
 node tools/shot.mjs tools/scenarios/fish-species.json # lands each of the twelve newer fish, then shows the journal by rarity and the tackle box
+node tools/shot.mjs tools/scenarios/secret.json       # (spoilers) the hidden chest from the bank and locked from the shelf, Gus's launch, TAKE PARAGLIDER and the edge with GLIDE
+node tools/shot.mjs tools/scenarios/secret-flight.json   # (spoilers) GLIDE, three seconds in the air, the wing overhead, the rest of the flight to the ledge, the grotto and TAKE KEY
+node tools/shot.mjs tools/scenarios/secret-treasure.json # (spoilers) the chest opened with the key, the Golden Spoon in the tackle box and not in the shop, the map, and the glimpses from the valley
+node tools/shot.mjs tools/scenarios/secret-glimpse.json  # the glint on the summit from Hotrod Landing by day, through the 8x lens, and the lantern at night
 node tools/shot.mjs tools/scenarios/minimap.json      # the small map on foot and driving, its goal marker, and a tap to the full map
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot
 node tools/shot.mjs tools/scenarios/fish-views.json   # fish schools, a fish approaching the float and the fight

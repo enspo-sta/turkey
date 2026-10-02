@@ -1,8 +1,9 @@
 // Gus's paraglider. With it, GLIDE from high ground where the land drops
 // away ahead: the canopy fills and you fly. Steer with the stick (or A/D),
 // push forward to dive, pull back to brake; look round freely while you fly.
-// You land when your feet touch ground, a deck or water; a treetop or the
-// edge of the map ends the flight early. At trim the wing sinks 1.15 m a
+// You land when your feet touch ground, a deck or water; a treetop, a roof,
+// a rock or a pole ends the flight early, and at the edge of the map a
+// headwind turns you back. At trim the wing sinks 1.15 m a
 // second at 10 m/s, a glide of about 8.7 to 1.
 import * as THREE from 'three';
 import { ModelBuilder } from '../util/builder.js';
@@ -83,7 +84,7 @@ export class Glider {
     const P = g.player;
     const W = g.world;
     if (!this.owned || P.mode !== 'foot' || P.boat) return false;
-    if (P.water && P.water.depth > 0.3) return false;
+    if (P.water && P.water.depth > 0.2) return false;
     const fx = -Math.sin(P.yaw);
     const fz = -Math.cos(P.yaw);
     const ax = P.pos.x + fx * 25;
@@ -96,9 +97,11 @@ export class Glider {
     for (let t = 1.5; t < 25; t += 1.5) {
       if (W.heightAt(P.pos.x + fx * t, P.pos.z + fz * t) > P.pos.y + 0.8) return false;
     }
-    // and no crate or wall right in front
+    // and no crate, wall, rock or treetop right in front
     for (let t = 1; t <= 6; t++) {
-      if (this.boxAt(P.pos.x + fx * t, P.pos.y + 0.3, P.pos.z + fz * t)) return false;
+      const x = P.pos.x + fx * t;
+      const z = P.pos.z + fz * t;
+      if (this.boxAt(x, P.pos.y + 0.3, z) || this.obstacleAt(x, P.pos.y + 0.5, z) || this.obstacleAt(x, P.pos.y + 1.5, z)) return false;
     }
     return true;
   }
@@ -112,7 +115,9 @@ export class Glider {
     P.vel.set(0, 0, 0);
     P.bobAmt = 0;
     this.from = { x: P.pos.x, z: P.pos.z, yaw: P.yaw };
-    this.pos.set(P.pos.x, P.pos.y + 0.3, P.pos.z);
+    // from the water's surface when you stand in a little water
+    const w = g.world.waterAt(P.pos.x, P.pos.z);
+    this.pos.set(P.pos.x, (w && !P.onDeck ? Math.max(P.pos.y, w.level) : P.pos.y) + 0.3, P.pos.z);
     this.heading = P.yaw;
     // a running start: the wing fills and gets up to speed
     this.speed = 6;
@@ -123,6 +128,10 @@ export class Glider {
     this.t = 0;
     // the take-off run: your feet stay on the ground until it drops away
     this.run = true;
+    // the stick or keys still held from walking to the edge steer nothing
+    // until they are let go or moved
+    const mv = g.input.readMove();
+    this.hold = { x: mv.x, y: mv.y };
     this.edgeWarned = false;
     this.canopy.visible = true;
     g.audio?.whoosh();
@@ -150,8 +159,12 @@ export class Glider {
     P.pitch = clamp(P.pitch - look.dy, -1.3, 1.0);
 
     const mv = input.readMove();
-    const turn = clamp(mv.x, -1, 1);
-    const push = clamp(-mv.y, -1, 1);
+    let turn = clamp(mv.x, -1, 1);
+    let push = clamp(-mv.y, -1, 1);
+    if (this.hold) {
+      if (Math.hypot(mv.x, mv.y) < 0.15 || Math.hypot(mv.x - this.hold.x, mv.y - this.hold.y) > 0.35) this.hold = null;
+      else turn = push = 0;
+    }
     // for the hands on the brakes (entities/viewmodel.js)
     this.turnIn = turn;
     this.pushIn = push;
@@ -178,21 +191,24 @@ export class Glider {
     const nz = clamp(this.pos.z + fz * this.speed * dt, -lim, lim);
     const ny = this.pos.y - this.sink * dt;
 
-    // a treetop in the way ends the flight at the foot of the tree
-    const tree = this.treeAt(nx, ny, nz);
-    if (tree) {
-      const ox = nx - tree.x;
-      const oz = nz - tree.z;
+    // a treetop, a rock or a pole in the way ends the flight at its foot
+    const hit = this.obstacleAt(nx, ny, nz);
+    if (hit) {
+      const c = hit.c;
+      const ox = nx - c.x;
+      const oz = nz - c.z;
       const l = Math.hypot(ox, oz) || 1;
-      const r = tree.r + 0.6;
-      g.hud?.toast('You snag a treetop and climb down');
-      this.land(tree.x + (ox / l) * r, tree.z + (oz / l) * r, null);
+      const r = c.r + 0.6;
+      g.hud?.toast(hit.tree ? 'You snag a treetop and climb down' : 'Bonk! You glance off it and drop to the ground');
+      this.land(c.x + (ox / l) * r, c.z + (oz / l) * r, null);
       return;
     }
-    // a roof or a wall: bump into it and slide down beside it
+    // a roof or a wall: bump into it and slide down beside it (pushed out at
+    // the height you hit it, so a pier's side wall leaves you in the water
+    // beside it, not inside it)
     const box = this.boxAt(nx, ny, nz);
     if (box) {
-      const r = g.colliders.resolve(nx, nz, 0.45, W.heightAt(nx, nz), 1.8);
+      const r = g.colliders.resolve(nx, nz, 0.45, ny, 1.8);
       g.hud?.toast('Bonk! You slide down off the roof');
       this.land(r.x, r.z, null);
       return;
@@ -220,35 +236,44 @@ export class Glider {
     this.place();
   }
 
-  // The tree whose crown the pilot is in, if any (see the crowns in
-  // world/scatter.js).
-  treeAt(x, y, z) {
+  // The tree whose crown the pilot is in (see the crowns in
+  // world/scatter.js), or the rock, post or tower in the way: { c, tree }.
+  // A circle with no height of its own (hi) stands 2.5 m, a rock about as
+  // tall as its radius; a rock under water has its top.
+  obstacleAt(x, y, z) {
     const g = this.game;
+    const W = g.world;
     for (const c of g.colliders.circlesNear(x, z, 7)) {
-      if (c.tag !== 'tree' && c.tag !== 'shrub') continue;
       const d = Math.hypot(c.x - x, c.z - z);
-      const h = y - g.world.heightAt(c.x, c.z);
-      if (h > (c.hi ?? 14) || h < 0) continue;
-      let reach = c.r + 0.3;
-      if (c.cr && h >= c.lo) {
-        const f = (h - c.lo) / (c.hi - c.lo);
-        const k = c.cone ? 1 - f : Math.sqrt(Math.max(0, 1 - (2 * f - 1) ** 2));
-        reach = Math.max(reach, c.cr * k * 0.8);
+      if (c.tag === 'tree' || c.tag === 'shrub') {
+        const h = y - W.heightAt(c.x, c.z);
+        if (h > (c.hi ?? 14) || h < 0) continue;
+        let reach = c.r + 0.3;
+        if (c.cr && h >= c.lo) {
+          const f = (h - c.lo) / (c.hi - c.lo);
+          const k = c.cone ? 1 - f : Math.sqrt(Math.max(0, 1 - (2 * f - 1) ** 2));
+          reach = Math.max(reach, c.cr * k * 0.8);
+        }
+        if (d < reach) return { c, tree: true };
+        continue;
       }
-      if (d < reach) return c;
+      if (d > c.r + 0.3) continue;
+      const top = c.top ?? W.heightAt(c.x, c.z) + (c.hi ?? (c.tag === 'rock' ? Math.max(0.5, c.r * 1.1) : 2.5));
+      if (y < top) return { c, tree: false };
     }
     return null;
   }
 
-  // The building, car or crate the pilot flies into, if any. A box with no
-  // height of its own (a cabin, the trading post) stands about 6 m tall.
+  // The building, car, sign or crate the pilot flies into, if any.
   boxAt(x, y, z) {
     const W = this.game.world;
     for (const b of this.game.colliders.boxes) {
       const dx = x - b.x;
       const dz = z - b.z;
       if (dx * dx + dz * dz > (b.radius + 0.5) ** 2) continue;
-      const top = b.yMax < 1e8 ? b.yMax : W.heightAt(b.x, b.z) + (b.tag === 'car' ? 1.5 : 6);
+      // with no height of its own: the hot rod 1.5 m, a sign, pump or
+      // outhouse 2.6 m, a cabin or the Trading Post 6 m
+      const top = b.yMax < 1e8 ? b.yMax : W.heightAt(b.x, b.z) + (b.tag === 'car' ? 1.5 : Math.max(b.hx, b.hz) < 1.6 ? 2.6 : 6);
       if (y > top || y + 1.8 < b.yMin) continue;
       const lx = dx * b.cos - dz * b.sin;
       const lz = dx * b.sin + dz * b.cos;
@@ -258,12 +283,21 @@ export class Glider {
   }
 
   // Back on your feet: carry a little of the speed into a few running steps.
-  // With no ground given, the ground (or deck) under that spot.
+  // With no ground given, the ground (or deck) under that spot, and deep
+  // water there means a swim ashore.
   land(x, z, ground) {
     const g = this.game;
     const P = g.player;
+    if (ground === null) {
+      ground = P.groundAt(x, z, 1e9);
+      const w = P._deck ? null : g.world.waterAt(x, z);
+      if (w && w.depth > 0.9) {
+        this.splashdown(x, z, w);
+        return;
+      }
+    }
     this.end();
-    P.pos.set(x, ground ?? P.groundAt(x, z, 1e9), z);
+    P.pos.set(x, ground, z);
     P.vel.set(-Math.sin(this.heading) * this.speed * 0.35, 0, -Math.cos(this.heading) * this.speed * 0.35);
     P.yaw = this.heading + this.look;
     g.audio?.step?.(P.surface, null, true);

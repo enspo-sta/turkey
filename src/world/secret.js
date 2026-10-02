@@ -133,7 +133,8 @@ export function buildSecret(P) {
     pole.cyl(0.055, 0.055, 0.14, 6, { pos: [0.32, 3.04, 0], color: 0xffd890 });
     P.addMesh(pole.build(), wx, wy, wz, 0);
     S.lanterns = [new THREE.Vector3(wx + 0.32, wy + 3.04, wz)];
-    P.colliders.addCircle(wx, wz, 0.12, 'solid');
+    // (hi: how tall it stands, for the paraglider)
+    P.colliders.addCircle(wx, wz, 0.12, 'solid').hi = 4.6;
     const sock = new ModelBuilder();
     // bands of orange and white, narrowing downwind (+z)
     for (let i = 0; i < 5; i++) {
@@ -163,7 +164,7 @@ export function buildSecret(P) {
       y0 += r * 0.85;
     }
     P.addMesh(c.build(), x, W.heightAt(x, z) - 0.05, z, rand() * 6);
-    P.colliders.addCircle(x, z, 0.3, 'rock');
+    P.colliders.addCircle(x, z, 0.3, 'rock').hi = 1.3;
   }
 
   // ------------------------------------------------ the grotto on the ledge
@@ -183,7 +184,7 @@ export function buildSecret(P) {
         const gy = ground(sd * 2.0, lz) - base;
         add(sd * (2.0 + rand() * 0.2), lz, gy + 0.7, 0.85 + rand() * 0.2, [0.9, 1.1, 1]);
         add(sd * (1.95 + rand() * 0.2), lz, gy + 1.9, 0.75 + rand() * 0.2, [0.9, 1.0, 1]);
-        P.colliders.addCircle(...f.to(sd * 2.05, lz), 0.62, 'rock');
+        P.colliders.addCircle(...f.to(sd * 2.05, lz), 0.62, 'rock').hi = 3;
       }
     }
     // the back
@@ -191,7 +192,7 @@ export function buildSecret(P) {
       const gy = ground(lx, -1.6) - base;
       add(lx, -1.7, gy + 0.6, 0.8, [1, 1.1, 0.8]);
       add(lx, -1.65, gy + 1.8, 0.75, [1, 1, 0.8]);
-      P.colliders.addCircle(...f.to(lx, -1.75), 0.55, 'rock');
+      P.colliders.addCircle(...f.to(lx, -1.75), 0.55, 'rock').hi = 3;
     }
     // the roof: big flat slabs stepping down toward the mouth with the floor,
     // on a third course of rocks along each wall
@@ -234,7 +235,7 @@ export function buildSecret(P) {
     tarp.box(3.0, 0.03, 1.5, { pos: [0, ty - 0.22, tz + 0.55], rot: [-0.3, 0, 0], color: 0xff6a14, jitter: 0 });
     for (const sd of [-1, 1]) tarp.beam([sd * 1.4, ground(sd * 1.4, tz + 1.2) - base - 0.1, tz + 1.2], [sd * 1.4, ty - 0.42, tz + 1.2], 0.03, 5, { color: WOOD_DARK });
     P.addMesh(tarp.build(), gx, base, gz, G.yaw);
-    for (const sd of [-1, 1]) P.colliders.addCircle(...f.to(sd * 1.4, tz + 1.2), 0.08, 'solid');
+    for (const sd of [-1, 1]) P.colliders.addCircle(...f.to(sd * 1.4, tz + 1.2), 0.08, 'solid').hi = ty - 0.42 - (ground(sd * 1.4, tz + 1.2) - base - 0.1);
 
     // Gus's lantern on a crooked post at the mouth's east corner: it glows
     // after dark, a warm speck high on the cliff seen from the valley
@@ -247,7 +248,7 @@ export function buildSecret(P) {
     post.cyl(0.08, 0.1, 0.22, 6, { pos: [0.55, 1.87, 0.1], color: 0x2a2a28 });
     post.cyl(0.06, 0.06, 0.16, 6, { pos: [0.55, 1.89, 0.1], color: 0xffd890 });
     P.addMesh(post.build(), px, py - 0.1, pz, G.yaw, P.mat, { shadow: false });
-    P.colliders.addCircle(px, pz, 0.12, 'solid');
+    P.colliders.addCircle(px, pz, 0.12, 'solid').hi = 2.2;
     // the glass of the lantern, turned with the post
     const c = Math.cos(G.yaw);
     const sn = Math.sin(G.yaw);
