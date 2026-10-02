@@ -254,8 +254,8 @@ What changed in the latest round, with pictures, the audit and the tests:
 
 - A fridge humming in the spruce east of the Trading Post, its cord running
   off into the moss. **OPEN** it once for $40.
-- A fairy ring of red toadstools north-west of Moose Lake whose spots glow at
-  night. Step inside once a day for four hours of fairy luck (four minutes of
+- A fairy ring of red toadstools north-west of Moose Lake; after dark their
+  spots glow and a ring of green light shows in the grass. Step inside once a day for four hours of fairy luck (four minutes of
   play by day): the fish bite half as well again, and the bite readout says
   Fairy luck.
 - A flying saucer nose down in a crater north of Steaming Springs, its rim
@@ -562,7 +562,7 @@ node tools/shot.mjs tools/scenarios/oddities-2.json  # (spoilers) Ruben's first 
 node tools/shot.mjs tools/scenarios/oddities-3.json  # (spoilers) the Christmas tree, the gnome and the door in the tree
 node tools/shot.mjs tools/scenarios/oddities-4.json  # (spoilers) the fairy ring, the Christmas tree and the stones at night
 node tools/shot.mjs tools/scenarios/oddities-5.json  # (spoilers) the crash site and the door in the tree at night
-node tools/shot.mjs tools/scenarios/oddities-6.json  # (spoilers) the tinfoil and Santa hats in the wardrobe, the Journal's list and the hot rod in Barn-find Rust
+node tools/shot.mjs tools/scenarios/oddities-6.json  # (spoilers) the hats and the paint before they are found, the tinfoil and Santa hats in the wardrobe, the Journal's list, and the hot rod in Barn-find Rust with Ruben in his Santa hat
 node tools/shot.mjs tools/scenarios/fish-look-1.json # a King Salmon, a Rainbow Trout, a Dolly Varden and a Northern Pike held up close
 node tools/shot.mjs tools/scenarios/fish-look-2.json # a Yelloweye Rockfish, an Arctic Grayling, a Pacific Halibut and a Coastal Cutthroat Trout held up close
 node tools/shot.mjs tools/scenarios/minimap.json      # the small map on foot and driving, its goal marker, and a tap to the full map

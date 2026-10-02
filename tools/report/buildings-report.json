@@ -1,0 +1,515 @@
+{
+  "kicker": "Hotrod Outdoor Alaska Fishing · buildings, oddities, fish",
+  "title": "Hotrod Detail and Oddities",
+  "lede": "Every house and every place you visit often is rebuilt the way the real thing is built, with wood, shingles, stone, concrete and corrugated metal you can see the grain of, for a handful of extra draws; ten strange things now wait in the woods; and the fish you land look wet and alive. Eight old bugs turned up on the way and an independent review found fifteen problems in the new work: all are fixed.",
+  "links": [
+    {
+      "label": "Play the new build",
+      "href": "https://claude.ai/artifact/3urJEG61Boov67ViABm26A"
+    },
+    {
+      "label": "Code on GitHub",
+      "href": "https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing"
+    },
+    {
+      "label": "README",
+      "href": "https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/README.md"
+    }
+  ],
+  "sections": [
+    {
+      "id": "status",
+      "kicker": "Your three requests",
+      "title": "Buildings in detail, strange things in the woods, better fish",
+      "html": "<p><b>1. The buildings.</b> You asked me to look through all the assets, bring the houses with low detail or low resolution up to higher detail, and give the places you visit often, like the Trading Post, the same treatment. I went through every structure in the game (the list is below). Every house and every place you stand on is rebuilt: <b>Ruben's cabin</b> with its yard, outhouse and mailbox, the <b>Kenai Trading Post</b> with its yard, <b>Kachemak Light</b> and the <b>keeper's house</b>, <b>Halibut Pier</b> with its <b>bait shack</b> and the skiff, the <b>lake docks</b> and their rowboats, the <b>Bear Falls platform</b> and the <b>tundra lookout</b>. The trailhead signs, the bridges, the campfires, the boardwalk at Mosquito Flats, the bug dope machine, the bench at the hot pool, the kayak at Glacier Lake and the wreck's wheelhouse got smaller upgrades.</p><p>\"Resolution\" here meant two things. The <b>shapes</b> were boxes: now they are made the way the real things are made (log walls with their corners, framed windows, doors with braces and hinges, porches on posts with railings and steps). And the <b>surfaces</b> were flat colour: now wood, shingles, stone, concrete and corrugated metal have their own pattern and relief, drawn once when the game loads, so a wall shows its boards and a roof its shingles without a single extra draw.</p><p><b>2. Easter eggs and strange things in the woods.</b> Ten oddities stand in the forest, on no map: a humming fridge, a fairy ring, a crashed flying saucer, Bigfoot's hut, Ruben's first car rusting with a tree through its engine, a ringing payphone, standing stones with glowing runes, a Christmas tree lit all year, a gnome who never stands in the same place twice and a tiny door in an old spruce. The Journal keeps a rumour for each one you have not found, some can be opened, answered or knocked on, and three give you things the store does not sell.</p><p><b>3. The caught fish.</b> All 31 species are rebuilt for the close look you get in your hands and in the catch photo: rounded bodies with the gill cover, painted scales and the lateral line, fins of rays with clear membrane, eyes with an iris, and a wet shine.</p><p><b>Estimated time left: none.</b> All of it is in the build at the link above: checked in a browser engine from the same spots before and after, walked through with the game's own player, measured, and reviewed by an independent code review whose fifteen findings are all fixed and measured again (see Tests).</p><h3>Next steps</h3><ol><li><b>Your play test on the iPhone.</b> Walk up the cabin's steps, onto the Trading Post's porch and out along the pier; land a fish and look at it close; go looking for the strange things with the Journal's rumours. Tell me if a surface looks too busy or too plain, if anything feels in the way, or if an oddity is too easy or too hard to find.</li><li><b>The iPhone app</b> needs building again in Xcode to get this round (it carries its own copy of the game).</li><li><b>The App Store preparations</b> stay skipped until you say go; new store pictures would show the new buildings and fish.</li><li><b>Ideas for a next round</b>, if you want one: going inside. The cabin and the Trading Post are built with real walls and openings now, so an interior is the natural next step: the store's counter with the tackle on the walls and the trophy wall in the cabin.</li></ol>"
+    },
+    {
+      "id": "inventory",
+      "kicker": "Everything I looked at",
+      "title": "The structures, before and after",
+      "html": "<p>Every structure the game builds, with the triangles it was made of before and after this round (counted in the game's own build code; \"in other\" means it is counted with the many small things in the last row of the totals). Triangles are what the graphics chip draws; the draws, which matter more on a phone, are in Performance.</p><div class=\"tablewrap\"><table><thead><tr><th>Structure</th><th>Where</th><th class=\"n\">Triangles before</th><th class=\"n\">Triangles after</th><th>What changed</th></tr></thead><tbody><tr><td>Ruben's cabin and its yard</td><td>Hotrod Landing</td><td class=\"n\">2,472</td><td class=\"n\">12,910</td><td>Rebuilt: log walls with chinking, sawn ends and real openings; four-pane windows, shutters, a plank door; a shingled roof over an open porch with a truss, railings and steps; a stone chimney; the yard (woodpile under a lean-to, chopping block, propane tank, rain barrel, canoe on sawhorses, salmon rack, bear cache, satellite dish). The yard is levelled.</td></tr><tr><td>Outhouse</td><td>Hotrod Landing</td><td class=\"n\">100</td><td class=\"n\">436</td><td>Rebuilt: board and batten on corner posts, a metal roof, a braced door with the moon, footings, a step, the sign.</td></tr><tr><td>Mailbox</td><td>Hotrod Landing</td><td class=\"n\">part of the cabin</td><td class=\"n\">part of the cabin</td><td>Rebuilt: a rural box with its flag up on a braced post; the RUBEN board now shows (it was inside the box).</td></tr><tr><td>Kenai Trading Post and its yard</td><td>by the junction</td><td class=\"n\">1,564</td><td class=\"n\">11,414</td><td>Rebuilt: false front with cornice and brackets, lap siding and board and batten, display windows, double doors with a transom, a covered porch with posts, braces, railings and steps, a metal roof with a stovepipe, a stone basement with barn doors at the back; outside two fuel pumps on an island, the flag on a footing, a weigh station with a halibut and a king salmon, ice chest, propane cage, bins, tires, a picnic table, a dumpster. The front yard is levelled.</td></tr><tr><td>Kachemak Light and the keeper's house</td><td>the headland</td><td class=\"n\">772</td><td class=\"n\">6,208</td><td>Rebuilt: the tower's base down to the ground, a door with steps, windows up the tower, a gallery with corbels and railings, the lantern's frame and vent; a new keeper's house along the slope (it was buried in it) with clapboard, a red roof, a walk-out basement, a chimney, a picket fence and a clothesline.</td></tr><tr><td>Halibut Pier, the bait shack and the skiff</td><td>the coast</td><td class=\"n\">5,532</td><td class=\"n\">9,784</td><td>Rebuilt: pile bents with caps and bracing, weed at the tide line, stringers, planks, railings with rod holders, cleats, lamp posts with lanterns, benches, crab pots, a ladder and a life ring, gulls; the bait shack with a service window, its flap propped up, a door, a shed roof and floats; the skiff with windows, rails, an outboard and rods.</td></tr><tr><td>Moose Lake dock and its rowboat</td><td>Moose Lake</td><td class=\"n\">1,316</td><td class=\"n\">1,432</td><td>Planks on caps and posts, cleats, a bench with a back, a ladder; the rowboat is now an open hull with seats and oars (it was a closed dome).</td></tr><tr><td>Mosquito Flats dock and boardwalk</td><td>Mosquito Flats</td><td class=\"n\">2,496</td><td class=\"n\">2,340</td><td>The same upgrade as the Moose Lake dock; the boardwalk's plank boxes became planked lengths on stringers (fewer triangles, more detail).</td></tr><tr><td>Bear Falls platform</td><td>Bear Falls</td><td class=\"n\">236</td><td class=\"n\">2,364</td><td>Rebuilt: posts with cross bracing, a planked deck with its rim, railings with balusters, a bench, a sign about the bears, a ramp with cleats and hand rails.</td></tr><tr><td>Tundra lookout</td><td>Caribou Tundra</td><td class=\"n\">272</td><td class=\"n\">2,500</td><td>Rebuilt: the same kind of braced legs, deck and railings, a shingled hip roof on four posts, a coin binocular viewer, a bench, the ramp with hand rails.</td></tr><tr><td>Truss bridges</td><td>the river crossings</td><td class=\"n\">924</td><td class=\"n\">924</td><td>Concrete surfaces on the deck, the abutments and the middle pier.</td></tr><tr><td>Trailhead signs, campfires, the junction post</td><td>every place</td><td class=\"n\">in other</td><td class=\"n\">in other</td><td>Peeled log posts under a little shingled roof; log seats and a stump at the fires.</td></tr><tr><td>Steaming Springs bench, bug dope machine, kayak</td><td>their places</td><td class=\"n\">in other</td><td class=\"n\">in other</td><td>A bench with a back; the machine on legs under a roof with a label, coin slot, crank and tray; the kayak's cockpit, deck lines and paddle.</td></tr><tr><td>The wreck's wheelhouse, deck and gangplank</td><td>Shipwreck Cove</td><td class=\"n\">in other</td><td class=\"n\">in other</td><td>Framed windows (one broken), a door with a porthole, a railed roof with radar, a searchlight and the stack; deck planking; real crab pots; a planked gangplank.</td></tr></tbody></table></div><p>All structures together: <b>30,054</b> triangles before, <b>68,712</b> after, spread over the whole map (the strange things in the woods, below, are another 22,265); the small things not in a row above (signs, fires, the springs, the mosquito statue, the wreck, the secret's pieces) went from 14,370 to 18,400.</p>"
+    },
+    {
+      "id": "finishes",
+      "kicker": "How the surfaces got their resolution",
+      "title": "Eight finishes, no extra draws",
+      "html": "<p>A texture image per building would have cost memory and a draw per building. Instead the game draws eight surface patterns once when it loads, each a seamless 2 m square at 512 by 512 pixels. Drawing them takes about half a second, so a background worker draws them while the world is being generated and they cost the loading screen nothing (where a browser has no workers they are drawn in place). The game packs them four to an image in two images: 2.8 MB of graphics memory with their <a href=\"https://en.wikipedia.org/wiki/Mipmap\">mipmaps</a>. Every part of a building says which finish it wears and gets its own surface coordinates in metres, worked out face by face (across and up a wall, along and across a floor or a roof, turned for boards that run the other way). The props' one material reads the pattern for each pixel, darkens and lightens the part's colour with it and bends the light with it as a <a href=\"https://en.wikipedia.org/wiki/Bump_mapping\">bump map</a> up close, so boards, shingle butts and mortar catch the sun. Parts without a finish carry a zero and look as before, so everything still merges into one draw for each 160 m square of the map. The code is in <a href=\"https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/src/world/finish.js\"><code>src/world/finish.js</code></a> and <a href=\"https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/src/util/builder.js\"><code>src/util/builder.js</code></a>.</p><div class=\"tablewrap\"><table><thead><tr><th>Finish</th><th>Name in the code</th><th>What it shows</th><th>Where it is used</th></tr></thead><tbody><tr><td>Lap siding</td><td><code>plank</code></td><td>Boards 0.2 m tall, each lapping over the one below with a shadow line, staggered joints, grain along the boards</td><td>The Trading Post's front and false front, the keeper's house, casings, benches, rails</td></tr><tr><td>Board and batten</td><td><code>batten</code></td><td>Boards a third of a metre wide standing on end, a batten over each joint, grain running up</td><td>The Trading Post's sides and back, the outhouse, gables, doors, shutters, the bait shack</td></tr><tr><td>Log</td><td><code>log</code></td><td>Bark with long checks and knots along the log</td><td>The cabin's walls, posts, the bear cache, firewood, sign posts, pilings</td></tr><tr><td>Cedar shingles</td><td><code>shingle</code></td><td>Rows a quarter of a metre apart, shingles of mixed widths, a shadow under each row's butts</td><td>The cabin, the bear cache, the lookout, the sign roofs</td></tr><tr><td>Fieldstone</td><td><code>stone</code></td><td>Stones of mixed size laid in rough courses, deep mortar joints</td><td>Foundations, the cabin's chimney, the keeper's chimney, the Trading Post's basement</td></tr><tr><td>Corrugated metal</td><td><code>metal</code></td><td>26 ridges to 2 m, sheets lapping every 10 ridges, rows of screws, rust streaks, a sheen</td><td>The Trading Post's and the keeper's roofs, the lean-to, the outhouse roof, the fuel pumps, the bins</td></tr><tr><td>Deck boards</td><td><code>deck</code></td><td>Boards 0.14 m wide with gaps, staggered butt joints and nail heads</td><td>Porches, steps, docks, the pier, platforms, the boardwalk, the wreck's deck</td></tr><tr><td>Concrete</td><td><code>concrete</code></td><td>Speckle, damp blotches and a crack or two</td><td>Sills, the bridges, the fuel island, steps, the lighthouse</td></tr></tbody></table></div><p>The patterns follow how these things are built: <a href=\"https://en.wikipedia.org/wiki/Clapboard_(architecture)\">lap siding</a>, <a href=\"https://en.wikipedia.org/wiki/Board_and_batten\">board and batten</a>, <a href=\"https://en.wikipedia.org/wiki/Wood_shingle\">cedar shingles</a>, <a href=\"https://en.wikipedia.org/wiki/Corrugated_galvanised_iron\">corrugated metal</a> and <a href=\"https://en.wikipedia.org/wiki/Log_building\">log walls</a>.</p>",
+      "pairs": [
+        {
+          "before": {
+            "file": "bld/before3/cabin-close.jpg",
+            "caption": "The cabin up close before: flat brown logs and a flat green roof."
+          },
+          "after": {
+            "file": "bld/after4/cabin-close.jpg",
+            "caption": "The same spot now: bark and checks on the logs, chinking, the sawn ends at the corner, a framed window with its shutters and the shingles over it."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/before3/post-close.jpg",
+            "caption": "The back corner of the Trading Post before: a flat red box on a flat grey block."
+          },
+          "after": {
+            "file": "bld/after4/post-close.jpg",
+            "caption": "Now: fieldstone in courses, board and batten with white corner boards, the frieze and the corrugated roof's edge."
+          }
+        }
+      ]
+    },
+    {
+      "id": "cabin",
+      "kicker": "Hotrod Landing",
+      "title": "Ruben's cabin, its yard and the outhouse",
+      "html": "<p>The cabin is built the way a <a href=\"https://en.wikipedia.org/wiki/Log_cabin\">log cabin</a> is: nine rows of round logs on each wall, the side walls half a log higher so the corners lap, the sawn ends showing light end grain, pale chinking between the rows, and the logs cut round real openings. The door is planks with a Z brace, strap hinges and a latch under the moose antlers; the windows have four panes, casings and a sill, the front one green shutters with a pine cut out and a box of flowers. Board and batten gables carry a vent each; the shingled roof runs out over the porch, which has a king post truss, posts down to the ground with knee braces, railings, a bench, a rocking chair with a blanket, boots, a rod and a lantern, and five steps down to the yard. A fieldstone foundation and a stone chimney with its cap, and a satellite dish (Ruben has his priorities).</p><p>The yard: a woodpile under a lean-to of corrugated metal, a chopping block with the axe in it and split pieces, a propane tank, a rain barrel, a red canoe upside down on sawhorses with its paddle, salmon drying on a rack and a <b>bear cache</b> on four stilts with tin round them so nothing climbs up, its ladder leaning on the platform.</p><p><b>The yard is level now.</b> The cabin stands on a bank that falls 0.22 m every metre toward the river, so the old cabin's porch was 3 m in the air. When the world is made, a yard round the cabin is brought to a gentle slope (6 cm a metre toward the river) and blended into the bank over 6 m, stopping short of the landing; roads keep their grade. The code is <a href=\"https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/src/world/sites.js\"><code>src/world/sites.js</code></a> and <code>World.levelPad</code> in <a href=\"https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/src/world/worldgen.js\"><code>src/world/worldgen.js</code></a>.</p>",
+      "pairs": [
+        {
+          "before": {
+            "file": "bld/before2/cabin-front.jpg",
+            "caption": "Before: the old cabin high on its block, no steps, a flat roof colour."
+          },
+          "after": {
+            "file": "bld/after4/cabin-front.jpg",
+            "caption": "After: the cabin on its level yard, the porch under the roof with its truss and railings, the steps down, the drying rack."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/before2/cabin-porch.jpg",
+            "caption": "Before: at the foot of the old porch."
+          },
+          "after": {
+            "file": "bld/after4/cabin-porch.jpg",
+            "caption": "After: at the steps, looking at the door, the window with its shutters and the porch."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/before2/cabin-back.jpg",
+            "caption": "Before: the back and the right side."
+          },
+          "after": {
+            "file": "bld/after4/cabin-back.jpg",
+            "caption": "After: the stone chimney, the dish, the bear cache on its stilts and the canoe on its sawhorses."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/before2/cabin-side.jpg",
+            "caption": "Before: the left side with its stack of logs."
+          },
+          "after": {
+            "file": "bld/after4/cabin-side.jpg",
+            "caption": "After: the woodpile under its lean-to, the chopping block and the propane tank."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/before2/outhouse.jpg",
+            "caption": "Before: a box with a moon."
+          },
+          "after": {
+            "file": "bld/after4/outhouse.jpg",
+            "caption": "After: board and batten on footings, a metal roof, the braced door with its moon, a step and the sign."
+          }
+        }
+      ]
+    },
+    {
+      "id": "post",
+      "kicker": "Where you trade",
+      "title": "The Kenai Trading Post",
+      "html": "<p>A frontier store with a <a href=\"https://en.wikipedia.org/wiki/False_front\">false front</a>: the facade rises above the roof in steps with a dark cornice on white brackets and frames the big sign. The front is lap siding, the sides and back board and batten with white corner boards and a frieze, under a low roof of corrugated metal with a stovepipe that smokes. Two display windows with eight panes each and a pair of green doors with glass and a transom open onto a covered porch: posts with knee braces, a shed roof, railings either side of wide steps, a bench, two rocking chairs round a table with a coffee can, barrels with a lantern, a rack of rods, crates, the live bait cooler under its sign, a notice board of flyers, the moose antlers over the door, a king salmon mounted on its plaque, two green enamel lamps, and an OPEN sign in the door.</p><p>Outside: two old fuel pumps (red and green) with their globes and hoses on a concrete island between yellow posts, the Alaska flag on its footing, a <b>weigh station</b> with its scale, a <a href=\"https://en.wikipedia.org/wiki/Pacific_halibut\">halibut</a> hanging by the tail and a king salmon, under a sign that says Brag here; the ice chest with its sign where you can see it, a propane cage, a bear-proof bin, a stack of tires, a picnic table, and at the back a dumpster and barn doors into a stone basement where the ground drops away. The front yard is levelled like the cabin's, so the porch is one step up all along its front.</p>",
+      "pairs": [
+        {
+          "before": {
+            "file": "bld/before2/post-front.jpg",
+            "caption": "Before: a red box with a sign, one pump and the flag."
+          },
+          "after": {
+            "file": "bld/after4/post-front.jpg",
+            "caption": "After: the false front and its cornice, the porch, the two pumps, the flag and the weigh station."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/before2/post-porch.jpg",
+            "caption": "Before: the old porch."
+          },
+          "after": {
+            "file": "bld/after4/post-porch.jpg",
+            "caption": "After: the steps, the doors with the OPEN sign, the notice board, the live bait cooler, the chairs and the lamps."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/before2/post-side.jpg",
+            "caption": "Before: the side."
+          },
+          "after": {
+            "file": "bld/after4/post-side.jpg",
+            "caption": "After: the weigh station with the day's halibut and salmon, the tires and the side windows."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/before2/post-back.jpg",
+            "caption": "Before: the back."
+          },
+          "after": {
+            "file": "bld/after4/post-back.jpg",
+            "caption": "After: the stone basement with its barn doors, the dumpster, the board and batten, the rear gable and the stovepipe."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/before3/post-night.jpg",
+            "caption": "Before: at night."
+          },
+          "after": {
+            "file": "bld/after4/post-night.jpg",
+            "caption": "After: at night, the display windows, the door's glass and the porch lamps lit."
+          }
+        }
+      ]
+    },
+    {
+      "id": "light",
+      "kicker": "The headland",
+      "title": "Kachemak Light and the keeper's house",
+      "html": "<p>The tower got a door with a hood and steps, three windows up its side, corbels under a railed gallery, the lantern's frame of astragals, a ventilator ball and a lightning rod, and a base that reaches the ground. The <a href=\"https://en.wikipedia.org/wiki/Lighthouse_keeper\">keeper's</a> house is new, beside the tower along the slope of the headland: white clapboard with green windows and door, a red metal roof with a brick chimney, a hood over the door, a walk-out basement on the side toward <a href=\"https://en.wikipedia.org/wiki/Kachemak_Bay\">Kachemak Bay</a>, a white <a href=\"https://en.wikipedia.org/wiki/Picket_fence\">picket fence</a> round the front yard and the wash out on the line.</p>",
+      "pairs": [
+        {
+          "before": {
+            "file": "bld/before3/lighthouse.jpg",
+            "caption": "Before: the tower."
+          },
+          "after": {
+            "file": "bld/after4/lighthouse.jpg",
+            "caption": "After: the tower with its door, windows and gallery, the keeper's house beside it."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/before2/keeper-house.jpg",
+            "caption": "Before: where the keeper's house was (in the hill)."
+          },
+          "after": {
+            "file": "bld/after4/keeper-house.jpg",
+            "caption": "After: the new house from its gate."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/before2/keeper-sea.jpg",
+            "caption": "Before: the same spot from the sea side."
+          },
+          "after": {
+            "file": "bld/after4/keeper-sea.jpg",
+            "caption": "After: the walk-out basement toward the sea."
+          }
+        }
+      ]
+    },
+    {
+      "id": "pier",
+      "kicker": "The coast",
+      "title": "Halibut Pier, its bait shack and the skiff",
+      "html": "<p>The pier stands on bents: a pile each side with a cap across, cross bracing down to the water and dark weed at the tide line, stringers under a deck of planks, railings with rod holders, cleats, three lamp posts with lanterns, two benches facing the sea, crab pots, a ladder and a life ring at the end, and gulls on the posts. The bait shack is board and batten under a shed roof, with a door at its seaward end and a service window toward the walk, its flap propped up over a counter and a shelf of tackle; a life ring, a string of floats and the bait cooler by the door. The skiff alongside has windows round its cabin, rails, an outboard, a life ring and two rods up.</p>",
+      "pairs": [
+        {
+          "before": {
+            "file": "bld/before2/pier-shack.jpg",
+            "caption": "Before: the bait shack from the pier."
+          },
+          "after": {
+            "file": "bld/after4/pier-shack.jpg",
+            "caption": "After: the shack's service window and flap, the floats, the lamp and the rails."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/before3/pier-deck.jpg",
+            "caption": "Before: down the pier from the beach end."
+          },
+          "after": {
+            "file": "bld/after4/pier-deck.jpg",
+            "caption": "After: the planks, rod holders, lamp posts, crab pots and benches."
+          }
+        }
+      ]
+    },
+    {
+      "id": "platforms",
+      "kicker": "Where you stand to look and fish",
+      "title": "The lookout, the Bear Falls platform and the docks",
+      "html": "<p>The tundra lookout and the Bear Falls platform share a build: log legs with cross bracing on every side, a planked deck with its rim, railings with balusters, and a ramp with cleats and hand rails. The lookout has a shingled hip roof on four posts and a coin binocular viewer; the platform a bench and a sign telling you to give the bears room. The lake docks have planks on caps and posts, cleats, a bench with a back and a ladder, and the rowboats are open boats with their seats and oars.</p>",
+      "pairs": [
+        {
+          "before": {
+            "file": "bld/before2/lookout.jpg",
+            "caption": "Before: the lookout."
+          },
+          "after": {
+            "file": "bld/after4/lookout.jpg",
+            "caption": "After: the braced legs, the railings and the hip roof."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/before2/falls-platform.jpg",
+            "caption": "Before: the Bear Falls platform."
+          },
+          "after": {
+            "file": "bld/after4/falls-platform.jpg",
+            "caption": "After: the braced legs, the railings, the bench and the ramp."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/before2/moose-dock.jpg",
+            "caption": "Before: the Moose Lake dock and its rowboat."
+          },
+          "after": {
+            "file": "bld/after4/moose-dock.jpg",
+            "caption": "After: the dock and the open rowboat."
+          }
+        }
+      ]
+    },
+    {
+      "id": "more",
+      "kicker": "The smaller things",
+      "title": "Signs, Mosquito Flats and the wreck",
+      "html": "<p><b>The painted signs are sharper.</b> Every sign's picture was 512 by 192 texels whatever the size of its board, so the Trading Post's 11 m sign was drawn at 46 texels a metre and stretched 1.9 times sideways, and the long arrows on the junction post were squashed to a third of their height. Each picture is now made in its board's own shape at about 100 texels a metre (512 to 1,024 across), and a line too long for its board is set smaller instead of running off the edge.</p><p>Every trailhead sign stands on two peeled log posts under a little shingled roof, and the signpost at the junction is a log with a cap. The boardwalk at Mosquito Flats is planked lengths on stringers, the bug dope machine stands on legs under a roof with its label, coin slot, crank and tray. The wreck's wheelhouse has framed windows (one broken), a door with a porthole, a railed roof with radar, a searchlight and the stack; her deck is planked, the crab pots are real pots and the gangplank is planks on stringers.</p>",
+      "pairs": [
+        {
+          "before": {
+            "file": "bld/before2/flats.jpg",
+            "caption": "Before: Mosquito Flats from the parking."
+          },
+          "after": {
+            "file": "bld/after4/flats.jpg",
+            "caption": "After: the sign on its posts, the machine and the boardwalk."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/before2/wreck.jpg",
+            "caption": "Before: the wreck from the beach."
+          },
+          "after": {
+            "file": "bld/after4/wreck.jpg",
+            "caption": "After: the wheelhouse's windows, radar and stack, the pots on deck."
+          }
+        }
+      ]
+    },
+    {
+      "id": "bugs",
+      "kicker": "Found on the way",
+      "title": "Eight problems in the old buildings, fixed",
+      "html": "<p>Looking through every structure closely turned up these, all from earlier rounds:</p><div class=\"tablewrap\"><table><thead><tr><th>Problem</th><th>What was wrong</th><th>Now</th></tr></thead><tbody><tr><td>The keeper's house was buried</td><td>It was built at the height of the lighthouse's base, but the headland rises 3.5 m in the 7 m to where it stood: the ground under it ran from 1.9 to 5.6 m above its floor, so its 3 m walls were in the hill and only parts of the roof showed.</td><td>A new house along the slope, on its own ground, with a walk-out basement toward the sea.</td></tr><tr><td>You could not get onto Ruben's porch</td><td>The porch stood 3.1 to 3.2 m above the ground along its front and 2.6 to 3.2 m along its sides, with no steps; the step up the game allows is 1.1 m. (SLEEP still worked from the ground under it.)</td><td>A levelled yard, a porch 0.9 m up and five steps; the walk test climbs them to the door.</td></tr><tr><td>The ICE sign was inside the ice chest</td><td>Its board stood at the chest's middle, so the chest hid it.</td><td>On the chest's front now.</td></tr><tr><td>The RUBEN name board was inside the mailbox</td><td>Same mistake: the board stood in the box.</td><td>On its own board under the box, facing the road.</td></tr><tr><td>The lighthouse floated on its seaward side</td><td>Its concrete base stopped 1.45 m above the ground there.</td><td>The base reaches down to the lowest ground round the tower.</td></tr><tr><td>Things you walked through</td><td>The Trading Post's ice chest, its tires and its barrels and crates had no collider.</td><td>Each has one, with its height for the paraglider.</td></tr><tr><td>The rowboats looked capsized</td><td>Each was a closed dome on the water.</td><td>An open hull with its inside, seats, oars and oarlocks.</td></tr><tr><td>Window glass glowed beige in daylight</td><td>The glass was lit a little all day, so windows read as yellow blinds.</td><td>Dark by day, as glass looks from outside; warm lamplight at night as before.</td></tr></tbody></table></div>"
+    },
+    {
+      "id": "oddities",
+      "kicker": "Your second request (spoilers)",
+      "title": "Ten strange things in the woods",
+      "html": "<p>Ten oddities stand in the forest, none on the map, each 40 to 140 m from a road in dense trees on gentle ground and well away from the places. Walk up to one and you find it: a line on the screen says what it is and how many you have found, and the Journal keeps them under Challenges, with a rumour for each one still out there (the rumours give the direction from a place on the map, checked against the map's north). Two new challenges pay $250 for finding three and $1,000 for all ten, so there are 27 challenges now. Some of them can be opened, answered or knocked on, and three give you something the Trading Post does not sell: a tinfoil hat and a Santa hat for the wardrobe (they show on Ruben at the wheel too) and a paint job for the hot rod. Things to hear: the fridge hums, the saucer throbs, the payphone rings, the fairies chime and the tiny door knocks. The code is in <a href=\"https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/src/world/oddities.js\"><code>src/world/oddities.js</code></a>.</p><div class=\"tablewrap\"><table><thead><tr><th>What</th><th>Where</th><th>What you see</th><th>What it does</th><th class=\"n\">Triangles</th></tr></thead><tbody><tr><td><b>The fridge in the woods</b></td><td>east of the Trading Post</td><td>A rounded old fridge, yellowed and rusting from the foot up, moss on its top and a chrome handle, humming away; its cord runs off into the moss to no socket at all.</td><td><b>OPEN</b> it once for an envelope marked FRIDGE MONEY: $40 (and a salmon labelled GUS, DO NOT EAT).</td><td class=\"n\">710</td></tr><tr><td><b>The fairy ring</b></td><td>north-west of Moose Lake</td><td>Twenty-three red toadstools in a perfect ring five metres across, a few small pale ones inside; after dark their white spots glow and a ring of green light shows in the grass.</td><td>Step inside, once a day, for four hours of fairy luck (four minutes of play by day, time to reach Moose Lake): the fish bite half as well again, and the bite readout says Fairy luck.</td><td class=\"n\">4,753</td></tr><tr><td><b>The crash site</b></td><td>north of Steaming Springs</td><td>A flying saucer nose down in a crater of thrown earth, stones and scorched ground: two shallow domes, a glass dome, its rim lights green at night, the hatch in its side open on a green glow with its door let down as a ramp, burnt spruce leaning away from it and a wisp of smoke. It throbs.</td><td><b>LOOK INSIDE</b> for a tinfoil hat.</td><td class=\"n\">5,286</td></tr><tr><td><b>Bigfoot's hut</b></td><td>south-west of Mosquito Flats</td><td>Whole young trees leaned into a cone with a way in and spruce boughs laid over them, a bed of moss inside, fresh fish bones by the door and nine very big footprints going off into the trees.</td><td>Only the shivers.</td><td class=\"n\">2,008</td></tr><tr><td><b>Ruben's first car</b></td><td>south-west of the Trading Post</td><td>An old hot rod rusted through and sunk to its axles, moss on its roof, the hood up, a headlight fallen in the moss, its old flames faint on its sides, and a spruce growing up through the engine.</td><td><b>LOOK</b> at it, and the garage paints yours to match, free: Barn-find Rust, matte, with faded flames.</td><td class=\"n\">1,608</td></tr><tr><td><b>The payphone</b></td><td>north-east of Halibut Pier</td><td>A blue payphone on a pole with its keypad, its handset on a cord and the phone book on its chain. Its bell rings as you come within 45 m.</td><td><b>ANSWER</b> it: one of seven callers each time.</td><td class=\"n\">316</td></tr><tr><td><b>The standing stones</b></td><td>south-west of Glacier Lake</td><td>Nine rough stones in a ring ten metres across, one fallen, lichen on their backs, a flat stone in the middle, and runes on three that glow blue at night.</td><td>A place to be at midnight.</td><td class=\"n\">2,312</td></tr><tr><td><b>The Christmas tree</b></td><td>west of Steaming Springs</td><td>A spruce dressed with baubles, a gold garland, forty lights and a star, lit all year, and three presents under it.</td><td><b>OPEN PRESENT</b> for a Santa hat, with a tag: To Ruben, for being good. Mostly.</td><td class=\"n\">3,980</td></tr><tr><td><b>The gnome</b></td><td>south-west of Caribou Tundra</td><td>A garden gnome with a red hat, a white beard and a fishing rod. He stands in one of four spots, a different one each day.</td><td>Only the finding.</td><td class=\"n\">416</td></tr><tr><td><b>The door in the tree</b></td><td>south-east of Bear Falls</td><td>A tiny arched door at the foot of an old spruce, two round windows lit at night, a lantern on a hook, a doormat, a path of pebbles and a red mailbox on a twig.</td><td><b>KNOCK</b> after dark for seventy-seven tiny coins: $77, once.</td><td class=\"n\">876</td></tr></tbody></table></div><p>All ten together are 22,265 triangles in ten different squares of the map, so wherever you stand you see at most one or two of them. Their lights glow from one shared material that brightens as night falls, and the fairy ring's ring of light fades in after dark.</p>",
+      "figs": [
+        {
+          "file": "bld/odd/odd-fridge.jpg",
+          "caption": "The fridge in the woods, east of the Trading Post."
+        },
+        {
+          "file": "bld/odd/odd-fairyring.jpg",
+          "caption": "The fairy ring in the birches north-west of Moose Lake."
+        },
+        {
+          "file": "bld/odd/odd-ufo.jpg",
+          "caption": "The crash site north of Steaming Springs."
+        },
+        {
+          "file": "bld/odd/odd-stickhut.jpg",
+          "caption": "Bigfoot's hut, the fish bones and the footprints."
+        },
+        {
+          "file": "bld/odd/odd-rustbucket.jpg",
+          "caption": "Ruben's first car, with a spruce through the engine."
+        },
+        {
+          "file": "bld/odd/odd-payphone.jpg",
+          "caption": "The payphone north-east of Halibut Pier."
+        },
+        {
+          "file": "bld/odd/odd-stones.jpg",
+          "caption": "The standing stones south-west of Glacier Lake."
+        },
+        {
+          "file": "bld/odd/odd-xmastree.jpg",
+          "caption": "The Christmas tree, in summer."
+        },
+        {
+          "file": "bld/odd/odd-gnome.jpg",
+          "caption": "The gnome, wherever he is today."
+        },
+        {
+          "file": "bld/odd/odd-fairydoor.jpg",
+          "caption": "The door in the tree south-east of Bear Falls."
+        },
+        {
+          "file": "bld/odd/odd-fairyring-night.jpg",
+          "caption": "The fairy ring after dark: its ring of light and glowing spots."
+        },
+        {
+          "file": "bld/odd/odd-xmastree-night.jpg",
+          "caption": "The Christmas tree at night."
+        },
+        {
+          "file": "bld/odd/odd-stones-night.jpg",
+          "caption": "The runes glowing at night."
+        },
+        {
+          "file": "bld/odd/odd-ufo-night.jpg",
+          "caption": "The saucer's lights at night."
+        },
+        {
+          "file": "bld/odd/odd-fairydoor-night.jpg",
+          "caption": "Somebody is home: the tiny windows at night."
+        },
+        {
+          "file": "bld/odd/odd-wardrobe-locked.jpg",
+          "caption": "Before you find them: the two hats say In the woods and cannot be bought."
+        },
+        {
+          "file": "bld/odd/odd-garage-locked.jpg",
+          "caption": "The same for the paint: Barn-find Rust is not for sale."
+        },
+        {
+          "file": "bld/odd/odd-wardrobe-tinfoil.jpg",
+          "caption": "The tinfoil hat in the wardrobe."
+        },
+        {
+          "file": "bld/odd/odd-wardrobe-santa.jpg",
+          "caption": "The Santa hat in the wardrobe."
+        },
+        {
+          "file": "bld/odd/odd-journal.jpg",
+          "caption": "The Journal: what you found, and the rumours for the rest."
+        },
+        {
+          "file": "bld/odd/odd-rust-hotrod.jpg",
+          "caption": "The hot rod in Barn-find Rust, Ruben in his Santa hat."
+        }
+      ]
+    },
+    {
+      "id": "fish",
+      "kicker": "Your third request",
+      "title": "The caught fish, close up",
+      "html": "<p>A fish you land is seen closer than anything else in the game: in your hands on the catch card and in the catch photo. Every one of the 31 species' models is rebuilt for that distance (in <a href=\"https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/src/entities/fishmodels.js\"><code>src/entities/fishmodels.js</code></a>):</p><ul><li><b>The body</b> is made of rounded cross sections on each family's own outline (a salmon's, a pike's, a rockfish's, a flatfish's and so on), with flat flanks, a full belly and the step of the gill cover, about four times as many triangles as before (2,535 on average, 662 before).</li><li><b>The skin</b> is painted at twice the size each way (512 by 256 texels, four times the detail): fine <a href=\"https://en.wikipedia.org/wiki/Fish_scale\">scales</a>, the <a href=\"https://en.wikipedia.org/wiki/Lateral_line\">lateral line</a>, the gill cover and the mouth, over the species' own colours and marks (spots, bars, the red band of a rainbow, the speckles of a char).</li><li><b>The fins</b> are rays with clear membrane between: the tail, the dorsal, the adipose fin on the salmon and the trout, the anal, the pelvic and the pectoral fins, and the grayling's great sail.</li><li><b>The eyes</b> have a coloured iris and a black pupil (the yelloweye's are yellow), and the cod and the burbot have the barbel under the chin.</li><li><b>A wet look:</b> a clear coat over the skin, so the light catches it like a wet fish, and a faint rainbow sheen on the salmon, the trout and the whitefish (<a href=\"https://en.wikipedia.org/wiki/Iridescence\">iridescence</a>).</li></ul><p>Only the fish in your hands, the one on your line and the salmon that leap from the river use these models (the fish you see swimming are the cheaper school models), so the cost is two or three thousand triangles each while you see one. The shader for the wet look is compiled while the game loads, with the others, so the first catch does not stutter. (The pale shape in the water under each fish in these pictures is a stone on the river bed at that spot: it is there with nothing in your hands too.)</p>",
+      "pairs": [
+        {
+          "before": {
+            "file": "bld/fish-before/fish-king.jpg",
+            "caption": "Before: a 95 cm King Salmon."
+          },
+          "after": {
+            "file": "bld/fish-after/fish-king.jpg",
+            "caption": "After: the same fish, with its scales, spots, gill cover, fins and wet shine."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/fish-before/fish-rainbow.jpg",
+            "caption": "Before: a Rainbow Trout."
+          },
+          "after": {
+            "file": "bld/fish-after/fish-rainbow.jpg",
+            "caption": "After: its red band, spots and clear fins."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/fish-before/fish-dolly.jpg",
+            "caption": "Before: a Dolly Varden."
+          },
+          "after": {
+            "file": "bld/fish-after/fish-dolly.jpg",
+            "caption": "After: its pink spots, the gill cover and an eye with an iris."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/fish-before/fish-pike.jpg",
+            "caption": "Before: a Northern Pike."
+          },
+          "after": {
+            "file": "bld/fish-after/fish-pike.jpg",
+            "caption": "After: its long snout, its pale spots and the fins set far back."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/fish-before/fish-yelloweye.jpg",
+            "caption": "Before: a Yelloweye Rockfish."
+          },
+          "after": {
+            "file": "bld/fish-after/fish-yelloweye.jpg",
+            "caption": "After: the yellow eye, the spiny dorsal and the orange skin."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/fish-before/fish-grayling.jpg",
+            "caption": "Before: an Arctic Grayling."
+          },
+          "after": {
+            "file": "bld/fish-after/fish-grayling.jpg",
+            "caption": "After: its sail of a dorsal fin."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/fish-before/fish-halibut.jpg",
+            "caption": "Before: a Pacific Halibut."
+          },
+          "after": {
+            "file": "bld/fish-after/fish-halibut.jpg",
+            "caption": "After: the flatfish with both eyes on top and its mottled back."
+          }
+        },
+        {
+          "before": {
+            "file": "bld/fish-before/fish-cutthroat.jpg",
+            "caption": "Before: a Coastal Cutthroat Trout."
+          },
+          "after": {
+            "file": "bld/fish-after/fish-cutthroat.jpg",
+            "caption": "After: its spots and its olive back."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tests",
+      "kicker": "How it was checked",
+      "title": "Tests",
+      "html": "<h3>Walking to every door</h3><p>A test walks the game's own player (its step up, its slopes and every collider and deck the buildings put down) along a route to each building, the way you would with the stick, and reports where it ended. All ten routes arrive:</p><div class=\"tablewrap\"><table><thead><tr><th>Route</th><th>Result</th><th>Height at the end</th><th>Interaction</th><th>Biggest step up</th></tr></thead><tbody><tr><td>cabin steps to the door</td><td>Reached</td><td>12.02 m (the deck: 12.02 m)</td><td>0.11 m from cabin, within 2.6 m</td><td>0.08 m</td></tr><tr><td>cabin round the side</td><td>Reached</td><td>11.83 m</td><td></td><td>0.01 m</td></tr><tr><td>post steps to the counter</td><td>Reached</td><td>30.73 m (the deck: 30.73 m)</td><td>0.59 m from POST, within 3.4 m</td><td>0.08 m</td></tr><tr><td>post porch end to end</td><td>Reached</td><td>30.73 m (the deck: 30.73 m)</td><td></td><td>0.00 m</td></tr><tr><td>keeper's gate to the door</td><td>Reached</td><td>15.45 m (the deck: 15.50 m)</td><td></td><td>0.06 m</td></tr><tr><td>lookout ramp to the deck</td><td>Reached</td><td>121.90 m (the deck: 121.90 m)</td><td></td><td>0.03 m</td></tr><tr><td>falls ramp to the platform</td><td>Reached</td><td>60.87 m (the deck: 60.87 m)</td><td></td><td>0.02 m</td></tr><tr><td>pier out to the end</td><td>Reached</td><td>3.20 m (the deck: 3.20 m)</td><td></td><td>0.00 m</td></tr><tr><td>moose out to the end</td><td>Reached</td><td>23.39 m (the deck: 23.39 m)</td><td></td><td>0.00 m</td></tr><tr><td>outhouse to its door</td><td>Reached</td><td>13.87 m</td><td></td><td>0.02 m</td></tr></tbody></table></div><p>The first runs of this test found two problems in the new buildings, both fixed before the pictures: the lookout's roof, given a collider so the paraglider cannot fly through it, reached down to the top of a standing player's head and stopped you at the top of the ramp; and the bait cooler by the shack narrowed the walk past it to nothing. The bench on the lookout was also moved off the top of its ramp.</p><h3>Pictures from the same spots</h3><p>22 views, each in a fresh browser (the software renderer gives out after about three pictures), first with the build from before this round and then with this one, at 10:30 in the morning with light cloud. They are the pairs in the sections above, and they are the scenarios <code>tools/scenarios/buildings-1.json</code> to <code>buildings-6.json</code> in the repository.</p><h3>The strange things and the secret</h3><p>A script builds the props with the oddities and reports, for each, its triangles, the ground under it (at most 0.49 m of rise across 8 m), the forest round it (the densest class at every one), its distance from the road (43 to 139 m), the nearest place (137 to 252 m away), its colliders and how far its interaction reaches. Another works out the compass direction from each rumour's place to its oddity on the map, which is how eight of the ten rumours got their direction right: five had said only beyond, below, behind or near, and three were 45 degrees out. The ten clearings in the forest change where trees grow (the forest is grown in one random sequence), so the secret on the mountain was flown again with the whole forest grown: no tree stands within 30 m of the line from Gus's launch to the ledge, every simulated flight lands 3 m from it, every landing walks into the grotto, and the walk along the shelf behind Bear Falls still reaches the chest.</p><h3>Building the world without a browser</h3><p>Scripts build the whole world and every structure in node and check: that the side walls and every turned part face out, that the finishes reach the merged meshes (the merge still makes one draw per material and 160 m square), that every porch and its steps line up with their decks, how high each porch stands, the triangles of every structure before and after, that the secret on the mountain still sits where it did (the glider, the key and the chest behind Bear Falls are unmoved), and that the fast nearest-stone search draws exactly the stones the full search drew (0 of 65,536 texels differ).</p><h3>An independent code review</h3><p>A separate agent reviewed the buildings code on its own: it read every change, built the world in node and measured with rays, face directions and the game's own player and paraglider. It found no errors at run time and none in the shaders, and the geometry and collider problems below. All are fixed, and its own measuring scripts were run again on the fixed build: no ray gets through any wall or gable of the cabin, the Trading Post or the keeper's house (0 rays in every scan, where the cabin's front gable let all 420 of its rays through before and the Trading Post's back gable 29%), the lookout's caps meet its roof within a millimetre, and the bait shack's roof shows no board above it.</p><div class=\"tablewrap\"><table><thead><tr><th>Finding</th><th>What was wrong</th><th>What I did</th></tr></thead><tbody><tr><td>Hollow woodpile ends</td><td>Each piece of firewood is an open tube with end grain at one end only, and the cabin's pile was turned so the open ends faced the yard: you looked into the tubes and through them.</td><td>End grain on both ends of every piece, and the pile turned with its front to the yard (204 discs face the yard, 206 the wall).</td></tr><tr><td>The lookout's roof floated</td><td>The new hip roof sat 18 cm above its four posts.</td><td>The posts and their caps run up to the roof's underside (the gap is now 1 mm).</td></tr><tr><td>A slit under the Trading Post's walls</td><td>The walls started 5 cm above the concrete sill, so you could see under them all round.</td><td>The walls start on the sill.</td></tr><tr><td>A slit under the keeper's house</td><td>The same, 2 cm.</td><td>The walls start on the sill.</td></tr><tr><td>A slot over the cabin's door, and over its side windows</td><td>The door's opening cut the log above it but its casing stopped 7 cm short of the next log; over the side windows the gap was 1 to 2 cm.</td><td>A squared header log over the door; the side windows' casings reach the first whole log.</td></tr><tr><td>Light between the gables and the roofs</td><td>The gables' top edges ran 12 to 14 cm under the roofs, so from the cabin's porch you saw into the attic, and through the Trading Post's back gable.</td><td>A rafter along each top edge of every gable, up into the roof's boards (the keeper's house too).</td></tr><tr><td>A gap under the cabin's side walls</td><td>The side walls start half a log up, with nothing under them: 13 cm you could see through, side to side (an old fault, carried over).</td><td>A squared sill beam under each side wall.</td></tr><tr><td>The bait shack's boards through its roof</td><td>Its side boards were rectangles under a sloping roof and stood 0.3 m out of it at the low end.</td><td>Cut to the roof's slope.</td></tr><tr><td>The lighthouse's red band was hidden</td><td>The band was 8.5 cm inside the tower, so the tower looked all white (an old fault).</td><td>The band sits on the tower's surface.</td></tr><tr><td>The paraglider flew through roofs</td><td>The cabin's porch roof, the keeper's chimney and the bear cache's body had no collider; the woodpile's collider was as tall as the sky; the junction post's was 0.4 m short.</td><td>Each has a collider of its own height; the porch roof's starts at 2.7 m, above your head.</td></tr><tr><td>Lap siding the wrong way up</td><td>Each board was darker and lower at its bottom edge, the opposite of real lap siding.</td><td>The lower edge stands proud and catches the light; the top of the board below sits in its shadow.</td></tr><tr><td>Board lines across rails and rims</td><td>Sixteen long narrow boards in the code built along the length of a building (rails, rims, fascia, stringers) got the siding's lines across their tops every 0.2 m.</td><td>Built lengthwise and turned into place, so the lines run along them.</td></tr><tr><td>Stripes across the lantern's roof</td><td>The corrugated pattern on the cone ran straight across it, not down it.</td><td>A plain red roof.</td></tr><tr><td>Seams between wall pieces</td><td>Each piece of a wall cut round its windows got its own shade.</td><td>One shade per wall.</td></tr><tr><td>A second shader for the rust</td><td>The wreck's rust material asked for its own copy of the props' shader program, one more compile while loading.</td><td>It shares the props' program.</td></tr></tbody></table></div>"
+    },
+    {
+      "id": "performance",
+      "kicker": "What it costs",
+      "title": "Performance",
+      "html": "<p>Measured in the browser engine at the picture spots, High quality, one frame counted after the view settled. Draw calls are what costs a phone most; triangles matter less; the frame time comes from a software renderer on the build machine (no graphics chip), so it compares the two builds with each other and says nothing about a phone's frame rate.</p><div class=\"tablewrap\"><table><thead><tr><th>Where</th><th class=\"n\">Draws before</th><th class=\"n\">Draws after</th><th class=\"n\">Triangles before</th><th class=\"n\">Triangles after</th><th class=\"n\">Frame before (ms)</th><th class=\"n\">Frame after (ms)</th></tr></thead><tbody><tr><td>Ruben's cabin from its yard</td><td class=\"n\">318</td><td class=\"n\">338</td><td class=\"n\">1,217,352</td><td class=\"n\">1,266,368</td><td class=\"n\">677</td><td class=\"n\">719</td></tr><tr><td>The Trading Post from the road</td><td class=\"n\">206</td><td class=\"n\">217</td><td class=\"n\">831,129</td><td class=\"n\">900,688</td><td class=\"n\">7624</td><td class=\"n\">8815</td></tr><tr><td>Kachemak Light</td><td class=\"n\">165</td><td class=\"n\">175</td><td class=\"n\">780,886</td><td class=\"n\">808,795</td><td class=\"n\">6911</td><td class=\"n\">7605</td></tr><tr><td>Halibut Pier at the bait shack</td><td class=\"n\">111</td><td class=\"n\">113</td><td class=\"n\">500,252</td><td class=\"n\">515,114</td><td class=\"n\">3797</td><td class=\"n\">4667</td></tr></tbody></table></div><p>The draws went up by 2 to 20 a view and the triangles by 3% to 8%. In the software renderer the frames took 6% to 23% longer: every pixel of a building now reads its finish twice and is bent by it, which a renderer without a graphics chip feels most. On a phone that work runs on the graphics chip; the draws are the number to watch there.</p><ul><li><b>Whole map:</b> 30,054 triangles in the structures before, 68,712 after, and 22,265 in the strange things; 82 meshes before, 104 after. The buildings add 7: five new painted signs (LIVE BAIT, OPEN, the weigh station, the bears at the falls and the outhouse's), the window glass of the keeper's house and of the bait shack, and one more merged mesh of sign boards, less the mailbox, which now merges with the rest. The strange things add 15, each in its own corner of the forest. Each is a draw only where you can see it. 37 materials before, 44 after (the new signs' pictures and the strange things' two kinds of glow).</li><li><b>Graphics memory:</b> the two finish images take 2.8 MB with their mipmaps; the props' vertices, as the game draws them after merging, 12.3 MB, of which the strange things are 1.9 MB (3.1 MB before: more triangles, and each vertex now carries its finish and surface position). A fish in your hands has a skin of 512 by 256 texels where it had 256 by 128.</li><li><b>Loading:</b> the patterns are drawn by a worker while the world is generated. The game was ready after a median of 7.9 s before and 8.1 s after in the browser engine on the build machine.</li></ul>"
+    },
+    {
+      "id": "conclusion",
+      "cls": "conclusion",
+      "kicker": "Limits of these results",
+      "title": "What would change this conclusion",
+      "html": "<p>The conclusion is that every house and every place you visit often is rebuilt in detail, ten strange things wait in the woods, the caught fish look the part, the eight old bugs and the review's fifteen findings are fixed, and the cost is a handful of draws. These would change it:</p><ul><li><b>An iPhone falling below 60 frames a second at the cabin or the Trading Post.</b> The measurements come from a software renderer. If a phone struggles there, the first things to thin are the balusters, pickets and firewood (a few thousand triangles each place) and the drawing of the finishes beyond 40 m.</li><li><b>The finishes looking too busy or too faint on a phone screen outdoors.</b> They were judged on a desktop monitor. How strongly a finish shades its surface is one number near you and one far away.</li><li><b>Something in your way.</b> The walk test covers the routes to each door and along each deck, not every corner of every yard. If you catch on a chair, a barrel or a fence, it can be moved.</li><li><b>The levelled yards.</b> The ground round the cabin and in front of the Trading Post was raised by up to 1.7 m and cut by up to 1.1 m, over 117 points of the height map. Nothing else stands there, and saved games put you back on the ground wherever it now is, but if a spot you liked to fish from or park on feels different, that is why.</li><li><b>An oddity too hard or too easy to find.</b> Each is found within 8 m (the stones and the saucer within 11 m, the gnome within 5 m), and the rumours name a direction from a place. If one stays hidden after a fair search, a trail of something (footprints, a cord, toadstools) can lead to it.</li><li><b>The fish on a phone screen.</b> The wet shine and the skins were judged on a desktop monitor in the software renderer; on an iPhone in bright sun the shine may need to be softer or stronger.</li><li><b>The iPhone app.</b> It carries its own copy of the game and needs building again in Xcode; until then it has the old buildings, no oddities and the old fish.</li></ul>"
+    }
+  ],
+  "footer": "Hotrod Outdoor Alaska Fishing · the buildings round. Play: <a href=\"https://claude.ai/artifact/3urJEG61Boov67ViABm26A\">https://claude.ai/artifact/3urJEG61Boov67ViABm26A</a> · Code: <a href=\"https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing\">https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing</a> · README: <a href=\"https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/README.md\">https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/README.md</a>. Background on the building types: <a href=\"https://en.wikipedia.org/wiki/False_front\">false front</a>, <a href=\"https://en.wikipedia.org/wiki/Log_cabin\">log cabin</a>, <a href=\"https://en.wikipedia.org/wiki/Log_building\">log building</a>, <a href=\"https://en.wikipedia.org/wiki/Board_and_batten\">board and batten</a>, <a href=\"https://en.wikipedia.org/wiki/Clapboard_(architecture)\">clapboard</a>, <a href=\"https://en.wikipedia.org/wiki/Wood_shingle\">wood shingle</a>, <a href=\"https://en.wikipedia.org/wiki/Corrugated_galvanised_iron\">corrugated galvanised iron</a>, <a href=\"https://en.wikipedia.org/wiki/Trading_post\">trading post</a>, <a href=\"https://en.wikipedia.org/wiki/Lighthouse_keeper\">lighthouse keeper</a>, <a href=\"https://en.wikipedia.org/wiki/Kachemak_Bay\">Kachemak Bay</a>. The graphics library: <a href=\"https://threejs.org/\">three.js</a>."
+}
