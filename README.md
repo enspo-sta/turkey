@@ -720,6 +720,7 @@ node tools/shot.mjs tools/scenarios/observatory.json  # the Tundra Observatory b
 node tools/shot.mjs tools/scenarios/telescope.json    # every telescope view at a time it is up, the radio dish (the pulsar and the hydrogen line), the almanac and the sky log
 node tools/shot.mjs tools/scenarios/stargaze.json     # the dome open at night, STARGAZE from a deck chair with the sky guide to the north, south and east, and getting up
 node tools/shot.mjs tools/scenarios/sky-events.json   # a fireball, the map's search circle, picking up the meteorite, a space station pass and its picture, a Kp 7 storm, the sky guide on foot, the solar system signs and the Journal's Sky page
+node tools/shot.mjs tools/scenarios/fireball.json     # a fireball over the aurora (the gallery picture), the camera on it, shooting stars, a space station pass watched and photographed, and a survey of the skyline from the observatory's deck
 node tools/shot.mjs tools/scenarios/gallery-cars.json # the title screen and the hot rod on the River Road for the pictures at the top of this page
 node tools/shot.mjs tools/scenarios/sky-night.json    # the real night sky to the north, south, east and overhead, and the Moon
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot
