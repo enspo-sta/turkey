@@ -205,9 +205,9 @@ What changed in the latest round, with pictures, the audit and the tests:
   round with the right half. At trim the wing sinks 1.15 m a second at
   36 km/h, a glide of about 8.7 to 1; the instruments show your height over
   the ground, the sink and the speed. You land when your feet touch the
-  ground, a deck or water; a treetop or a roof ends the flight early, and
-  a headwind turns you back at the edge of the map. GLIDE again from any
-  edge.
+  ground, a deck or water; a treetop, a roof, a rock or a pole ends the
+  flight early, and a headwind turns you back at the edge of the map. GLIDE
+  again from any edge.
 - Gus's note points south, to a ledge under an orange tarp that no path
   reaches. Glide down to it from the launch (about 300 m, half a minute in
   the air): his camp is in a shallow grotto, with a lantern on a post at its
