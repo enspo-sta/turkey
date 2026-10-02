@@ -224,7 +224,10 @@ export function* meshSDFSteps(sdf, lo, hi, h) {
   const C = 4;
   const half = (C * h * Math.sqrt(3)) / 2;
   const far = [];
-  let blocks = 0;
+  // work since the last yield, in field values: a far block costs one, a
+  // near block up to 216 (6 by 6 by 6 with its ring); yield after ~430, so
+  // one step stays well inside a slow phone's share of a frame
+  let work = 0;
   for (let k0 = 0; k0 < nz - 1; k0 += C) {
     for (let j0 = 0; j0 < ny - 1; j0 += C) {
       for (let i0 = 0; i0 < nx - 1; i0 += C) {
@@ -232,11 +235,20 @@ export function* meshSDFSteps(sdf, lo, hi, h) {
         const j1 = Math.min(j0 + C, ny - 1);
         const k1 = Math.min(k0 + C, nz - 1);
         const d = sdf(X((i0 + i1) / 2), Y((j0 + j1) / 2), Z((k0 + k1) / 2));
+        work += 1;
         if (Math.abs(d) > half * 1.3 + h) {
           far.push(i0, j0, k0, i1, j1, k1, d);
+          if (work >= 430) {
+            work = 0;
+            yield;
+          }
           continue;
         }
-        if (++blocks % 8 === 0) yield;
+        work += 216;
+        if (work >= 430) {
+          work = 0;
+          yield;
+        }
         // near: every point of the block and a ring of one round it (for
         // the slope at its edge)
         for (let k = Math.max(0, k0 - 1); k <= Math.min(nz - 1, k1 + 1); k++) {

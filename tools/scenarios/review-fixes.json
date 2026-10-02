@@ -1,0 +1,111 @@
+{
+"width": 640,
+"height": 360,
+"timeout": 300000,
+"steps": [
+{
+"wait": 500
+},
+{
+"eval": "__rhf.start(false)"
+},
+{
+"wait": 1500
+},
+{
+"eval": "(()=>{const g=__rhf.game; const S=__rhf.session; const C={x:-6,z:-154}; const all=()=>[...new Set([...g.colliders.grid.values()].flat())]; window.__trees=()=>all().filter(c=>c.tag==='tree'&&Math.hypot(c.x-C.x,c.z-C.z)<24).length; window.__logs=()=>g.colliders.boxes.filter(b=>b.tag==='log').length; window.__pods=()=>all().filter(c=>c.tag==='pod').length; const m=g.wtex.mask.image.data; window.__grass=()=>{let s=0; for(let j=0;j<4096;j++){} const N=Math.round(Math.sqrt(m.length/4)); const CS=3.125, HALF=N*CS/2; for(let j=Math.floor((C.z-12+HALF)/CS); j<=Math.ceil((C.z+12+HALF)/CS); j++) for(let i=Math.floor((C.x-12+HALF)/CS); i<=Math.ceil((C.x+12+HALF)/CS); i++) s+=m[(i+j*N)*4]; return s}; window.__t0=window.__trees(); window.__g0=window.__grass(); g.state.visitor={stage:'friend',follow:true,at:{day:1,time:1}}; g.visitor.restore(); const Z=g.visitor.zib; for(let i=0;i<400&&Z.sculpt;i++) Z.sculptStep(50); for(let i=0;i<10;i++) S.update(0.05); return 'A1 site built: trees near '+window.__t0+' -> '+window.__trees()+', logs '+window.__logs()+', pod '+window.__pods()+', grass '+window.__g0+' -> '+window.__grass()+'; zib '+Z.pos.distanceTo(g.player.pos).toFixed(1)+' m from you; clearing discovered '+!!g.state.discovered.crash+', parking '+!!g.props.layout.parking.crash})()"
+},
+{
+"eval": "(()=>{__rhf.game.fastTravel('tors',0.5); return 'A travel to the tors started'})()"
+},
+{
+"waitFor": "!__rhf.session.fadeBusy",
+"timeout": 90000
+},
+{
+"eval": "(()=>{const g=__rhf.game; const S=__rhf.session; for(let i=0;i<40;i++) S.update(0.05); const Z=g.visitor.zib; const P=g.player.pos; return 'A2 after the travel: zib '+Math.hypot(Z.pos.x-P.x,Z.pos.z-P.z).toFixed(1)+' m away, visible '+Z.group.visible})()"
+},
+{
+"eval": "(()=>{const g=__rhf.game; const S=__rhf.session; g.state.gear.climbing=true; const r=g.tors.route('steps'); g.player.place(r.base.x+r.n.x*0.6, r.base.z+r.n.z*0.6); g.climbing.start('steps'); for(let i=0;i<5;i++) S.update(0.05); window.__base={x:r.base.x,z:r.base.z}; const t0=g.env.time; window.__t0h=t0; g.fastTravel('landing',0.5); return 'B0 climbing, mode '+g.player.mode+', fade started '+S.fadeBusy+', toast: '+(document.querySelector('#toasts')?.lastElementChild?.textContent||'')})()"
+},
+{
+"wait": 3000
+},
+{
+"eval": "(()=>{const g=__rhf.game; const S=__rhf.session; for(let i=0;i<5;i++) S.update(0.05); const P=g.player.pos; const b=window.__base; return 'B1 mode '+g.player.mode+'; player '+Math.hypot(P.x-b.x,P.z-b.z).toFixed(1)+' m from the route foot; hours passed '+(g.env.time-window.__t0h).toFixed(2)})()"
+},
+{
+"eval": "(()=>{const g=__rhf.game; const S=__rhf.session; S.toTitle(); const r='G0 at the title: climbing.active '+g.climbing.active+', mode '+g.player.mode+', climbRig.visible '+g.viewmodel.climbRig.visible+', marks visible '+(g.climbing.marks||[]).filter(m=>m.visible).length; __rhf.start(true); for(let i=0;i<3;i++) S.update(0.05); return r+'; G1 continue: mode '+g.player.mode+', climbing.active '+g.climbing.active+', zib '+(g.visitor.zib?g.visitor.zib.pos.distanceTo(g.player.pos).toFixed(1)+' m from you':'none')})()"
+},
+{
+"eval": "(()=>{const g=__rhf.game; const P=g.player.pos; window.__pb={x:P.x,z:P.z}; g.fastTravel('crash',0.5); return 'C0 Drive there to Starfall Clearing: fade started '+__rhf.session.fadeBusy})()"
+},
+{
+"waitFor": "!__rhf.session.fadeBusy",
+"timeout": 90000
+},
+{
+"eval": "(()=>{const g=__rhf.game; const S=__rhf.session; for(let i=0;i<5;i++) S.update(0.05); const P=g.player.pos; return 'C1 now '+Math.hypot(P.x+6,P.z+154).toFixed(0)+' m from the pod, hot rod '+Math.hypot(g.hotrod.pos.x+6,g.hotrod.pos.z+154).toFixed(0)+' m from it, on road '+g.props.nearestRoad(g.hotrod.pos.x,g.hotrod.pos.z).d.toFixed(1)+' m from the road centre'})()"
+},
+{
+"eval": "(()=>{const g=__rhf.game; const S=__rhf.session; const before='logs '+window.__logs()+' pod '+window.__pods()+' trees '+window.__trees()+' grass '+window.__grass(); S.toTitle(); __rhf.start(false); return 'D new game: before ['+before+'] after [logs '+window.__logs()+' pod '+window.__pods()+' trees '+window.__trees()+' (at first '+window.__t0+') grass '+window.__grass()+' (at first '+window.__g0+')], parking '+!!g.props.layout.parking.crash+', place '+!!g.world.place('crash')+', discovered '+!!g.state.discovered.crash})()"
+},
+{
+"wait": 1000
+},
+{
+"eval": "(()=>{const g=__rhf.game; const n0=g.visitor.group.children.length; g.state.visitor={stage:'due'}; g.visitor.startFall(); for(let i=0;i<30;i++) g.visitor.update(0.1); const vis=()=>g.visitor.group.children.filter(o=>o.visible).length; const mid=vis(); g.state.visitor.stage='falling'; g.visitor.restore(); return 'E fall effects: children '+n0+' before, visible mid-fall '+mid+'; after restore: visible '+vis()+', children '+g.visitor.group.children.length+', fall '+g.visitor.fall+', stage '+g.state.visitor.stage})()"
+},
+{
+"eval": "(()=>{const g=__rhf.game; g.visitor.showerOn=()=>true; g.screens.open('telescope',{tab:'scope'}); g.screens.scopeSel='shower'; g.screens.rerender(); const r1='H0 shower view: eyepiece '+!!document.getElementById('eyepiece')+', loop '+!!g.screens.showerRAF; g.screens.tab='tonight'; g.screens.render(); window.__rhfJump=15; return r1+'; switched to tab '+g.screens.tab})()"
+},
+{
+"waitFor": "!__rhf.game.screens.showerRAF",
+"timeout": 90000
+},
+{
+"eval": "(()=>{const g=__rhf.game; const r='H1 after the switch: screen '+g.screens.current+', tab '+g.screens.tab+', loop '+g.screens.showerRAF+', stage '+(g.state.visitor&&g.state.visitor.stage); g.screens.tab='scope'; g.screens.render(); window.__rhfJump=15; return r+'; back to the telescope, loop '+!!g.screens.showerRAF})()"
+},
+{
+"waitFor": "__rhf.game.screens.current === null",
+"timeout": 120000
+},
+{
+"eval": "(()=>{const g=__rhf.game; return 'H2 after watching to the end: screen '+g.screens.current+', stage '+(g.state.visitor&&g.state.visitor.stage)+', falling '+!!g.visitor.fall})()"
+},
+{
+"eval": "(()=>{const g=__rhf.game; const C=g.colliders; const out=[]; for(const r of g.tors.routes){ const q=C.resolve(r.top.x,r.top.z,0.4,r.topY); out.push(r.id+' stand '+(Math.hypot(q.x-r.top.x,q.z-r.top.z)<1e-3?'clear':'INSIDE')+' '+Math.hypot(r.top.x-r.lip.p.x,r.top.z-r.lip.p.z).toFixed(2)+' m back'); } const a=g.tors.sampleAt; const q=C.resolve(a.x,a.z,0.3,a.y); out.push('flake '+(Math.hypot(q.x-a.x,q.z-a.z)<1e-3?'clear':'INSIDE')); return 'M '+out.join(', ')})()"
+},
+{
+"eval": "(()=>{const g=__rhf.game; const S=__rhf.session; g.state.gear.climbing=true; const r=g.tors.route('steps'); g.player.place(r.base.x+r.n.x*0.6, r.base.z+r.n.z*0.6); g.bears.threat={x:r.base.x,z:r.base.z}; const ok=g.climbing.start('steps'); g.bears.clearThreat(); const ok2=g.climbing.start('steps'); for(let i=0;i<3;i++) S.update(0.05); g.player.health=0; S.knockedOut(); return 'K0 climb with a bear about: '+ok+'; without: '+ok2+'; knocked out on the rope'})()"
+},
+{
+"waitFor": "!__rhf.session.fadeBusy",
+"timeout": 90000
+},
+{
+"eval": "(()=>{const g=__rhf.game; const S=__rhf.session; for(let i=0;i<3;i++) S.update(0.05); const L=g.world.place('landing'); return 'K1 after the knock-out: mode '+g.player.mode+', climbing '+g.climbing.active+', '+Math.hypot(g.player.pos.x-L.x,g.player.pos.z-L.z).toFixed(0)+' m from the landing, health '+g.player.health})()"
+},
+{
+"eval": "(()=>{const g=__rhf.game; const S=__rhf.session; g.state.flags.coil=false; g.tesla.coilT=0; g.tesla.coilCool=0; S.runCoil(); g.screens.open('map'); for(let i=0;i<20;i++) S.update(0.5); const r='O0 coil run, then the map open for 10 s: screen '+g.screens.current; g.screens.close(); for(let i=0;i<16;i++) S.update(0.5); return r+'; after closing it: screen '+g.screens.current+' ('+(g.screens.noteData&&g.screens.noteData.title)+')'})()"
+},
+{
+"eval": "(()=>{const g=__rhf.game; g.screens.close(); return 'closed'})()"
+},
+{
+"eval": "(()=>{const g=__rhf.game; const S=__rhf.session; delete g.visitor.showerOn; g.visitor.clearFall(); const s=g.state; s.visitor={stage:'friend',follow:true,at:{day:1,time:1}}; g.visitor.restore(); s.science={}; s.sky.seen={moon:1,m31:1,jupiter:2}; s.sky.heard={pulsar:1}; s.photoSold={bear:3,eagle:2}; s.flags.racer250=true; s.sky.kpMax=5; s.sky.walk={sun:1,mercury:1,venus:1,earth:1,mars:1,jupiter:1,saturn:1,uranus:1,neptune:1}; s.journal.sockeye=s.journal.sockeye||{count:1}; window.localStorage.setItem('__money0', String(s.money)); S.save(); return 'F0 saved with Zib following and old logs'})()"
+},
+{
+"reload": true
+},
+{
+"eval": "(()=>{const g=__rhf.game; const S=__rhf.session; if(!__rhf.ready) return 'not ready'; let n=0; const B=g.visitor.blinkTo.bind(g.visitor); g.visitor.blinkTo=(p)=>{n++; return B(p)}; __rhf.start(true); const Z=g.visitor.zib; for(let i=0;i<400&&Z.sculpt;i++) Z.sculptStep(50); S.update(0.05); S.update(0.05); const s=g.state; const m0=+localStorage.getItem('__money0'); return 'F1 continue: blinks '+n+', zib '+Z.pos.distanceTo(g.player.pos).toFixed(1)+' m from you; science caught up: '+Object.keys(s.science).join(', ')+'; money +'+(s.money-m0)})()"
+},
+{
+"wait": 3500
+},
+{
+"eval": "(()=>[...document.querySelectorAll('#toasts > *')].map(t=>t.textContent).join(' || '))()"
+}
+]
+}

@@ -919,7 +919,8 @@ export class Screens {
     const dist = d > 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m';
     const hours = Math.max(0.25, d / 15000 + 0.25);
     const gliding = g.player.mode === 'glide';
-    const busy = g.fishing.state !== 'idle' || (g.bears && g.bears.threat) || g.player.mode === 'boat' || !!g.player.boat || gliding;
+    const climbing = g.player.mode === 'climb';
+    const busy = g.fishing.state !== 'idle' || (g.bears && g.bears.threat) || g.player.mode === 'boat' || !!g.player.boat || gliding || climbing;
     let fish = '';
     if (p.kind === 'fishing') {
       if (known) {
@@ -945,7 +946,7 @@ export class Screens {
     }
     box.innerHTML = `<div class="place-info"><b>${known ? esc(p.name) : 'Undiscovered place'}</b><p>${known ? esc(p.blurb) : 'Explore to find it. Follow the roads and watch the compass.'}</p>${fish}<p>${dist} away</p>${
       known && d > 60
-        ? `<button class="btn hot" id="travel-btn" ${busy ? 'disabled' : ''}>Drive there · about ${hours < 1 ? Math.round(hours * 60) + ' min' : hours.toFixed(1) + ' h'}</button>${busy ? `<p>${g.player.mode === 'boat' || g.player.boat ? 'Get ashore first. The boat stays where you leave it.' : gliding ? 'Land first. The hot rod does not fly.' : 'Deal with the situation at hand first.'}</p>` : ''}`
+        ? `<button class="btn hot" id="travel-btn" ${busy ? 'disabled' : ''}>Drive there · about ${hours < 1 ? Math.round(hours * 60) + ' min' : hours.toFixed(1) + ' h'}</button>${busy ? `<p>${g.player.mode === 'boat' || g.player.boat ? 'Get ashore first. The boat stays where you leave it.' : gliding ? 'Land first. The hot rod does not fly.' : climbing ? 'Lower off first: you are on the rope.' : 'Deal with the situation at hand first.'}</p>` : ''}`
         : ''
     }</div>`;
     const tb = $('travel-btn');
@@ -1857,7 +1858,7 @@ export class Screens {
             `<button class="target ${x.S.ok ? 'up' : 'off'}${g.state.sky.seen[x.T.id] ? ' logged' : ''}" data-t="${x.T.id}"><i>${g.state.sky.seen[x.T.id] ? '✓' : ''}</i><b>${esc(x.T.name)}</b><small>${esc(x.S.ok ? x.S.where : x.S.why)}</small></button>`
         )
         .join('');
-    this.body.innerHTML = `<div class="scope"><div class="scope-view"><canvas id="eyepiece" class="eyepiece" width="512" height="512" aria-label="Meteors through the telescope"></canvas><div class="cap" id="eyecap"></div><div class="facts"><small>Meteor shower</small><h4>The Kappa Cygnids</h4><p>A minor shower each August, known for slow meteors (about 25 km a second) and bright fireballs. Its dust may come from 2008 ED69, an asteroid that is probably a burnt-out comet.</p><p>Tonight the Earth is crossing a dense strand of that dust: an outburst. The telescope's wide eyepiece is on, pointed near the radiant.</p></div></div><div class="scope-list">${list}</div></div>`;
+    this.body.innerHTML = `<div class="scope"><div class="scope-view"><canvas id="eyepiece" class="eyepiece" width="512" height="512" aria-label="Meteors through the telescope"></canvas><div class="cap" id="eyecap"></div><div class="facts"><small>Meteor shower</small><h4>The Kappa Cygnids</h4><p>A minor shower each August, weak most years and stronger about every seven years. Its meteors are slow, often golden, with fireballs that flare. Its dust may come from 2008 ED69, an asteroid that may be a burnt-out comet; 2001 MG1 and 2004 LA12 are other candidates.</p><p>Tonight the Earth is crossing a dense strand of that dust: an outburst. The telescope's wide eyepiece is on, pointed near the radiant.</p></div></div><div class="scope-list">${list}</div></div>`;
     this.body.querySelectorAll('[data-t]').forEach((b) =>
       b.addEventListener('click', () => {
         if (b.dataset.t === 'shower') return;
@@ -1932,8 +1933,16 @@ export class Screens {
       [10.5, 'It glows like a spacecraft coming in: the air in front of it, squeezed and heated by its speed. It is coming down!'],
     ];
     const frame = (now) => {
+      // another tab or target took the eyepiece's place: the show stops (it
+      // starts again from the beginning when you come back to it), and it
+      // never closes a screen you have moved on to
+      if (!cv.isConnected) {
+        this.showerRAF = 0;
+        return;
+      }
       // (the tests' scripts can run the show faster: window.__rhfFast)
-      const dt = Math.min(0.05, (now - last) / 1000) * (window.__rhfFast || 1);
+      // (never backward: a browser may hand over a stale time stamp)
+      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)) * (window.__rhfFast || 1);
       last = now;
       t += dt;
       if (window.__rhfJump) {

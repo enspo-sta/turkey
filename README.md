@@ -1,14 +1,18 @@
 # Hotrod Outdoor Alaska Fishing
 
 A first-person fishing and hunting adventure in Alaska, made for iPhone and iPad.
-Drive Ruben's flame-painted hot rod between thirteen places on a wild Alaskan
+Drive Ruben's flame-painted hot rod between fifteen places on a wild Alaskan
 peninsula, tow a fishing boat to any lake, river or the bay, cast with a timing
-bar, fight salmon and halibut, hunt caribou and moose with a longbow, take
-pictures of the wildlife, and keep your bow close: grizzlies smell the fish in
-your cooler. After dark the real night sky comes out over the Kenai Peninsula:
-look through the telescope at the Tundra Observatory, listen to pulsars with its
-radio dish, watch the northern lights and the space station, and go after the
-meteorites the fireballs drop. And something very fast is hidden in the woods.
+bar, fight salmon and halibut, hunt caribou and moose with a longbow, climb the
+Granite Tors on a top rope, take pictures of the wildlife, and keep your bow
+close: grizzlies smell the fish in your cooler. After dark the real night sky
+comes out over the Kenai Peninsula: look through the telescope at the Tundra
+Observatory, listen to pulsars with its radio dish, watch the northern lights
+and the space station, and go after the meteorites the fireballs drop.
+Twenty-three science objectives, from the craters of the Moon to Nikola Tesla's
+coil at Bear Falls, keep what you find out in the Journal. One clear night a
+meteor outburst brings something down in the forest, and someone small and
+friendly climbs out. And something very fast is hidden in the woods.
 
 ![Title screen](docs/screenshots/title.jpg)
 
@@ -17,7 +21,7 @@ rivers, glacier, forests, animals, the cars, the fish, the sky, the weather,
 the sound effects and the music. The night sky comes from real data packed
 into the game: a star catalogue and the planets' and the Moon's motions.
 There are no downloaded models, textures or audio files, so the whole game is
-a single 1.8 MB HTML file (about 640 KB compressed).
+a single 1.9 MB HTML file (about 690 KB compressed).
 
 | | |
 |---|---|
@@ -33,10 +37,16 @@ a single 1.8 MB HTML file (about 640 KB compressed).
 | ![The rebuilt hot rod at Hotrod Landing](docs/screenshots/hotrod.jpg) | ![The first-person hands on the rod, in a flannel shirt](docs/screenshots/arms.jpg) |
 | ![The Tundra Observatory by Caribou Tundra](docs/screenshots/observatory.jpg) | ![Saturn through the observatory's telescope](docs/screenshots/telescope.jpg) |
 | ![Stargazing from a deck chair with the sky guide](docs/screenshots/stargaze.jpg) | ![A fireball coming down over the tundra](docs/screenshots/fireball.jpg) |
+| ![The Granite Tors and their top ropes](docs/screenshots/tors.jpg) | ![A hand on a hold under the overhang of Raven's Roof](docs/screenshots/climbing.jpg) |
+| ![Nikola Tesla's statue on the rim of the gorge at Bear Falls](docs/screenshots/tesla.jpg) | ![The Tesla coil running in the coil house](docs/screenshots/coil.jpg) |
+| ![Bear Falls Hydro: the penstock and the powerhouse at the foot of the falls](docs/screenshots/hydro.jpg) | ![The Journal's Science page](docs/screenshots/science.jpg) |
+| ![The meteor outburst through the telescope, and something slower](docs/screenshots/outburst.jpg) | ![The craft coming down, seen from the observatory](docs/screenshots/craft.jpg) |
+| ![Starfall Clearing: the pod and the trees laid flat round it](docs/screenshots/crash.jpg) | ![Zib comes out from behind the pod](docs/screenshots/zib.jpg) |
 
-What changed in the latest round (the arms, the hot rod, the race car and the
-night sky), with pictures and the tests:
-[docs/cars-sky-update.html](docs/cars-sky-update.html). Earlier rounds:
+What changed in the latest round (the iPhone fixes, climbing, the Tesla
+Memorial, the science objectives and the visitor from the sky), with pictures
+and the tests: [docs/science-update.html](docs/science-update.html). Earlier
+rounds: [docs/cars-sky-update.html](docs/cars-sky-update.html),
 [docs/hotrod-buildings.html](docs/hotrod-buildings.html),
 [docs/hotrod-update.html](docs/hotrod-update.html) and
 [docs/graphics-update.html](docs/graphics-update.html).
@@ -138,10 +148,11 @@ night sky), with pictures and the tests:
   Ruben sits at the wheel in your wardrobe's clothes, his hands on the rim. It
   runs 0 to 100 km/h in 3.2 seconds and tops out at 166 km/h with the best
   engine.
-- Thirteen places joined by gravel roads and truss bridges: Hotrod Landing
+- Fifteen places joined by gravel roads and truss bridges: Hotrod Landing
   (Ruben's cabin), Kenai Trading Post, Salmon Bend, Bear Falls, Glacier Lake,
   Moose Lake, Halibut Pier, Caribou Tundra, Kachemak Light, the Tundra
-  Observatory (see The night sky below) and three newer ones:
+  Observatory (see The night sky below), the Granite Tors (see Climbing), the
+  Tesla Memorial at Bear Falls (see Science) and three newer ones:
   - Steaming Springs: a warm green trout pond in a basin of white and orange
     sinter, steam vents, bubbling mud pots, a hot pool to **SOAK** in (it heals
     you and passes an hour) and Old Faceful, a geyser that rumbles and blows
@@ -404,6 +415,87 @@ night sky), with pictures and the tests:
   04:00, while its windows are lit).
 </details>
 
+**Climbing**
+
+- The Granite Tors off the Tundra Road: two towers of granite blocks, the big
+  one four blocks and about 18 m high, the little one 6 m, like the tors in the
+  hills near Fairbanks. The Kenai Climbing Club keeps four top ropes on them,
+  each in its own colour: First Steps (5.4) on the little tor, Tundra Stroll
+  (5.5) up the south face of the big tor, Ptarmigan Crack (5.8) up its north
+  face and Raven's Roof (5.10) over a ledge and under the overhang on its east
+  face. The grades are the American ones: 5 means a climb that needs a rope,
+  the number after the point how hard it is.
+- A climbing kit (shoes, harness and chalk) from the Trading Post's gear page.
+  At the foot of a route, **CLIMB**.
+- You climb hand over hand: push the stick (or W, A, S, D or the arrow keys)
+  toward the next hold, or tap a hold, and the hand that can reach it goes
+  there. Faint rings mark the holds in reach. Jugs are big, edges and pockets
+  smaller, slopers round and crimps tiny; each tires your fingers at its own
+  rate, and steep rock faster (an overhang three times as fast as a slab).
+  The grip meter at the bottom shows what is left: **CHALK** buys some back,
+  and a big hold on rock that is not overhanging is a rest (the meter says
+  REST). Over the roof waits the big hold climbers call a thank-god jug.
+- Run out of grip and you come off: the rope holds you after a short drop.
+  **CLIMB ON** when you have your breath back, or **LOWER** to the ground.
+- Top out and you stand on top of the tor: sign the summit register (an old
+  ammunition can, as on real summits), take a rock sample, look out over the
+  forest and **LOWER OFF** from the anchor. The club's bounty board pays for
+  each first ascent, and two challenges belong to the tors.
+
+**Science**
+
+- Twenty-three objectives in five fields, done in any order, each paying and
+  keeping what you learned in the Journal's Science page. Astronomy: the
+  Moon's craters, a planet's disc, the Andromeda Galaxy, a pulsar, the Big
+  Bang's afterglow, the space station, the northern lights, a meteor shower, a
+  meteorite and the size of the solar system. Physics and engineering: Tesla's
+  plaque, the Tesla coil, the hydro plant's power, the wall of air at 250 km/h
+  in the race car and a paraglider's lift. Earth science: the granite of the
+  tors, the glacier calving and the hot springs. Biology: the salmon's journey,
+  a fat bear and the bald eagles. Life beyond Earth: the visitor, and life at
+  the edges.
+- The Tesla Memorial at Bear Falls: a bronze Nikola Tesla seated reading his
+  notes on a granite base, in the pose of Frano Kršinić's 1976 statue at
+  Niagara Falls, on a terrace at the rim of the gorge. **READ THE PLAQUE** for
+  his story: the rotating magnetic field and the induction motor, the power of
+  Niagara reaching Buffalo in 1896 on his alternating current, his coil, and
+  the unit named after him.
+- The coil house beside it: **RUN THE TESLA COIL** and it throws sparks a metre
+  long inside its earthed cage, and a fluorescent tube on a stand lights up
+  with no wire to it.
+- Bear Falls Hydro: the intake at the top of the falls, the penstock out of its
+  tunnel along the foot of the gorge, the powerhouse at the water with its
+  outflow foaming back into the river, three wires up the gorge on poles
+  (three-phase alternating current) and a board at the rim that works out the
+  plant's power from the falls' drop: about 300 kW.
+- Three science odd jobs on the board: a geologist wants a granite sample from
+  the top of the big tor, the observatory a picture of the Moon and the weather
+  service one of the northern lights.
+- A save from before the objectives existed gets them for what its logs show
+  already done (the sky log, the radio log, the album's sales, the solar
+  system's signs, the race car's speed marks, the aurora, the fish journal),
+  and is paid for them when it is loaded.
+
+**The visitor from the sky** (spoilers)
+
+- One clear dark night the observatory calls a meteor outburst: the Kappa
+  Cygnids, an August shower known for slow meteors and fireballs. Watch it
+  through the telescope and among the meteors comes something far too slow,
+  that turns: a craft coming in, glowing with the heat of the air it rams.
+  The screen closes and you watch it come down in the forest to the west: the
+  flash, the glow over the trees, and the boom two seconds later, because
+  sound is slow.
+- Starfall Clearing joins the map: scorched ground, the trees laid flat outward
+  round it as at Tunguska in 1908, a smoking iridescent pod with its hatch
+  open, and someone peeking at you from behind it.
+- Zib: small, mint-green, three-eyed, with long ears whose tips glow.
+  **SAY HELLO** and it greets you in prime numbers. **INVITE ALONG** and it
+  floats at your shoulder, rides in the hot rod's passenger seat, turns its
+  ears gold when a fish is coming to your line and red when a bear is near,
+  and blinks back to you when you get far away. **WAIT HERE** and it waits.
+  It has a story at the old saucer in the woods, likes the hot pool, and is
+  worth a picture.
+
 **World and graphics**
 
 - Clear water you can see into: the bed, stones and fish are lit through the
@@ -603,7 +695,7 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 |---|---|
 | `src/main.js` | Game session: title screen, start and continue, the per-frame gameplay loop, interactions, saving, fast travel and the debug hooks used by the tests |
 | `src/game.js` | Engine core: renderer, scene, cameras, lights and shadows, dynamic resolution and the frame loop |
-| `src/world/layout.js` | The peninsula: coastline, river, lakes, glacier, roads and the twelve places laid out with the world (the thirteenth, the observatory, joins after it is made) |
+| `src/world/layout.js` | The peninsula: coastline, river, lakes, glacier, roads and the twelve places laid out with the world (the observatory, the Granite Tors and the Tesla Memorial join after it is made) |
 | `src/world/areas.js` | Steaming Springs (the geyser, the hot pool, steam vents and mud pots), Mosquito Flats (the giant mosquito, the boardwalk, the bug dope machine) and Shipwreck Cove (the wreck, its deck, gangplank and sea chest, the sea stacks) |
 | `src/world/worldgen.js` | Height field, river and lake carving, road grading, surface types and water queries |
 | `src/world/terrain.js`, `worldtex.js` | Chunked terrain with levels of detail, the ground material with per-surface detail, and the world textures (height, colour, surfaces, water levels) |
@@ -616,6 +708,11 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/world/meteors.js`, `satellites.js` | Shooting stars, fireballs and their meteorites; the space station's passes and the fainter satellites |
 | `src/world/observatory.js` | The Tundra Observatory: the turning dome and its telescope, the radio dish, the hut, the deck chairs, the notice board, the mast and the all-sky camera |
 | `src/world/solarwalk.js` | The scale model of the solar system along the Lighthouse Road |
+| `src/world/tors.js`, `src/gameplay/climbing.js` | The Granite Tors: the granite blocks, the routes and their holds, the ropes, the tops, the register and the route board; and the climbing: reaching, grip, chalk, rests, falls, the top and lowering off |
+| `src/world/tesla.js` | The Tesla Memorial at Bear Falls: the sculpted statue, the terrace, the coil house and its sparks, and Bear Falls Hydro |
+| `src/gameplay/science.js` | The science objectives and what each one teaches |
+| `src/gameplay/visitor.js` | (spoilers) The meteor outburst, the craft's fall, Starfall Clearing and Zib |
+| `src/util/sdfmesh.js` | Sculpting with distance fields, and meshing them with surface nets a little at a time |
 | `src/world/pitstop.js` | (spoilers) The race car's clearing at the end of the logging track, its props, and the tarp draped over the car |
 | `src/world/water.js`, `effects.js`, `calving.js` | River, lake and sea surfaces with animated waves and reflections, the waterfall, splashes, ripples, rain, mist and dust, and the calving glacier |
 | `src/world/scatter.js`, `grass.js`, `props.js`, `roads.js`, `colliders.js` | Forests, ground plants and rocks, wind-blown grass, where the buildings stand, bridges, trailhead signs and campfires, gravel roads and collision |
@@ -661,7 +758,12 @@ screenshots to `tools/out/`. Scenarios drive the game through the `window.__rhf`
 debug interface (`start`, `press`, `hold`, `tp`, `time`, `god`, `settle`). Before
 each screenshot the harness calls `settle`, which finishes the ground detail
 around the camera: the software renderer draws about one frame a second, far
-too slow for the game's two ground squares a frame after a jump. For example:
+too slow for the game's two ground squares a frame after a jump. A headless
+page also draws frames only while a screenshot is taken, so gameplay checks
+step the game themselves (`__rhf.session.update(dt)`). Besides `eval`,
+`wait` and `shot`, a step can `reload` the page (to continue from a save) or
+`waitFor` a condition in the page (a fade over, a show ended), polled on a
+timer. For example:
 
 ```sh
 node tools/shot.mjs tools/scenarios/catch.json   # cast, hook, fight and land a fish, then open the journal, map and shop
@@ -722,6 +824,16 @@ node tools/shot.mjs tools/scenarios/stargaze.json     # the dome open at night, 
 node tools/shot.mjs tools/scenarios/sky-events.json   # a fireball, the map's search circle, picking up the meteorite, a space station pass and its picture, a Kp 7 storm, the sky guide on foot, the solar system signs and the Journal's Sky page
 node tools/shot.mjs tools/scenarios/fireball.json     # a fireball over the aurora (the gallery picture), the camera on it, shooting stars, a space station pass watched and photographed, and a survey of the skyline from the observatory's deck
 node tools/shot.mjs tools/scenarios/gallery-cars.json # the title screen and the hot rod on the River Road for the pictures at the top of this page
+node tools/shot.mjs tools/scenarios/climb-routes.json    # an automatic climber up all four routes: time, highest hold, lowest grip and falls
+node tools/shot.mjs tools/scenarios/climb-roof-fall.json # a fall forced under the roof, climbing back on, and the top
+node tools/shot.mjs tools/scenarios/climbing.json        # the start, under the roof, the top, the register and lowering off
+node tools/shot.mjs tools/scenarios/tesla.json           # the Tesla Memorial: the statue, the terrace, the coil running, the board, the statue close up and the plant from across the river
+node tools/shot.mjs tools/scenarios/outburst.json        # (spoilers) the meteor outburst through the telescope, the craft coming down and the flash
+node tools/shot.mjs tools/scenarios/visitor.json         # (spoilers) Starfall Clearing, Zib, saying hello, Zib following and riding in the hot rod
+node tools/shot.mjs tools/scenarios/visitor-checks.json  # (spoilers) Zib's bear warning and fish sense, the old saucer, the science log, saving and the Journal's Science page
+node tools/shot.mjs tools/scenarios/round-smoke.json     # save and continue with the visitor's story, every screen opened, and the memorial's plaque, coil and board
+node tools/shot.mjs tools/scenarios/sites-draws.json     # draw calls and triangles at the landing, the memorial, Starfall Clearing and the tors
+node tools/shot.mjs tools/scenarios/review-fixes.json    # (spoilers) the code review's cases: Zib after a fast travel, no travel on the rope, driving to Starfall Clearing, a new game clearing the site, the shower view on another tab, continuing with Zib, and old saves' science
 node tools/shot.mjs tools/scenarios/sky-night.json    # the real night sky to the north, south, east and overhead, and the Moon
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot
 node tools/shot.mjs tools/scenarios/fish-views.json   # fish schools, a fish approaching the float and the fight

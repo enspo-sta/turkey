@@ -1106,11 +1106,18 @@ export class TeslaMemorial {
 
   // Sculpt the statue: a few milliseconds a frame once you are within a
   // kilometre (or all at once, for tests).
-  sculptStep(budget = 3) {
+  sculptStep(budget = 3, shared = false) {
     if (!this.sculpt) return true;
+    // (shared: within what is left of the frame's sculpting budget, see
+    // main.js; a call on demand takes what it asks for)
+    const g = this.game;
+    if (shared && g.sculptLeft === undefined) shared = false;
+    const ms = shared ? Math.min(budget, g.sculptLeft) : budget;
+    if (ms <= 0) return false;
     const t0 = performance.now();
     let r = this.sculpt.next();
-    while (!r.done && performance.now() - t0 < budget) r = this.sculpt.next();
+    while (!r.done && performance.now() - t0 < ms) r = this.sculpt.next();
+    if (shared) g.sculptLeft -= performance.now() - t0;
     if (!r.done) return false;
     this.statue.geometry.dispose();
     this.statue.geometry = r.value;
@@ -1127,7 +1134,7 @@ export class TeslaMemorial {
     const g = this.game;
     if (this.sculpt) {
       const c = g.camera.position;
-      if (Math.hypot(c.x - TESLA.x, c.z - TESLA.z) < 1000) this.sculptStep(3);
+      if (Math.hypot(c.x - TESLA.x, c.z - TESLA.z) < 1000) this.sculptStep(3, true);
     }
     // the foam drifts away downstream
     if (this.foamTex) {

@@ -284,6 +284,41 @@ export class GameState {
     return done;
   }
 
+  // A save from before the science objectives: what its logs show already
+  // done counts, and pays. (The telescope, the radio dish, the camera, the
+  // solar system's signs, the race car and the aurora only report a thing
+  // the first time, so it would never come round again.) Returns the
+  // objectives it marks.
+  backfillScience() {
+    const sky = this.sky || {};
+    const evs = [];
+    for (const id of Object.keys(sky.seen || {})) evs.push({ type: 'scope', id });
+    for (const id of Object.keys(sky.heard || {})) evs.push({ type: 'radio', id });
+    for (const id of Object.keys(this.photoSold || {})) evs.push({ type: 'photo', id });
+    evs.push({ type: 'solarwalk', count: Object.keys(sky.walk || {}).length });
+    for (const mark of [200, 250, 300]) if (this.flags && this.flags['racer' + mark]) evs.push({ type: 'racerSpeed', kmh: mark });
+    if ((sky.kpMax || 0) > 0) evs.push({ type: 'aurora', kp: sky.kpMax });
+    if ((sky.iss || 0) > 0) evs.push({ type: 'iss' });
+    if ((sky.meteorites || []).length > 0) evs.push({ type: 'meteorite' });
+    for (const species of Object.keys(this.journal || {})) evs.push({ type: 'catch', fish: { species } });
+    const done = [];
+    for (const o of SCIENCE) {
+      if (this.science[o.id]) continue;
+      const hit = evs.some((e) => {
+        try {
+          return o.test(e, this);
+        } catch (err) {
+          return false;
+        }
+      });
+      if (!hit) continue;
+      this.science[o.id] = { day: this.day };
+      this.addMoney(o.reward);
+      done.push(o);
+    }
+    return done;
+  }
+
   currentChallenge() {
     return CHALLENGES.find((c) => !this.challenges[c.id]) || null;
   }

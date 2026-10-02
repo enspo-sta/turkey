@@ -1,0 +1,74 @@
+{
+"width": 960,
+"height": 540,
+"reducedMotion": true,
+"steps": [
+{
+"wait": 1000
+},
+{
+"eval": "__rhf.start(false)"
+},
+{
+"wait": 2500
+},
+{
+"eval": "(()=>{const g=__rhf.game; g.env.setTime(23.6); g.env.weather.cloud=0.05; const D=g.observatory.deckAt; g.player.place(D.x, D.z, 0); __rhf.settle(); return 'night '+g.env.night.toFixed(2)+' cloud '+g.env.weather.cloud+' showerOn '+g.visitor.showerOn()+' stage '+g.visitor.stage()})()"
+},
+{
+"wait": 3000
+},
+{
+"wait": 6000
+},
+{
+"eval": "(()=>{const g=__rhf.game; g.env.night=Math.max(g.env.night,0.9); g.env.weather.cloud=0.05; g.screens.open('telescope', {tab:'scope'}); g.screens.scopeSel='shower'; g.screens.rerender(); return 'night '+g.env.night.toFixed(2)+' showerOn '+g.visitor.showerOn()+' scope open: '+g.screens.current+' sel '+g.screens.scopeSel+' canvas '+!!document.getElementById('eyepiece')})()"
+},
+{
+"wait": 2500
+},
+{
+"eval": "window.__rhfJump = 8.6; 'jump to the craft'"
+},
+{
+"wait": 1500
+},
+{
+"eval": "(document.getElementById('eyecap')||{}).textContent"
+},
+{
+"wait": 1500
+},
+{
+"eval": "window.__rhfJump = 6; 'jump to the end'"
+},
+{
+"waitFor": "__rhf.game.screens.current === null",
+"timeout": 120000
+},
+{
+"eval": "(()=>{const g=__rhf.game; window.__rhfFast=1; return 'screen '+g.screens.current+' stage '+g.visitor.stage()+' falling '+!!g.visitor.fall+' science '+JSON.stringify(Object.keys(g.state.science))})()"
+},
+{
+"eval": "(()=>{const g=__rhf.game; for(let i=0;i<45;i++) g.visitor.update(0.1); return 'fall t '+(g.visitor.fall&&g.visitor.fall.t.toFixed(1))})()"
+},
+{
+"wait": 4000
+},
+{
+"shot": "shower-fall.jpg"
+},
+{
+"eval": "(()=>{const g=__rhf.game; for(let i=0;i<66;i++) g.visitor.update(0.1); return 'after impact: stage '+g.visitor.stage()+' site '+!!g.visitor.site+' place '+!!g.world.place('crash')})()"
+},
+{
+"wait": 1200
+},
+{
+"shot": "shower-impact.jpg"
+},
+{
+"eval": "(()=>{const g=__rhf.game; const F=g.visitor.fall; if(!F) return 'no fall'; const f=F.flash; const v=f.position.clone().project(g.camera); return 'after '+(F.after||0).toFixed(2)+' flash pos '+f.position.toArray().map(x=>x.toFixed(0))+' scale '+f.scale.x.toFixed(0)+' opacity '+f.material.opacity.toFixed(2)+' visible '+f.visible+' ndc '+v.toArray().map(x=>x.toFixed(2))+' cam '+g.camera.position.toArray().map(x=>x.toFixed(0))+' parent '+(f.parent&&f.parent.name)+' in scene '+(g.visitor.group.parent===g.scene)})()"
+}
+]
+}

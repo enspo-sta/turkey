@@ -267,12 +267,15 @@ export function makeWorldTextures(world) {
 export function clearGrass(game, x, z, r) {
   const t = game.wtex && game.wtex.mask;
   const W = game.world;
-  if (!t) return;
+  if (!t) return null;
   const d = t.image.data;
   const i0 = Math.max(0, Math.floor((x - r - CS - -HALF) / CS));
   const i1 = Math.min(N - 1, Math.ceil((x + r + CS - -HALF) / CS));
   const j0 = Math.max(0, Math.floor((z - r - CS - -HALF) / CS));
   const j1 = Math.min(N - 1, Math.ceil((z + r + CS - -HALF) / CS));
+  // what was there, so restoreGrass can grow it back
+  const undo = { i0, i1, j0, j1, rg: new Uint8Array((i1 - i0 + 1) * (j1 - j0 + 1) * 2) };
+  let u = 0;
   for (let j = j0; j <= j1; j++) {
     for (let i = i0; i <= i1; i++) {
       const cx = -HALF + i * CS;
@@ -280,8 +283,29 @@ export function clearGrass(game, x, z, r) {
       const dist = Math.hypot(cx - x, cz - z);
       const keep = Math.min(1, Math.max(0, (dist - r) / CS));
       const k = i + j * N;
+      undo.rg[u++] = d[k * 4];
+      undo.rg[u++] = d[k * 4 + 1];
       d[k * 4] = Math.min(d[k * 4], Math.round(d[k * 4] * keep));
       d[k * 4 + 1] = Math.min(d[k * 4 + 1], Math.round(d[k * 4 + 1] * keep));
+      if (W && W.grass) W.grass[k] = d[k * 4];
+    }
+  }
+  t.needsUpdate = true;
+  return undo;
+}
+
+// Put back the grass and fireweed clearGrass took (a site taken down again).
+export function restoreGrass(game, undo) {
+  const t = game.wtex && game.wtex.mask;
+  const W = game.world;
+  if (!t || !undo) return;
+  const d = t.image.data;
+  let u = 0;
+  for (let j = undo.j0; j <= undo.j1; j++) {
+    for (let i = undo.i0; i <= undo.i1; i++) {
+      const k = i + j * N;
+      d[k * 4] = undo.rg[u++];
+      d[k * 4 + 1] = undo.rg[u++];
       if (W && W.grass) W.grass[k] = d[k * 4];
     }
   }

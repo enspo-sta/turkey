@@ -374,6 +374,8 @@ export class Viewmodel {
   // The climber whose hands to show on the rock, or null.
   setClimbHands(climb) {
     this.climb = climb;
+    // (off the rock the climbing hands go at once, not on the next frame)
+    if (!climb) this.climbRig.visible = false;
   }
 
   setTool(tool) {

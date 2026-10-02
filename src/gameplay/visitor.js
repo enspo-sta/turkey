@@ -20,7 +20,8 @@ import * as THREE from 'three';
 import { ModelBuilder } from '../util/builder.js';
 import { canvasTexture } from '../entities/carparts.js';
 import { sphere, ellipsoid, cone, placed, frameAt, blend, carve, meshSDFSteps } from '../util/sdfmesh.js';
-import { clearGrass } from '../world/worldtex.js';
+import { clearGrass, restoreGrass } from '../world/worldtex.js';
+import { ROAD_HALF } from '../world/worldgen.js';
 import { smoothstep, damp, clamp, mulberry32 } from '../util/math.js';
 
 export const CRASH = { x: -6, z: -154 };
@@ -38,6 +39,7 @@ const SPOT = 0x5fb3a8;
 const _a = new THREE.Vector3();
 const _b = new THREE.Vector3();
 const _c = new THREE.Vector3();
+const _v2 = new THREE.Vector2();
 
 function dirFromAzEl(az, el, out = new THREE.Vector3()) {
   return out.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el));
@@ -57,6 +59,47 @@ function glowTex(inner = 'rgba(255,255,255,1)', mid = 'rgba(150,255,235,0.45)') 
     },
     { srgb: false }
   );
+}
+
+// A cloud of soft puffs for the falling craft's trail: one draw for all of
+// them, each puff with its own size (in metres) and opacity, instead of a
+// sprite and a draw each.
+function puffCloud(n, map, color, additive) {
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  geo.setAttribute('size', new THREE.BufferAttribute(new Float32Array(n), 1));
+  geo.setAttribute('alpha', new THREE.BufferAttribute(new Float32Array(n), 1));
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { map: { value: map }, color: { value: new THREE.Color(color) }, scale: { value: 500 } },
+    vertexShader: `
+      attribute float size;
+      attribute float alpha;
+      uniform float scale;
+      varying float vA;
+      void main() {
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = alpha > 0.0 ? size * scale / max(0.001, -mv.z) : 0.0;
+        vA = alpha;
+      }`,
+    fragmentShader: `
+      uniform sampler2D map;
+      uniform vec3 color;
+      varying float vA;
+      void main() {
+        vec4 t = texture2D(map, gl_PointCoord);
+        gl_FragColor = vec4(color * t.rgb, t.a * vA);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
+    transparent: true,
+    depthWrite: false,
+    blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+  });
+  const pts = new THREE.Points(geo, mat);
+  pts.frustumCulled = false;
+  pts.renderOrder = 3;
+  return pts;
 }
 
 function smokeTex() {
@@ -228,11 +271,18 @@ class Zib {
   }
 
   // Sculpt the body a few milliseconds at a time.
-  sculptStep(budget = 3) {
+  sculptStep(budget = 3, shared = false) {
     if (!this.sculpt) return true;
+    // (shared: within what is left of the frame's sculpting budget, see
+    // main.js; a call on demand takes what it asks for)
+    const g = this.game;
+    if (shared && g.sculptLeft === undefined) shared = false;
+    const ms = shared ? Math.min(budget, g.sculptLeft) : budget;
+    if (ms <= 0) return false;
     const t0 = performance.now();
     let r = this.sculpt.next();
-    while (!r.done && performance.now() - t0 < budget) r = this.sculpt.next();
+    while (!r.done && performance.now() - t0 < ms) r = this.sculpt.next();
+    if (shared) g.sculptLeft -= performance.now() - t0;
     if (!r.done) return false;
     this.body.geometry.dispose();
     this.body.geometry = r.value;
@@ -399,7 +449,8 @@ export class Visitor {
     const to = new THREE.Vector3(CRASH.x, W.heightAt(CRASH.x, CRASH.z) + 0.5, CRASH.z);
     const eye = g.camera.position.clone();
     const rad = dirFromAzEl(RADIANT.az, RADIANT.el);
-    const from = eye.clone().addScaledVector(rad, 9000);
+    // (8.5 km out: inside the camera's 9 km reach from the first frame)
+    const from = eye.clone().addScaledVector(rad, 8500);
     from.y = Math.max(from.y, 7000);
     this.fall = { t: 0, dur: F_DUR, from, to, eye, last: from.clone(), boomAt: 0, trail: [], trailT: 0 };
     this.buildFallFX();
@@ -418,15 +469,14 @@ export class Visitor {
     glow.renderOrder = 4;
     this.group.add(glow);
     F.glow = glow;
+    // the trail: glowing puffs and smoke, 70 of each, in two clouds
     const tex = glowTex('rgba(255,210,150,0.9)', 'rgba(255,120,60,0.35)');
     const smoke = smokeTex();
+    F.glowPts = puffCloud(70, tex, 0xffb070, true);
+    F.smokePts = puffCloud(70, smoke, 0x8a8a8e, false);
+    this.group.add(F.glowPts, F.smokePts);
     F.trail = [];
-    for (let i = 0; i < 140; i++) {
-      const glowS = new THREE.Sprite(new THREE.SpriteMaterial({ map: i % 2 ? smoke : tex, color: i % 2 ? 0x8a8a8e : 0xffb070, blending: i % 2 ? THREE.NormalBlending : THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0, fog: false }));
-      glowS.visible = false;
-      this.group.add(glowS);
-      F.trail.push({ s: glowS, life: 0, glow: !(i % 2) });
-    }
+    for (let i = 0; i < 140; i++) F.trail.push({ i: i >> 1, glow: !(i % 2), life: 0, max: 1, size: 0, p: new THREE.Vector3() });
   }
 
   // The craft's place on its way down, at u (0 to 1): fast and high at
@@ -472,24 +522,32 @@ export class Visitor {
         if (!T) break;
         T.life = T.glow ? 0.9 : 3.2;
         T.max = T.life;
-        T.s.position.copy(F.last).lerp(p, (k + 1) / Math.min(n, 12));
+        T.p.copy(F.last).lerp(p, (k + 1) / Math.min(n, 12));
         T.size = d * (T.glow ? 0.055 : 0.04);
-        T.s.visible = true;
       }
       F.last.copy(p);
     }
+    const GA = F.glowPts.geometry.attributes;
+    const SA = F.smokePts.geometry.attributes;
     for (const T of F.trail) {
-      if (T.life <= 0) continue;
-      T.life -= dt;
-      const k = T.life / T.max;
+      const A = T.glow ? GA : SA;
+      if (T.life > 0) T.life -= dt;
       if (T.life <= 0) {
-        T.s.visible = false;
+        A.alpha.array[T.i] = 0;
         continue;
       }
-      const sz = T.size * (T.glow ? 0.6 + k * 0.4 : 1.6 - k * 0.8);
-      T.s.scale.set(sz, sz, 1);
-      T.s.material.opacity = T.glow ? k * 0.8 : k * 0.35;
+      const k = T.life / T.max;
+      A.position.array[T.i * 3] = T.p.x;
+      A.position.array[T.i * 3 + 1] = T.p.y;
+      A.position.array[T.i * 3 + 2] = T.p.z;
+      A.size.array[T.i] = T.size * (T.glow ? 0.6 + k * 0.4 : 1.6 - k * 0.8);
+      A.alpha.array[T.i] = T.glow ? k * 0.8 : k * 0.35;
     }
+    for (const A of [GA, SA]) A.position.needsUpdate = A.size.needsUpdate = A.alpha.needsUpdate = true;
+    // a puff's size is in metres: pixels a metre at a metre's distance
+    const scale = g.renderer.getDrawingBufferSize(_v2).y / (2 * Math.tan((g.camera.fov * Math.PI) / 360));
+    F.glowPts.material.uniforms.scale.value = scale;
+    F.smokePts.material.uniforms.scale.value = scale;
     // the land lights up as it comes in low
     g.env.fireFlash = Math.max(g.env.fireFlash || 0, smoothstep(0.55, 0.95, u) * 0.6);
     // your eyes follow it
@@ -547,14 +605,27 @@ export class Visitor {
         g.audio?.boom?.();
         g.player.shake = Math.min(1, (g.player.shake || 0) + 0.25);
       }
-      if (F.after > 13 && !F.boomAt) {
-        for (const T of F.trail) this.group.remove(T.s);
-        for (const Q of F.plume || []) this.group.remove(Q.s);
-        this.group.remove(F.head, F.glow);
-        if (F.flash) this.group.remove(F.flash, F.fire);
-        this.fall = null;
-      }
+      if (F.after > 13 && !F.boomAt) this.clearFall();
     }
+  }
+
+  // Take the fall's glow, trail, flash and plume out of the sky.
+  clearFall() {
+    const F = this.fall;
+    this.fall = null;
+    if (!F) return;
+    const gone = [F.head, F.glow, F.flash, F.fire, F.glowPts, F.smokePts, ...(F.plume || []).map((Q) => Q.s)];
+    const maps = new Set();
+    for (const s of gone) {
+      if (!s) continue;
+      this.group.remove(s);
+      const m = s.material;
+      const map = m.map || (m.uniforms && m.uniforms.map && m.uniforms.map.value);
+      if (map) maps.add(map);
+      m.dispose();
+      if (s.isPoints) s.geometry.dispose();
+    }
+    for (const t of maps) t.dispose();
   }
 
   impact() {
@@ -598,14 +669,14 @@ export class Visitor {
     const dirs = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
     const dir = dirs[Math.round(((az + 360) % 360) / 45) % 8];
     g.announcer?.say('fireball', { sub: `IT CAME DOWN TO THE ${dir.toUpperCase()}`, kind: 'legend' });
-    g.hud.toast(`A flash behind the trees to the ${dir}, about ${Math.round(dist / 100) * 100} m away. The boom will take ${Math.round(dist / 343)} seconds to reach you: sound is slow. The map shows the crash site`, 'good', 10);
+    g.hud.toast(`A flash behind the trees to the ${dir}, about ${Math.round(dist / 100) * 100} m away. The boom will take ${Math.round(dist / 343)} seconds to reach you: sound is slow. The map shows where: Starfall Clearing`, 'good', 10);
     g.save?.();
   }
 
   // Back to before the outburst: the site gone, the trees standing again.
   teardown() {
     const g = this.game;
-    this.fall = null;
+    this.clearFall();
     if (this.zib) {
       this.detach();
       g.scene.remove(this.zib.group);
@@ -622,6 +693,20 @@ export class Visitor {
     for (const [t, i, x] of this.felled || []) t.x[i] = x;
     this.felled = null;
     g.scatter.lastPos.set(1e9, 0, 0);
+    // the logs and the pod stop blocking the way; the trees block it again
+    const C = g.colliders;
+    const SC = this.siteColliders;
+    if (SC) {
+      for (const b of SC.boxes) C.removeBox(b);
+      const mine = new Set(SC.circles);
+      C.removeCircles(CRASH.x - 30, CRASH.z - 30, CRASH.x + 30, CRASH.z + 30, (c) => mine.has(c));
+      for (const c of SC.felled) C.addCircle(c.x, c.z, c.r, c.tag);
+      this.siteColliders = null;
+    }
+    // the grass grows back over the scorched ground
+    restoreGrass(g, this.grassUndo);
+    this.grassUndo = null;
+    delete g.props.layout.parking.crash;
     if (this.siteMesh) {
       this.siteMesh.parent?.remove(this.siteMesh);
       this.siteMesh = null;
@@ -654,7 +739,8 @@ export class Visitor {
         }
       }
     }
-    C.removeCircles(x0 - 30, z0 - 30, x0 + 30, z0 + 30, (c) => (c.tag === 'tree' || c.tag === 'shrub' || c.tag === 'rock') && Math.hypot(c.x - x0, c.z - z0) < 24);
+    const SC = (this.siteColliders = { boxes: [], circles: [], felled: [] });
+    SC.felled = C.removeCircles(x0 - 30, z0 - 30, x0 + 30, z0 + 30, (c) => (c.tag === 'tree' || c.tag === 'shrub' || c.tag === 'rock') && Math.hypot(c.x - x0, c.z - z0) < 24);
     S.lastPos.set(1e9, 0, 0);
     // the scorched ground: a disc that follows the land
     const rings = 10;
@@ -690,7 +776,7 @@ export class Visitor {
     dg.computeVertexNormals();
     const scorch = new THREE.Mesh(dg, new THREE.MeshStandardMaterial({ map: scorchTex(), transparent: true, depthWrite: false, roughness: 1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
     // the grass burnt off where the ground is scorched
-    clearGrass(g, x0, z0, 9);
+    this.grassUndo = clearGrass(g, x0, z0, 9);
     scorch.receiveShadow = true;
     site.add(scorch);
     // the rim of thrown-up earth and clods, and the felled trunks
@@ -728,7 +814,7 @@ export class Visitor {
       }
       const mx = (ax + bx) / 2;
       const mz = (az + bz) / 2;
-      C.addBox(mx, mz, rad + 0.1, len / 2, Math.atan2(bx - ax, bz - az), -1e9, Math.max(ay, by) + rad, 'log');
+      SC.boxes.push(C.addBox(mx, mz, rad + 0.1, len / 2, Math.atan2(bx - ax, bz - az), -1e9, Math.max(ay, by) + rad, 'log'));
     }
     this.siteMesh = g.props.addMesh(b.build(), 0, 0, 0, 0);
     // the pod, nose down at the middle, its hatch open
@@ -786,7 +872,7 @@ export class Visitor {
     door.rotation.set(Math.PI, 0.4, 0.2);
     door.castShadow = true;
     site.add(door);
-    C.addCircle(x0, z0, 1.6, 'pod');
+    SC.circles.push(C.addCircle(x0, z0, 1.6, 'pod'));
     this.pod = pod;
     // where Zib hides: behind the pod, away from the road
     this.hideAt = new THREE.Vector3(x0 - 2.2, y0 + 0.4, z0 - 1.8);
@@ -799,21 +885,29 @@ export class Visitor {
       this.smoke.push({ s, life: (i / 16) * 7, max: 7 });
     }
     this.site = site;
-    // the place on the map
+    // the place on the map, known from the moment you saw the flash
+    g.state.discovered.crash = true;
     if (!W.places.some((p) => p.id === 'crash')) {
       const px = x0 + 14;
       const pz = z0 + 10;
       W.places.push({
         id: 'crash',
-        name: 'Crash site',
+        name: 'Starfall Clearing',
         kind: 'landmark',
         x: px,
         z: pz,
         y: W.heightAt(px, pz),
         face: Math.atan2(-(x0 - px), -(z0 - pz)),
-        blurb: 'Something came down here out of the meteor shower and flattened the trees round it. Its pod lies in the scorched ground. Who flew it?',
+        blurb: 'Something came down here out of the meteor shower and flattened the trees round it. Its pod lies in the scorched ground. Who flew it? Park on the River Road and walk in: about 120 m through the forest.',
         bearRisk: 0.2,
       });
+    }
+    const road = g.props.nearestRoad(x0, z0);
+    if (road) {
+      const dx = road.x - x0;
+      const dz = road.z - z0;
+      const dl = Math.hypot(dx, dz) || 1;
+      g.props.layout.parking.crash = { x: road.x - (dx / dl) * (ROAD_HALF + 2), z: road.z - (dz / dl) * (ROAD_HALF + 2), yaw: Math.atan2(road.tx, road.tz), roadX: road.x, roadZ: road.z, side: { x: dx / dl, z: dz / dl } };
     }
   }
 
@@ -986,13 +1080,17 @@ export class Visitor {
     const P = g.player;
     const cam = g.camera.position;
     const d = Math.hypot(Z.pos.x - P.pos.x, Z.pos.z - P.pos.z);
-    const visibleNear = Math.hypot(cam.x - Z.pos.x, cam.z - Z.pos.z) < 600 || Z.riding;
+    // (with you it always keeps up: far off after a fast travel, it blinks
+    // to you below instead of staying where it was)
+    const visibleNear = st.follow || Z.riding || Math.hypot(cam.x - Z.pos.x, cam.z - Z.pos.z) < 600;
     if (!visibleNear) {
       Z.group.visible = false;
       return;
     }
-    if (!Z.sculptStep(3)) return;
-    Z.group.visible = true;
+    // its body is sculpted a little each frame when it first appears; it is
+    // seen once that is done, but it keeps up with you from the start
+    const ready = Z.sculptStep(3, true);
+    Z.group.visible = ready;
     // ---- where it goes
     if (st.stage === 'down') {
       // hiding behind the pod, peeking out when you come near, and out

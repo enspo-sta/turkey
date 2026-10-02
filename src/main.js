@@ -333,6 +333,9 @@ class Session {
     const g = this.game;
     g.fishing.cancel();
     g.hunting.reset();
+    // off the rock: the next game must not start with the climbing hands
+    if (g.climbing.active) g.climbing.finish('foot');
+    this.coilNoteT = 0;
     if (g.player.mode === 'drive') this.exitCar(true);
     if (g.player.mode === 'boat' || g.player.boat) g.boat.leave(true);
     g.glider.end();
@@ -360,6 +363,8 @@ class Session {
     if (continueSave && s.photoSoldMissing) {
       for (const [id, shot] of Object.entries(g.photo.album.shots)) s.photoSold[id] ??= shot.stars;
     }
+    // a save from before the science objectives: what you had already done
+    const caughtUp = continueSave ? s.backfillScience() : [];
     s.started = true;
     g.started = true;
     $('title').hidden = true;
@@ -392,13 +397,14 @@ class Session {
     // a fireball's stone still lying where it fell
     this.endGaze();
     g.meteors.restore(s.meteorite);
-    g.visitor.restore();
     if (continueSave && s.player) g.player.place(s.player.x, s.player.z, s.player.yaw);
     else {
       // start on the riverbank in front of the cabin, facing the water
       const landing = g.world.place('landing');
       g.player.place(landing.x, landing.z, landing.face);
     }
+    // (after you are in place, so a Zib who is with you starts at your side)
+    g.visitor.restore();
     // the boat: on its trailer behind the car, or moored where you left it
     g.boat.restore(continueSave ? s.boat : null);
     if (continueSave && s.player && s.player.aboard) {
@@ -421,7 +427,14 @@ class Session {
         g.hud.placeTitle('Welcome to Alaska', 'Hotrod Landing');
         g.hud.hint(IS_TOUCH ? 'Drag left side to walk, right side to look. Face the river and tap CAST.' : 'WASD to walk, drag to look. Face the river and press Space to cast.', 7);
       }, 400);
-    } else g.hud.toast(`Welcome back. ${formatMoney(s.money)} in the tin`);
+    } else {
+      g.hud.toast(`Welcome back. ${formatMoney(s.money)} in the tin`);
+      if (caughtUp.length) {
+        const pay = caughtUp.reduce((a, o) => a + o.reward, 0);
+        const names = caughtUp.map((o) => o.title).join(', ');
+        setTimeout(() => g.hud.toast(`New in the Journal: science objectives. ${caughtUp.length} of them you had already done (${names}): ${formatMoney(pay)} for what you found out`, 'money', 9), 2500);
+      }
+    }
     this.checkOrientation();
   }
 
@@ -546,12 +559,8 @@ class Session {
     g.hud.toast(first ? 'Sparks a metre long, and the tube on the stand lights up with no wire to it: the coil\'s field drives the gas inside to glow' : 'The coil crackles; the tube glows', 'good', first ? 7 : 3);
     if (first) {
       g.state.flags.coil = true;
-      // what it is, once the show is over
-      setTimeout(() => {
-        if (g.screens.isOpen) return;
-        const n = g.tesla.coilNote();
-        g.screens.note(n.title, n.html);
-      }, 6500);
+      // what it is, once the show is over (see update)
+      this.coilNoteT = 6.5;
       this.onEvent({ type: 'coil' });
       this.save();
     }
@@ -623,6 +632,12 @@ class Session {
     if (g.player.mode === 'glide' && g.glider.from) {
       P = g.glider.from;
       yaw = g.glider.from.yaw;
+    }
+    // on the rock: the foot of the route, a step out from it
+    if (g.player.mode === 'climb' && g.climbing.route) {
+      const r = g.climbing.route;
+      P = { x: r.base.x + r.n.x * 0.6, z: r.base.z + r.n.z * 0.6 };
+      yaw = Math.atan2(r.n.x, r.n.z);
     }
     s.player = { x: P.x, z: P.z, yaw, aboard };
     s.boat = g.boat.toJSON();
@@ -818,6 +833,10 @@ class Session {
       g.hud.toast('Land first. The hot rod does not fly');
       return;
     }
+    if (g.player.mode === 'climb') {
+      g.hud.toast('Lower off first: you are on the rope');
+      return;
+    }
     g.fishing.cancel();
     g.hunting.reset();
     this.withFade(`Driving to ${p.name}…`, () => {
@@ -864,6 +883,7 @@ class Session {
     this.withFade('Mauled by a grizzly…', () => {
       s.cooler = [];
       s.money -= fee;
+      if (g.climbing.active) g.climbing.finish('foot');
       if (g.player.mode === 'drive') this.exitCar(true);
       if (g.player.mode === 'boat' || g.player.boat) g.boat.leave(true);
       g.glider.end();
@@ -1133,6 +1153,14 @@ class Session {
     g.paused = false;
     const P = g.player;
     const car = g.car;
+    // the Tesla coil's story, once its show is over and no screen is open
+    if (this.coilNoteT > 0) {
+      this.coilNoteT -= dt;
+      if (this.coilNoteT <= 0) {
+        const n = g.tesla.coilNote();
+        g.screens.note(n.title, n.html);
+      }
+    }
 
     // tool switch: rod, longbow, camera (once bought), empty hands (Q
     // cycles, 1 2 3 4 pick directly)
@@ -1244,8 +1272,12 @@ class Session {
     g.bears.update(dt);
     g.observatory.update(dt);
     g.solarwalk.update(dt);
-    g.tesla.update(dt);
+    // one budget a frame for all the sculpting going on (the statue, Zib):
+    // two at once never take longer than one would
+    // (Zib first: it is small and quick, the statue takes the rest)
+    g.sculptLeft = 3;
     g.visitor.update(dt);
+    g.tesla.update(dt);
     g.meteors.update(dt);
     g.satellites.update(dt);
     this.updateSkyEvents(dt);

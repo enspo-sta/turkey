@@ -7,7 +7,7 @@
 //
 // The Kenai Climbing Club keeps four top ropes on them, each in its own
 // colour: First Steps (5.4) on the little tor; Tundra Stroll (5.5) up the
-// south face of the big tor, Ptarmigan Crack (5.8) up its west face and
+// south face of the big tor, Ptarmigan Crack (5.8) up its north face and
 // Raven's Roof (5.10) under the overhang on its east face. The grades are
 // the ones American climbers use: 5 means a climb that needs a rope, and the
 // number after the point how hard it is. The holds are chalked white, as
@@ -16,7 +16,7 @@
 // Like the observatory, everything is added after the world is made, and
 // the trees on the site are felled, so the forest elsewhere is untouched.
 import * as THREE from 'three';
-import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeVertices, mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ModelBuilder } from '../util/builder.js';
 import { canvasTexture } from '../entities/carparts.js';
 import { makeSignTexture } from '../util/textures.js';
@@ -332,26 +332,39 @@ export class Tors {
       const tor = { id, x, z, yaw: T.yaw, foot, blocks: [], group: new THREE.Group() };
       tor.group.position.set(x, foot, z);
       tor.group.rotation.y = T.yaw;
+      // the blocks, each turned and placed, merged into one mesh a tor (one
+      // draw instead of four)
+      const parts = [];
       T.blocks.forEach((B, k) => {
         const detail = id === 'big' ? (k < 3 ? 13 : 10) : 10;
         const geo = graniteBlock(B.h[0], B.h[1], B.h[2], B.r, B.rough, (id === 'big' ? 100 : 200) + k * 7, detail);
-        const m = new THREE.Mesh(geo, rockMat);
-        m.position.set(B.c[0], B.c[1], B.c[2]);
-        m.rotation.set(B.tilt ? B.tilt[0] : 0, B.yaw, B.tilt ? B.tilt[1] : 0, 'YXZ');
-        m.castShadow = true;
-        m.receiveShadow = true;
-        tor.group.add(m);
-        meshes.push(m);
-        tor.blocks.push({ ...B, mesh: m });
+        const M = new THREE.Matrix4().compose(new THREE.Vector3(B.c[0], B.c[1], B.c[2]), new THREE.Quaternion().setFromEuler(new THREE.Euler(B.tilt ? B.tilt[0] : 0, B.yaw, B.tilt ? B.tilt[1] : 0, 'YXZ')), new THREE.Vector3(1, 1, 1));
+        geo.applyMatrix4(M);
+        parts.push(geo);
+        tor.blocks.push({ ...B });
       });
+      const m = new THREE.Mesh(mergeGeometries(parts), rockMat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      tor.group.add(m);
       this.group.add(tor.group);
       tor.group.updateMatrixWorld(true);
+      // for rays (placing the holds, lowering off) one unseen mesh a block,
+      // so a ray tests only the blocks it passes near, not every triangle
+      // of the tor
+      for (const geo of parts) {
+        geo.computeBoundingSphere();
+        const rm = new THREE.Mesh(geo, rockMat);
+        rm.matrixAutoUpdate = false;
+        rm.matrixWorld.copy(tor.group.matrixWorld);
+        meshes.push(rm);
+      }
       // colliders: the bottom block, and the top of the tor to stand on
       const B0 = T.blocks[0];
       C.addBox(x, z, B0.h[0] + 0.15, B0.h[2] + 0.15, T.yaw + B0.yaw, -1e9, foot + B0.c[1] + B0.h[1], 'rock');
       this.tors[id] = tor;
     }
-    this.meshes = meshes;
+    this.rayMeshes = meshes;
 
     // ------------------------------------------------------ the routes
     this.raycaster = new THREE.Raycaster();
@@ -365,6 +378,7 @@ export class Tors {
     this.group.add(holds);
     this.addRopes();
     this.addTops();
+    for (const r of this.routes) this.clearStand(r);
     this.addTalus(rockMat);
     this.addCrack();
 
@@ -415,11 +429,37 @@ export class Tors {
     S.lastPos.set(1e9, 0, 0);
   }
 
+  // Where you stand when you top out: on the top's stand, clear of the
+  // summit block and the walls round the edge, as nearly straight back from
+  // the lip as it can be (up to 1.6 m back), else a little to one side
+  // (straight back from some lips is the summit block itself).
+  clearStand(r) {
+    const C = this.game.colliders;
+    if (!r.lip) return;
+    const free = (x, z) => {
+      if (C.deckAt(x, z, r.topY, 0.5) === null) return false;
+      const q = C.resolve(x, z, 0.4, r.topY);
+      return Math.hypot(q.x - x, q.z - z) < 1e-3;
+    };
+    for (const side of [0, 0.25, -0.25, 0.5, -0.5, 0.75, -0.75, 1, -1, 1.25, -1.25, 1.5, -1.5, 1.75, -1.75, 2, -2]) {
+      for (let back = 1.6; back >= 0.55; back -= 0.05) {
+        const x = r.lip.p.x - r.n.x * back + r.right.x * side;
+        const z = r.lip.p.z - r.n.z * back + r.right.z * side;
+        if (free(x, z)) {
+          r.top.set(x, r.topY, z);
+          return;
+        }
+      }
+    }
+    const q = C.resolve(r.top.x, r.top.z, 0.4, r.topY);
+    r.top.set(q.x, r.topY, q.z);
+  }
+
   // Where a ray from outside the tor along -n first meets the rock.
   hit(origin, dir) {
     this.raycaster.set(origin, dir);
     this.raycaster.far = 30;
-    const hits = this.raycaster.intersectObjects(this.meshes, false);
+    const hits = this.raycaster.intersectObjects(this.rayMeshes, false);
     return hits[0] || null;
   }
 
@@ -593,7 +633,21 @@ export class Tors {
   // The top ropes, one colour a route: from the anchor down the line of the
   // route to the foot, a little off the rock, and a coil at the bottom.
   addRopes() {
-    const mats = {};
+    const parts = [];
+    const col = new THREE.Color();
+    const paint = (geo, hex) => {
+      col.set(hex);
+      const n = geo.attributes.position.count;
+      const c = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) {
+        c[i * 3] = col.r;
+        c[i * 3 + 1] = col.g;
+        c[i * 3 + 2] = col.b;
+      }
+      geo.setAttribute('color', new THREE.BufferAttribute(c, 3));
+      geo.deleteAttribute('uv');
+      parts.push(geo.index ? geo.toNonIndexed() : geo);
+    };
     for (const r of this.routes) {
       if (!r.lip) continue;
       const pts = [r.lip.p.clone().addScaledVector(r.lip.n, 0.1).add(new THREE.Vector3(0, 0.12, 0))];
@@ -603,19 +657,19 @@ export class Tors {
       foot.y = r.ground + 0.05;
       pts.push(foot);
       const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
-      const geo = new THREE.TubeGeometry(curve, Math.max(24, pts.length * 6), 0.012, 5, false);
-      const m = mats[r.rope] || (mats[r.rope] = new THREE.MeshStandardMaterial({ color: r.rope, roughness: 0.7 }));
-      const rope = new THREE.Mesh(geo, m);
-      rope.castShadow = false;
-      this.group.add(rope);
+      paint(new THREE.TubeGeometry(curve, Math.max(24, pts.length * 6), 0.012, 5, false), r.rope);
       // the coil of slack on the ground
-      const coil = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 5, 18), m);
-      coil.rotation.x = Math.PI / 2;
-      coil.position.set(foot.x + r.right.x * 0.4, r.ground + 0.04, foot.z + r.right.z * 0.4);
-      coil.scale.set(1, 1, 0.6);
-      this.group.add(coil);
+      const coil = new THREE.TorusGeometry(0.22, 0.03, 5, 18);
+      coil.rotateX(Math.PI / 2);
+      coil.scale(1, 0.6, 1);
+      coil.translate(foot.x + r.right.x * 0.4, r.ground + 0.04, foot.z + r.right.z * 0.4);
+      paint(coil, r.rope);
       r.ropePts = pts;
     }
+    if (!parts.length) return;
+    const ropes = new THREE.Mesh(mergeGeometries(parts), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7 }));
+    ropes.castShadow = false;
+    this.group.add(ropes);
   }
 
   // The tops: a stand on each, walls round its edge where no one should step
@@ -668,8 +722,27 @@ export class Tors {
         reg.rotation.y = yaw + 0.4;
         this.group.add(reg);
         this.register = { x: rx, z: rz, y: top };
-        // the flake: a loose slab of granite by the summit block
-        const [fx, fz] = to(-hx * 0.55, hz * 0.5);
+        // the flake: a loose slab of granite by the summit block, on the
+        // first corner of the stand that is open rock (clear of the summit
+        // block, the walls and the register)
+        let [fx, fz] = to(-hx * 0.55, hz * 0.5);
+        for (const [ax, az] of [
+          [-0.6, 0.6],
+          [-0.6, -0.6],
+          [0.6, -0.6],
+          [0, 0.62],
+          [0, -0.62],
+          [-0.62, 0],
+          [0.62, 0],
+        ]) {
+          const [qx, qz] = to(hx * ax, hz * az);
+          const q = C.resolve(qx, qz, 0.35, top);
+          if (Math.hypot(q.x - qx, q.z - qz) < 1e-3 && Math.hypot(qx - rx, qz - rz) > 1) {
+            fx = qx;
+            fz = qz;
+            break;
+          }
+        }
         const fb = new ModelBuilder();
         fb.dodeca(0.16, { pos: [0, 0.06, 0], scale: [1.6, 0.45, 1.1], color: 0xa0948c });
         fb.dodeca(0.09, { pos: [0.25, 0.04, 0.12], scale: [1.4, 0.5, 1], color: 0x968a82 });

@@ -1,0 +1,17 @@
+{"width": 960, "height": 540, "steps": [
+{"wait": 1000},
+{"eval": "__rhf.start(false)"},
+{"wait": 2500},
+{"eval": "(()=>{const g=__rhf.game; window.__m=(label)=>{const r=g.renderer; const gl=r.getContext(); const px=new Uint8Array(4); r.info.autoReset=false; r.info.reset(); const a=performance.now(); g.frame(); gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,px); const t=performance.now()-a; const i=r.info.render; const out=label+': calls '+i.calls+', triangles '+i.triangles+', cpu game '+g.perf.game.toFixed(1)+' world '+g.perf.world.toFixed(1)+' ms'; r.info.autoReset=true; return out;}; g.env.setTime(14); const p=g.world.place('landing'); g.player.place(p.x,p.z,p.face); __rhf.settle(); return 'ok'})()"},
+{"wait": 6000},
+{"eval": "window.__m('landing')"},
+{"eval": "(()=>{const g=__rhf.game; g.tesla.finishSculpt(); const p=g.world.place('tesla'); g.player.place(p.x,p.z,p.face); __rhf.settle(); return 'tesla'})()"},
+{"wait": 6000},
+{"eval": "window.__m('tesla memorial')"},
+{"eval": "(()=>{const g=__rhf.game; g.state.visitor={stage:'due'}; g.visitor.startFall(); for(let i=0;i<125;i++) g.visitor.update(0.1); for(let i=0;i<400 && g.visitor.zib.sculpt;i++) g.visitor.zib.sculptStep(50); const p=g.world.place('crash'); g.player.place(p.x,p.z,p.face); __rhf.settle(); return 'crash'})()"},
+{"wait": 6000},
+{"eval": "window.__m('crash site')"},
+{"eval": "(()=>{const g=__rhf.game; const p=g.world.place('tors'); g.player.place(p.x,p.z,p.face); __rhf.settle(); return 'tors'})()"},
+{"wait": 6000},
+{"eval": "window.__m('granite tors')"}
+]}

@@ -1,0 +1,20 @@
+{"width": 960, "height": 540, "steps": [
+{"wait": 1000},
+{"eval": "__rhf.start(false)"},
+{"wait": 2500},
+{"eval": "(()=>{const g=__rhf.game; g.env.setTime(15.5); g.env.weather.cloud=0.25; g.state.gear.climbing=true; window.__climb=(id,maxH,maxSteps)=>{const C=g.climbing; const r=g.tors.route(id); const dirs=[[0,-1],[0.7,-0.7],[-0.7,-0.7],[1,0],[-1,0]]; let di=0,stuck=0,steps=0; const wait=()=>C.resting&&C.grip<85; const inp={readLook:()=>({dx:0,dy:0}), readMove:()=>wait()?{x:0,y:0}:({x:dirs[di][0],y:dirs[di][1]}), takeTap:()=>null, pressed:(n)=>n==='primary'&&((C.state==='climb'&&C.grip<35&&C.chalkCool<=0)||(C.state==='hang'&&C.grip>60)), keyPressed:()=>false}; while(steps<(maxSteps||4000) && C.state==='climb'){ const top=C.hands[0]&&C.hands[1]?Math.max(C.hands[0].p.y,C.hands[1].p.y)-r.ground:0; if(top>=maxH && !C.moving) break; const before=C.hands.map(h=>h&&h.i).join(); C.update(0.05,inp); steps++; const after=C.hands.map(h=>h&&h.i).join(); if(C.moving||wait()){stuck=0;continue;} if(before===after){stuck++; if(stuck>12){di=(di+1)%dirs.length;stuck=0;}} else di=0;} return C.state+' at '+(C.body.y-r.ground).toFixed(1)+' m, grip '+C.grip.toFixed(0);}; const r=g.tors.route('stroll'); g.player.place(r.base.x, r.base.z, 0); g.player.tool='none'; g.viewmodel.setTool('none'); __rhf.settle(); g.climbing.start('stroll'); return 'start: '+window.__climb('stroll', 2.6)})()"},
+{"wait": 5000},
+{"shot": "climb-start.jpg"},
+{"eval": "(()=>{const g=__rhf.game; g.climbing.finish('foot'); const r=g.tors.route('roof'); g.player.place(r.base.x, r.base.z, 0); __rhf.settle(); g.climbing.start('roof'); const s=window.__climb('roof', 10.4); g.climbing.lookPitch=0.55; return 'roof: '+s})()"},
+{"wait": 5000},
+{"shot": "climb-roof.jpg"},
+{"eval": "(()=>{const g=__rhf.game; const s=window.__climb('roof', 99); for(let i=0;i<60;i++) g.climbing.update(0.05,{readLook:()=>({dx:0,dy:0}),readMove:()=>({x:0,y:0}),takeTap:()=>null,pressed:()=>false,keyPressed:()=>false}); const P=g.player; P.pitch=-0.05; return 'top: '+s+' mode '+P.mode+' y '+P.pos.y.toFixed(1)+' sent '+JSON.stringify(Object.keys(g.state.climb.sent))})()"},
+{"wait": 5000},
+{"shot": "climb-summit.jpg"},
+{"eval": "(()=>{const g=__rhf.game; const P=g.player; const reg=g.tors.register; P.place(reg.x+1.0, reg.z+0.9, 0); P.yaw=Math.atan2(-(reg.x-P.pos.x), -(reg.z-P.pos.z)); P.pitch=-0.6; __rhf.session.updateInteraction(); return 'register: '+(g.interaction?g.interaction.label:'none')+' y '+P.pos.y.toFixed(1)})()"},
+{"wait": 4000},
+{"shot": "climb-register.jpg"},
+{"eval": "(()=>{const g=__rhf.game; g.climbing.lowerFromTop('stroll'); for(let i=0;i<40;i++) g.climbing.update(0.05,{readLook:()=>({dx:0,dy:0}),readMove:()=>({x:0,y:0}),takeTap:()=>null,pressed:()=>false,keyPressed:()=>false}); return 'lowering: '+g.climbing.state+' at '+(g.climbing.body.y-g.climbing.route.ground).toFixed(1)})()"},
+{"wait": 4000},
+{"shot": "climb-lower.jpg"}
+]}

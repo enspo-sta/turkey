@@ -73,6 +73,25 @@ for (const s of steps) {
     console.log('viewport', s.viewport.join(' by '));
   }
   if (s.wait) await page.waitForTimeout(s.wait);
+  // reload the page (to continue from a save) and wait for the game again
+  if (s.reload) {
+    await page.reload();
+    try {
+      await page.waitForFunction(() => window.__rhf && window.__rhf.ready, null, { timeout: scenario.timeout || 120000 });
+      console.log('reloaded');
+    } catch (e) {
+      console.log('TIMEOUT waiting for ready after reload');
+    }
+  }
+  // wait until something in the page holds (a fade over, a show ended);
+  // polled on a timer, as a headless page draws few frames
+  if (s.waitFor) {
+    try {
+      await page.waitForFunction(s.waitFor, null, { timeout: s.timeout || 60000, polling: 250 });
+    } catch (e) {
+      console.log('waitFor timed out:', s.waitFor);
+    }
+  }
   if (s.tap) await page.touchscreen.tap(s.tap[0], s.tap[1]);
   if (s.click) await page.mouse.click(s.click[0], s.click[1]);
   // real taps and clicks on the centre of an element, found by CSS selector

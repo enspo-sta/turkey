@@ -60,12 +60,17 @@ export class Climbing {
       g.hud.toast('You need climbing shoes, a harness and chalk: the Trading Post sells a climbing kit', 'bad', 5);
       return false;
     }
+    if (g.bears && g.bears.threat) {
+      g.hud.toast('Not with a bear this close: deal with it first', 'bad', 3);
+      return false;
+    }
     const P = g.player;
     g.fishing.cancel?.();
     g.hunting.reset?.();
     this.route = r;
     this.active = true;
     this.state = 'climb';
+    this.lowerWant = null;
     this.prevTool = P.tool;
     P.mode = 'climb';
     P.tool = 'none';
@@ -132,6 +137,7 @@ export class Climbing {
     this.route = r;
     this.active = true;
     this.state = 'lower';
+    this.lowerWant = null;
     g.player.mode = 'climb';
     this.prevTool = g.player.tool;
     g.player.tool = 'none';
@@ -394,13 +400,18 @@ export class Climbing {
       const target = r.ground + 1.0;
       this.body.y = Math.max(target, this.body.y - dt * 2.1);
       const n = r.n;
-      // follow the face out from the rock
-      const o = _a.set(this.body.x, this.body.y, this.body.z).addScaledVector(n, 2.5);
-      const h = g.tors.hit(o, _b.copy(n).negate());
-      if (h) {
-        const want = h.point.clone().addScaledVector(n, 0.75);
-        this.body.x = damp(this.body.x, want.x, 6, dt);
-        this.body.z = damp(this.body.z, want.z, 6, dt);
+      // follow the face out from the rock (a ray every 0.1 s is plenty at
+      // walking pace)
+      this.lowerT = (this.lowerT || 0) - dt;
+      if (this.lowerT <= 0 || !this.lowerWant) {
+        this.lowerT = 0.1;
+        const o = _a.set(this.body.x, this.body.y, this.body.z).addScaledVector(n, 2.5);
+        const h = g.tors.hit(o, _b.copy(n).negate());
+        if (h) (this.lowerWant || (this.lowerWant = new THREE.Vector3())).copy(h.point).addScaledVector(n, 0.75);
+      }
+      if (this.lowerWant) {
+        this.body.x = damp(this.body.x, this.lowerWant.x, 6, dt);
+        this.body.z = damp(this.body.z, this.lowerWant.z, 6, dt);
       }
       if (this.body.y <= target + 0.01) {
         this.finish('foot');

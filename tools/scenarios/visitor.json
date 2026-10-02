@@ -1,0 +1,69 @@
+{
+"width": 960,
+"height": 540,
+"steps": [
+{
+"wait": 1000
+},
+{
+"eval": "__rhf.start(false)"
+},
+{
+"wait": 2500
+},
+{
+"eval": "(()=>{const g=__rhf.game; g.state.visitor={stage:'due'}; g.visitor.startFall(); for(let i=0;i<125;i++) g.visitor.update(0.1); g.env.setTime(10.5); g.env.weather.cloud=0.2; const p=g.world.place('crash'); g.player.place(p.x, p.z, p.face); g.player.pitch=-0.1; g.player.tool='none'; g.viewmodel.setTool('none'); __rhf.settle(); for(let i=0;i<400 && g.visitor.zib.sculpt;i++) g.visitor.zib.sculptStep(50); return 'stage '+g.visitor.stage()+' place '+p.x.toFixed(0)+','+p.z.toFixed(0)+' zib sculpted '+!g.visitor.zib.sculpt+' tris '+(g.visitor.zib.body.geometry.index?g.visitor.zib.body.geometry.index.count/3:0)})()"
+},
+{
+"wait": 5000
+},
+{
+"shot": "crash-site.jpg"
+},
+{
+"eval": "(()=>{const g=__rhf.game; const Z=g.visitor.zib; const h=g.visitor.hideAt; g.player.place(h.x+2.1, h.z-0.6, 0); g.player.yaw=Math.atan2(-(h.x-g.player.pos.x), -(h.z-g.player.pos.z)); g.player.pitch=-0.12; for(let i=0;i<30;i++) g.visitor.update(0.05); __rhf.session.updateInteraction(); return 'near zib: interaction '+(g.interaction?g.interaction.label:'none')+' zib at '+Z.pos.toArray().map(v=>v.toFixed(1))})()"
+},
+{
+"wait": 4000
+},
+{
+"shot": "crash-zib-peek.jpg"
+},
+{
+"eval": "(()=>{const g=__rhf.game; g.visitor.hello(); return 'dialog '+g.screens.current+' stage '+g.visitor.stage()+' science '+JSON.stringify(Object.keys(g.state.science))})()"
+},
+{
+"wait": 2500
+},
+{
+"shot": "crash-hello.jpg"
+},
+{
+"eval": "(()=>{const g=__rhf.game; g.screens.close(); g.visitor.invite(); for(let i=0;i<40;i++) g.visitor.update(0.05); const P=g.player; P.yaw += 2.2; P.pitch=-0.05; return 'following '+g.visitor.following+' zib '+g.visitor.zib.pos.toArray().map(v=>v.toFixed(1))})()"
+},
+{
+"wait": 4000
+},
+{
+"shot": "zib-follow.jpg"
+},
+{
+"eval": "(()=>{const g=__rhf.game; g.state.visitor={stage:'due'}; g.visitor.startFall(); for(let i=0;i<125;i++) g.visitor.update(0.1); g.env.setTime(10.5); g.env.weather.cloud=0.2; for(let i=0;i<400 && g.visitor.zib.sculpt;i++) g.visitor.zib.sculptStep(50); const h=g.visitor.hideAt; const P=g.player; P.place(h.x+4.5, h.z+3.0, 0); P.tool='none'; g.viewmodel.setTool('none'); for(let i=0;i<60;i++) g.visitor.update(0.05); const Z=g.visitor.zib; P.yaw=Math.atan2(-(Z.pos.x-P.pos.x), -(Z.pos.z-P.pos.z)); P.pitch=-0.15; __rhf.settle(); __rhf.session.updateInteraction(); return 'zib at '+Z.pos.toArray().map(v=>v.toFixed(1))+' player '+P.pos.toArray().map(v=>v.toFixed(1))+' interaction '+(g.interaction?g.interaction.label:'none')})()"
+},
+{
+"wait": 4500
+},
+{
+"shot": "crash-zib-out.jpg"
+},
+{
+"eval": "(()=>{const g=__rhf.game; g.visitor.hello(); g.screens.close(); g.visitor.invite(); const car=g.hotrod; const P=g.player; car.place(P.pos.x+4, P.pos.z+2, 0.3); __rhf.session.enterCar(car); for(let i=0;i<20;i++) g.visitor.update(0.05); car.camMode='chase'; car.camYaw=2.6; return 'mode '+P.mode+' zib parent '+(g.visitor.zib.group.parent&&g.visitor.zib.group.parent.type)+' riding '+!!g.visitor.zib.riding})()"
+},
+{
+"wait": 4500
+},
+{
+"shot": "zib-car.jpg"
+}
+]
+}
