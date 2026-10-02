@@ -7,7 +7,7 @@
 // ringing payphone, the humming, the gnome who will not stay put and the
 // fairy ring's luck.
 import * as THREE from 'three';
-import { ModelBuilder } from '../util/builder.js';
+import { ModelBuilder, jitterGeometry } from '../util/builder.js';
 import { mulberry32 } from '../util/math.js';
 
 // Where they stand (picked in dense forest 40 to 140 m from a road, well
@@ -20,7 +20,7 @@ export const ODDITIES = [
   { id: 'stickhut', name: "Bigfoot's hut", x: 86, z: 812, find: 'Something big built this out of whole trees. The fish bones are fresh.', rumour: 'Big footprints lead into the forest south-west of Mosquito Flats.' },
   { id: 'rustbucket', name: "Ruben's first car", x: -196, z: 554, find: "Ruben's first hot rod, with a spruce growing through the engine. He swears he will fix it one day.", rumour: 'Ruben once lost a car in the woods south-west of the Trading Post. He says it is still there.' },
   { id: 'payphone', name: 'The payphone', x: -592, z: 494, find: 'A payphone on a pole, deep in the woods. It rings.', rumour: 'A phone rings in the forest north-east of Halibut Pier, and nobody knows why.' },
-  { id: 'stones', name: 'The standing stones', x: -166, z: -664, find: 'Nine stones in a ring on the hill. They are warm, even at night.', rumour: 'Old stones stand in a ring in the forest south-west of Glacier Lake.' },
+  { id: 'stones', name: 'The standing stones', x: -166, z: -664, find: 'Nine old stones in a ring in the forest. They are warm, even at night.', rumour: 'Old stones stand in a ring in the forest south-west of Glacier Lake.' },
   { id: 'xmastree', name: 'The Christmas tree', x: 638, z: 92, find: 'A Christmas tree, decorated and lit, in the middle of summer. There is a present under it.', rumour: 'Somebody keeps Christmas all year in the woods west of Steaming Springs.' },
   { id: 'gnome', name: 'The gnome', x: 452, z: -382, find: 'A garden gnome with a fishing rod. Did he not stand somewhere else?', rumour: 'A little fisherman in a red hat wanders the forest south-west of Caribou Tundra.' },
   { id: 'fairydoor', name: 'The door in the tree', x: 116, z: -262, find: 'A tiny door at the foot of an old spruce. Somebody lives here.', rumour: 'One old spruce south-east of Bear Falls has a door in it. Knock after dark.' },
@@ -45,7 +45,7 @@ const CALLS = [
   'Static, and somebody far away reeling in a very big fish.',
 ];
 
-const RUST = 0x7a3a1c;
+const RUST = 0x5e3a24;
 
 export function oddityAvoid() {
   const out = ODDITIES.map((o) => ({ x: o.x, z: o.z, r: o.id === 'stones' ? 9 : o.id === 'ufo' ? 8 : 6 }));
@@ -72,6 +72,9 @@ export function buildOddities(P) {
   // the oddities' own glow: lamps, lights, runes and toadstool spots,
   // brighter as night falls (see Props.update)
   P.oddGlowMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
+  // light that is there only after dark (the fairy ring's), faded in by
+  // Props.update
+  P.oddNightMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false, transparent: true, opacity: 0, depthWrite: false });
   const spots = {};
   for (const o of ODDITIES) {
     const yaw = towardRoad(P, o.x, o.z);
@@ -80,13 +83,30 @@ export function buildOddities(P) {
     const gy = (lx, lz) => W.heightAt(...to(lx, lz)) - g;
     const b = new ModelBuilder();
     const glow = new ModelBuilder();
-    const ctx = { P, W, o, yaw, to, g, gy, b, glow, rand };
+    const night = new ModelBuilder();
+    const ctx = { P, W, o, yaw, to, g, gy, b, glow, night, rand };
     BUILD[o.id](ctx);
     if (b.parts.length) P.addMesh(b.build(), o.x, g, o.z, yaw);
     if (glow.parts.length) P.addMesh(glow.build(), o.x, g, o.z, yaw, P.oddGlowMat, { shadow: false });
+    if (night.parts.length) P.addMesh(night.build(), o.x, g, o.z, yaw, P.oddNightMat, { shadow: false });
     spots[o.id] = { x: o.x, z: o.z, y: g, yaw, to };
   }
   P.oddities = spots;
+}
+
+// A rough standing stone of unit size: an icosphere pushed out toward a
+// box, narrowing toward the top, its surface knocked about.
+function menhir(rand) {
+  const g = new THREE.IcosahedronGeometry(0.5, 1);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i) * 2;
+    const y = p.getY(i) * 2;
+    const z = p.getZ(i) * 2;
+    const taper = 1 - 0.11 * (y + 1);
+    p.setXYZ(i, Math.sign(x) * Math.abs(x) ** 0.55 * 0.5 * taper, Math.sign(y) * Math.abs(y) ** 0.8 * 0.5, Math.sign(z) * Math.abs(z) ** 0.55 * 0.5 * taper);
+  }
+  return jitterGeometry(g, 0.1, rand);
 }
 
 const BUILD = {
@@ -138,7 +158,7 @@ const BUILD = {
 
   // Toadstools in a perfect ring: red caps with white spots that glow a
   // little at night.
-  fairyring({ b, glow, gy, rand }) {
+  fairyring({ b, glow, night, gy, rand }) {
     const R = 2.6;
     const n = 23;
     for (let i = 0; i < n; i++) {
@@ -153,9 +173,11 @@ const BUILD = {
       for (let k = 0; k < 3; k++) {
         const sa = rand() * Math.PI * 2;
         const sr = r * (0.3 + rand() * 0.45);
-        glow.sphere(r * 0.16, 5, 3, { pos: [x + Math.cos(sa) * sr, y + h - r * 0.15 + Math.sqrt(Math.max(0, r * r - sr * sr)) * 0.75, z + Math.sin(sa) * sr], color: 0xe8f4c8, jitter: 0 });
+        glow.sphere(r * 0.2, 5, 3, { pos: [x + Math.cos(sa) * sr, y + h - r * 0.15 + Math.sqrt(Math.max(0, r * r - sr * sr)) * 0.75, z + Math.sin(sa) * sr], color: 0xe8f4c8, jitter: 0 });
       }
     }
+    // a faint ring of light in the grass after dark
+    night.torus(R, 0.07, 4, 48, { pos: [0, 0.05, 0], rot: [Math.PI / 2, 0, 0], scale: [1, 1, 0.25], color: 0x9aff7a, jitter: 0 });
     // and a few small pale ones inside
     for (let i = 0; i < 5; i++) {
       const a = rand() * Math.PI * 2;
@@ -168,59 +190,86 @@ const BUILD = {
     }
   },
 
-  // A flying saucer nose down in a crater of torn moss, its hatch open, a
-  // ring of green lights, scorched spruce leaning away.
+  // A flying saucer nose down in a crater of torn moss, its hatch open on
+  // its side, a ring of green lights, scorched spruce leaning away.
   ufo({ P, b, glow, gy, to, o, rand }) {
     const tilt = 0.32;
-    const m = new THREE.Matrix4().makeRotationX(tilt).setPosition(0, 0.55, 0);
-    // the crater's rim of thrown earth
-    for (let i = 0; i < 20; i++) {
-      const a = (i / 20) * Math.PI * 2;
-      const r = 3.6 + rand() * 0.6;
+    const m = new THREE.Matrix4().makeRotationX(tilt).setPosition(0, 0.65, 0);
+    // the crater's rim of thrown earth and stones
+    for (let i = 0; i < 26; i++) {
+      const a = (i / 26) * Math.PI * 2 + rand() * 0.2;
+      const r = 3.3 + rand() * 0.9;
       const x = Math.cos(a) * r;
       const z = Math.sin(a) * r;
-      b.sphere(0.8 + rand() * 0.4, 7, 4, { pos: [x, gy(x, z) - 0.25, z], scale: [1.3, 0.45, 1], color: i % 3 ? 0x4a3a2a : 0x3a4a22, jitter: 0.1 });
+      b.sphere(0.5 + rand() * 0.35, 9, 5, { pos: [x, gy(x, z) - 0.12, z], scale: [1.4, 0.55, 1.1], rot: [0, -a, 0], color: [0x4a3a2a, 0x5a4632, 0x3e3226][i % 3], jitter: 0.1 });
     }
-    b.cyl(3.4, 3.0, 0.4, 20, { pos: [0, -0.35, 0], color: 0x2e261c, jitter: 0.08 });
+    for (let i = 0; i < 9; i++) {
+      const a = rand() * Math.PI * 2;
+      const r = 2.8 + rand() * 2;
+      const x = Math.cos(a) * r;
+      const z = Math.sin(a) * r;
+      b.dodeca(0.18 + rand() * 0.2, { pos: [x, gy(x, z) + 0.05, z], scale: [1, 0.7, 1], color: 0x7a786e, jitter: 0.08 });
+    }
+    // scorched, torn earth over the crater's floor, following the ground
+    for (let i = 0; i < 16; i++) {
+      const a = rand() * Math.PI * 2;
+      const d = Math.sqrt(rand()) * 3.0;
+      const x = Math.cos(a) * d;
+      const z = Math.sin(a) * d;
+      b.sphere(0.7 + rand() * 0.5, 8, 3, { pos: [x, gy(x, z) - 0.02, z], scale: [1, 0.06, 1], color: i % 3 ? 0x2a2218 : 0x3a2e20, jitter: 0.1 });
+    }
     // the saucer: two shallow domes, the rim, a glass dome on top
     b.add(new THREE.SphereGeometry(2.5, 28, 8, 0, Math.PI * 2, 0, Math.PI / 2), { matrix: m, pos: [0, 0, 0], scale: [1, 0.28, 1], color: 0xb8bcc4, smooth: true, jitter: 0 });
     b.add(new THREE.SphereGeometry(2.5, 28, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), { matrix: m, pos: [0, 0, 0], scale: [1, 0.22, 1], color: 0x8a8e96, smooth: true, jitter: 0 });
     b.add(new THREE.TorusGeometry(2.5, 0.08, 6, 36), { matrix: m, pos: [0, 0, 0], rot: [Math.PI / 2, 0, 0], color: 0x6a6e76, jitter: 0 });
     b.add(new THREE.SphereGeometry(0.9, 18, 8, 0, Math.PI * 2, 0, Math.PI / 2), { matrix: m, pos: [0, 0.6, 0], color: 0x2a4a3a, smooth: true, jitter: 0 });
-    // the open hatch and its ramp down to the moss
-    b.add(new THREE.BoxGeometry(0.9, 0.06, 1.3), { matrix: m, pos: [0, -0.32, 1.75], rot: [-0.55, 0, 0], color: 0x9aa0a8, jitter: 0 });
-    glow.add(new THREE.BoxGeometry(0.8, 0.02, 0.6), { matrix: m, pos: [0, -0.5, 1.1], color: 0x7aff9a, jitter: 0 });
+    // the hatch in its underside on the right, open on a green glow, its
+    // door let down as a ramp to the moss (the lower dome's surface is 0.36
+    // under the rim's plane at 1.9 m out, sloping up 14 degrees outward)
+    glow.add(new THREE.BoxGeometry(0.85, 0.02, 0.75), { matrix: m, pos: [1.9, -0.39, 0], rot: [0, 0, 0.25], color: 0x7aff9a, jitter: 0 });
+    b.add(new THREE.BoxGeometry(0.95, 0.03, 0.85), { matrix: m, pos: [1.9, -0.375, 0], rot: [0, 0, 0.25], color: 0x2a2e2a, jitter: 0 });
+    b.add(new THREE.BoxGeometry(0.9, 0.05, 0.8), { matrix: m, pos: [2.68, -0.47, 0], rot: [0, 0, -0.43], color: 0x9aa0a8, jitter: 0 });
     // the lights round the rim
     for (let i = 0; i < 14; i++) {
       const a = (i / 14) * Math.PI * 2;
-      glow.add(new THREE.SphereGeometry(0.09, 6, 4), { matrix: m, pos: [Math.cos(a) * 2.5, 0.02, Math.sin(a) * 2.5], color: i % 2 ? 0x7aff9a : 0xb0ffc8, jitter: 0 });
+      glow.add(new THREE.SphereGeometry(0.13, 6, 4), { matrix: m, pos: [Math.cos(a) * 2.52, 0.02, Math.sin(a) * 2.52], color: i % 2 ? 0x7aff9a : 0xb0ffc8, jitter: 0 });
     }
-    // scorched spruce leaning away from the impact
+    // scorched spruce leaning away from the impact: black trunks with the
+    // stubs of their branches
     for (let i = 0; i < 4; i++) {
       const a = 0.6 + i * 1.5 + rand() * 0.4;
-      const x = Math.cos(a) * 5.2;
-      const z = Math.sin(a) * 5.2;
-      const top = [x + Math.cos(a) * 3.2, gy(x, z) + 5.2, z + Math.sin(a) * 3.2];
-      b.beam([x, gy(x, z) - 0.2, z], top, 0.16, 6, { r2: 0.05, color: 0x1e1a16 });
-      b.beam([x + Math.cos(a) * 1.2, gy(x, z) + 2.4, z + Math.sin(a) * 1.2], [x + Math.cos(a) * 1.9, gy(x, z) + 2.7, z + Math.sin(a) * 1.9 + 0.6], 0.04, 4, { color: 0x1e1a16 });
+      const x = Math.cos(a) * 5.4;
+      const z = Math.sin(a) * 5.4;
+      const g0 = gy(x, z);
+      const top = [x + Math.cos(a) * 2.6, g0 + 5.4, z + Math.sin(a) * 2.6];
+      b.beam([x, g0 - 0.2, z], top, 0.2, 7, { r2: 0.04, color: 0x1e1a16, jitter: 0.1 });
+      for (let k = 0; k < 6; k++) {
+        const t = 0.25 + k * 0.12;
+        const p = [x + (top[0] - x) * t, g0 + (top[1] - g0) * t, z + (top[2] - z) * t];
+        const ba = rand() * Math.PI * 2;
+        const len = 0.5 - t * 0.35;
+        b.beam(p, [p[0] + Math.cos(ba) * len, p[1] - 0.1, p[2] + Math.sin(ba) * len], 0.035, 4, { r2: 0.01, color: 0x1e1a16 });
+      }
     }
     P.colliders.addCircle(...to(0, 0), 2.6).hi = 1.8;
-    const [ix, iz] = to(0, 3.0);
+    const [ix, iz] = to(3.0, 0);
     P.interactions.push({ id: 'odd:ufo', x: ix, z: iz, r: 2.0 });
     // a thin wisp from the crater
     const [sx, sz] = to(0.6, -0.4);
     P.smokePoints.push(new THREE.Vector3(sx, P.world.heightAt(o.x, o.z) + 1.0, sz));
   },
 
-  // Whole young trees leaned into a cone with a way in, a bed of moss inside,
-  // fish bones by the door and a trail of very big footprints.
+  // Whole young trees leaned into a cone with a way in, spruce boughs laid
+  // over them, a bed of moss inside, fish bones by the door and a trail of
+  // very big footprints.
   stickhut({ P, b, gy, to, rand }) {
-    const n = 26;
+    const n = 36;
+    // (the way in faces the road, local +z)
+    const door = (a) => Math.abs(((a - Math.PI / 2 + Math.PI * 3) % (Math.PI * 2)) - Math.PI) < 0.32;
     for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2;
-      // the way in faces the road
-      if (Math.abs(((a - Math.PI / 2 + Math.PI * 3) % (Math.PI * 2)) - Math.PI) < 0.32) continue;
-      const r = 2.3 + rand() * 0.4;
+      const a = (i / n) * Math.PI * 2 + (rand() - 0.5) * 0.08;
+      if (door(a)) continue;
+      const r = 2.2 + rand() * 0.5;
       const x = Math.cos(a) * r;
       const z = Math.sin(a) * r;
       const len = 4.2 + rand() * 1.2;
@@ -228,37 +277,47 @@ const BUILD = {
       const dir = [top[0] - x, top[1] - gy(x, z), top[2] - z];
       const l = Math.hypot(...dir);
       const end = [x + (dir[0] / l) * len, gy(x, z) + (dir[1] / l) * len, z + (dir[2] / l) * len];
-      b.beam([x, gy(x, z) - 0.2, z], end, 0.07 + rand() * 0.04, 5, { r2: 0.025, color: rand() < 0.5 ? 0x5a4632 : 0x6a5640 });
+      b.beam([x, gy(x, z) - 0.2, z], end, 0.07 + rand() * 0.05, 5, { r2: 0.025, color: rand() < 0.5 ? 0x5a4632 : 0x6a5640 });
     }
-    b.sphere(1.3, 10, 5, { pos: [0, gy(0, 0) + 0.05, 0], scale: [1, 0.22, 1], color: 0x4f7a2e, jitter: 0.08 });
+    // spruce boughs laid flat on the lower half, needles still on, their
+    // tips up the slope of the poles (60 degrees)
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2 + rand() * 0.3;
+      if (door(a)) continue;
+      const h = 0.6 + rand() * 1.3;
+      const r = 2.5 - h * 0.57;
+      b.cone(0.55, 1.6, 6, { pos: [Math.cos(a) * r, gy(Math.cos(a) * 2, Math.sin(a) * 2) + h, Math.sin(a) * r], rot: [0, -a, 0.51], scale: [0.35, 1, 1], color: rand() < 0.5 ? 0x24402a : 0x2e4a2c, jitter: 0.08 });
+    }
+    b.sphere(1.3, 10, 5, { pos: [0, gy(0, 0) + 0.05, 0], scale: [1, 0.18, 1], color: 0x3a5a26, jitter: 0.08 });
     // fish bones by the way in
     for (let i = 0; i < 5; i++) {
-      const x = -0.6 + rand() * 1.2;
-      const z = 2.6 + rand() * 0.8;
-      const y = gy(x, z) + 0.02;
+      const x = -0.7 + rand() * 1.4;
+      const z = 2.6 + rand() * 0.9;
+      const y = gy(x, z) + 0.025;
       const ry = rand() * Math.PI;
-      b.box(0.36, 0.015, 0.015, { pos: [x, y, z], rot: [0, ry, 0], color: 0xe8e2d0, jitter: 0 });
-      for (let k = -2; k <= 2; k++) b.box(0.01, 0.01, 0.12, { pos: [x + Math.cos(ry) * k * 0.06, y, z - Math.sin(ry) * k * 0.06], rot: [0, ry, 0], color: 0xe8e2d0, jitter: 0 });
-      b.cone(0.05, 0.1, 4, { pos: [x + Math.cos(ry) * 0.2, y + 0.02, z - Math.sin(ry) * 0.2], rot: [0, 0, Math.PI / 2], color: 0xe0d8c4 });
+      b.box(0.5, 0.025, 0.025, { pos: [x, y, z], rot: [0, ry, 0], color: 0xf2ece0, jitter: 0 });
+      for (let k = -3; k <= 3; k++) b.box(0.015, 0.015, 0.18 - Math.abs(k) * 0.02, { pos: [x + Math.cos(ry) * k * 0.055, y, z - Math.sin(ry) * k * 0.055], rot: [0, ry, 0], color: 0xf2ece0, jitter: 0 });
+      b.cone(0.07, 0.14, 4, { pos: [x + Math.cos(ry) * 0.29, y + 0.02, z - Math.sin(ry) * 0.29], rot: [0, ry, Math.PI / 2], color: 0xe8e0cc });
+      b.cone(0.06, 0.1, 3, { pos: [x - Math.cos(ry) * 0.29, y + 0.02, z + Math.sin(ry) * 0.29], rot: [0, ry, -Math.PI / 2], color: 0xe8e0cc });
     }
     // footprints: a left and a right, 1.4 m apart, off into the trees
     for (let i = 0; i < 9; i++) {
-      const z = 3.6 + i * 1.4;
+      const z = 3.8 + i * 1.4;
       const x = (i % 2 ? 0.3 : -0.3) + Math.sin(i * 0.5) * 0.6;
       const y = gy(x, z) + 0.01;
-      b.box(0.24, 0.012, 0.46, { pos: [x, y, z], rot: [0, (rand() - 0.5) * 0.2, 0], color: 0x2a2018, jitter: 0.05 });
-      for (let k = 0; k < 5; k++) b.box(0.05, 0.012, 0.07, { pos: [x - 0.1 + k * 0.05, y, z - 0.27], color: 0x2a2018, jitter: 0.05 });
+      b.sphere(0.2, 8, 2, { pos: [x, y, z], scale: [0.7, 0.05, 1.3], color: 0x2a2018, jitter: 0.05 });
+      for (let k = 0; k < 5; k++) b.sphere(0.045, 5, 2, { pos: [x - 0.1 + k * 0.05, y, z - 0.31 + Math.abs(k - 2) * 0.02], scale: [1, 0.3, 1.2], color: 0x2a2018, jitter: 0.05 });
     }
     P.colliders.addCircle(...to(0, 0), 2.0).hi = 4.0;
   },
 
   // An old hot rod, rusted through, sunk to its axles, moss on the roof and
   // a spruce growing up through the engine.
-  rustbucket({ P, b, gy, to, yaw }) {
+  rustbucket({ P, b, gy, to, yaw, rand }) {
     const y0 = -0.12;
-    b.box(1.7, 0.35, 3.6, { pos: [0, y0 + 0.55, 0], color: RUST, surf: 'concrete', jitter: 0.04 });
+    b.box(1.7, 0.35, 3.6, { pos: [0, y0 + 0.55, 0], color: 0x5e3a24, surf: 'concrete', jitter: 0.04 });
     // the cab and its roof, the empty window holes
-    b.box(1.5, 0.75, 1.4, { pos: [0, y0 + 1.1, -0.6], color: 0x6a3218, surf: 'concrete' });
+    b.box(1.5, 0.75, 1.4, { pos: [0, y0 + 1.1, -0.6], color: 0x5a3422, surf: 'concrete' });
     b.box(1.56, 0.08, 1.5, { pos: [0, y0 + 1.5, -0.6], color: 0x5a2a14 });
     b.box(1.45, 0.08, 1.4, { pos: [0, y0 + 1.56, -0.6], color: 0x4a7a2a, jitter: 0.08 });
     for (const sx of [-0.76, 0.76]) b.box(0.02, 0.4, 0.9, { pos: [sx, y0 + 1.15, -0.55], color: 0x14100c, jitter: 0 });
@@ -276,6 +335,19 @@ const BUILD = {
         b.torus(0.33, 0.13, 6, 14, { pos: [sx, y0 + 0.2, sz], rot: [0, Math.PI / 2, 0], scale: [1, 0.8, 1], color: 0x1c1a18 });
       }
     }
+    // rust in patches, dark and pale, and holes rusted right through: on
+    // the body between the fenders and on the cab's sides
+    for (const sd of [-1, 1]) {
+      for (let k = 0; k < 8; k++) {
+        const cab = k >= 4;
+        const pz = cab ? -1.15 + rand() * 1.1 : -0.6 + rand() * 1.2;
+        const py = cab ? y0 + 0.8 + rand() * 0.15 : y0 + 0.45 + rand() * 0.15;
+        const hole = rand() < 0.25;
+        b.box(0.012, 0.07 + rand() * 0.1, 0.12 + rand() * 0.25, { pos: [sd * ((cab ? 0.751 : 0.851) + (hole ? 0.002 : 0)), py, pz], color: hole ? 0x140e0a : rand() < 0.5 ? 0x3a2214 : 0x8a5a36, jitter: 0.06 });
+      }
+    }
+    // and on the hood's top
+    for (let k = 0; k < 5; k++) b.box(0.15 + rand() * 0.25, 0.012, 0.1 + rand() * 0.2, { pos: [-0.5 + rand() * 1.0, y0 + 0.731, 0.8 + rand() * 0.9], color: rand() < 0.5 ? 0x3a2214 : 0x8a5a36, jitter: 0.06 });
     // faded flames still on the side
     for (const sd of [-1, 1]) {
       for (let k = 0; k < 4; k++) b.box(0.01, 0.12, 0.5 - k * 0.08, { pos: [sd * 0.855, y0 + 0.62 + k * 0.03, 1.0 - k * 0.2], rot: [0.25, 0, 0], color: k % 2 ? 0xb06a2a : 0x9a4a1a, jitter: 0 });
@@ -339,35 +411,40 @@ const BUILD = {
       const y = gy(x, z);
       const h = 2.0 + rand() * 1.0;
       const w = 1.0 + rand() * 0.35;
-      const d = 0.55 + rand() * 0.2;
-      const fallen = i === 6;
-      const runes = i % 3 === 0 && !fallen;
+      const d = 0.5 + rand() * 0.2;
+      const fallen = i === 7;
+      const runes = i % 3 === 0;
       // broad face to the middle (local z points out from it); the rune
       // stones stand straight
       const lean = runes ? 0 : 0.08;
       const rot = fallen ? [Math.PI / 2 - 0.15, a, 0] : [(rand() - 0.5) * lean, -a + Math.PI / 2, (rand() - 0.5) * lean];
       const yc = fallen ? y + 0.25 : y + h / 2 - 0.2;
-      // a rough faceted slab: a stretched dodecahedron, whose front and back
-      // are upright ridges 0.467 of its depth out from the middle
-      b.dodeca(0.5, { pos: [x, yc, z], rot, scale: [w, h, d], color: 0x7a786e, surf: 'stone', surfScale: 1.6, jitter: 0.05 });
+      b.add(menhir(rand), { pos: [x, yc, z], rot, scale: [w, h, d], color: rand() < 0.5 ? 0x7a786e : 0x6e6c64, surf: 'concrete', surfScale: 1.4, jitter: 0.05 });
       if (fallen) continue;
-      const ridge = 0.467 * d;
-      // lichen on the outer ridge
-      b.sphere(0.2, 6, 4, { pos: [x + Math.cos(a) * (ridge - 0.05), yc - h * 0.1, z + Math.sin(a) * (ridge - 0.05)], rot: [0, -a + Math.PI / 2, 0], scale: [1.3, 1.8, 0.45], color: 0x9aa860, jitter: 0.1 });
+      // its broad faces stand 0.45 of its depth out from the middle
+      const face = 0.45 * d;
+      // lichen on the outer face, a few patches
+      for (let k = 0; k < 3; k++) {
+        const ly = yc - h * 0.25 + rand() * h * 0.45;
+        const lx = (rand() - 0.5) * w * 0.5;
+        b.sphere(0.1 + rand() * 0.06, 6, 4, { pos: [x + Math.cos(a) * face - Math.sin(a) * lx, ly, z + Math.sin(a) * face + Math.cos(a) * lx], rot: [0, -a + Math.PI / 2, 0], scale: [1.3, 1, 0.2], color: 0x7a8466, jitter: 0.1 });
+      }
       if (runes) {
-        // three runes down the inner ridge, facing the middle
-        const off = ridge + 0.02;
-        const m = new THREE.Matrix4().makeRotationY(-a + Math.PI * 1.5).setPosition(x - Math.cos(a) * off, yc, z - Math.sin(a) * off);
-        RUNES.forEach((glyph, k) => {
-          for (const [x0, y0, x1, y1] of glyph) {
-            const len = Math.hypot(x1 - x0, y1 - y0);
-            glow.add(new THREE.BoxGeometry(len + 0.035, 0.035, 0.01), { matrix: m, pos: [(x0 + x1) / 2, (y0 + y1) / 2 + (1 - k) * 0.27, 0], rot: [0, 0, Math.atan2(y1 - y0, x1 - x0)], color: 0x7ac8ff, jitter: 0 });
-          }
-        });
+        // three runes down each broad face, toward the middle and away
+        const off = face + 0.05;
+        for (const sd of [-1, 1]) {
+          const m = new THREE.Matrix4().makeRotationY(-a + Math.PI / 2 + (sd < 0 ? Math.PI : 0)).setPosition(x + sd * Math.cos(a) * off, yc, z + sd * Math.sin(a) * off);
+          RUNES.forEach((glyph, k) => {
+            for (const [x0, y0, x1, y1] of glyph) {
+              const len = Math.hypot(x1 - x0, y1 - y0);
+              glow.add(new THREE.BoxGeometry(len + 0.035, 0.035, 0.01), { matrix: m, pos: [(x0 + x1) / 2, (y0 + y1) / 2 + (1 - k) * 0.27, 0], rot: [0, 0, Math.atan2(y1 - y0, x1 - x0)], color: 0x7ac8ff, jitter: 0 });
+            }
+          });
+        }
       }
       P.colliders.addCircle(...to(x, z), 0.55).hi = h - 0.2;
     }
-    b.dodeca(0.5, { pos: [0, gy(0, 0) + 0.1, 0], rot: [0, 0.3, 0], scale: [1.8, 0.45, 1.15], color: 0x6a685e, surf: 'stone', jitter: 0.05 });
+    b.add(menhir(rand), { pos: [0, gy(0, 0) + 0.1, 0], rot: [0, 0.3, 0], scale: [1.8, 0.45, 1.15], color: 0x6a685e, surf: 'concrete', surfScale: 1.4, jitter: 0.05 });
     P.colliders.addCircle(...to(0, 0), 0.8).hi = 0.45;
   },
 
@@ -383,32 +460,37 @@ const BUILD = {
       [0.65, 1.2, 3.6],
     ];
     for (const [r, h, yy] of tiers) b.cone(r, h, 12, { pos: [0, y + yy, 0], color: 0x24482a, jitter: 0.06 });
+    // (the tree's radius at a height: the widest tier there)
+    const rAt = (yy) => Math.max(0, ...tiers.map(([r, h, c]) => (yy >= c - h / 2 && yy <= c + h / 2 ? (r * (c + h / 2 - yy)) / h : 0)));
     const COLS = [0xc4261c, 0xd8b030, 0x2a6aa8, 0xe8e4da];
     for (let i = 0; i < 26; i++) {
-      const t = rand();
-      const yy = 0.4 + t * 3.4;
-      const r = 1.6 * (1 - t * 0.85) + 0.05;
+      const yy = 0.3 + rand() * 3.4;
+      const r = rAt(yy);
+      if (r < 0.2) continue;
       const a = rand() * Math.PI * 2;
-      b.sphere(0.07, 8, 6, { pos: [Math.cos(a) * r, y + yy, Math.sin(a) * r], color: COLS[i % 4], smooth: true, jitter: 0 });
+      b.sphere(0.07, 8, 6, { pos: [Math.cos(a) * (r + 0.03), y + yy - 0.06, Math.sin(a) * (r + 0.03)], color: COLS[i % 4], smooth: true, jitter: 0 });
     }
-    // the garland, round and down the tree
-    for (let k = 0; k < 3; k++) b.torus(1.45 - k * 0.38, 0.03, 4, 24, { pos: [0, y + 1.0 + k * 0.95, 0], rot: [Math.PI / 2 + 0.12, 0, 0], color: 0xd8b030, jitter: 0 });
-    // the lights, and the star on top
+    // the garland along the skirt of each tier
+    for (const [, h, c] of tiers) {
+      const yy = c - h / 2 + 0.16;
+      b.torus(rAt(yy) + 0.02, 0.03, 4, 28, { pos: [0, y + yy, 0], rot: [Math.PI / 2 + (rand() - 0.5) * 0.08, 0, 0], color: 0xd8b030, jitter: 0 });
+    }
+    // the lights, round and down the tree on its branches, and the star on top
     const LIGHT = [0xff5a4a, 0xffd23a, 0x5ab0ff, 0x8aff7a];
     for (let i = 0; i < 40; i++) {
       const t = i / 40;
-      const yy = 0.5 + t * 3.3;
-      const r = 1.62 * (1 - t * 0.84) + 0.06;
+      const yy = 0.35 + t * 3.45;
+      const r = rAt(yy) + 0.03;
       const a = t * Math.PI * 9;
       glow.sphere(0.04, 4, 3, { pos: [Math.cos(a) * r, y + yy, Math.sin(a) * r], color: LIGHT[i % 4], jitter: 0 });
     }
     glow.cone(0.16, 0.3, 5, { pos: [0, y + 4.35, 0], color: 0xffe27a, jitter: 0 });
     glow.cone(0.16, 0.3, 5, { pos: [0, y + 4.15, 0], rot: [Math.PI, 0, 0], color: 0xffe27a, jitter: 0 });
-    // presents
+    // presents, out in front of the lowest branches
     for (const [x, z, s, c, r] of [
-      [0.9, 0.6, 0.4, 0xc4261c, 0xd8b030],
-      [-0.7, 0.8, 0.32, 0x2a6a3a, 0xe8e4da],
-      [0.2, 1.2, 0.5, 0x2a5aa8, 0xc4261c],
+      [1.05, 1.45, 0.4, 0xc4261c, 0xd8b030],
+      [-0.95, 1.5, 0.32, 0x2a6a3a, 0xe8e4da],
+      [0.15, 1.85, 0.5, 0x2a5aa8, 0xc4261c],
     ]) {
       const py = gy(x, z);
       b.box(s, s * 0.8, s, { pos: [x, py + s * 0.4, z], rot: [0, 0.4, 0], color: c });
@@ -425,17 +507,23 @@ const BUILD = {
   gnome({ P, o, W }) {
     const b = new ModelBuilder();
     b.cyl(0.13, 0.17, 0.28, 10, { pos: [0, 0.22, 0], color: 0x2a5aa8 });
-    b.box(0.3, 0.06, 0.12, { pos: [0, 0.08, 0.04], color: 0x3a2618 });
+    // boots, a belt with its buckle
+    for (const sx of [-0.07, 0.07]) b.box(0.1, 0.07, 0.16, { pos: [sx, 0.04, 0.03], color: 0x2a1a10 });
+    b.cyl(0.152, 0.152, 0.035, 10, { pos: [0, 0.2, 0], color: 0x3a2618 });
+    b.box(0.05, 0.04, 0.02, { pos: [0, 0.2, 0.15], color: 0xd8b040, jitter: 0 });
+    // the face, the nose, the white beard down his front
     b.sphere(0.11, 10, 8, { pos: [0, 0.44, 0.02], color: 0xe8b090, smooth: true });
     b.sphere(0.035, 6, 4, { pos: [0, 0.43, 0.13], color: 0xd88a70 });
-    b.cone(0.11, 0.22, 8, { pos: [0, 0.31, 0.08], rot: [0.35, 0, 0], color: 0xf2efe8 });
+    b.cone(0.11, 0.24, 8, { pos: [0, 0.32, 0.09], rot: [Math.PI - 0.3, 0, 0], color: 0xf2efe8 });
     b.cone(0.12, 0.34, 10, { pos: [0, 0.66, -0.02], rot: [-0.18, 0, 0], color: 0xc4261c });
+    // his arm, the rod and its line with a red float
     b.cyl(0.04, 0.04, 0.14, 6, { pos: [0.15, 0.24, 0.06], rot: [0.9, 0, 0], color: 0x2a5aa8 });
     b.beam([0.16, 0.2, 0.14], [0.3, 0.95, 0.45], 0.008, 4, { color: 0x3a2618 });
     b.beam([0.3, 0.95, 0.45], [0.36, 0.0, 0.62], 0.002, 3, { color: 0xd8d8d8 });
     b.sphere(0.03, 6, 4, { pos: [0.36, 0.05, 0.62], color: 0xc4261c });
     const g = W.heightAt(o.x, o.z);
     const m = P.addMesh(b.build(), o.x, g, o.z, 0);
+    m.scale.setScalar(1.25);
     m.matrixAutoUpdate = true;
     P.gnome = m;
   },
@@ -445,21 +533,24 @@ const BUILD = {
   fairydoor({ P, b, glow, gy, to, rand }) {
     const y = gy(0, 0);
     b.cyl(0.62, 0.95, 14, 12, { pos: [0, y + 6.6, -0.9], color: 0x4a3626, surf: 'log', surfScale: 0.8 });
-    for (let k = 0; k < 7; k++) {
-      const a = (k / 7) * Math.PI * 2;
+    // roots spreading out, clear of the doorway (local +z)
+    for (const a of [0.75, -0.75, 1.75, -1.75, 2.7, -2.7, Math.PI].map((d) => Math.PI / 2 + d)) {
       b.strut([Math.cos(a) * 0.5, y + 0.6, -0.9 + Math.sin(a) * 0.5], [Math.cos(a) * 1.7, y - 0.15, -0.9 + Math.sin(a) * 1.7], 0.3, 0.22, { color: 0x4a3626 });
     }
     for (let k = 0; k < 5; k++) b.cone(3.2 - k * 0.5, 2.6, 10, { pos: [0, y + 9.0 + k * 1.5, -0.9], color: 0x22402a, jitter: 0.05 });
-    // the door: an arch of planks, a frame, a brass knob
-    const dz = -0.9 + 0.86;
+    // the door: an arch of planks, a frame, a brass knob, on the bark (the
+    // trunk's front edge is 0.94 m out from its middle at the foot)
+    const dz = -0.9 + 0.97;
     b.box(0.36, 0.34, 0.06, { pos: [0, y + 0.17, dz], color: 0x2e5a3a, surf: 'batten', surfScale: 0.25 });
     b.add(new THREE.CylinderGeometry(0.18, 0.18, 0.06, 12, 1, false, -Math.PI / 2, Math.PI), { pos: [0, y + 0.34, dz], rot: [Math.PI / 2, 0, 0], color: 0x2e5a3a });
     b.add(new THREE.TorusGeometry(0.2, 0.025, 4, 12, Math.PI), { pos: [0, y + 0.34, dz + 0.01], color: 0x6a4a2a, jitter: 0 });
     b.sphere(0.018, 6, 4, { pos: [0.11, y + 0.18, dz + 0.04], color: 0xd8b040 });
-    // two round windows, lit at night, and the lantern
+    // two round windows, lit at night, on the bark either side, and the
+    // lantern
+    const wz = -0.9 + 0.87;
     for (const sx of [-0.34, 0.34]) {
-      b.torus(0.07, 0.015, 4, 10, { pos: [sx, y + 0.42, dz - 0.02], color: 0x6a4a2a, jitter: 0 });
-      glow.cyl(0.06, 0.06, 0.01, 10, { pos: [sx, y + 0.42, dz - 0.03], rot: [Math.PI / 2, 0, 0], color: 0xffc870, jitter: 0 });
+      b.torus(0.07, 0.015, 4, 10, { pos: [sx, y + 0.42, wz + 0.005], color: 0x6a4a2a, jitter: 0 });
+      glow.cyl(0.06, 0.06, 0.01, 10, { pos: [sx, y + 0.42, wz], rot: [Math.PI / 2, 0, 0], color: 0xffc870, jitter: 0 });
     }
     b.box(0.015, 0.1, 0.015, { pos: [0.24, y + 0.62, dz + 0.02], color: 0x2a2a2a, jitter: 0 });
     b.box(0.05, 0.07, 0.05, { pos: [0.24, y + 0.53, dz + 0.04], color: 0x2a2a2a });
@@ -563,15 +654,16 @@ export class Oddities {
         if (Math.hypot(s.x - P.pos.x, s.z - P.pos.z) < 30) g.audio?.hum?.(s.x, s.z, id === 'ufo' ? 1 : 0);
       }
     }
-    // the fairy ring: step inside for an hour of luck, once a day
+    // the fairy ring: step inside for four hours of luck (four minutes of
+    // play by day: time to reach Moose Lake and cast), once a day
     const fr = g.props.oddities.fairyring;
     if (Math.hypot(fr.x - P.pos.x, fr.z - P.pos.z) < 2.1 && P.mode === 'foot') {
       const f = this.found;
       if (f.luckDay !== g.env.day) {
         f.luckDay = g.env.day;
-        g.env.luckUntil = g.env.day * 24 + g.env.time + 1;
+        g.env.luckUntil = g.env.day * 24 + g.env.time + 4;
         g.audio?.fairy?.();
-        g.hud.toast('The air goes still and smells of honey. You feel lucky: the fish will bite for the next hour.', 'good', 6);
+        g.hud.toast('The air goes still and smells of honey. You feel lucky: the fish will bite better for the next four hours.', 'good', 6);
       }
     }
   }

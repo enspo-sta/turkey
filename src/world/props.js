@@ -399,6 +399,10 @@ export class Props {
     this.lampMat.color.setRGB(0.3 + night * 2.2, 0.28 + night * 1.9, 0.22 + night * 1.2);
     // the strange things' own lights: toadstool spots, runes, the saucer
     if (this.oddGlowMat) this.oddGlowMat.color.setScalar(0.45 + night * 1.5);
+    if (this.oddNightMat) {
+      this.oddNightMat.opacity = night * 0.6;
+      this.oddNightMat.visible = night > 0.02;
+    }
     if (this.lantern) this.lantern.material.color.setRGB(0.35 + night * 2.5, 0.38 + night * 2.2, 0.42 + night * 1.4);
     if (this.beam) {
       this.beam.rotation.y = t * 0.6;

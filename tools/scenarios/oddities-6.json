@@ -19,6 +19,24 @@
    "wait": 2000
   },
   {
+   "eval": "(() => { const g = __rhf.game; const O = g.props.oddities; g.screens.open('wardrobe'); return 'wardrobe before the hats are found'; })()"
+  },
+  {
+   "wait": 2500
+  },
+  {
+   "shot": "odd-wardrobe-locked.jpg"
+  },
+  {
+   "eval": "(() => { const g = __rhf.game; const O = g.props.oddities; g.screens.open('shop', { tab: 'garage' }); g.screens.body.scrollTop = 1e6; return 'garage before the rust is found'; })()"
+  },
+  {
+   "wait": 2500
+  },
+  {
+   "shot": "odd-garage-locked.jpg"
+  },
+  {
    "eval": "(() => { const g = __rhf.game; const O = g.props.oddities; const s = g.state; for (const h of ['hat:tinfoil', 'hat:santa']) if (!s.wardrobe.includes(h)) s.wardrobe.push(h); if (!s.gear.paints.includes('rust')) s.gear.paints.push('rust'); const f = (s.flags.odd = s.flags.odd || {}); for (const id of ['fridge', 'ufo', 'xmastree', 'rustbucket', 'gnome', 'stones']) f[id] = 1; s.look.hat = 'tinfoil'; g.screens.open('wardrobe'); return 'wardrobe'; })()"
   },
   {
@@ -37,7 +55,7 @@
    "shot": "odd-wardrobe-santa.jpg"
   },
   {
-   "eval": "(() => { const g = __rhf.game; const O = g.props.oddities; const s = g.state; for (const h of ['hat:tinfoil', 'hat:santa']) if (!s.wardrobe.includes(h)) s.wardrobe.push(h); if (!s.gear.paints.includes('rust')) s.gear.paints.push('rust'); const f = (s.flags.odd = s.flags.odd || {}); for (const id of ['fridge', 'ufo', 'xmastree', 'rustbucket', 'gnome', 'stones']) f[id] = 1; g.screens.open('journal', { tab: 'goals' }); const b = g.screens.body; const h = [...b.querySelectorAll('h3')].find((e) => e.textContent.startsWith('Strange')); if (h) b.scrollTop = h.offsetTop - 10; return 'journal ' + (h ? h.textContent : 'no list'); })()"
+   "eval": "(() => { const g = __rhf.game; const O = g.props.oddities; const s = g.state; for (const h of ['hat:tinfoil', 'hat:santa']) if (!s.wardrobe.includes(h)) s.wardrobe.push(h); if (!s.gear.paints.includes('rust')) s.gear.paints.push('rust'); const f = (s.flags.odd = s.flags.odd || {}); for (const id of ['fridge', 'ufo', 'xmastree', 'rustbucket', 'gnome', 'stones']) f[id] = 1; g.screens.open('journal', { tab: 'goals' }); const b = g.screens.body; const h = [...b.querySelectorAll('h3')].find((e) => e.textContent.startsWith('Strange')); if (h) h.scrollIntoView({ block: 'start' }); return 'journal ' + (h ? h.textContent : 'no list'); })()"
   },
   {
    "wait": 2500
@@ -46,7 +64,7 @@
    "shot": "odd-journal.jpg"
   },
   {
-   "eval": "(() => { const g = __rhf.game; const O = g.props.oddities; const s = g.state; for (const h of ['hat:tinfoil', 'hat:santa']) if (!s.wardrobe.includes(h)) s.wardrobe.push(h); if (!s.gear.paints.includes('rust')) s.gear.paints.push('rust'); const f = (s.flags.odd = s.flags.odd || {}); for (const id of ['fridge', 'ufo', 'xmastree', 'rustbucket', 'gnome', 'stones']) f[id] = 1; g.screens.close(); s.gear.paint = 'rust'; g.hotrod.setPaint('rust'); s.look.hat = 'santa'; g.hotrod.setLook(s.look); const c = g.hotrod; return __look(c.pos.x, c.pos.y + 1.1, c.pos.z, c.yaw, 0.9, 4.8); })()"
+   "eval": "(() => { const g = __rhf.game; const O = g.props.oddities; const s = g.state; for (const h of ['hat:tinfoil', 'hat:santa']) if (!s.wardrobe.includes(h)) s.wardrobe.push(h); if (!s.gear.paints.includes('rust')) s.gear.paints.push('rust'); const f = (s.flags.odd = s.flags.odd || {}); for (const id of ['fridge', 'ufo', 'xmastree', 'rustbucket', 'gnome', 'stones']) f[id] = 1; g.screens.close(); s.gear.paint = 'rust'; g.hotrod.setPaint('rust'); s.look.hat = 'santa'; g.hotrod.setLook(s.look); const L = g.props.layout.post; const c = Math.cos(L.yaw), n = Math.sin(L.yaw); const lx = -5.5, lz = 13.5; g.hotrod.place(L.x + lx * c + lz * n, L.z - lx * n + lz * c, L.yaw + 1.9); __rhf.session.enterCar(); g.hotrod.camMode = 'chase'; g.hotrod.camYaw = 2.1; g.hotrod.camPitch = -0.1; g.input.mouseDown = true; return 'at the wheel in the post yard'; })()"
   },
   {
    "wait": 2500

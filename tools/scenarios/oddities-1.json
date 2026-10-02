@@ -37,7 +37,7 @@
    "shot": "odd-fairyring.jpg"
   },
   {
-   "eval": "(() => { const g = __rhf.game; const O = g.props.oddities; const o = O.ufo;  return __look(o.x, o.y + 0.8, o.z, o.yaw, 0.45, 8.8, 10.5); })()"
+   "eval": "(() => { const g = __rhf.game; const O = g.props.oddities; const o = O.ufo;  return __look(o.x, o.y + 0.8, o.z, o.yaw, 1.15, 8.2, 10.5); })()"
   },
   {
    "wait": 2500

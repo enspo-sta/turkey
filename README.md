@@ -255,8 +255,9 @@ What changed in the latest round, with pictures, the audit and the tests:
 - A fridge humming in the spruce east of the Trading Post, its cord running
   off into the moss. **OPEN** it once for $40.
 - A fairy ring of red toadstools north-west of Moose Lake whose spots glow at
-  night. Step inside once a day for an hour of fairy luck: the fish bite half
-  as well again (the bite readout says so).
+  night. Step inside once a day for four hours of fairy luck (four minutes of
+  play by day): the fish bite half as well again, and the bite readout says
+  Fairy luck.
 - A flying saucer nose down in a crater north of Steaming Springs, its rim
   lights green at night and its hatch open. **LOOK INSIDE** for a tinfoil hat.
 - Bigfoot's hut of whole young trees south-west of Mosquito Flats, with fresh
