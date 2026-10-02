@@ -74,14 +74,44 @@ function loadAlbum() {
   return { shots: {}, roll: [] };
 }
 
+// Hills, and the grass close in front: the line of sight from a to b is
+// blocked where the ground rises above it, and (with grass) where the grass
+// the game draws round you does: up to 0.75 m in the densest grass, less
+// where it is sparse, and shrinking from 16.5 m out to nothing at 28.5 m,
+// as the grass field fades (see world/grass.js).
+export function groundInTheWay(game, ax, ay, az, bx, by, bz, grass = true) {
+  const W = game.world;
+  const dx = bx - ax;
+  const dy = by - ay;
+  const dz = bz - az;
+  const D = Math.hypot(dx, dz);
+  if (D < 1) return false;
+  const near = Math.min(28, D - 1);
+  for (let t = 1.5; t < near; t += 2) {
+    const k = t / D;
+    const x = ax + dx * k;
+    const z = az + dz * k;
+    const f = Math.min(1, Math.max(0, (t - 16.5) / 12));
+    const fade = 1 - f * f * (3 - 2 * f);
+    const tall = grass && W.grass && W.inBounds(x, z) ? (W.grass[W.cellIndex(x, z)] / 255) * 0.75 * fade : 0;
+    if (W.heightAt(x, z) + tall > ay + dy * k) return true;
+  }
+  for (let i = 1; i < 10; i++) {
+    const k = i / 10;
+    if (W.heightAt(ax + dx * k, az + dz * k) > ay + dy * k + 0.3) return true;
+  }
+  return false;
+}
+
 // Tree crowns across a line of sight, from a to b. Each tree's collider
 // carries its crown (see the tree helper in world/scatter.js): from lo to hi
 // metres above the ground, cr metres round, a spruce's cone or a broadleaf's
 // round crown; a bare snag is only its trunk, and a willow counts like a
-// tree. A line under a birch's crown or over a tree's top is clear, and the
-// outer fifth of a crown lets the view through. Trees within near metres of
-// b stand beside the subject, not in front of it.
-export function treesInTheWay(game, ax, ay, az, bx, by, bz, near = 5) {
+// tree. A line under a birch's crown or over a tree's top is clear; a
+// spruce's needles hide all the way out, while the outer fifth of a leafy
+// crown lets the view through. A tree within near metres of b is the one
+// the subject stands at, not one in front of it.
+export function treesInTheWay(game, ax, ay, az, bx, by, bz, near = 1.5) {
   const C = game.colliders;
   const W = game.world;
   const dx = bx - ax;
@@ -92,23 +122,26 @@ export function treesInTheWay(game, ax, ay, az, bx, by, bz, near = 5) {
   for (let t = 0; t <= D; t += 6) {
     const px = ax + (dx / D) * t;
     const pz = az + (dz / D) * t;
-    // 6 m reaches the widest crowns (a big coastal spruce's 4.8 m) between
+    // 7 m reaches the widest crowns (a big coastal spruce's 6 m) between
     // steps
-    for (const c of C.circlesNear(px, pz, 6)) {
+    for (const c of C.circlesNear(px, pz, 7)) {
       if ((c.tag !== 'tree' && c.tag !== 'shrub') || seen.has(c)) continue;
       seen.add(c);
-      // how far along the line, how far off it, and how high it passes
-      const u = ((c.x - ax) * dx + (c.z - az) * dz) / (D * D);
-      if (u <= 0 || u * D > D - near) continue;
-      const off = Math.abs((c.x - ax) * dz - (c.z - az) * dx) / D;
-      if (off > 5) continue;
+      // how far along the line (from the eye itself for a tree just behind
+      // it, whose branches can reach over you), how far off it, and how
+      // high the line passes
+      const along = ((c.x - ax) * dx + (c.z - az) * dz) / (D * D);
+      if (along * D > D - near) continue;
+      const u = Math.max(0, along);
+      const off = Math.hypot(c.x - ax - dx * u, c.z - az - dz * u);
+      if (off > 6.5) continue;
       const h = ay + (by - ay) * u - W.heightAt(c.x, c.z);
       if (h > (c.hi ?? 14)) continue;
       let reach = c.r + 0.15;
       if (c.cr && h >= c.lo) {
         const f = (h - c.lo) / (c.hi - c.lo);
         const k = c.cone ? 1 - f : Math.sqrt(Math.max(0, 1 - (2 * f - 1) ** 2));
-        reach = Math.max(reach, c.cr * k * 0.8);
+        reach = Math.max(reach, c.cr * k * (c.cone ? 1 : 0.8));
       }
       if (off < reach) return true;
     }
@@ -130,7 +163,7 @@ export function plantsInTheWay(game, ax, ay, az, bx, by, bz) {
   const dx = bx - ax;
   const dz = bz - az;
   const D = Math.hypot(dx, dz);
-  const reach = Math.min(60, D - 3);
+  const reach = Math.min(60, D - 1);
   if (reach < 1) return false;
   const mx = ax + (dx / D) * (reach / 2);
   const mz = az + (dz / D) * (reach / 2);
@@ -151,6 +184,24 @@ export function plantsInTheWay(game, ax, ay, az, bx, by, bz) {
     if (hit) return true;
   }
   return false;
+}
+
+// How much of a subject the eye at a can see: of three points up its middle
+// (low, centre and high, size apart), how many have no hill, tree or bush
+// in the way, 0 to 3. Grass counts for the centre and high points only: an
+// animal with its legs in the grass is still a fine picture. Trees and
+// bushes count within 300 m; beyond that the subject is out at sea or in
+// the sky.
+export function pointsInSight(game, ax, ay, az, bx, by, bz, size) {
+  const far = Math.hypot(bx - ax, by - ay, bz - az) >= 300;
+  let n = 0;
+  for (const k of [-0.3, 0, 0.3]) {
+    const y = by + k * size;
+    if (groundInTheWay(game, ax, ay, az, bx, y, bz, k >= 0)) continue;
+    if (!far && (treesInTheWay(game, ax, ay, az, bx, y, bz) || plantsInTheWay(game, ax, ay, az, bx, y, bz))) continue;
+    n++;
+  }
+  return n;
 }
 
 export class PhotoCamera {
@@ -242,7 +293,6 @@ export class PhotoCamera {
   evaluate() {
     const g = this.game;
     const cam = g.camera;
-    const W = g.world;
     const eye = cam.position;
     const tanHalf = Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2);
     const { fx, fy } = this.crop();
@@ -258,25 +308,15 @@ export class PhotoCamera {
       // how much of the picture's height it fills, and how far off centre
       const frac = s.size / (2 * d * tanHalf) / fy;
       const off = Math.max(Math.abs(_v.x) / fx, Math.abs(_v.y) / fy);
-      // the ground in the way?
-      let blocked = false;
-      for (let i = 1; i < 10; i++) {
-        const t = i / 10;
-        const x = eye.x + dx * t;
-        const z = eye.z + dz * t;
-        if (W.heightAt(x, z) > eye.y + dy * t + 0.3) {
-          blocked = true;
-          break;
-        }
-      }
-      if (blocked) continue;
-      // or a tree, or a bush close in front (far subjects are at sea or in
-      // the sky)
-      if (d < 300 && (treesInTheWay(g, eye.x, eye.y, eye.z, s.x, s.y, s.z) || plantsInTheWay(g, eye.x, eye.y, eye.z, s.x, s.y, s.z))) continue;
+      // how much of it a hill, the grass, a tree or a bush hides
+      const seen = pointsInSight(g, eye.x, eye.y, eye.z, s.x, s.y, s.z, s.size);
+      if (!seen) continue;
       let stars = frac >= 0.2 ? 3 : frac >= 0.09 ? 2 : frac >= 0.035 ? 1 : 0;
       if (stars > 1 && off > 0.4) stars--;
-      const score = frac * (1.4 - off);
-      if (!best || score > best.score) best = { ...s, d, frac, off, stars, score };
+      // partly hidden: a star less for each part, but something to show
+      if (seen < 3 && stars) stars = Math.max(1, stars - (3 - seen));
+      const score = frac * (1.4 - off) * (seen / 3);
+      if (!best || score > best.score) best = { ...s, d, frac, off, stars, score, seen };
     }
     return best;
   }

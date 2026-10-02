@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { ModelBuilder } from '../util/builder.js';
 import { clamp, wrapAngle } from '../util/math.js';
-import { treesInTheWay, plantsInTheWay } from '../gameplay/camera.js';
+import { pointsInSight } from '../gameplay/camera.js';
 
 const FUR = 0x3a2a1e;
 const FUR_DARK = 0x2a1d14;
@@ -80,16 +80,11 @@ export class Bigfoot {
       const z = P.pos.z - Math.cos(a + Math.PI) * d;
       if (!W.inBounds(x, z, 40) || W.waterAt(x, z) || W.slopeAt(x, z) > 0.5) continue;
       if (W.forest && W.forest[W.cellIndex(x, z)] < 60) continue;
-      // somewhere you could actually see it from: no hill in between
+      // somewhere you could actually see it from: no hill or grass, tree or
+      // bush in front of its head, middle or legs
       const eyeY = P.pos.y + 1.7;
       const y = W.heightAt(x, z) + 1.4;
-      let hidden = false;
-      for (let i = 1; i < 12 && !hidden; i++) {
-        const t = i / 12;
-        hidden = W.heightAt(P.pos.x + (x - P.pos.x) * t, P.pos.z + (z - P.pos.z) * t) > eyeY + (y - eyeY) * t + 0.3;
-      }
-      // and no tree or bush in front of it either
-      if (hidden || treesInTheWay(g, P.pos.x, eyeY, P.pos.z, x, y, z) || plantsInTheWay(g, P.pos.x, eyeY, P.pos.z, x, y, z)) continue;
+      if (pointsInSight(g, P.pos.x, eyeY, P.pos.z, x, y, z, 2.6) < 3) continue;
       this.pos.set(x, W.heightAt(x, z), z);
       // stroll across your view, a little away from you
       const away = Math.atan2(x - P.pos.x, z - P.pos.z);

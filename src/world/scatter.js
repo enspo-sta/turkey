@@ -1144,7 +1144,8 @@ export class Scatter {
     // a tree's trunk to walk into, and its crown for what it hides from a
     // camera (treesInTheWay in gameplay/camera.js): from lo to hi metres up
     // and cr metres round, a spruce's cone or a broadleaf's round crown, as
-    // the tree models are built; a bare snag has only its trunk
+    // the tree models are built (a spruce close up droops its lowest
+    // branches to 0.4 of its scale); a bare snag has only its trunk
     const tree = (x, z, r, lo, hi, cr, cone) => {
       const c = this.colliders.addCircle(x, z, r, 'tree');
       c.lo = lo;
@@ -1194,7 +1195,7 @@ export class Scatter {
           const s = 0.6 + rand() * 0.55;
           const v = 0.8 + rand() * 0.3;
           T.blackSpruce.add(x, y - 0.1, z, rot, s, [v * 0.95, v, v * (0.95 + rand() * 0.15)], 0.7 + rand() * 0.45, 0.7 + rand() * 0.45);
-          tree(x, z, 0.1 * s, 0.7 * s, 8.6 * s, 0.8 * s, true);
+          tree(x, z, 0.1 * s, 0.5 * s, 8.6 * s, 0.8 * s, true);
         } else if (low && (birchN > 0.25 || rand() < 0.08)) {
           const s = 0.75 + rand() * 0.55;
           const autumn = rand() < 0.14;
@@ -1209,7 +1210,7 @@ export class Scatter {
           const w = 0.8 + rand() * 0.45;
           const tint = [v * (1 - coast * 0.12), v * (0.95 + rand() * 0.1), v * (0.9 + rand() * 0.15 + coast * 0.2)];
           T.spruce.add(x, y - 0.2, z, rot, s, tint, w, w * (0.9 + rand() * 0.2));
-          tree(x, z, 0.3 * s, 1.2 * s, 11 * s, 2.1 * s * w, true);
+          tree(x, z, 0.3 * s, 0.4 * s, 12 * s, 2.25 * s * w, true);
         }
       }
     }
