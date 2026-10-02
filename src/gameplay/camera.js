@@ -50,6 +50,7 @@ export const PHOTO_SUBJECTS = {
   seal: { name: 'Harbor seal', group: 'sea', value: 30, size: 0.4 },
   geyser: { name: 'Old Faceful erupting', group: 'moments', value: 60, size: 14 },
   bigfoot: { name: 'Bigfoot (probably)', group: 'moments', value: 300, size: 2.6 },
+  zib: { name: 'Zib, the visitor from the sky', group: 'moments', value: 250, size: 0.9 },
   // the sky: placed about 550 m out along its direction (see skySubjects in
   // main.js), sized so the long lens fills the picture
   moon: { name: 'The Moon', group: 'sky', value: 40, size: 12 },
@@ -281,6 +282,9 @@ export class PhotoCamera {
     // something big and hairy at the edge of the trees
     const B = g.bigfoot;
     if (B && B.active) add('bigfoot', B.pos.x, B.pos.y + 1.4, B.pos.z);
+    // a small friend from a long way off
+    const Z = g.visitor?.photoSpot();
+    if (Z) add('zib', Z.x, Z.y, Z.z);
     // a moment in progress: the geyser blowing
     const m = this.moment;
     if (m && g.time < m.until) add(m.id, m.x, m.y, m.z);

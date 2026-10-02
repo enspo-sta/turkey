@@ -134,6 +134,7 @@ export class Calving {
       if (this.timer <= 0) {
         this.timer = 35 + this.rand() * 55;
         this.calve();
+        this.game.onEvent?.({ type: 'calving' });
       }
     }
     for (let i = this.pieces.length - 1; i >= 0; i--) {

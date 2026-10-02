@@ -2,6 +2,7 @@
 // localStorage save/load and challenge evaluation.
 import { CHALLENGES, SPECIES_IDS, COOLERS, RODS, FISH, ARROWS, ARROW_ORDER, QUIVER, LOOKS, LOOK_DEFAULT } from './data.js';
 import { JOBS } from './jobs.js';
+import { SCIENCE } from './science.js';
 
 const SAVE_KEY = 'rubenHotrodFishing.save.v1';
 const SETTINGS_KEY = 'rubenHotrodFishing.settings.v1';
@@ -58,6 +59,8 @@ export class GameState {
       spray: 1,
       medkit: 1,
       cooler: 0,
+      // rock shoes, a harness and chalk (the ropes are at the tors)
+      climbing: false,
       engine: 0,
       tires: 0,
       paint: 'flame',
@@ -93,6 +96,14 @@ export class GameState {
     this.sky = { seen: {}, heard: {}, meteorites: [], iss: 0, kpMax: 0, walk: {} };
     // the last fireball's stone, where it lies (see world/meteors.js)
     this.meteorite = null;
+    // climbing at the Granite Tors: routes topped out ({ id: { day, secs,
+    // falls } }), the summit register signed, the granite sample taken
+    this.climb = { sent: {}, signed: false, sample: false };
+    // the science log: objectives done ({ id: { day } }, see science.js)
+    this.science = {};
+    // the visitor from the sky (see gameplay/visitor.js): where the story
+    // is, where the craft came down, where the companion is
+    this.visitor = null;
     this.health = 100;
     this.started = false;
     this.salmonRun = null;
@@ -238,6 +249,10 @@ export class GameState {
       case 'solarwalk':
         if (ev.count >= 9) complete('solarwalk');
         break;
+      case 'climb':
+        complete('climb');
+        if (ev.route === 'roof') complete('roof');
+        break;
       case 'photo':
         // animals only: fish pictures do not count
         if ((ev.animals || 0) >= 8) complete('photo');
@@ -249,6 +264,22 @@ export class GameState {
       default:
         break;
     }
+    // the science log: every objective whose test the event passes
+    const sci = [];
+    for (const o of SCIENCE) {
+      if (this.science[o.id]) continue;
+      let ok = false;
+      try {
+        ok = o.test(ev, this);
+      } catch (e) {
+        ok = false;
+      }
+      if (!ok) continue;
+      this.science[o.id] = { day: this.day };
+      this.addMoney(o.reward);
+      sci.push(o);
+    }
+    this.lastScience = sci;
     for (const fn of this.listeners) fn(ev, done);
     return done;
   }
@@ -286,6 +317,9 @@ export class GameState {
       racerTop: this.racerTop,
       sky: this.sky,
       meteorite: this.meteorite,
+      climb: this.climb,
+      science: this.science,
+      visitor: this.visitor,
       health: this.health,
       started: this.started,
     };
@@ -351,6 +385,9 @@ export class GameState {
         racerTop: Number(d.racerTop) || 0,
         sky: { ...this.sky, ...(d.sky && typeof d.sky === 'object' ? d.sky : {}) },
         meteorite: d.meteorite && typeof d.meteorite === 'object' ? d.meteorite : null,
+        climb: { sent: {}, signed: false, sample: false, ...(d.climb && typeof d.climb === 'object' ? d.climb : {}) },
+        science: d.science && typeof d.science === 'object' ? d.science : {},
+        visitor: d.visitor && typeof d.visitor === 'object' ? d.visitor : null,
         health: d.health ?? 100,
         started: !!d.started,
       });

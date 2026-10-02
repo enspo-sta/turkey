@@ -29,6 +29,8 @@ export const POSES = {
   rod: { fingers: [[0.55, 0.5, 0.25, 0.08], [1.3, 1.5, 0.75, 0], [1.3, 1.5, 0.75, -0.05], [1.35, 1.45, 0.7, -0.12]], thumb: [-0.012, -0.04, 0.12] },
   // an open hand cupped under a belly
   cradle: { fingers: [[0.35, 0.4, 0.2, 0.06], [0.35, 0.42, 0.2, 0], [0.38, 0.42, 0.2, -0.06], [0.42, 0.45, 0.22, -0.13]], thumb: [-0.07, -0.022, 0.085] },
+  // fingers curled over a hold on the rock, the thumb along the index
+  hold: { fingers: [[0.78, 1.5, 0.55, 0.07], [0.82, 1.55, 0.55, 0], [0.82, 1.5, 0.55, -0.06], [0.88, 1.45, 0.5, -0.13]], thumb: [-0.03, -0.034, 0.088] },
   // three fingers hooked on the string, the little finger and thumb tucked
   draw: { fingers: [[0.3, 1.5, 0.6, 0.06], [0.28, 1.55, 0.6, 0], [0.32, 1.5, 0.6, -0.06], [1.2, 1.4, 0.8, -0.12]], thumb: [-0.012, -0.046, 0.075] },
 };

@@ -129,6 +129,7 @@ export class Glider {
     const P = g.player;
     if (!this.canLaunch()) return;
     P.mode = 'glide';
+    g.onEvent?.({ type: 'flight' });
     P.running = false;
     P.vel.set(0, 0, 0);
     P.bobAmt = 0;

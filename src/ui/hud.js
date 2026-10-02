@@ -82,6 +82,10 @@ export class HUD {
       speedoGear: $('speedo-gear'),
       glide: $('glide'),
       glideAlt: $('glide-alt'),
+      grip: $('grip'),
+      gripFill: $('grip-fill'),
+      gripRoute: $('grip-route'),
+      gripLabel: $('grip-label'),
       glideSink: $('glide-sink'),
       glideSpeed: $('glide-speed'),
       crosshair: $('crosshair'),
@@ -542,8 +546,10 @@ export class HUD {
     el.horn.hidden = !driving;
     el.cam.hidden = !driving;
     el.speedo.hidden = !driving;
-    el.primary.hidden = driving || gliding || catchOpen || tool === 'none';
-    el.tool.hidden = driving || gliding || catchOpen || (fishing && fishing.state !== 'idle');
+    // on the rock: CHALK (or CLIMB ON) and LOWER, nothing else
+    const climbing = mode === 'climb';
+    el.primary.hidden = driving || gliding || catchOpen || (tool === 'none' && !climbing) || (climbing && g.climbing.state !== 'climb' && g.climbing.state !== 'hang');
+    el.tool.hidden = driving || gliding || catchOpen || climbing || (fishing && fishing.state !== 'idle');
     // no running in a boat
     el.run.hidden = !onFoot || catchOpen || !!P.boat;
     set('running', !!P.running, (v) => {
@@ -563,7 +569,13 @@ export class HUD {
     let pLabel = '';
     let pClass = 'btn round primary';
     let sLabel = null;
-    if (onFoot && tool === 'rod' && fishing) {
+    if (climbing) {
+      const C = g.climbing;
+      pLabel = C.state === 'hang' ? 'CLIMB ON' : 'CHALK';
+      if (C.state === 'climb' && C.grip < 30 && C.chalkCool <= 0) pClass += ' alert';
+      if ((C.state === 'climb' && (C.chalkT > 0 || C.chalkCool > 0)) || (C.state === 'hang' && C.grip <= 25)) pClass += ' off';
+      sLabel = C.state === 'climb' || C.state === 'hang' ? 'LOWER' : null;
+    } else if (onFoot && tool === 'rod' && fishing) {
       switch (fishing.state) {
         case 'idle':
           pLabel = 'CAST';
@@ -612,7 +624,7 @@ export class HUD {
       span.textContent = v;
     });
     set('pClass', pClass, (v) => (el.primary.className = v));
-    el.secondary.hidden = driving || catchOpen || !sLabel || (fishing && fishing.state !== 'idle' && tool === 'rod');
+    el.secondary.hidden = driving || catchOpen || !sLabel || (!climbing && fishing && fishing.state !== 'idle' && tool === 'rod');
     if (sLabel) set('sLabel', sLabel, (v) => (el.secondary.innerHTML = `<span>${v}</span>`));
     el.secondary.classList.toggle('on', !!(hunting && hunting.aiming && tool === 'bow'));
 
@@ -636,7 +648,7 @@ export class HUD {
 
     // crosshair: a ring for the bow, a dot for the rod, none with empty hands
     // or the camera, which has its viewfinder
-    el.crosshair.hidden = driving || gliding || catchOpen || tool === 'none' || tool === 'camera';
+    el.crosshair.hidden = driving || gliding || catchOpen || climbing || tool === 'none' || tool === 'camera';
     const vf = onFoot && tool === 'camera' && !catchOpen;
     el.viewfinder.hidden = !vf;
     if (vf) {
@@ -680,6 +692,20 @@ export class HUD {
       el.speedoArc.setAttribute('stroke-dasharray', `${(f * 251).toFixed(1)} 999`);
       set('kmh', Math.round(kmh), (v) => (el.speedoVal.textContent = v));
       set('gear', v < -0.3 ? 'R' : mode === 'boat' ? (Math.abs(v) < 0.3 ? 'N' : 'F') : String(g.car.gear), (x) => (el.speedoGear.textContent = x));
+    }
+
+    // climbing: the grip left, the route and how high you are
+    el.grip.hidden = !climbing;
+    if (climbing) {
+      const C = g.climbing;
+      const gr = Math.max(0, Math.round(C.grip));
+      set('grip', gr, (v) => (el.gripFill.style.transform = `scaleX(${v / 100})`));
+      const hgt = Math.max(0, C.body.y + 0.6 - C.route.ground);
+      set('gripRoute', `${C.route.id}|${Math.round(hgt * 2)}`, () => (el.gripRoute.textContent = `${C.route.name} ${C.route.grade} · ${hgt.toFixed(1)} m`));
+      el.grip.classList.toggle('low', C.state === 'climb' && gr < 30);
+      // on two good holds the fingers come back: the label says so
+      set('gripLabel', C.resting ? 'REST' : 'GRIP', (v) => (el.gripLabel.textContent = v));
+      el.grip.classList.toggle('rest', !!C.resting);
     }
 
     // the paraglider's instruments

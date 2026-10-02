@@ -40,6 +40,7 @@ const LINES = {
   storm: [['NORTHERN LIGHTS!', 1]],
   scope: [['NEW IN THE SKY LOG!', 1]],
   planets: [['ALL FIVE BRIGHT PLANETS!', 1]],
+  topout: [['TOPPED OUT!', 2], ['WHAT A CLIMB!', 1], ['ON TOP OF THE WORLD!', 1]],
 };
 
 // Apple's novelty and robotic voices (and the Eloquence family, which sounds

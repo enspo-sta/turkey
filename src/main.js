@@ -14,6 +14,10 @@ import { Oddities } from './world/oddities.js';
 import { Pitstop, PITSTOP, clearPitstop } from './world/pitstop.js';
 import { Observatory } from './world/observatory.js';
 import { SolarWalk } from './world/solarwalk.js';
+import { Tors } from './world/tors.js';
+import { TeslaMemorial } from './world/tesla.js';
+import { Visitor } from './gameplay/visitor.js';
+import { Climbing } from './gameplay/climbing.js';
 import { Meteors } from './world/meteors.js';
 import { Satellites } from './world/satellites.js';
 import { SkyGuide } from './ui/skyguide.js';
@@ -88,6 +92,14 @@ class Session {
     // to the constellations
     g.observatory = new Observatory(g);
     g.solarwalk = new SolarWalk(g);
+    // the granite tors off the Tundra Road, for climbing
+    g.tors = new Tors(g);
+    g.climbing = new Climbing(g);
+    // Nikola Tesla on the rim of the gorge at Bear Falls, the coil house and
+    // the falls' little hydro plant
+    g.tesla = new TeslaMemorial(g);
+    // the visitor from the sky: the meteor outburst, the crash, Zib
+    g.visitor = new Visitor(g);
     g.meteors = new Meteors(g);
     g.satellites = new Satellites(g);
     g.skyguide = new SkyGuide(g);
@@ -380,6 +392,7 @@ class Session {
     // a fireball's stone still lying where it fell
     this.endGaze();
     g.meteors.restore(s.meteorite);
+    g.visitor.restore();
     if (continueSave && s.player) g.player.place(s.player.x, s.player.z, s.player.yaw);
     else {
       // start on the riverbank in front of the cabin, facing the water
@@ -483,6 +496,78 @@ class Session {
     window.addEventListener('mousedown', wake);
   }
 
+  // The summit register on the big tor: an old ammunition can with a
+  // notebook, as on real summits. The first time you sign it.
+  signRegister() {
+    const g = this.game;
+    const s = g.state;
+    const names = ['K. Ahtuangaruak, 2019: windy!', 'The Hendersons, all five of us', 'Dale (radio), saw Bigfoot from here. Maybe.', 'Ptarmigan Crack in the rain. Never again.', 'Gus. Where is my paraglider?', 'Roof on the third try!'];
+    const first = !s.climb.signed;
+    s.climb.signed = true;
+    const line = names[(g.env.day + names.length) % names.length];
+    g.hud.toast(first ? `You sign the register: Day ${g.env.day}, ${Object.keys(s.climb.sent).length} route${Object.keys(s.climb.sent).length === 1 ? '' : 's'} up. The line above yours: "${line}"` : `The register: "${line}"`, 'good', 6);
+    if (first) this.onEvent({ type: 'register' });
+    this.save();
+  }
+
+  // A chip off the loose flake on top of the big tor, for the science log.
+  takeSample() {
+    const g = this.game;
+    const s = g.state;
+    // (one chip for the log, and another for the geologist when asked)
+    const job = s.job && !s.job.done && s.job.id === 'geologist';
+    if (s.climb.sample && !job) return;
+    s.climb.sample = true;
+    if (g.tors.flake) g.tors.flake.scale.set(0.85, 0.9, 0.85);
+    g.audio.climbTick?.(0.8);
+    g.hud.toast('A chip of granite in your pocket: pink feldspar, grey quartz, flakes of black mica. The crystals are big because the rock cooled slowly, deep underground', 'good', 8);
+    this.onEvent({ type: 'sample', rock: 'granite' });
+    g.jobs.onEvent('sample');
+    this.save();
+  }
+
+  // The Tesla Memorial: the plaque, the coil and the hydro plant's board.
+  readTesla() {
+    const g = this.game;
+    const n = g.tesla.plaqueNote();
+    g.screens.note(n.title, n.html);
+    if (!g.state.flags.tesla) {
+      g.state.flags.tesla = true;
+      this.onEvent({ type: 'tesla' });
+      this.save();
+    }
+  }
+
+  runCoil() {
+    const g = this.game;
+    if (!g.tesla.runCoil()) return;
+    g.player.shake = Math.min(1, (g.player.shake || 0) + 0.15);
+    const first = !g.state.flags.coil;
+    g.hud.toast(first ? 'Sparks a metre long, and the tube on the stand lights up with no wire to it: the coil\'s field drives the gas inside to glow' : 'The coil crackles; the tube glows', 'good', first ? 7 : 3);
+    if (first) {
+      g.state.flags.coil = true;
+      // what it is, once the show is over
+      setTimeout(() => {
+        if (g.screens.isOpen) return;
+        const n = g.tesla.coilNote();
+        g.screens.note(n.title, n.html);
+      }, 6500);
+      this.onEvent({ type: 'coil' });
+      this.save();
+    }
+  }
+
+  readHydro() {
+    const g = this.game;
+    const n = g.tesla.hydroNote();
+    g.screens.note(n.title, n.html);
+    if (!g.state.flags.hydro) {
+      g.state.flags.hydro = true;
+      this.onEvent({ type: 'hydro', kw: Math.round(g.tesla.power) });
+      this.save();
+    }
+  }
+
   // ---------------------------------------------------------------- events
   onEvent(ev) {
     const g = this.game;
@@ -490,6 +575,11 @@ class Session {
     for (const c of done) {
       g.hud.toast(`Challenge complete: ${c.text} (+${formatMoney(c.reward)})`, 'money');
       g.audio.cash();
+    }
+    // the science log: what you found out (the Journal keeps it)
+    for (const o of g.state.lastScience || []) {
+      g.hud.toast(`Science: ${o.title} (+${formatMoney(o.reward)}). ${o.learn}`, 'good', 10);
+      g.audio.chime();
     }
     if (done.length) {
       const next = g.state.currentChallenge();
@@ -588,7 +678,7 @@ class Session {
       g.player.health = g.player.maxHealth;
       g.bears.clearThreat();
       g.hud.toast(lines[Math.floor(Math.random() * lines.length)], 'good');
-      g.onEvent({ type: 'soak' });
+      g.onEvent({ type: 'soak', companion: g.visitor.following && Math.hypot(g.visitor.zib.pos.x - g.player.pos.x, g.visitor.zib.pos.z - g.player.pos.z) < 30 });
       g.jobs.onEvent('soak');
       this.save();
     });
@@ -952,6 +1042,12 @@ class Session {
         g.hud.toast(`Aurora alert: a geomagnetic storm tonight (Kp ${kp}, ${KP_WORDS[kp]}). The northern lights may reach overhead, red at the top. Find a dark spot with a view north`, 'good', 8);
       }
     }
+    // the meteor outburst: the observatory calls it at dusk on a clear night
+    if (g.visitor.stage() === 'due' && night !== this.outburstNight && env.time > 21.4 && env.time < 23.5 && env.weather.cloud < 0.7) {
+      this.outburstNight = night;
+      g.announcer.say('storm', { sub: 'METEOR OUTBURST TONIGHT', kind: 'legend' });
+      g.hud.toast('The Tundra Observatory calls a meteor outburst tonight: the Kappa Cygnids, slow and bright, pouring out of Cygnus high overhead. Watch it through the telescope', 'good', 9);
+    }
     const aur = env.uniforms.uAurora.value;
     if (aur > 0.3 && env.weather.cloud < 0.7 && sw.kp > (s.sky.kpMax || 0)) {
       this.aurT = (this.aurT || 0) + dt;
@@ -959,6 +1055,7 @@ class Session {
         this.aurT = 0;
         s.sky.kpMax = sw.kp;
         if (sw.kp >= 4) g.hud.toast(`The northern lights at Kp ${sw.kp}: your strongest aurora yet`, 'good', 5);
+        this.onEvent({ type: 'aurora', kp: sw.kp });
       }
     }
   }
@@ -1026,7 +1123,8 @@ class Session {
       // the dome and the dish turn to what the observatory's screen picks
       g.observatory.update(dt);
       g.player.applyCamera(g.camera);
-      if (g.player.mode === 'drive') g.car.applyCamera(g.camera, 0, input);
+      if (g.player.mode === 'climb') g.climbing.applyCamera(g.camera);
+      else if (g.player.mode === 'drive') g.car.applyCamera(g.camera, 0, input);
       else if (g.player.mode === 'boat') g.boat.applyCamera(g.camera, 0, input);
       else if (g.player.mode === 'glide') g.glider.applyCamera(g.camera);
       input.endFrame();
@@ -1088,6 +1186,13 @@ class Session {
       // place the camera now so fishing and hunting use this frame's view
       P.applyCamera(g.camera);
       g.camera.updateMatrixWorld();
+    } else if (P.mode === 'climb') {
+      // on the rock at the Granite Tors (see gameplay/climbing.js)
+      g.climbing.update(dt, input);
+      if (P.mode === 'climb') {
+        P.pos.set(g.climbing.body.x, g.climbing.body.y - 1.0, g.climbing.body.z);
+        P.tick(dt);
+      }
     } else if (P.mode === 'boat') {
       // at the tiller: the camera button swaps the seat and the chase view
       if (input.pressed('cam') || input.keyPressed('KeyC')) g.boat.camMode = g.boat.camMode === 'seat' ? 'chase' : 'seat';
@@ -1139,12 +1244,15 @@ class Session {
     g.bears.update(dt);
     g.observatory.update(dt);
     g.solarwalk.update(dt);
+    g.tesla.update(dt);
+    g.visitor.update(dt);
     g.meteors.update(dt);
     g.satellites.update(dt);
     this.updateSkyEvents(dt);
 
     // camera
     if (P.mode === 'foot') P.applyCamera(g.camera);
+    else if (P.mode === 'climb') g.climbing.applyCamera(g.camera);
     else if (P.mode === 'glide') g.glider.applyCamera(g.camera);
     else if (P.mode === 'boat') g.boat.applyCamera(g.camera, dt, input);
     else car.applyCamera(g.camera, dt, input);
@@ -1163,8 +1271,8 @@ class Session {
     }
 
     // viewmodel: the rod, the bow or the camera on foot, the brakes in the air
-    g.overlay.enabled = P.mode === 'foot' || P.mode === 'glide';
-    g.viewmodel.visible = P.mode === 'foot' || P.mode === 'glide';
+    g.overlay.enabled = P.mode === 'foot' || P.mode === 'glide' || P.mode === 'climb';
+    g.viewmodel.visible = P.mode === 'foot' || P.mode === 'glide' || P.mode === 'climb';
     g.viewmodel.update(dt, { bobPhase: P.bobPhase, bobAmt: P.bobAmt, lookDX: P.lookDelta.x, lookDY: P.lookDelta.y });
 
     // discovery
@@ -1227,7 +1335,7 @@ class Session {
     let ia2 = null;
     // nothing to do mid-cast, mid-fight, with the catch card up, in the air
     // or while the screen fades (a trip, a sleep, a soak)
-    if ((g.fishing.state !== 'idle' && g.fishing.state !== 'catch') || g.hud.blocking || P.mode === 'glide' || this.fadeBusy) {
+    if ((g.fishing.state !== 'idle' && g.fishing.state !== 'catch') || g.hud.blocking || P.mode === 'glide' || P.mode === 'climb' || this.fadeBusy) {
       g.interaction = g.interaction2 = null;
       return;
     }
@@ -1265,6 +1373,24 @@ class Session {
           if (it.id === 'goldchest' && !fl.treasure && Math.abs(P.pos.y - it.y) < 1.6) ia = { label: 'OPEN', icon: fl.key ? 'key' : 'claim', act: () => this.openGoldChest() };
           // the strange things in the woods (see world/oddities.js)
           if (it.id.startsWith('odd:')) ia = g.oddities.action(it.id.slice(4)) || ia;
+          // the Granite Tors (see world/tors.js): climb from the foot of a
+          // route, lower off from its anchor on the top
+          if (it.id.startsWith('climb:')) {
+            const r = g.tors.route(it.id.slice(6));
+            if (r && Math.abs(P.pos.y - r.ground) < 2.5) ia = { label: `CLIMB ${r.grade}`, icon: 'hand', act: () => g.climbing.start(r.id) };
+          }
+          if (it.id.startsWith('lower:')) {
+            const r = g.tors.route(it.id.slice(6));
+            if (r && Math.abs(P.pos.y - it.y) < 1.5) ia = { label: 'LOWER OFF', icon: 'hand', act: () => g.climbing.lowerFromTop(r.id) };
+          }
+          if (it.id === 'register' && Math.abs(P.pos.y - it.y) < 1.5) ia = { label: g.state.climb.signed ? 'READ THE REGISTER' : 'SIGN THE REGISTER', icon: 'book', act: () => this.signRegister() };
+          if (it.id === 'sample' && Math.abs(P.pos.y - it.y) < 1.5 && (!g.state.climb.sample || (g.state.job && !g.state.job.done && g.state.job.id === 'geologist'))) ia = { label: 'TAKE A ROCK SAMPLE', icon: 'rock', act: () => this.takeSample() };
+          // the Tesla Memorial at Bear Falls (see world/tesla.js)
+          if (it.id === 'tesla' && Math.abs(P.pos.y - it.y) < 1.6) ia = { label: 'READ THE PLAQUE', icon: 'book', act: () => this.readTesla() };
+          if (it.id === 'coil') ia = { label: g.tesla.coilRunning ? 'CRACKLING' : 'RUN THE TESLA COIL', icon: 'bolt', act: () => this.runCoil() };
+          if (it.id === 'hydro') ia = { label: 'BEAR FALLS HYDRO', icon: 'book', act: () => this.readHydro() };
+          // Zib, the visitor from the sky (see gameplay/visitor.js)
+          if (it.id === 'zib') ia = g.visitor.action() || ia;
           // the Tundra Observatory (see world/observatory.js)
           if (it.id === 'scope') ia = { label: 'TELESCOPE', icon: 'scope', act: () => g.screens.open('telescope', { tab: 'scope' }) };
           if (it.id === 'radio') ia = { label: 'RADIO DISH', icon: 'dish', act: () => g.screens.open('telescope', { tab: 'radio' }) };

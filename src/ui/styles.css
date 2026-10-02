@@ -377,6 +377,9 @@ svg { width: 1em; height: 1em; display: block; }
 .challenge.done .check { background: var(--moss); border-color: var(--moss); color: #0d1a1f; }
 .challenge.current { border-color: var(--flame-2); }
 .challenge p { margin: 0; font-size: 15px; line-height: 1.3; flex: 1; }
+.challenge.sci p b { color: var(--ink); }
+.challenge.sci.done p { color: var(--ink-dim, #cbbfa8); }
+.challenge.sci .check { margin-top: 2px; }
 .challenge .reward { font-weight: 800; color: var(--flame-2); white-space: nowrap; }
 
 /* the full map: the canvas fills the sheet, the place card and tools float over it */
@@ -592,6 +595,17 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
   #btn-brake { width: 66px; height: 66px; right: calc(var(--sar) + 110px); }
 }
 
+/* climbing: the grip meter along the bottom */
+#grip { position: absolute; left: 50%; bottom: calc(var(--sab) + 14px); transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 7px 14px; border-radius: 14px; background: rgba(14,26,30,.6); border: 1px solid rgba(244,234,214,.2); pointer-events: none; white-space: nowrap; }
+#grip .grip-label { font-weight: 800; font-size: 13px; letter-spacing: .14em; color: var(--ink); }
+#grip .grip-bar { width: min(240px, 26vw); height: 12px; border-radius: 6px; background: rgba(255,255,255,.12); overflow: hidden; }
+#grip-fill { display: block; height: 100%; width: 100%; border-radius: 6px; background: linear-gradient(90deg, #ff5a3a, #ffc93a 32%, #7ce07a 66%); transform-origin: left center; }
+#grip em { font-style: normal; font-weight: 700; font-size: 13px; letter-spacing: .04em; color: var(--ink-dim, #cbbfa8); }
+#grip.rest .grip-label { color: #7ce07a; }
+#grip.low .grip-bar { animation: gripPulse .45s ease-in-out infinite alternate; }
+@keyframes gripPulse { from { box-shadow: 0 0 0 0 rgba(255,90,58,.0); } to { box-shadow: 0 0 0 4px rgba(255,90,58,.55); } }
+@media (max-height: 430px) { #grip { bottom: calc(var(--sab) + 8px); padding: 5px 10px; } #grip .grip-bar { width: min(200px, 24vw); } }
+
 /* frame rate readout (Settings > Frame rate) */
 /* the always-on minimap under the money, health and chips */
 #minimap { position: absolute; top: calc(var(--sat) + 118px); left: calc(var(--sal) + 12px); width: 124px; height: 124px; padding: 0; border-radius: 50%; overflow: hidden; background: #123040; border: 2px solid rgba(244,234,214,.55); box-shadow: 0 3px 10px rgba(0,0,0,.45), inset 0 0 12px rgba(0,0,0,.5); }
@@ -625,3 +639,12 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
 .radio-trace { display: block; width: 100%; height: auto; aspect-ratio: 880 / 240; border-radius: 10px; background: #061012; border: 1px solid var(--line); }
 .almanac .li b { color: var(--flame-2); }
 @media (max-width: 720px) { .scope { grid-template-columns: 1fr; } }
+
+/* a page to read: a plaque, a board */
+.note-body { max-width: 62ch; margin: 0 auto; }
+.note-body p { margin: 0 0 12px; font-size: 16px; line-height: 1.5; color: var(--ink); }
+.note-body b { color: #ffd98a; }
+.note-body .formula { display: block; margin: 4px 0; padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,.07); border: 1px solid rgba(244,234,214,.16); font: 600 14px/1.55 ui-monospace, Menlo, Consolas, monospace; color: var(--ink); }
+
+/* the meteor outburst in the telescope's list */
+.target.new b::after { content: '  TONIGHT'; color: #ffd25a; font-size: 11px; letter-spacing: .08em; }

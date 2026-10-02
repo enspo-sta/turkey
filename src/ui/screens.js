@@ -1,11 +1,13 @@
 // Menu sheets: map with fast travel, journal (fish, trophies, challenges),
 // Trading Post shop, lure picker, pause/settings, how-to-play and dialogs.
+import * as THREE from 'three';
 import { biteOutlook, bestTime } from '../gameplay/bite.js';
 import { PHOTO_SUBJECTS, PHOTO_GROUPS, CAMERA_PRICE } from '../gameplay/camera.js';
 import { BOAT } from '../entities/boat.js';
 import { jobGoal } from '../gameplay/jobs.js';
 import { FISH, SPECIES_IDS, LEGENDS, LURES, RODS, COOLERS, ENGINES, TIRES, PAINTS, GEAR, GAME, CHALLENGES, ARROWS, ARROW_ORDER, LOOKS, lookColors, RARITY, RARITY_ORDER, timingGradient, placeSpecies } from '../gameplay/data.js';
 import { ODDITIES } from '../world/oddities.js';
+import { SCIENCE, FIELDS, scienceDone } from '../gameplay/science.js';
 import { GUS_NOTES } from '../world/secret.js';
 import { formatMoney, formatTime, clamp } from '../util/math.js';
 import { privacyHTML, PRIVACY_UPDATED } from './privacy.js';
@@ -563,6 +565,7 @@ export class Screens {
     if (was === 'shop' || was === 'wardrobe') this.game.save();
     if (was === 'telescope') {
       cancelAnimationFrame(this.radioRAF);
+      cancelAnimationFrame(this.showerRAF);
       this.game.audio?.listen?.(null);
       this.radioSel = null;
     }
@@ -593,6 +596,7 @@ export class Screens {
     else if (n === 'privacy') this.renderPrivacy();
     else if (n === 'lure') this.renderLures();
     else if (n === 'dialog') this.renderDialog();
+    else if (n === 'note') this.renderNote();
     else if (n === 'wardrobe') this.renderWardrobe();
     else if (n === 'telescope') this.renderTelescope();
   }
@@ -1122,6 +1126,7 @@ export class Screens {
         ['trophies', 'Hunting'],
         ['photos', `Photos ${g.photo.count()}/${Object.keys(PHOTO_SUBJECTS).length}`],
         ['goals', 'Challenges'],
+        ['science', `Science ${scienceDone(s)}/${SCIENCE.length}`],
         ['sky', 'Sky'],
         ['stats', 'Stats'],
       ],
@@ -1161,6 +1166,23 @@ export class Screens {
       this.renderAlbum();
     } else if (tab === 'sky') {
       this.body.innerHTML = this.skyLogHTML();
+    } else if (tab === 'science') {
+      // what to find out, field by field; what you learned for each one done
+      const sci = s.science || {};
+      this.body.innerHTML =
+        `<p class="catch-info" style="margin:0 0 10px">Things to see, do and find out about all over Kenai Country, in any order. Each one done keeps what you learned here.</p>` +
+        Object.entries(FIELDS)
+          .map(([f, name]) => {
+            const list = SCIENCE.filter((o) => o.field === f);
+            const n = list.filter((o) => sci[o.id]).length;
+            return `<h3 style="margin-top:14px">${esc(name)} ${n}/${list.length}</h3><div class="list">${list
+              .map((o) => {
+                const done = !!sci[o.id];
+                return `<div class="challenge sci ${done ? 'done' : ''}"><div class="check">${done ? '✓' : ''}</div><p><b>${esc(o.title)}</b><br>${esc(done ? o.learn : o.text)}</p><span class="reward">${formatMoney(o.reward)}</span></div>`;
+              })
+              .join('')}</div>`;
+          })
+          .join('');
     } else if (tab === 'goals') {
       const cur = s.currentChallenge();
       // Gus's notes, once you have found them (see world/secret.js)
@@ -1351,6 +1373,7 @@ export class Screens {
       card('yew', GEAR.yew.name, GEAR.yew.desc, GEAR.yew.price, s.gear.yew, s.gear.yew, 'yew');
       card('sight', GEAR.sight.name, GEAR.sight.desc, GEAR.sight.price, s.gear.sight, s.gear.sight, 'sight');
       card('camera', 'Camera with zoom lens', 'Snap moose, bears, eagles and whales, and trophy shots of your catch. The first good shot of every animal sells to Alaska Outdoors magazine.', CAMERA_PRICE, s.gear.camera, s.gear.camera, 'camera');
+      card('climbing', GEAR.climbing.name, GEAR.climbing.desc, GEAR.climbing.price, s.gear.climbing, s.gear.climbing, 'climbkit');
       COOLERS.forEach((c, i) => {
         if (i === 0) return;
         card(String(i), c.name, `Holds ${c.cap} fish.`, c.price, s.gear.cooler >= i, s.gear.cooler === i, 'cooler');
@@ -1451,6 +1474,12 @@ export class Screens {
         if (pay(CAMERA_PRICE)) {
           s.gear.camera = true;
           g.hud.toast('Camera bought. Tap the tool button until the camera comes up', 'good');
+        }
+        break;
+      case 'buy-climbkit':
+        if (pay(GEAR.climbing.price)) {
+          s.gear.climbing = true;
+          g.hud.toast('Climbing kit bought. The ropes are up at the Granite Tors off the Tundra Road', 'good', 5);
         }
         break;
       case 'buy-sight':
@@ -1765,15 +1794,20 @@ export class Screens {
     const g = this.game;
     const env = g.env;
     const sky = g.state.sky;
+    // the meteor outburst, while it is on (see gameplay/visitor.js)
+    const shower = g.visitor?.showerOn();
+    if (this.scopeSel === 'shower' && shower) return this.renderShower();
     const st = TARGETS.map((T) => ({ T, S: targetStatus(g, T) }));
     if (!this.scopeSel || !st.some((x) => x.T.id === this.scopeSel)) this.scopeSel = (st.find((x) => x.S.ok) || st[0]).T.id;
     const { T, S } = st.find((x) => x.T.id === this.scopeSel);
-    const list = st
-      .map(
-        (x) =>
-          `<button class="target ${x.S.ok ? 'up' : 'off'}${sky.seen[x.T.id] ? ' logged' : ''}${x.T.id === this.scopeSel ? ' sel' : ''}" data-t="${x.T.id}"><i>${sky.seen[x.T.id] ? '✓' : ''}</i><b>${esc(x.T.name)}</b><small>${esc(x.S.ok ? x.S.where : x.S.why)}</small></button>`
-      )
-      .join('');
+    const list =
+      (shower ? this.showerButton() : '') +
+      st
+        .map(
+          (x) =>
+            `<button class="target ${x.S.ok ? 'up' : 'off'}${sky.seen[x.T.id] ? ' logged' : ''}${x.T.id === this.scopeSel ? ' sel' : ''}" data-t="${x.T.id}"><i>${sky.seen[x.T.id] ? '✓' : ''}</i><b>${esc(x.T.name)}</b><small>${esc(x.S.ok ? x.S.where : x.S.why)}</small></button>`
+        )
+        .join('');
     const view = S.ok ? `<canvas id="eyepiece" class="eyepiece" width="512" height="512" aria-label="${esc(T.name)} through the telescope"></canvas><div class="cap" id="eyecap"></div>` : `<div class="scope-off">${esc(T.name)}<br><br>${esc(S.why)}</div>`;
     const visible = st.filter((x) => x.S.ok).length;
     this.body.innerHTML = `<div class="scope"><div class="scope-view">${view}<div class="facts"><small>${esc(T.kind)}</small><h4>${esc(T.name)}</h4>${T.facts
@@ -1802,6 +1836,208 @@ export class Screens {
     $('eyecap').textContent = `${caption} · field ${fov >= 1 ? fov + ' arcminutes' : Math.round(fov * 60) + ' arcseconds'} · north up`;
     g.observatory?.aim(S.dir);
     logSeen(g, T);
+  }
+
+  showerButton() {
+    return `<button class="target up new${this.scopeSel === 'shower' ? ' sel' : ''}" data-t="shower"><i></i><b>Meteor outburst</b><small>The Kappa Cygnids, out of Cygnus high overhead</small></button>`;
+  }
+
+  // The outburst through the telescope: meteors streaking out of the
+  // radiant, and then a light that is far too slow, and turns, and comes
+  // down. When the show is over the screen closes and you see it fall in
+  // the real sky (the visitor takes it from there).
+  renderShower() {
+    const g = this.game;
+    const st = TARGETS.map((T) => ({ T, S: targetStatus(g, T) }));
+    const list =
+      this.showerButton() +
+      st
+        .map(
+          (x) =>
+            `<button class="target ${x.S.ok ? 'up' : 'off'}${g.state.sky.seen[x.T.id] ? ' logged' : ''}" data-t="${x.T.id}"><i>${g.state.sky.seen[x.T.id] ? '✓' : ''}</i><b>${esc(x.T.name)}</b><small>${esc(x.S.ok ? x.S.where : x.S.why)}</small></button>`
+        )
+        .join('');
+    this.body.innerHTML = `<div class="scope"><div class="scope-view"><canvas id="eyepiece" class="eyepiece" width="512" height="512" aria-label="Meteors through the telescope"></canvas><div class="cap" id="eyecap"></div><div class="facts"><small>Meteor shower</small><h4>The Kappa Cygnids</h4><p>A minor shower each August, known for slow meteors (about 25 km a second) and bright fireballs. Its dust may come from 2008 ED69, an asteroid that is probably a burnt-out comet.</p><p>Tonight the Earth is crossing a dense strand of that dust: an outburst. The telescope's wide eyepiece is on, pointed near the radiant.</p></div></div><div class="scope-list">${list}</div></div>`;
+    this.body.querySelectorAll('[data-t]').forEach((b) =>
+      b.addEventListener('click', () => {
+        if (b.dataset.t === 'shower') return;
+        cancelAnimationFrame(this.showerRAF);
+        this.scopeSel = b.dataset.t;
+        g.audio?.click();
+        this.rerender();
+      })
+    );
+    g.observatory?.aim(new THREE.Vector3(Math.sin(1.22) * Math.cos(1.26), Math.sin(1.26), -Math.cos(1.22) * Math.cos(1.26)));
+    g.visitor.watched();
+    const cv = $('eyepiece');
+    const cap = $('eyecap');
+    const ctx = cv.getContext('2d');
+    const W = cv.width;
+    const H = cv.height;
+    const R = W / 2 - 8;
+    // the field: stars thick with the Milky Way, which runs through Cygnus
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    const stars = [];
+    for (let i = 0; i < 520; i++) {
+      const band = rnd() < 0.55;
+      let x = rnd() * W;
+      let y = rnd() * H;
+      if (band) y = x * 0.55 + 90 + (rnd() - 0.5) * 140;
+      stars.push([x, y, Math.pow(rnd(), 3) * 2.2 + 0.4, 0.4 + rnd() * 0.6]);
+    }
+    const sky = document.createElement('canvas');
+    sky.width = W;
+    sky.height = H;
+    {
+      const k = sky.getContext('2d');
+      k.fillStyle = '#04060c';
+      k.fillRect(0, 0, W, H);
+      // the glow of the Milky Way, with its dark rift
+      k.save();
+      k.translate(W / 2, H / 2);
+      k.rotate(Math.atan(0.55));
+      const gr = k.createLinearGradient(0, -140, 0, 140);
+      gr.addColorStop(0, 'rgba(120,130,160,0)');
+      gr.addColorStop(0.45, 'rgba(150,160,190,0.16)');
+      gr.addColorStop(0.5, 'rgba(40,40,50,0.05)');
+      gr.addColorStop(0.55, 'rgba(150,160,190,0.14)');
+      gr.addColorStop(1, 'rgba(120,130,160,0)');
+      k.fillStyle = gr;
+      k.fillRect(-W, -140, W * 2, 280);
+      k.restore();
+      for (const [x, y, r, a] of stars) {
+        k.fillStyle = `rgba(230,236,255,${a})`;
+        k.beginPath();
+        k.arc(x, y, r, 0, Math.PI * 2);
+        k.fill();
+      }
+    }
+    // the radiant, up and to the left of the field
+    const rad = { x: -W * 0.35, y: -H * 0.25 };
+    const meteors = [];
+    let next = 0.4;
+    let last = performance.now();
+    let t = 0;
+    const sparks = [];
+    const craftAt = (u) => {
+      // in from the top right, slow, weaving, then diving out of the bottom
+      const x = W * (1.05 - u * 0.95) + Math.sin(u * 7) * 26 * (1 - u);
+      const y = H * (-0.05 + u * 0.75 + u * u * 0.45) + Math.sin(u * 11) * 10;
+      return { x, y };
+    };
+    const captions = [
+      [0, 'Meteors out of Cygnus: dust from a comet’s trail, burning up 100 km over your head · wide field · north up'],
+      [7.5, 'Wait. That one is not a meteor. Far too slow, and it is turning'],
+      [10.5, 'It glows like a spacecraft coming in: the air in front of it, squeezed and heated by its speed. It is coming down!'],
+    ];
+    const frame = (now) => {
+      // (the tests' scripts can run the show faster: window.__rhfFast)
+      const dt = Math.min(0.05, (now - last) / 1000) * (window.__rhfFast || 1);
+      last = now;
+      t += dt;
+      if (window.__rhfJump) {
+        t += window.__rhfJump;
+        window.__rhfJump = 0;
+      }
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, W, H);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(W / 2, H / 2, R, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(sky, 0, 0);
+      // meteors, out of the radiant
+      next -= dt;
+      if (next <= 0 && t < 13) {
+        next = 0.35 + Math.random() * 0.9;
+        const sx = Math.random() * W;
+        const sy = Math.random() * H * 0.8;
+        const dx = sx - rad.x;
+        const dy = sy - rad.y;
+        const l = Math.hypot(dx, dy);
+        meteors.push({ x: sx, y: sy, ux: dx / l, uy: dy / l, len: 60 + Math.random() * 160, t: 0, dur: 0.45 + Math.random() * 0.5, b: 0.6 + Math.random() * 0.4 });
+      }
+      for (let i = meteors.length - 1; i >= 0; i--) {
+        const m = meteors[i];
+        m.t += dt;
+        const u = m.t / m.dur;
+        if (u >= 1) {
+          meteors.splice(i, 1);
+          continue;
+        }
+        const hx = m.x + m.ux * m.len * u;
+        const hy = m.y + m.uy * m.len * u;
+        const tl = Math.min(m.len * u, 70);
+        const gr = ctx.createLinearGradient(hx - m.ux * tl, hy - m.uy * tl, hx, hy);
+        const a = m.b * Math.sin(u * Math.PI);
+        gr.addColorStop(0, 'rgba(255,190,120,0)');
+        gr.addColorStop(1, `rgba(255,248,230,${a})`);
+        ctx.strokeStyle = gr;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(hx - m.ux * tl, hy - m.uy * tl);
+        ctx.lineTo(hx, hy);
+        ctx.stroke();
+      }
+      // the craft
+      if (t > 7) {
+        const u = Math.min(1, (t - 7) / 6);
+        const p = craftAt(u);
+        const flick = 0.75 + Math.random() * 0.25;
+        const r = (10 + u * 26) * flick;
+        // its glowing wake
+        for (let k = 1; k <= 14; k++) {
+          const q = craftAt(Math.max(0, u - k * 0.012));
+          ctx.fillStyle = `rgba(255,170,90,${0.12 * (1 - k / 15)})`;
+          ctx.beginPath();
+          ctx.arc(q.x, q.y, r * (0.8 - k * 0.03), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        const halo = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 2.2);
+        halo.addColorStop(0, 'rgba(255,255,245,1)');
+        halo.addColorStop(0.25, 'rgba(255,220,160,0.85)');
+        halo.addColorStop(0.6, 'rgba(255,140,60,0.25)');
+        halo.addColorStop(1, 'rgba(255,120,40,0)');
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+        // sparks shed from it
+        if (Math.random() < 0.6) sparks.push({ x: p.x, y: p.y, vx: (Math.random() - 0.3) * 40, vy: (Math.random() - 0.8) * 40, life: 0.6 });
+      }
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const k = sparks[i];
+        k.life -= dt;
+        if (k.life <= 0) {
+          sparks.splice(i, 1);
+          continue;
+        }
+        k.x += k.vx * dt;
+        k.y += k.vy * dt;
+        ctx.fillStyle = `rgba(255,210,140,${k.life * 1.4})`;
+        ctx.fillRect(k.x, k.y, 2, 2);
+      }
+      ctx.restore();
+      // the eyepiece's rim
+      ctx.strokeStyle = 'rgba(80,90,100,0.9)';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(W / 2, H / 2, R + 2, 0, Math.PI * 2);
+      ctx.stroke();
+      let c = captions[0][1];
+      for (const [at, txt] of captions) if (t >= at) c = txt;
+      if (cap.textContent !== c) cap.textContent = c;
+      if (t >= 14) {
+        this.showerRAF = 0;
+        this.close();
+        g.visitor.startFall();
+        return;
+      }
+      this.showerRAF = requestAnimationFrame(frame);
+    };
+    cancelAnimationFrame(this.showerRAF);
+    this.showerRAF = requestAnimationFrame(frame);
   }
 
   renderRadio() {
@@ -1933,7 +2169,10 @@ export class Screens {
       ['Space weather', `Kp ${kp}, ${KP_WORDS[kp]}${env.night > 0.5 ? (aur > 0.3 ? '. The aurora is out: look north' : aur > 0.08 ? '. A faint aurora low in the north' : '. No aurora to speak of') : ''}`],
     ];
     const canWait = env.time >= 5 && env.time < 22.8;
+    // the meteor outburst, while it is coming (see gameplay/visitor.js)
+    const outburst = g.visitor?.meteorLine();
     this.body.innerHTML = `<h3>${esc(A.date)}: the night ahead</h3><div class="list almanac">${almanacLines(A)
+      .map(([k, v]) => (k === 'Meteors' && outburst ? [k, outburst] : [k, v]))
       .map(([k, v]) => `<div class="li note"><b>${esc(k)}</b><span>${esc(v)}</span></div>`)
       .join('')}</div><h3 style="margin-top:14px">Right now</h3><div class="list almanac">${now
       .map(([k, v]) => `<div class="li note"><b>${esc(k)}</b><span>${esc(v)}</span></div>`)
@@ -1967,6 +2206,26 @@ export class Screens {
       `<div class="li"><b>Planets through the telescope</b><span>Mercury, Venus, Mars, Jupiter, Saturn</span><span class="v">${planetsSeen(sky)}/5</span></div>`,
     ];
     return `<h3>Through the telescope ${Object.keys(sky.seen).length}/${TARGETS.length}</h3>${rows(seen)}<h3 style="margin-top:16px">Heard with the radio dish ${Object.keys(sky.heard).length}/${RADIO.length}</h3>${rows(heard)}<h3 style="margin-top:16px">Meteorites</h3>${rows(rocks)}<h3 style="margin-top:16px">Sky watching</h3>${rows(other)}`;
+  }
+
+  // ----------------------------------------------------------------- notes
+  // A page to read: a plaque, a board, what something is. The paragraphs
+  // are the game's own text (they may carry <b> and a formula box).
+  note(title, paragraphs) {
+    this.noteData = { title, paragraphs };
+    if (!this.current) this.open('note');
+    else {
+      this.current = 'note';
+      this.render();
+    }
+  }
+
+  renderNote() {
+    const d = this.noteData;
+    this.title.textContent = d.title;
+    this.setTabs([], null);
+    this.body.innerHTML = `<div class="note-body">${d.paragraphs.map((p) => `<p>${p}</p>`).join('')}</div><div class="dialog-actions"><button class="btn big" data-close>Close</button></div>`;
+    this.body.querySelector('[data-close]').addEventListener('click', () => this.close());
   }
 
   // --------------------------------------------------------------- dialogs

@@ -59,6 +59,11 @@ export class Input {
             this.lookTouch.id = t.identifier;
             this.lookTouch.x = t.clientX;
             this.lookTouch.y = t.clientY;
+            // a short touch that hardly moves is a tap (climbing picks a hold)
+            this.lookTouch.sx = t.clientX;
+            this.lookTouch.sy = t.clientY;
+            this.lookTouch.t0 = performance.now();
+            this.lookTouch.moved = 0;
           }
         }
         // Only swallow touches that walk or look. Cancelling a touch that
@@ -90,6 +95,7 @@ export class Input {
             this.moveStick(dx, dy);
           } else if (t.identifier === this.lookTouch.id) {
             mine = true;
+            this.lookTouch.moved = Math.max(this.lookTouch.moved || 0, Math.hypot(t.clientX - this.lookTouch.sx, t.clientY - this.lookTouch.sy));
             this.look.dx += t.clientX - this.lookTouch.x;
             this.look.dy += t.clientY - this.lookTouch.y;
             this.lookTouch.x = t.clientX;
@@ -111,7 +117,10 @@ export class Input {
           this.stick.y = 0;
           this.hideStick();
         }
-        if (t.identifier === this.lookTouch.id) this.lookTouch.id = null;
+        if (t.identifier === this.lookTouch.id) {
+          if (e.type === 'touchend' && (this.lookTouch.moved || 0) < 12 && performance.now() - (this.lookTouch.t0 || 0) < 350) this.tap = { x: t.clientX, y: t.clientY, at: performance.now() };
+          this.lookTouch.id = null;
+        }
       }
     };
     root.addEventListener('touchend', end, opts);
@@ -147,6 +156,7 @@ export class Input {
       if (e.button === 0) {
         this.mouseDown = true;
         this.pressKey('Mouse0');
+        this.mouseStart = { x: e.clientX, y: e.clientY, t: performance.now() };
       }
       if (e.button === 2) this.pressKey('Mouse2');
     });
@@ -154,6 +164,12 @@ export class Input {
       if (e.button === 0) {
         this.mouseDown = false;
         this.releaseKey('Mouse0');
+        const m = this.mouseStart;
+        this.mouseStart = null;
+        if (m && Math.hypot(e.clientX - m.x, e.clientY - m.y) < 8 && performance.now() - m.t < 350) {
+          // a click with the mouse locked to the view aims at the middle
+          this.tap = this.pointerLocked ? { x: window.innerWidth / 2, y: window.innerHeight / 2, at: performance.now() } : { x: e.clientX, y: e.clientY, at: performance.now() };
+        }
       }
       if (e.button === 2) this.releaseKey('Mouse2');
     });
@@ -376,6 +392,13 @@ export class Input {
     this.move.x = x;
     this.move.y = y;
     return this.move;
+  }
+
+  // A tap on the view (not a drag, not a button) in the last moment, once.
+  takeTap() {
+    const t = this.tap;
+    this.tap = null;
+    return t && performance.now() - t.at < 500 ? t : null;
   }
 
   // Look delta in radians since last call.

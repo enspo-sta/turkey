@@ -19,7 +19,13 @@ export const JOBS = [
   { id: 'spa', who: 'Your aching back', text: 'demands a soak in the hot pool at Steaming Springs. It is not asking.', kind: 'event', event: 'soak', reward: 80 },
   { id: 'kings', who: 'The Bear Falls fish counter', text: 'needs a King Salmon over 20 kg to settle a bet with the bears.', kind: 'fish', species: 'king', minKg: 20, reward: 650 },
   { id: 'wolfeel', who: 'The aquarium in Seward', text: 'would love a Wolf Eel. Its face, mostly. Bring one from Shipwreck Cove.', kind: 'fish', species: 'wolfeel', reward: 900 },
+  // science: the university, the observatory and the weather service
+  { id: 'geologist', who: 'A geologist from the university in Fairbanks', text: 'wants a chip of the granite from the top of the big tor at the Granite Tors, to date the rock. Climb up and bring one down.', kind: 'event', event: 'sample', reward: 280 },
+  { id: 'astronomer', who: 'Dr. Okafor at the Tundra Observatory', text: 'needs a two-star picture of the Moon for the school star night. A clear evening, the camera, the Moon.', kind: 'photo', subject: 'moon', stars: 2, reward: 240 },
+  { id: 'auroracam', who: 'The weather service in Anchorage', text: 'collects pictures of the northern lights to check its aurora forecasts. Send one.', kind: 'photo', subject: 'aurora', stars: 1, reward: 320 },
 ];
+
+const PHOTO_NAMES = { bigfoot: 'Bigfoot', orca: 'the orcas', eagle: 'a bald eagle', moose: 'a moose', moon: 'the Moon', aurora: 'the northern lights' };
 
 export function jobById(id) {
   return JOBS.find((j) => j.id === id) || null;
@@ -33,9 +39,10 @@ export function jobGoal(j) {
     if (j.lure) return `${name} caught on the Mosquito Dry Fly`;
     return `${name}${j.minKg ? ` over ${j.minKg} kg` : ''} in the cooler`;
   }
-  if (j.kind === 'photo') return `A ${'★'.repeat(j.stars)} picture of ${j.subject === 'bigfoot' ? 'Bigfoot' : j.subject === 'orca' ? 'the orcas' : j.subject === 'eagle' ? 'a bald eagle' : 'a moose'}`;
+  if (j.kind === 'photo') return `A ${'★'.repeat(j.stars)} picture of ${PHOTO_NAMES[j.subject] || 'it'}`;
   if (j.kind === 'snag') return 'Keep casting at Salmon Bend';
   if (j.event === 'scareOff') return 'Send a bear running with a whistler';
+  if (j.event === 'sample') return 'A chip of granite from the top of the big tor';
   return 'A soak in the hot pool';
 }
 

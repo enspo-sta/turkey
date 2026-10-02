@@ -1001,6 +1001,87 @@ export class AudioEngine {
   // ---------------------------------------------------------- the night sky
   // A fireball's sonic boom, minutes after the light: a double crack from
   // far off rolling into thunder, and its echo off the hills.
+  // Climbing: a scuff of rubber and fingertips on granite as a hand reaches.
+  climbTick(v = 0.5) {
+    if (!this.ready) return;
+    this.noise(0.09, 0.16 * v, { freq: 2400, q: 1.4, attack: 0.004 });
+    this.noise(0.05, 0.1 * v, { type: 'highpass', freq: 4500, q: 0.6, when: 0.03 });
+  }
+  // A hand in the chalk bag, and a clap of dust.
+  chalk() {
+    if (!this.ready) return;
+    this.noise(0.18, 0.1, { freq: 1200, q: 0.8, attack: 0.02, when: 0.25 });
+    this.noise(0.08, 0.16, { type: 'highpass', freq: 2500, q: 0.7, when: 0.75 });
+  }
+  // Coming off: a scrape down the rock, then the rope taking your weight.
+  climbFall() {
+    if (!this.ready) return;
+    this.noise(0.25, 0.25, { freq: 1600, f2: 500, q: 1, attack: 0.005 });
+    this.tone('sine', 110, 0.25, 0.25, { f2: 70, when: 0.45 });
+    this.noise(0.12, 0.18, { type: 'lowpass', freq: 600, q: 1, when: 0.45 });
+  }
+  // The Tesla coil: the spark gap's buzz under the crackle of the sparks,
+  // for dur seconds (see world/tesla.js).
+  coil(x, z, dur = 6) {
+    const sp = this.spatial(x, z, 70);
+    if (sp.vol < 0.02) return;
+    const o = { pan: sp.pan };
+    this.drone('sawtooth', 120, dur, 0.035 * sp.vol, { ...o, fade: 0.08 });
+    this.drone('square', 240, dur, 0.012 * sp.vol, { ...o, fade: 0.08 });
+    for (let i = 0; i < dur * 16; i++) {
+      this.noise(0.02 + Math.random() * 0.05, (0.06 + Math.random() * 0.16) * sp.vol, { type: 'highpass', freq: 2500 + Math.random() * 3500, q: 0.7, pan: sp.pan, when: Math.random() * dur });
+    }
+  }
+  // A single loud snap, a spark striking the earthed ball.
+  zap(x, z) {
+    const sp = this.spatial(x, z, 70);
+    if (sp.vol < 0.02) return;
+    this.noise(0.05, 0.22 * sp.vol, { type: 'highpass', freq: 1800, q: 0.6, pan: sp.pan });
+    this.noise(0.12, 0.08 * sp.vol, { type: 'bandpass', freq: 900, q: 1.2, pan: sp.pan, when: 0.01 });
+  }
+
+  // Zib's voice: little glides and trills (see gameplay/visitor.js).
+  chirp(kind = 'happy') {
+    if (!this.ready) return;
+    const n = (m) => 440 * Math.pow(2, (m - 69) / 12);
+    const t = (m, m2, when, dur = 0.12, vol = 0.07) => this.tone('sine', n(m), dur, vol, { f2: n(m2), when, attack: 0.01 });
+    if (kind === 'hello') {
+      t(81, 84, 0);
+      t(84, 88, 0.18);
+      t(88, 93, 0.36, 0.2);
+    } else if (kind === 'happy') {
+      for (let i = 0; i < 5; i++) t(86 + (i % 2) * 4, 90 + (i % 2) * 3, i * 0.07, 0.07, 0.05);
+    } else if (kind === 'peek') {
+      t(88, 92, 0, 0.1, 0.05);
+      t(92, 86, 0.14, 0.12, 0.04);
+    } else if (kind === 'warn') {
+      for (let i = 0; i < 6; i++) t(96, 94, i * 0.09, 0.06, 0.07);
+    } else if (kind === 'fish') {
+      t(84, 91, 0, 0.18, 0.05);
+    } else if (kind === 'sad') {
+      t(84, 72, 0, 0.9, 0.06);
+      t(79, 67, 0.95, 0.9, 0.05);
+    } else if (kind === 'blink') {
+      this.noise(0.25, 0.06, { type: 'highpass', freq: 4000, f2: 9000, q: 0.5 });
+      t(96, 100, 0.02, 0.1, 0.04);
+    } else {
+      t(84, 81, 0, 0.16, 0.05);
+    }
+  }
+  // The craft coming in: a roar rising out of the sky and dying away, with
+  // the crackle of the air it burns through.
+  craft(dur = 11) {
+    if (!this.ready) return;
+    this.noise(dur, 0.18, { type: 'lowpass', freq: 70, f2: 240, q: 0.6, buf: this.brown, attack: dur * 0.6 });
+    this.noise(dur * 0.8, 0.06, { type: 'bandpass', freq: 600, f2: 1600, q: 0.8, attack: dur * 0.5 });
+    for (let i = 0; i < 26; i++) this.noise(0.04, 0.04 + Math.random() * 0.06, { type: 'highpass', freq: 2500, q: 0.6, when: dur * (0.4 + Math.random() * 0.6) });
+  }
+
+  // On top.
+  cheer() {
+    this.fanfare(false);
+  }
+
   boom() {
     if (!this.ready) return;
     this.tone('sine', 48, 1.6, 0.5, { f2: 26, attack: 0.02 });

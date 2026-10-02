@@ -1201,6 +1201,7 @@ export const GEAR = {
   yew: { name: 'Yew longbow', price: 700, desc: 'A heavier draw: faster, flatter arrows that hit harder.' },
   spray: { name: 'Bear spray', price: 80, desc: 'Stops a charging grizzly at close range. Carry up to 2.' },
   medkit: { name: 'First aid kit', price: 60, desc: 'Restores full health instantly. Carry up to 3.' },
+  climbing: { name: 'Climbing kit', price: 140, desc: 'Rock shoes, a harness and a chalk bag. The Kenai Climbing Club keeps four top ropes on the Granite Tors off the Tundra Road.' },
 };
 
 export const GAME = {
@@ -1239,11 +1240,13 @@ export const CHALLENGES = [
   { id: 'strange3', text: 'Find 3 strange things in the woods (the Journal keeps the rumours)', reward: 250 },
   { id: 'stargaze', text: 'Log 5 objects through the telescope at the Tundra Observatory', reward: 300 },
   { id: 'solarwalk', text: 'Walk the solar system: visit all 9 signs of the scale model on the Lighthouse Road', reward: 250 },
+  { id: 'climb', text: 'Climb a route at the Granite Tors off the Tundra Road (climbing kit at the Trading Post)', reward: 250 },
   { id: 'iss', text: 'Watch the International Space Station pass over (the observatory knows when)', reward: 200 },
   { id: 'meteorite', text: 'Find a meteorite where a fireball came down', reward: 400 },
   { id: 'wolfeel', text: 'Land a Wolf Eel at Shipwreck Cove', reward: 900 },
   { id: 'photo', text: 'Photograph 8 different animals with the camera', reward: 400 },
   { id: 'planets', text: 'See 4 planets through the telescope (it finds the bright ones in daylight too)', reward: 500 },
+  { id: 'roof', text: "Climb Raven's Roof (5.10), under the overhang on the big tor", reward: 600 },
   { id: 'strangeall', text: 'Find all 10 strange things in the woods', reward: 1000 },
   { id: 'journal', text: `Complete the Fish Journal (all ${SPECIES_IDS.length} species)`, reward: 5000 },
 ];

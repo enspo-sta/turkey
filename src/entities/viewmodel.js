@@ -144,6 +144,17 @@ function buildGlideArm(side, c) {
   });
 }
 
+// Climbing: a hand curled over a hold, in the hold's frame (y up the rock,
+// z out of it toward the climber, the hold at the origin), the forearm down
+// toward the body. side -1 is the left hand.
+const HOLD = [0, -0.032, 0.1];
+function buildClimbArm(side, c) {
+  return armParts((hand, cloth) => {
+    const X = addHand(hand, c, POSES.hold, handFrame([-1, 0, 0], [0, 0.18, 1], HOLD, [0, 0, 0.012]), side > 0);
+    sleeveFrom(hand, cloth, c, X([0, 0, -0.012]), [side * 0.22, -0.82, 0.52], [side * 0.04, -0.04, 0.05], { r0: 0.044, r1: 0.06, len: 0.5 });
+  });
+}
+
 // Holding up a catch, in the fish rig's frame (x right, y up, z toward the
 // camera) with the grip point at the origin: side 1 grips the tail wrist,
 // side -1 cradles the belly.
@@ -242,6 +253,9 @@ const _tb = new THREE.Vector3();
 const _nk = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
 const _sq = new THREE.Quaternion();
+const _cm = new THREE.Matrix4();
+const _cs = new THREE.Vector3();
+const _cv = new THREE.Vector3();
 
 // Place a unit-height cylinder (along +y from its base) between a and b.
 function stretch(mesh, a, b) {
@@ -321,6 +335,14 @@ export class Viewmodel {
     this.root.add(this.glideRig);
     this.glidePull = [0, 0];
 
+    // climbing: both hands on the rock (see gameplay/climbing.js)
+    this.climbRig = new THREE.Group();
+    this.climbHands = [this.makeArm(buildClimbArm(-1, look)), this.makeArm(buildClimbArm(1, look))];
+    this.climbRig.add(this.climbHands[0], this.climbHands[1]);
+    this.climbRig.visible = false;
+    this.root.add(this.climbRig);
+    this.climb = null;
+
     // held fish
     this.fishRig = new THREE.Group();
     this.root.add(this.fishRig);
@@ -347,6 +369,11 @@ export class Viewmodel {
   resize(w, h) {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+  }
+
+  // The climber whose hands to show on the rock, or null.
+  setClimbHands(climb) {
+    this.climb = climb;
   }
 
   setTool(tool) {
@@ -379,6 +406,8 @@ export class Viewmodel {
     swap(this.fishHands[1], buildFishArm(-1, c));
     swap(this.glideHands[0], buildGlideArm(-1, c));
     swap(this.glideHands[1], buildGlideArm(1, c));
+    swap(this.climbHands[0], buildClimbArm(-1, c));
+    swap(this.climbHands[1], buildClimbArm(1, c));
     const tex = shirtTexture(c.shirt);
     if (this.clothMat.map !== tex) {
       this.clothMat.map = tex;
@@ -487,6 +516,27 @@ export class Viewmodel {
     this.rodRig.visible = this.shown === 'rod' && !showFish && this.visible && !gliding;
     this.bowRig.visible = this.shown === 'bow' && !showFish && this.visible && !gliding;
     this.glideRig.visible = gliding && this.visible;
+
+    // ---- climbing: each hand on its hold, in the eye's frame; the chalking
+    // hand dips to the bag at the hip and back
+    this.climbRig.visible = !!this.climb && this.visible;
+    if (this.climbRig.visible) {
+      const C = this.climb;
+      const cam = game.camera;
+      for (let k = 0; k < 2; k++) {
+        const arm = this.climbHands[k];
+        C.handMatrix(k, cam, _cm);
+        _cm.decompose(arm.position, arm.quaternion, _cs);
+        if (C.shake > 0) {
+          arm.position.x += Math.sin(game.time * 38 + k * 2) * 0.004 * C.shake;
+          arm.position.y += Math.sin(game.time * 45 + k) * 0.004 * C.shake;
+        }
+        if (C.chalkT > 0 && C.chalkHand === k) {
+          const t = Math.sin((1 - C.chalkT / 1.1) * Math.PI);
+          arm.position.lerp(_cv.set(k ? 0.16 : -0.16, -0.62, -0.32), t * 0.9);
+        }
+      }
+    }
 
     // ---- the paraglider's brakes: pull the side you turn to, both to slow
     if (this.glideRig.visible) {

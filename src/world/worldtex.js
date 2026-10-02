@@ -260,3 +260,30 @@ export function makeWorldTextures(world) {
     uvOffset: 0.5 / N,
   };
 }
+
+// No grass (or fireweed) within r metres of (x, z): for the sites added after
+// the world is made, a paved terrace or scorched ground. The mask is the
+// world's grid, 3.125 m a texel, so the edge is soft.
+export function clearGrass(game, x, z, r) {
+  const t = game.wtex && game.wtex.mask;
+  const W = game.world;
+  if (!t) return;
+  const d = t.image.data;
+  const i0 = Math.max(0, Math.floor((x - r - CS - -HALF) / CS));
+  const i1 = Math.min(N - 1, Math.ceil((x + r + CS - -HALF) / CS));
+  const j0 = Math.max(0, Math.floor((z - r - CS - -HALF) / CS));
+  const j1 = Math.min(N - 1, Math.ceil((z + r + CS - -HALF) / CS));
+  for (let j = j0; j <= j1; j++) {
+    for (let i = i0; i <= i1; i++) {
+      const cx = -HALF + i * CS;
+      const cz = -HALF + j * CS;
+      const dist = Math.hypot(cx - x, cz - z);
+      const keep = Math.min(1, Math.max(0, (dist - r) / CS));
+      const k = i + j * N;
+      d[k * 4] = Math.min(d[k * 4], Math.round(d[k * 4] * keep));
+      d[k * 4 + 1] = Math.min(d[k * 4 + 1], Math.round(d[k * 4 + 1] * keep));
+      if (W && W.grass) W.grass[k] = d[k * 4];
+    }
+  }
+  t.needsUpdate = true;
+}
