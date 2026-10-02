@@ -152,6 +152,7 @@ export function buildSecret(P) {
     post.box(0.1, 1.5, 0.1, { pos: [0, 0.75, 0], color: WOOD_DARK });
     P.addMesh(post.build(), sx, sy, sz, Math.PI);
     P.addSign("GUS'S LAUNCH", 'No refunds · Mind the first step', sx, sy + 1.45, sz, Math.PI, 1.5, 0.62);
+    P.colliders.addBox(sx, sz, 0.75, 0.08, Math.PI, -1e9, sy + 2.2);
   }
 
   // ------------------------------------------------ cairns on the way up

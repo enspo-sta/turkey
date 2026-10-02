@@ -94,16 +94,34 @@ export class Glider {
     const w = W.waterAt(ax, az);
     if (w) low = Math.max(low, w.level);
     if (P.pos.y - low < DROP) return false;
-    for (let t = 1.5; t < 25; t += 1.5) {
-      if (W.heightAt(P.pos.x + fx * t, P.pos.z + fz * t) > P.pos.y + 0.8) return false;
-    }
-    // and no crate, wall, rock or treetop right in front
-    for (let t = 1; t <= 6; t++) {
+    // on the way out, metre by metre: no ground rising above your feet, no
+    // water as high as the wing will be (it sinks about 0.12 m a metre at
+    // first), no crate or wall right in front, and no treetop or rock where
+    // the wing passes
+    for (let t = 1; t <= 25; t++) {
       const x = P.pos.x + fx * t;
       const z = P.pos.z + fz * t;
-      if (this.boxAt(x, P.pos.y + 0.3, z) || this.obstacleAt(x, P.pos.y + 0.5, z) || this.obstacleAt(x, P.pos.y + 1.5, z)) return false;
+      const y = P.pos.y + 0.3 - 0.12 * t;
+      if (W.heightAt(x, z) > P.pos.y + 0.8) return false;
+      const wa = W.waterAt(x, z);
+      if (wa && wa.level > y - 0.1) return false;
+      if (t <= 6 && this.boxAt(x, P.pos.y + 0.3, z)) return false;
+      if (this.obstacleAt(x, y, z) || this.obstacleAt(x, y + 1.2, z)) return false;
     }
     return true;
+  }
+
+  // canLaunch for the GLIDE button: worked out again only when you have
+  // moved or turned, or a few frames have gone by (GLIDE itself checks
+  // afresh)
+  offer() {
+    const g = this.game;
+    const P = g.player;
+    const k = this.offerKey;
+    if (k && g.time - k.t < 0.15 && Math.abs(P.pos.x - k.x) < 0.3 && Math.abs(P.pos.z - k.z) < 0.3 && Math.abs(P.yaw - k.yaw) < 0.05 && k.mode === P.mode) return k.ok;
+    const ok = this.canLaunch();
+    this.offerKey = { t: g.time, x: P.pos.x, z: P.pos.z, yaw: P.yaw, mode: P.mode, ok };
+    return ok;
   }
 
   launch() {
@@ -129,7 +147,8 @@ export class Glider {
     // the take-off run: your feet stay on the ground until it drops away
     this.run = true;
     // the stick or keys still held from walking to the edge steer nothing
-    // until they are let go or moved
+    // until they are let go or moved, each way on its own (W held from the
+    // walk stays off when you add A to turn)
     const mv = g.input.readMove();
     this.hold = { x: mv.x, y: mv.y };
     this.edgeWarned = false;
@@ -161,9 +180,12 @@ export class Glider {
     const mv = input.readMove();
     let turn = clamp(mv.x, -1, 1);
     let push = clamp(-mv.y, -1, 1);
-    if (this.hold) {
-      if (Math.hypot(mv.x, mv.y) < 0.15 || Math.hypot(mv.x - this.hold.x, mv.y - this.hold.y) > 0.35) this.hold = null;
-      else turn = push = 0;
+    const H = this.hold;
+    if (H) {
+      if (H.x !== null && (Math.abs(mv.x) < 0.15 || Math.abs(mv.x - H.x) > 0.35)) H.x = null;
+      if (H.y !== null && (Math.abs(mv.y) < 0.15 || Math.abs(mv.y - H.y) > 0.35)) H.y = null;
+      if (H.x !== null) turn = 0;
+      if (H.y !== null) push = 0;
     }
     // for the hands on the brakes (entities/viewmodel.js)
     this.turnIn = turn;
@@ -200,7 +222,7 @@ export class Glider {
       const l = Math.hypot(ox, oz) || 1;
       const r = c.r + 0.6;
       g.hud?.toast(hit.tree ? 'You snag a treetop and climb down' : 'Bonk! You glance off it and drop to the ground');
-      this.land(c.x + (ox / l) * r, c.z + (oz / l) * r, null);
+      this.land(c.x + (ox / l) * r, c.z + (oz / l) * r, null, ny + 0.3);
       return;
     }
     // a roof or a wall: bump into it and slide down beside it (pushed out at
@@ -210,7 +232,7 @@ export class Glider {
     if (box) {
       const r = g.colliders.resolve(nx, nz, 0.45, ny, 1.8);
       g.hud?.toast('Bonk! You slide down off the roof');
-      this.land(r.x, r.z, null);
+      this.land(r.x, r.z, null, ny + 0.3);
       return;
     }
     // water, ground or a deck under your feet
@@ -271,9 +293,10 @@ export class Glider {
       const dx = x - b.x;
       const dz = z - b.z;
       if (dx * dx + dz * dz > (b.radius + 0.5) ** 2) continue;
-      // with no height of its own: the hot rod 1.5 m, a sign, pump or
-      // outhouse 2.6 m, a cabin or the Trading Post 6 m
-      const top = b.yMax < 1e8 ? b.yMax : W.heightAt(b.x, b.z) + (b.tag === 'car' ? 1.5 : Math.max(b.hx, b.hz) < 1.6 ? 2.6 : 6);
+      // a rail you could step over has its own height for the glider
+      // (glideTop); with no height at all: the hot rod 1.5 m, a sign, pump
+      // or outhouse 2.6 m, a cabin or the Trading Post 6 m
+      const top = b.glideTop ?? (b.yMax < 1e8 ? b.yMax : W.heightAt(b.x, b.z) + (b.tag === 'car' ? 1.5 : Math.max(b.hx, b.hz) < 1.6 ? 2.6 : 6));
       if (y > top || y + 1.8 < b.yMin) continue;
       const lx = dx * b.cos - dz * b.sin;
       const lz = dx * b.sin + dz * b.cos;
@@ -283,13 +306,13 @@ export class Glider {
   }
 
   // Back on your feet: carry a little of the speed into a few running steps.
-  // With no ground given, the ground (or deck) under that spot, and deep
-  // water there means a swim ashore.
-  land(x, z, ground) {
+  // With no ground given, the ground (or a deck no higher than fromY) under
+  // that spot, and deep water there means a swim ashore.
+  land(x, z, ground, fromY = 1e9) {
     const g = this.game;
     const P = g.player;
     if (ground === null) {
-      ground = P.groundAt(x, z, 1e9);
+      ground = P.groundAt(x, z, fromY);
       const w = P._deck ? null : g.world.waterAt(x, z);
       if (w && w.depth > 0.9) {
         this.splashdown(x, z, w);

@@ -405,8 +405,9 @@ export class Wildlife {
       m.receiveShadow = true;
       m.name = 'beaverLodge';
       this.group.add(m);
+      // its dome stands about a metre out of the water
       const lc = this.game.colliders?.addCircle(lodge.x, lodge.z, 2.6);
-      if (lc) lc.hi = 1.6;
+      if (lc) lc.top = lake.level + 1.0;
       for (let i = 0; i < 2; i++) this.beavers.push({ lake, x: lodge.x, z: lodge.z, yaw: this.rand() * 6.28, t: this.rand() * 10, under: 0, lodge, tx: lodge.x, tz: lodge.z });
     }
   }

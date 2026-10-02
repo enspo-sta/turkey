@@ -208,7 +208,8 @@ function buildMosquito(P, x, z, yaw) {
   const wb = new ModelBuilder();
   for (const sd of [-1, 1]) wb.box(2.6, 0.02, 0.85, { pos: [sd * 1.55, H + 0.75, 0.0], rot: [0, sd * 0.35, sd * 0.18], color: 0xffffff });
   P.addMesh(wb.build(), x, y, z, yaw, P.wingMat, { shadow: false });
-  P.colliders.addBox(x, z, 0.95, 0.95, yaw);
+  // up to the tips of its antennae, for the paraglider
+  P.colliders.addBox(x, z, 0.95, 0.95, yaw, -1e9, y + 6);
 }
 
 function buildFlats(P, L) {
@@ -283,7 +284,7 @@ function buildFlats(P, L) {
       const ba = rand() * Math.PI * 2;
       snag.beam([x - p.x, by, z - p.z], [x - p.x + Math.cos(ba) * 0.9, by + 0.25, z - p.z + Math.sin(ba) * 0.9], 0.03, 3, { color: 0x7c7870 });
     }
-    P.colliders.addCircle(x, z, 0.25).hi = 1.5;
+    P.colliders.addCircle(x, z, 0.25).hi = h;
     placed++;
   }
   if (placed) P.addMesh(snag.build(), p.x, p.y, p.z, 0);
@@ -370,12 +371,12 @@ export function addWreckColliders(C, W, p) {
     for (let z = -12; z < 12; z += 1.5) {
       const zm = z + 0.75;
       const [rx, rz] = f.to(sd * (beam(zm) - 0.12), zm);
-      C.addBox(rx, rz, 0.12, 0.8, w.yaw, deckTop - 1, deckTop + 2);
+      C.addBox(rx, rz, 0.12, 0.8, w.yaw, deckTop - 1, deckTop + 2).glideTop = deckTop + 0.8;
     }
   }
   // across the stern
   const [tx, tz] = f.to(0, -11.8);
-  C.addBox(tx, tz, 3.0, 0.2, w.yaw, deckTop - 1, deckTop + 2);
+  C.addBox(tx, tz, 3.0, 0.2, w.yaw, deckTop - 1, deckTop + 2).glideTop = deckTop + 0.8;
   // the hatch is a step up; the crab pots, the sea chest and the mast are in the way
   const [ax, az] = f.to(0, 3.2);
   C.addDeck(ax, az, 1.3, 1.3, w.yaw, at(3.2) + 0.44, { slope: pitch });

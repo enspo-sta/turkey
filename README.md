@@ -217,7 +217,7 @@ What changed in the latest round, with pictures, the audit and the tests:
   chest sits in a niche there. **OPEN** it with the key for $5,000 in gold
   nuggets and Gus's Golden Spoon, a lure every fish takes well and that brings
   rare and epic fish more often. It is never sold at the Trading Post.
-- Gus's notes are kept in the journal under Goals once you have found them.
+- Gus's notes are kept in the journal, under Challenges, once you have found them.
 - A save made in the air keeps the edge you launched from: Continue puts you
   back there with the paraglider.
 

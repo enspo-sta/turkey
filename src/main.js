@@ -1028,7 +1028,7 @@ class Session {
         else if (near && B.canLoad()) ia2 = { label: 'LOAD BOAT', icon: 'boat', act: () => B.load() };
       }
       // at an edge with Gus's paraglider
-      if ((!ia || !ia2) && g.glider.canLaunch()) {
+      if ((!ia || !ia2) && g.glider.offer()) {
         const glide = { label: 'GLIDE', icon: 'glide', act: () => g.glider.launch() };
         if (!ia) ia = glide;
         else ia2 = glide;

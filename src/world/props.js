@@ -631,7 +631,8 @@ export class Props {
     }
     for (const side of [-1, 1]) {
       const [wx, wz] = f.to(side * (d.width / 2 + 0.35), 0);
-      this.colliders.addBox(wx, wz, 0.2, len / 2 - 1.5, yaw, d.top - 1, d.top + 2);
+      // the rail stands 1.1 m; a glider just clearing it goes over
+      this.colliders.addBox(wx, wz, 0.2, len / 2 - 1.5, yaw, d.top - 1, d.top + 2).glideTop = d.top + 1.15;
     }
     const [shx, shz] = f.to(-d.width / 2 + 1.4, ez - 4);
     this.colliders.addBox(shx, shz, 1.7, 1.4, yaw, d.top - 1, d.top + 3);
@@ -652,7 +653,8 @@ export class Props {
     bm.userData.bob = { y: -0.2, phase: 1.3 };
     this.bobbers = this.bobbers || [];
     this.bobbers.push(bm);
-    this.colliders.addCircle(bx, bz, 1.6);
+    // (its cabin's roof, for the paraglider)
+    this.colliders.addCircle(bx, bz, 1.6).top = 2.3;
   }
 
   // ---------------------------------------------------- Bear Falls platform
