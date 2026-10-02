@@ -27,6 +27,8 @@ const LINES = {
   bullseye: [['BULLSEYE!', 1]],
   photo: [['WHAT A SHOT!', 2], ['FRAME IT!', 1]],
   treasure: [['TREASURE!', 1]],
+  glider: [['A PARAGLIDER!', 1]],
+  key: [['A SECRET KEY!', 1]],
   jobDone: [['CHA-CHING!', 2], ['JOB DONE!', 1]],
   bigfoot: [['BIGFOOT?!', 1]],
 };

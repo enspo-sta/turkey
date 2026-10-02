@@ -122,6 +122,24 @@ function handColors(c) {
   return { palm, finger: leather ? c.glove : c.skin, crease: leather ? c.glove : c.crease };
 }
 
+// Under the paraglider: a fist round a red brake toggle, the forearm down to
+// the elbow below the view and the brake line up to the wing. Built in camera
+// space with the toggle at the origin; side -1 is the left hand.
+function buildGlideArm(side, c) {
+  const b = new ModelBuilder();
+  const h = handColors(c);
+  b.cyl(0.014, 0.014, 0.11, 6, { pos: [0, 0, 0], rot: [0, 0, Math.PI / 2], color: 0xd8322a });
+  b.box(0.072, 0.086, 0.074, { pos: [0, 0, 0.006], color: h.palm });
+  for (let i = 0; i < 4; i++) b.box(0.017, 0.062, 0.02, { pos: [-0.027 + i * 0.018, 0, -0.036], color: i % 2 ? h.finger : h.crease });
+  b.box(0.024, 0.05, 0.024, { pos: [-side * 0.044, 0.012, -0.012], rot: [0, 0, side * 0.3], color: h.finger });
+  // the forearm in its sleeve, out past the edge of the view, and the cuff
+  b.beam([0, -0.03, 0.02], [side * 0.16, -0.17, 0.3], 0.042, 8, { color: c.shirt.main });
+  b.beam([0, -0.04, 0.025], [side * 0.02, -0.07, 0.07], 0.046, 8, { color: c.shirt.band });
+  // the brake line
+  b.beam([0, 0.012, 0], [side * 0.14, 2.4, -0.55], 0.0018, 3, { color: 0x222222, jitter: 0 });
+  return b.build();
+}
+
 function buildFishArm(side, c) {
   const b = new ModelBuilder();
   const skin = c.skin;
@@ -327,6 +345,20 @@ export class Viewmodel {
     this.looseT = 1; // time since the last loose (1 = settled)
     this.stringWobble = 0;
 
+    // under the paraglider: hands on the brakes, risers up to the wing
+    this.glideRig = new THREE.Group();
+    this.glideHands = [new THREE.Mesh(buildGlideArm(-1, look), handMat), new THREE.Mesh(buildGlideArm(1, look), handMat)];
+    const risers = new ModelBuilder();
+    for (const sd of [-1, 1]) {
+      risers.beam([sd * 0.26, -0.3, 0.05], [sd * 0.5, 2.2, -0.3], 0.011, 4, { color: 0x1c2a4a, jitter: 0 });
+      risers.beam([sd * 0.27, -0.3, 0.06], [sd * 0.62, 2.2, -0.12], 0.0025, 3, { color: 0x2a2a2a, jitter: 0 });
+    }
+    this.glideRisers = new THREE.Mesh(risers.build(), handMat);
+    this.glideRig.add(this.glideHands[0], this.glideHands[1], this.glideRisers);
+    this.glideRig.visible = false;
+    this.root.add(this.glideRig);
+    this.glidePull = [0, 0];
+
     // held fish
     this.fishRig = new THREE.Group();
     this.root.add(this.fishRig);
@@ -373,6 +405,8 @@ export class Viewmodel {
     swap(this.drawArm, buildDrawArm(c));
     swap(this.fishHands[0], buildFishArm(1, c));
     swap(this.fishHands[1], buildFishArm(-1, c));
+    swap(this.glideHands[0], buildGlideArm(-1, c));
+    swap(this.glideHands[1], buildGlideArm(1, c));
   }
 
   setBowWood(yew) {
@@ -472,8 +506,29 @@ export class Viewmodel {
     const breathe = Math.sin(game.time * 1.6) * 0.003;
 
     const showFish = !!this.fishModel;
-    this.rodRig.visible = this.shown === 'rod' && !showFish && this.visible;
-    this.bowRig.visible = this.shown === 'bow' && !showFish && this.visible;
+    const gliding = game.player.mode === 'glide';
+    this.rodRig.visible = this.shown === 'rod' && !showFish && this.visible && !gliding;
+    this.bowRig.visible = this.shown === 'bow' && !showFish && this.visible && !gliding;
+    this.glideRig.visible = gliding && this.visible;
+
+    // ---- the paraglider's brakes: pull the side you turn to, both to slow
+    if (this.glideRig.visible) {
+      const G = game.glider;
+      const turn = G.turnIn || 0;
+      const push = G.pushIn || 0;
+      const brake = Math.max(0, -push);
+      const pulls = [Math.max(0, -turn) * 0.13 + brake * 0.1 - Math.max(0, push) * 0.03, Math.max(0, turn) * 0.13 + brake * 0.1 - Math.max(0, push) * 0.03];
+      // up at the top corners, nearer the middle on a squarer screen
+      const z = -0.5;
+      const hh = Math.tan((this.camera.fov * Math.PI) / 360) * -z;
+      const x = Math.min(0.45, hh * this.camera.aspect * 0.72);
+      for (let i = 0; i < 2; i++) {
+        this.glidePull[i] = damp(this.glidePull[i], pulls[i], 7, dt);
+        const sd = i ? 1 : -1;
+        this.glideHands[i].position.set(sd * x + this.swayX * 0.5, hh * 0.62 - this.glidePull[i] + this.swayY * 0.5 + breathe, z);
+        this.glideHands[i].rotation.set(0.1, sd * 0.2, -sd * 0.15);
+      }
+    }
 
     // ---- rod
     if (this.rodRig.visible) {

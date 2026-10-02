@@ -522,9 +522,10 @@ export class Fishing {
     const pool = this.pool();
     const lure = LURES[g.state.gear.lure];
     const night = g.env.night > 0.5;
-    // a gold hotspot and a perfect cast tempt the rarer fish
+    // a gold hotspot and a perfect cast tempt the rarer fish, and so do the
+    // lively rods and Gus's golden spoon
     const skill = (this.castHot ? 1.5 : 1) * (this.perfect ? 1.3 : 1);
-    const rk = g.state.rod().rare || 1;
+    const rk = (g.state.rod().rare || 1) * (lure.rare || 1);
     const rareK = { common: 1, uncommon: 1 + (skill - 1) * 0.4, rare: skill * rk, epic: skill * skill * rk };
     // each species keeps its own hours: kings at dawn, pike in the midday sun
     const out = biteOutlook(g.env, this.water?.kind);

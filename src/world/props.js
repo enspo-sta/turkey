@@ -8,6 +8,7 @@ import { makeSignTexture, makeAlaskaFlagTexture } from '../util/textures.js';
 import { mulberry32, clamp, lerp } from '../util/math.js';
 import { ROAD_HALF } from './worldgen.js';
 import { buildAreas, areaAvoid } from './areas.js';
+import { buildSecret, secretAvoid } from './secret.js';
 
 const WOOD = 0x6b4a2e;
 const WOOD_DARK = 0x4a3220;
@@ -89,6 +90,7 @@ export class Props {
     for (const pk of Object.values(L.parking)) out.push({ x: pk.x, z: pk.z, r: 7 });
     for (const fr of L.fires) out.push({ x: fr.x, z: fr.z, r: 4 });
     out.push(...areaAvoid(W));
+    out.push(...secretAvoid());
     this.avoid = out;
     return out;
   }
@@ -170,6 +172,7 @@ export class Props {
     this.buildCampfires(L.fires);
     this.buildGlacierProps();
     buildAreas(this, L);
+    buildSecret(this);
     this.mergeStatic();
     return this.group;
   }

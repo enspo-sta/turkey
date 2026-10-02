@@ -76,6 +76,10 @@ export class HUD {
       speedoArc: $('speedo-arc'),
       speedoVal: $('speedo-val'),
       speedoGear: $('speedo-gear'),
+      glide: $('glide'),
+      glideAlt: $('glide-alt'),
+      glideSink: $('glide-sink'),
+      glideSpeed: $('glide-speed'),
       crosshair: $('crosshair'),
       hitmark: $('hitmark'),
       dmg: $('dmg'),
@@ -216,7 +220,8 @@ export class HUD {
     this.savedT = setTimeout(() => el.classList.remove('show'), 1600);
   }
 
-  toast(text, kind = '') {
+  // A short message under the compass; a long one (a note) can stay longer.
+  toast(text, kind = '', secs = 3.2) {
     const el = document.createElement('div');
     el.className = 'toast ' + kind;
     el.textContent = text;
@@ -226,12 +231,12 @@ export class HUD {
       const old = this.toastList.shift();
       old.remove();
     }
-    setTimeout(() => el.classList.add('out'), 3200);
+    setTimeout(() => el.classList.add('out'), secs * 1000);
     setTimeout(() => {
       el.remove();
       const i = this.toastList.indexOf(el);
       if (i >= 0) this.toastList.splice(i, 1);
-    }, 3700);
+    }, secs * 1000 + 500);
   }
 
   // A big arcade banner; sub is a second line under it (a species name) and
@@ -247,8 +252,13 @@ export class HUD {
     b.className = '';
     void b.offsetWidth;
     b.className = 'show ' + kind + (sub ? ' long' : '') + (place ? ' ' + place : '');
+    // a banner in the middle pushes the messages down below it meanwhile
+    this.root.classList.toggle('banner-on', !place);
     clearTimeout(this.bannerT);
-    this.bannerT = setTimeout(() => (b.className = ''), sub ? 2850 : 1950);
+    this.bannerT = setTimeout(() => {
+      b.className = '';
+      this.root.classList.remove('banner-on');
+    }, sub ? 2850 : 1950);
   }
 
   prompt(text, kind = 'hot', duration = 1) {
@@ -522,13 +532,15 @@ export class HUD {
     const catchOpen = !el.catchCard.hidden;
     // the hot rod and the boat share the pedals, the camera button and the gauge
     const driving = mode === 'drive' || mode === 'boat';
+    // under Gus's paraglider: the stick flies, the instruments show
+    const gliding = mode === 'glide';
     el.gas.hidden = !driving;
     el.brake.hidden = !driving;
     el.horn.hidden = !driving;
     el.cam.hidden = !driving;
     el.speedo.hidden = !driving;
-    el.primary.hidden = driving || catchOpen || tool === 'none';
-    el.tool.hidden = driving || catchOpen || (fishing && fishing.state !== 'idle');
+    el.primary.hidden = driving || gliding || catchOpen || tool === 'none';
+    el.tool.hidden = driving || gliding || catchOpen || (fishing && fishing.state !== 'idle');
     // no running in a boat
     el.run.hidden = !onFoot || catchOpen || !!P.boat;
     set('running', !!P.running, (v) => {
@@ -621,7 +633,7 @@ export class HUD {
 
     // crosshair: a ring for the bow, a dot for the rod, none with empty hands
     // or the camera, which has its viewfinder
-    el.crosshair.hidden = driving || catchOpen || tool === 'none' || tool === 'camera';
+    el.crosshair.hidden = driving || gliding || catchOpen || tool === 'none' || tool === 'camera';
     const vf = onFoot && tool === 'camera' && !catchOpen;
     el.viewfinder.hidden = !vf;
     if (vf) {
@@ -643,8 +655,11 @@ export class HUD {
     if (!fishing || fishing.state !== 'fight') {
       let lh = '';
       if (driving) lh = g.input.usingTouch ? '◀ drag to steer ▶' : 'W/S drive · A/D steer';
+      else if (gliding) lh = g.input.usingTouch ? '◀ drag to steer ▶ · up dives · down brakes' : 'A/D steer · W dive · S brake';
       else if (g.input.usingTouch && g.time < (this.firstShown || 0) + 20) lh = 'drag here to walk';
       set('leftHint', lh, (v) => (el.leftHint.textContent = v));
+      // above the paraglider's instruments
+      el.leftHint.classList.toggle('raised', gliding);
     }
     if (!this.firstShown) this.firstShown = g.time;
 
@@ -659,6 +674,17 @@ export class HUD {
       el.speedoArc.setAttribute('stroke-dasharray', `${(f * 251).toFixed(1)} 999`);
       set('kmh', Math.round(kmh), (v) => (el.speedoVal.textContent = v));
       set('gear', v < -0.3 ? 'R' : mode === 'boat' ? (Math.abs(v) < 0.3 ? 'N' : 'F') : String(g.hotrod.gear), (x) => (el.speedoGear.textContent = x));
+    }
+
+    // the paraglider's instruments
+    el.glide.hidden = !gliding;
+    if (gliding) {
+      const G = g.glider;
+      const h = Math.max(0, G.height());
+      set('glideAlt', Math.round(h), (v) => (el.glideAlt.textContent = v));
+      set('glideSpeed', Math.round(G.speed * 3.6), (v) => (el.glideSpeed.textContent = v));
+      set('glideSink', G.sink.toFixed(1), (v) => (el.glideSink.textContent = `▼ ${v} m/s`));
+      el.glide.classList.toggle('low', h < 10);
     }
 
     this.updateCompass(dt);

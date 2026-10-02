@@ -935,6 +935,19 @@ export const LURES = {
       wolfeel: 1.7,
     },
   },
+  // Gus's treasure (see world/secret.js): never in the shop, only in his
+  // chest. Every fish takes it well, and rare and epic fish come to it more
+  // often (rare, as on the rods).
+  gold: {
+    short: 'Gold Spoon',
+    name: "Gus's Golden Spoon",
+    price: 0,
+    secret: true,
+    rare: 1.4,
+    desc: "Solid gold, from Gus's chest. Every fish wants a look, and the rare ones look twice.",
+    color: 0xf0c040,
+    likes: Object.fromEntries(Object.keys(FISH).map((id) => [id, 1.5])),
+  },
 };
 
 // Rods, cheapest first. maxTension is what the line holds, cast the longest

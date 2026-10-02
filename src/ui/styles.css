@@ -144,6 +144,7 @@ svg { width: 1em; height: 1em; display: block; }
 #objective b { color: var(--flame-2); font-weight: 800; letter-spacing: 0.1em; margin-right: 6px; }
 
 #toasts { position: absolute; top: calc(var(--sat) + 70px); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(560px, 80vw); }
+#hud.banner-on #toasts { top: max(calc(var(--sat) + 70px), calc(30% + 66px)); }
 .toast { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 7px 14px; font-weight: 600; font-size: 16px; letter-spacing: 0.02em; box-shadow: var(--shadow); animation: toastIn .25s ease; text-align: center; }
 .toast.good { border-color: var(--moss); }
 .toast.money { border-color: var(--flame-2); color: var(--flame-2); }
@@ -251,6 +252,14 @@ svg { width: 1em; height: 1em; display: block; }
 .speedo-read em { position: absolute; right: 18px; bottom: 30px; font-style: normal; font-weight: 800; font-size: 13px; color: var(--flame-2); }
 
 /* controls */
+/* the paraglider's instruments: height over the ground, sink and speed */
+#glide { position: absolute; left: 50%; bottom: calc(var(--sab) + 14px); transform: translateX(-50%); display: flex; align-items: flex-end; gap: 18px; padding: 8px 18px 10px; border-radius: 16px; background: rgba(14,26,30,.55); border: 1px solid rgba(244,234,214,.18); font-variant-numeric: tabular-nums; pointer-events: none; }
+.glide-read { text-align: center; min-width: 64px; }
+.glide-read b { display: block; font-family: var(--display); font-weight: 400; font-size: 28px; line-height: 1.05; color: var(--ink); }
+.glide-read small { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); }
+.glide-sink { align-self: center; font-weight: 800; font-size: 13px; letter-spacing: .06em; color: var(--flame-2); white-space: nowrap; }
+#glide.low .glide-read:first-child b { color: #ffb347; }
+
 #controls { position: absolute; inset: 0; pointer-events: none; }
 .btn.round { position: absolute; border-radius: 50%; padding: 0; flex-direction: column; font-size: 15px; letter-spacing: 0.06em;
   background: radial-gradient(circle at 35% 30%, rgba(60,80,84,.92), rgba(14,26,30,.9)); border: 3px solid rgba(244,234,214,.35); box-shadow: 0 6px 16px rgba(0,0,0,.45), inset 0 -3px 0 rgba(0,0,0,.35); }
@@ -291,6 +300,7 @@ svg { width: 1em; height: 1em; display: block; }
 #stick { position: absolute; width: 126px; height: 126px; margin: -63px 0 0 -63px; border-radius: 50%; border: 3px solid rgba(244,234,214,.28); background: radial-gradient(circle, rgba(14,26,30,.2), rgba(14,26,30,.45)); opacity: 0; transition: opacity .15s ease; pointer-events: none; }
 #stick.on { opacity: 1; }
 #stick-knob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.55), rgba(244,234,214,.25)); border: 2px solid rgba(255,255,255,.5); }
+#left-hint.raised { bottom: calc(var(--sab) + 96px); }
 #left-hint { position: absolute; left: calc(var(--sal) + 26px); bottom: calc(var(--sab) + 30px); font-size: 13px; font-weight: 700; letter-spacing: 0.1em; color: rgba(244,234,214,.55); text-transform: uppercase; pointer-events: none !important; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
 
 /* ---------- catch card ---------- */
@@ -350,6 +360,9 @@ svg { width: 1em; height: 1em; display: block; }
 .list .li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 8px 10px; background: rgba(255,255,255,.04); border-radius: 10px; font-size: 15px; font-variant-numeric: tabular-nums; }
 .list .li b { font-weight: 700; }
 .list .li .v { color: var(--flame-2); font-weight: 800; }
+.list .li.note { grid-template-columns: 1fr; gap: 3px; }
+.list .li.note b { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--flame-2); }
+.list .li.note span { font-style: italic; line-height: 1.45; }
 .sell-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0; flex-wrap: wrap; }
 
 .fishcard { position: relative; background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }

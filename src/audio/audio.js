@@ -905,7 +905,9 @@ export class AudioEngine {
     const coast = W.inBounds(px, pz) ? W.coastD[W.cellIndex(px, pz)] : 0;
     const oceanV = Math.max(0, 1 - Math.max(0, coast) / 350);
     const altitude = cam.position.y;
-    const windV = 0.12 + Math.min(0.5, Math.max(0, altitude - 60) / 400) + g.env.weather.rain * 0.2;
+    // under the paraglider the air rushes past
+    const glide = g.player?.mode === 'glide' ? g.glider.speed / 10 : 0;
+    const windV = 0.12 + Math.min(0.5, Math.max(0, altitude - 60) / 400) + g.env.weather.rain * 0.2 + glide * 0.55;
     const rainV = g.env.weather.rain;
     const set = (node, v, tc = 0.3) => node.g.gain.setTargetAtTime(v * duck, t, tc);
     set(this.river, riverV * 0.2);
@@ -913,7 +915,7 @@ export class AudioEngine {
     set(this.falls, fallsV * 0.5);
     this.ocean.g.gain.setTargetAtTime(oceanV * (0.12 + 0.12 * (0.5 + 0.5 * Math.sin(t * 0.5))) * duck, t, 0.4);
     set(this.wind, windV * 0.35);
-    this.wind.f.frequency.setTargetAtTime(380 + Math.sin(t * 0.13) * 160 + Math.sin(t * 0.47) * 60, t, 0.5);
+    this.wind.f.frequency.setTargetAtTime(380 + glide * 420 + Math.sin(t * 0.13) * 160 + Math.sin(t * 0.47) * 60, t, 0.5);
     set(this.rainN, rainV * 0.22);
 
     if (!inMenu) {

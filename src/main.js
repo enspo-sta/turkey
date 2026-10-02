@@ -8,6 +8,8 @@ import { Announcer } from './audio/announcer.js';
 import { PhotoCamera } from './gameplay/camera.js';
 import { Jobs } from './gameplay/jobs.js';
 import { Bigfoot } from './entities/bigfoot.js';
+import { Glider } from './entities/glider.js';
+import { Secret, GUS_NOTES } from './world/secret.js';
 import { Screens } from './ui/screens.js';
 import { GameState } from './gameplay/state.js';
 import { Player } from './entities/player.js';
@@ -79,6 +81,8 @@ class Session {
     g.areas = new Areas(g);
     g.jobs = new Jobs(g);
     g.bigfoot = new Bigfoot(g);
+    g.glider = new Glider(g);
+    g.secret = new Secret(g);
     g.screens = new Screens(g);
     g.onEvent = (ev) => this.onEvent(ev);
     g.save = () => this.save();
@@ -157,6 +161,8 @@ class Session {
     show(g.fishing.line);
     show(g.hotrod.group);
     show(g.insects.group);
+    show(g.glider.canopy);
+    for (const s of [g.secret.glint, ...g.secret.glows]) if (s) show(s);
     // a fish in the world (under water, fog) and in the hands (no fog), so the
     // first bite and the first catch do not stall on shader compiles
     const fishWorld = makeFishModel('pink');
@@ -274,6 +280,7 @@ class Session {
     g.hunting.reset();
     if (g.player.mode === 'drive') this.exitCar(true);
     if (g.player.mode === 'boat' || g.player.boat) g.boat.leave(true);
+    g.glider.end();
     g.audio.stopEngine();
     g.audio.updateOutboard?.(0, 0, 999, false);
     g.announcer.stop();
@@ -305,6 +312,7 @@ class Session {
     g.env.setTime(s.time);
     g.env.day = s.day;
     g.player.health = s.health || 100;
+    g.glider.end();
     g.player.mode = 'foot';
     g.player.boat = null;
     g.hotrod.occupied = false;
@@ -462,10 +470,16 @@ class Session {
     s.day = g.env.day;
     s.health = Math.max(30, Math.round(g.player.health));
     let P = g.player.mode === 'drive' ? g.hotrod.exitPoint(1) : g.player.pos;
+    let yaw = g.player.yaw;
     // out on the boat: remember that, and a spot on the shore to fall back on
     const aboard = g.player.mode === 'boat' || !!g.player.boat;
     if (aboard) P = g.boat.shoreSpot() || g.hotrod.exitPoint(1);
-    s.player = { x: P.x, z: P.z, yaw: g.player.yaw, aboard };
+    // in the air: the edge you launched from
+    if (g.player.mode === 'glide' && g.glider.from) {
+      P = g.glider.from;
+      yaw = g.glider.from.yaw;
+    }
+    s.player = { x: P.x, z: P.z, yaw, aboard };
     s.boat = g.boat.toJSON();
     s.car = { x: g.hotrod.pos.x, z: g.hotrod.pos.z, yaw: g.hotrod.yaw };
     const ok = s.save();
@@ -549,6 +563,55 @@ class Session {
     this.save();
   }
 
+  // Gus's secret, step one: his paraglider on the summit.
+  takeGlider() {
+    const g = this.game;
+    const s = g.state;
+    if (s.flags.glider) return;
+    s.flags.glider = true;
+    g.audio.chime();
+    g.announcer.say('glider', { sub: 'PROPERTY OF GUS', kind: 'legend' });
+    g.hud.toast(`A note on the sack: '${GUS_NOTES[0].text}'`, 'good', 8);
+    setTimeout(() => g.hud.hint(IS_TOUCH ? 'Face a long drop and tap GLIDE' : 'Face a long drop and press E to GLIDE', 6), 3000);
+    g.onEvent({ type: 'glider' });
+    this.save();
+  }
+
+  // Step two: the key in the grotto on the ledge.
+  takeKey() {
+    const g = this.game;
+    const s = g.state;
+    if (s.flags.key) return;
+    s.flags.key = true;
+    g.audio.chime();
+    g.announcer.say('key', { sub: 'GUS LEFT A NOTE', kind: 'legend' });
+    g.hud.toast(`A brass key in a tin, and a note: '${GUS_NOTES[1].text}'`, 'good', 8);
+    g.onEvent({ type: 'key' });
+    this.save();
+  }
+
+  // Step three: Gus's chest behind Bear Falls.
+  openGoldChest() {
+    const g = this.game;
+    const s = g.state;
+    if (s.flags.treasure) return;
+    if (!s.flags.key) {
+      g.audio.tick(1);
+      g.hud.toast('Locked tight. A brass keyhole, and a G scratched in the lid', 'bad');
+      return;
+    }
+    s.flags.treasure = true;
+    s.addMoney(5000);
+    if (!s.gear.lures.includes('gold')) s.gear.lures.push('gold');
+    g.audio.cash();
+    g.audio.chime();
+    g.announcer.say('treasure', { sub: "GUS'S GOLD!", kind: 'legend' });
+    g.hud.toast("$5,000 in gold nuggets, and Gus's Golden Spoon is in your tackle box", 'money', 6);
+    g.haptic('success');
+    g.onEvent({ type: 'treasure' });
+    this.save();
+  }
+
   // Little things that happen at the newer places.
   updatePlaces(dt) {
     const g = this.game;
@@ -603,6 +666,10 @@ class Session {
       g.hud.toast('Get ashore first. The boat stays where you leave it');
       return;
     }
+    if (g.player.mode === 'glide') {
+      g.hud.toast('Land first. The hot rod does not fly');
+      return;
+    }
     g.fishing.cancel();
     g.hunting.reset();
     this.withFade(`Driving to ${p.name}…`, () => {
@@ -645,6 +712,7 @@ class Session {
       s.money -= fee;
       if (g.player.mode === 'drive') this.exitCar(true);
       if (g.player.mode === 'boat' || g.player.boat) g.boat.leave(true);
+      g.glider.end();
       this.placeAtStart();
       g.player.health = 60;
       // three hours out cold, and no waking before eight
@@ -732,6 +800,7 @@ class Session {
       g.player.applyCamera(g.camera);
       if (g.player.mode === 'drive') g.hotrod.applyCamera(g.camera, 0, input);
       else if (g.player.mode === 'boat') g.boat.applyCamera(g.camera, 0, input);
+      else if (g.player.mode === 'glide') g.glider.applyCamera(g.camera);
       input.endFrame();
       return;
     }
@@ -791,6 +860,9 @@ class Session {
       }
       P.pos.copy(g.boat.pos);
       P.tick(dt);
+    } else if (P.mode === 'glide') {
+      g.glider.update(dt, input);
+      P.tick(dt);
     } else {
       // driving controls
       if (input.pressed('cam') || input.keyPressed('KeyC')) car.camMode = car.camMode === 'cockpit' ? 'chase' : 'cockpit';
@@ -813,11 +885,13 @@ class Session {
     g.insects.update(dt);
     g.areas.update(dt);
     g.bigfoot.update(dt);
+    g.secret.update(dt);
     this.updatePlaces(dt);
     g.bears.update(dt);
 
     // camera
     if (P.mode === 'foot') P.applyCamera(g.camera);
+    else if (P.mode === 'glide') g.glider.applyCamera(g.camera);
     else if (P.mode === 'boat') g.boat.applyCamera(g.camera, dt, input);
     else car.applyCamera(g.camera, dt, input);
     g.camera.updateMatrixWorld();
@@ -834,9 +908,9 @@ class Session {
       g.camera.updateProjectionMatrix();
     }
 
-    // viewmodel
-    g.overlay.enabled = P.mode === 'foot';
-    g.viewmodel.visible = P.mode === 'foot';
+    // viewmodel: the rod, the bow or the camera on foot, the brakes in the air
+    g.overlay.enabled = P.mode === 'foot' || P.mode === 'glide';
+    g.viewmodel.visible = P.mode === 'foot' || P.mode === 'glide';
     g.viewmodel.update(dt, { bobPhase: P.bobPhase, bobAmt: P.bobAmt, lookDX: P.lookDelta.x, lookDY: P.lookDelta.y });
 
     // discovery
@@ -889,8 +963,8 @@ class Session {
     let ia = null;
     // a second action beside the first: the boat's launch, load and board
     let ia2 = null;
-    // nothing to do mid-cast, mid-fight or with the catch card up
-    if ((g.fishing.state !== 'idle' && g.fishing.state !== 'catch') || g.hud.blocking) {
+    // nothing to do mid-cast, mid-fight, with the catch card up or in the air
+    if ((g.fishing.state !== 'idle' && g.fishing.state !== 'catch') || g.hud.blocking || P.mode === 'glide') {
       g.interaction = g.interaction2 = null;
       return;
     }
@@ -916,6 +990,11 @@ class Session {
           if (it.id === 'soak') ia = { label: 'SOAK', icon: 'hand', act: () => this.soak() };
           if (it.id === 'bugdope') ia = { label: 'BUG DOPE $15', icon: 'bag', act: () => this.buyBugDope() };
           if (it.id === 'chest' && Math.abs(P.pos.y - it.y) < 1.6 && !g.state.flags.chest) ia = { label: 'OPEN', icon: 'claim', act: () => this.openChest() };
+          // Gus's secret (see world/secret.js)
+          const fl = g.state.flags;
+          if (it.id === 'glider' && !fl.glider && Math.abs(P.pos.y - it.y) < 2) ia = { label: 'TAKE PARAGLIDER', icon: 'glide', act: () => this.takeGlider() };
+          if (it.id === 'key' && !fl.key && Math.abs(P.pos.y - it.y) < 2) ia = { label: 'TAKE KEY', icon: 'key', act: () => this.takeKey() };
+          if (it.id === 'goldchest' && !fl.treasure && Math.abs(P.pos.y - it.y) < 1.6) ia = { label: 'OPEN', icon: fl.key ? 'key' : 'claim', act: () => this.openGoldChest() };
           if (it.id === 'cabin') {
             const t = g.env.time;
             const canSleep = t > 19.5 || t < 5;
@@ -943,6 +1022,12 @@ class Session {
         const near = Math.hypot(r.x - P.pos.x, r.z - P.pos.z) < 7 || dCar < 6;
         if (near && B.canLaunch()) ia2 = { label: 'LAUNCH', icon: 'boat', act: () => B.launch() };
         else if (near && B.canLoad()) ia2 = { label: 'LOAD BOAT', icon: 'boat', act: () => B.load() };
+      }
+      // at an edge with Gus's paraglider
+      if ((!ia || !ia2) && g.glider.canLaunch()) {
+        const glide = { label: 'GLIDE', icon: 'glide', act: () => g.glider.launch() };
+        if (!ia) ia = glide;
+        else ia2 = glide;
       }
     }
     g.interaction = ia;

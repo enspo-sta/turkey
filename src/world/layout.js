@@ -147,6 +147,26 @@ export const LAKES = [
 // The geyser at Steaming Springs: a sinter cone that blows every minute or two.
 export const GEYSER = { x: 834, z: -4 };
 
+// The secret, on no map. Gus left his paraglider on a summit in the far west
+// (seen from the landing, the store, the falls and most places, as a glint
+// and a windsock); a walk of about 1.5 km up from Bear Falls reaches it, past
+// a few cairns. From there a glide south reaches a grotto on a ledge no path
+// reaches, with the key; the key opens his chest on a shelf behind Bear
+// Falls. The chest's place is worked out from the falls (see
+// world/secret.js).
+export const SECRET = {
+  cache: { x: -1123, z: -603 },
+  // the ledge, and the grotto against the rock wall at its back (south)
+  ledge: { x: -1115, z: -307 },
+  grotto: { x: -1109, z: -306.5, yaw: Math.PI },
+  cairns: [
+    [-887, -545],
+    [-985, -521],
+    [-1067, -509],
+    [-1087, -571],
+  ],
+};
+
 // Glacier tongue flowing from the north mountains into Glacier Lake.
 export const GLACIER_POINTS = [
   [-120, -1260],

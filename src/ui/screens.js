@@ -5,6 +5,7 @@ import { PHOTO_SUBJECTS, PHOTO_GROUPS, CAMERA_PRICE } from '../gameplay/camera.j
 import { BOAT } from '../entities/boat.js';
 import { jobGoal } from '../gameplay/jobs.js';
 import { FISH, SPECIES_IDS, LEGENDS, LURES, RODS, COOLERS, ENGINES, TIRES, PAINTS, GEAR, GAME, CHALLENGES, ARROWS, ARROW_ORDER, LOOKS, lookColors, RARITY, RARITY_ORDER, timingGradient, placeSpecies } from '../gameplay/data.js';
+import { GUS_NOTES } from '../world/secret.js';
 import { formatMoney, formatTime, clamp } from '../util/math.js';
 import { privacyHTML, PRIVACY_UPDATED } from './privacy.js';
 import { renderMapRGBA, worldToMap } from '../world/maprender.js';
@@ -1047,10 +1048,15 @@ export class Screens {
       this.renderAlbum();
     } else if (tab === 'goals') {
       const cur = s.currentChallenge();
+      // Gus's notes, once you have found them (see world/secret.js)
+      const notes = GUS_NOTES.filter((n) => s.flags[n.flag]);
+      const gus = notes.length
+        ? `<h3 style="margin-top:16px">Gus's notes</h3><div class="list">${notes.map((n) => `<div class="li note"><b>${esc(n.where)}</b><span>${esc(n.text)}</span></div>`).join('')}</div>`
+        : '';
       this.body.innerHTML = `<div class="list">${CHALLENGES.map((c) => {
         const done = s.challenges[c.id];
         return `<div class="challenge ${done ? 'done' : ''} ${cur && cur.id === c.id ? 'current' : ''}"><div class="check">${done ? '✓' : ''}</div><p>${esc(c.text)}</p><span class="reward">${formatMoney(c.reward)}</span></div>`;
-      }).join('')}</div>`;
+      }).join('')}</div>${gus}`;
     } else {
       const st = s.stats;
       const rows = [
@@ -1197,7 +1203,7 @@ export class Screens {
           'rod',
           `<div class="swatch" style="background:linear-gradient(135deg, ${hex(r.look.blank)} 55%, ${hex(r.look.wrap)} 55%)"></div>`
         );
-      for (const [id, l] of Object.entries(LURES).sort((a, b) => a[1].price - b[1].price))
+      for (const [id, l] of Object.entries(LURES).filter(([, l]) => !l.secret).sort((a, b) => a[1].price - b[1].price))
         card(id, l.name, l.desc, l.price, s.gear.lures.includes(id), s.gear.lure === id, 'lure', `<div class="swatch" style="background:${hex(l.color)}"></div>`);
     } else if (tab === 'gear') {
       const consumable = (id, title, desc, price, have, max, extra = '', label = 'Buy') => {
@@ -1377,7 +1383,10 @@ export class Screens {
     const s = g.state;
     this.title.textContent = 'Tackle box';
     this.setTabs([], null);
-    this.body.innerHTML = `<div class="lure-grid">${Object.entries(LURES).sort((a, b) => a[1].price - b[1].price)
+    // a secret lure shows once you have found it
+    this.body.innerHTML = `<div class="lure-grid">${Object.entries(LURES)
+      .filter(([id, l]) => !l.secret || s.gear.lures.includes(id))
+      .sort((a, b) => a[1].price - b[1].price)
       .map(([id, l]) => {
         const owned = s.gear.lures.includes(id);
         return `<div class="item ${owned ? 'owned' : 'locked'}"><div class="row" style="justify-content:flex-start;gap:10px"><div class="swatch" style="background:${hex(l.color)}"></div><h4>${esc(
