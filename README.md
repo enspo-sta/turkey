@@ -93,6 +93,21 @@ What changed in the latest round, with pictures, the audit and the tests:
 
 **The hot rod, the boat and the places**
 
+- The buildings in detail. Ruben's log cabin stands on its own levelled yard
+  above the landing: chinked logs with their ends showing at the corners, four-
+  pane windows with green shutters, a shingled roof running out over an open
+  porch with a rocking chair, steps down to the yard, a stone chimney, a
+  woodpile under a lean-to, a canoe upside down on sawhorses, salmon drying on
+  a rack and a bear cache on stilts. The Kenai Trading Post has a false front
+  under its big sign, display windows and double doors onto a covered porch
+  with rocking chairs, barrels, a live bait cooler and a notice board, two fuel
+  pumps on their island, a weigh station with the day's halibut, an ice chest,
+  propane, tires and a stone basement where the ground drops away at the back.
+  Kachemak Light has a door, windows and a railed gallery, and the keeper's
+  house beside it a picket fence and the wash out on the line; the bait shack
+  on Halibut Pier sells through its service window. Wood, shingles, stone,
+  concrete and corrugated metal have real surfaces (board joints, bark,
+  shingle rows, mortar, ridges and rust) that cost no extra draws.
 - Twelve places joined by gravel roads and truss bridges: Hotrod Landing
   (Ruben's cabin), Kenai Trading Post, Salmon Bend, Bear Falls, Glacier Lake,
   Moose Lake, Halibut Pier, Caribou Tundra, Kachemak Light and three newer ones:
@@ -429,7 +444,10 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/world/lighting.js` | The mountain shadow and sky visibility maps, computed on the graphics processor |
 | `src/world/sky.js` | Sky dome with sun, moon, stars, clouds, rainbows and northern lights, the cascaded sun shadows, the weather, and the day and night cycle |
 | `src/world/water.js`, `effects.js`, `calving.js` | River, lake and sea surfaces with animated waves and reflections, the waterfall, splashes, ripples, rain, mist and dust, and the calving glacier |
-| `src/world/scatter.js`, `grass.js`, `props.js`, `roads.js`, `colliders.js` | Forests, ground plants and rocks, wind-blown grass, buildings, bridges, the pier and lighthouse, gravel roads and collision |
+| `src/world/scatter.js`, `grass.js`, `props.js`, `roads.js`, `colliders.js` | Forests, ground plants and rocks, wind-blown grass, where the buildings stand, bridges, trailhead signs and campfires, gravel roads and collision |
+| `src/world/buildings.js` | The buildings in detail: Ruben's cabin, its yard, outhouse and mailbox, the Kenai Trading Post, Kachemak Light and the keeper's house, Halibut Pier and its bait shack, the lake docks and rowboats, the Bear Falls platform, the tundra lookout and the sign posts |
+| `src/world/finish.js` | The surface finishes of wood, shingles, stone, concrete and corrugated metal: patterns drawn once at load and picked per vertex in the props' one material |
+| `src/world/sites.js` | Where the cabin and the Trading Post stand, and the yards the world levels for them before the terrain is built |
 | `src/world/scenery.js` | Volcano steam, clouds on the peaks and the cascades down the cliffs |
 | `src/world/floaters.js` | Driftwood, branches, petals and leaves on the water, pond lilies, pondweed and ice floes |
 | `src/world/post.js` | Bloom, sun rays and the colour grade of the High preset |
@@ -491,6 +509,13 @@ node tools/shot.mjs tools/scenarios/secret.json       # (spoilers) the hidden ch
 node tools/shot.mjs tools/scenarios/secret-flight.json   # (spoilers) GLIDE, three seconds in the air, the wing overhead, the rest of the flight to the ledge, the grotto and TAKE KEY
 node tools/shot.mjs tools/scenarios/secret-treasure.json # (spoilers) the chest opened with the key, the Golden Spoon in the tackle box and not in the shop, the map, and the glimpses from the valley
 node tools/shot.mjs tools/scenarios/secret-glimpse.json  # the glint on the summit from Hotrod Landing by day, through the 8x lens, and the lantern at night
+node tools/shot.mjs tools/scenarios/buildings-1.json  # Ruben's cabin from the yard, at its porch steps, from behind and from the woodpile side
+node tools/shot.mjs tools/scenarios/buildings-2.json  # a close look at the cabin's logs and shingles, the outhouse, and the Trading Post from the road and at its porch
+node tools/shot.mjs tools/scenarios/buildings-3.json  # the Trading Post from the weigh station side, from behind, a close look at its stone basement and boards, and at night
+node tools/shot.mjs tools/scenarios/buildings-4.json  # the bait shack and the deck of Halibut Pier, Kachemak Light and the keeper's house from its gate
+node tools/shot.mjs tools/scenarios/buildings-5.json  # the keeper's house from the sea side, the tundra lookout, the Bear Falls platform and the Moose Lake dock with its rowboat
+node tools/shot.mjs tools/scenarios/buildings-6.json  # Mosquito Flats and the wreck at Shipwreck Cove
+node tools/shot.mjs tools/scenarios/perf-buildings.json # draw calls, triangles and frame time at the cabin, the Trading Post, Kachemak Light and Halibut Pier
 node tools/shot.mjs tools/scenarios/minimap.json      # the small map on foot and driving, its goal marker, and a tap to the full map
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot
 node tools/shot.mjs tools/scenarios/fish-views.json   # fish schools, a fish approaching the float and the fight

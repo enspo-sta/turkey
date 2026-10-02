@@ -1,53 +1,23 @@
-// Hand-placed structures: Ruben's cabin, the Trading Post, bridge, docks, the
-// halibut pier, Bear Falls platform, lighthouse, lookout, signs and campfires.
-// Each registers colliders, walkable decks and interaction points.
+// Hand-placed structures: where they stand (the layout), the bridges, the
+// trailhead signs and the campfires, with the buildings themselves in
+// world/buildings.js (Ruben's cabin, the Trading Post, the lighthouse and its
+// keeper's house, the pier, the docks, the Bear Falls platform and the
+// lookout). Each registers colliders, walkable decks and interaction points,
+// and the static meshes merge into a few draws (mergeStatic).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ModelBuilder } from '../util/builder.js';
-import { makeSignTexture, makeAlaskaFlagTexture } from '../util/textures.js';
-import { mulberry32, clamp, lerp } from '../util/math.js';
+import { makeSignTexture } from '../util/textures.js';
 import { ROAD_HALF } from './worldgen.js';
 import { buildAreas, areaAvoid } from './areas.js';
 import { buildSecret, secretAvoid } from './secret.js';
+import { makeFinishTextures, finishMaterial, ensureFinishAttributes } from './finish.js';
+import { buildCabin, buildMailbox, buildTradingPost, buildLighthouse, lighthouseSpot, buildPier, buildDock, buildFallsPlatform, buildLookout, signPosts } from './buildings.js';
+import { cabinSite, postSite } from './sites.js';
 
-const WOOD = 0x6b4a2e;
-const WOOD_DARK = 0x4a3220;
-const WOOD_LIGHT = 0x8a6a45;
 const LOG = 0x7a5534;
-const STONE = 0x77726a;
-const ROOF_GREEN = 0x2f4a3a;
-const ROOF_GREY = 0x4a4e52;
-const BARN_RED = 0x8a2f22;
-const WHITE = 0xe8e4da;
 const STEEL = 0x3e6b5a;
 const CONCRETE = 0x9a968c;
-const RED = 0xb02a1e;
-
-// Local-to-world helper for a prop origin with a yaw.
-function frame(x, z, yaw) {
-  const c = Math.cos(yaw);
-  const s = Math.sin(yaw);
-  return {
-    x,
-    z,
-    yaw,
-    // local (lx, lz) -> world
-    to(lx, lz) {
-      return [x + lx * c + lz * s, z - lx * s + lz * c];
-    },
-  };
-}
-
-function gable(b, w, h, depth, o) {
-  const shape = new THREE.Shape();
-  shape.moveTo(-w / 2, 0);
-  shape.lineTo(w / 2, 0);
-  shape.lineTo(0, h);
-  shape.closePath();
-  const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false });
-  geo.translate(0, 0, -depth / 2);
-  b.add(geo, o);
-}
 
 export class Props {
   constructor(game) {
@@ -56,7 +26,10 @@ export class Props {
     this.colliders = game.colliders;
     this.group = new THREE.Group();
     this.group.name = 'props';
-    this.mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, metalness: 0.0 });
+    // wood, shingles, stone and metal on the parts that ask for them (see
+    // world/finish.js); plain colour on the rest
+    this.finishTex = makeFinishTextures();
+    this.mat = finishMaterial(this.finishTex);
     this.metalMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.45, metalness: 0.6 });
     this.glowMat = new THREE.MeshBasicMaterial({ color: 0x2a3036, toneMapped: false });
     this.lampMat = new THREE.MeshBasicMaterial({ color: 0x333333, toneMapped: false });
@@ -77,7 +50,7 @@ export class Props {
     for (const p of W.places) out.push({ x: p.x, z: p.z, r: p.kind === 'service' ? 26 : 12 });
     this.layout = this.computeLayout();
     const L = this.layout;
-    out.push({ x: L.cabin.x, z: L.cabin.z, r: 12 });
+    out.push({ x: L.cabin.x, z: L.cabin.z, r: 14 });
     out.push({ x: L.outhouse.x, z: L.outhouse.z, r: 3 });
     out.push({ x: L.post.x, z: L.post.z, r: 22 });
     for (const b of W.bridges) {
@@ -87,6 +60,10 @@ export class Props {
     out.push({ x: L.falls.x, z: L.falls.z, r: 8 });
     out.push({ x: L.lookout.x, z: L.lookout.z, r: 8 });
     out.push({ x: L.light.x, z: L.light.z, r: 20 });
+    // the tower stands on the highest dry ground near its place, the
+    // keeper's house beside it
+    const lt = lighthouseSpot(W, L.light);
+    out.push({ x: lt.x, z: lt.z, r: 9 }, { x: lt.keeper.x, z: lt.keeper.z, r: 10 });
     for (const pk of Object.values(L.parking)) out.push({ x: pk.x, z: pk.z, r: 7 });
     for (const fr of L.fires) out.push({ x: fr.x, z: fr.z, r: 4 });
     out.push(...areaAvoid(W));
@@ -112,17 +89,14 @@ export class Props {
   computeLayout() {
     const W = this.world;
     const L = { parking: {} };
+    // the cabin above Hotrod Landing and the Trading Post by the junction
+    // (see world/sites.js: the world has levelled their yards)
+    L.cabin = cabinSite(W);
     const landing = W.place('landing');
     const d = { x: -Math.sin(landing.face), z: -Math.cos(landing.face) }; // toward water
     const r = { x: -d.z, z: d.x };
-    L.cabin = { x: landing.x - d.x * 17 + r.x * 7, z: landing.z - d.z * 17 + r.z * 7, yaw: Math.atan2(d.x, d.z) };
     L.outhouse = { x: L.cabin.x - d.x * 12 - r.x * 9, z: L.cabin.z - d.z * 12 - r.z * 9, yaw: L.cabin.yaw };
-    const post = W.place('post');
-    // put the store south-east of the junction, facing it
-    const jx = -60;
-    const jz = 428;
-    L.post = { x: post.x + 16, z: post.z + 24 };
-    L.post.yaw = Math.atan2(jx - L.post.x, jz - L.post.z);
+    L.post = postSite(W);
     const falls = W.place('falls');
     const fd = { x: -Math.sin(falls.face), z: -Math.cos(falls.face) };
     L.falls = { x: falls.x - fd.x * 7 - fd.z * 9, z: falls.z - fd.z * 7 + fd.x * 9, yaw: Math.atan2(fd.x, fd.z) };
@@ -161,13 +135,14 @@ export class Props {
 
   build() {
     const L = this.layout || this.computeLayout();
-    this.buildCabin(L.cabin, L.outhouse);
-    this.buildTradingPost(L.post);
+    buildCabin(this, L.cabin, L.outhouse);
+    buildMailbox(this, L.cabin);
+    buildTradingPost(this, L.post);
     for (const b of this.world.bridges) this.buildBridge(b);
-    for (const p of this.world.places) if (p.dock) (p.dock.pier ? this.buildPier(p) : this.buildDock(p));
-    this.buildFallsPlatform(L.falls);
-    this.buildLighthouse(L.light);
-    this.buildLookout(L.lookout);
+    for (const p of this.world.places) if (p.dock) (p.dock.pier ? buildPier(this, p) : buildDock(this, p));
+    buildFallsPlatform(this, L.falls);
+    buildLighthouse(this, L.light);
+    buildLookout(this, L.lookout);
     this.buildSigns(L);
     this.buildCampfires(L.fires);
     this.buildGlacierProps();
@@ -222,6 +197,9 @@ export class Props {
   }
 
   addMesh(geo, x, y, z, yaw, mat = this.mat, { shadow = true } = {}) {
+    // every mesh in a finish material carries the finish attributes, so
+    // they all merge together
+    if (mat.userData.finish) ensureFinishAttributes(geo);
     const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z);
     m.rotation.y = yaw;
@@ -231,230 +209,6 @@ export class Props {
     m.matrixAutoUpdate = false;
     this.group.add(m);
     return m;
-  }
-
-  groundMax(f, hx, hz) {
-    let mx = -Infinity;
-    for (let i = -1; i <= 1; i += 0.5) {
-      for (let j = -1; j <= 1; j += 0.5) {
-        const [x, z] = f.to(i * hx, j * hz);
-        mx = Math.max(mx, this.world.heightAt(x, z));
-      }
-    }
-    return mx;
-  }
-
-  // ---------------------------------------------------------------- cabin
-  buildCabin(c, oh) {
-    const f = frame(c.x, c.z, c.yaw);
-    const base = this.groundMax(f, 4.5, 4.5) + 0.35;
-    const b = new ModelBuilder();
-    const W = 7;
-    const D = 6;
-    const H = 2.8;
-    // foundation and floor
-    b.box(W + 0.6, 1.8, D + 0.6, { pos: [0, -0.9, 0], color: STONE, jitter: 0.12 });
-    b.box(W + 0.4, 0.25, D + 0.4, { pos: [0, 0.12, 0], color: WOOD_DARK });
-    // log walls
-    const logs = 9;
-    for (let i = 0; i < logs; i++) {
-      const y = 0.4 + i * 0.3;
-      const off = i % 2 ? 0.25 : 0;
-      b.cyl(0.17, 0.17, W + 0.7 + off, 7, { pos: [0, y, D / 2], rot: [0, 0, Math.PI / 2], color: LOG, jitter: 0.1 });
-      b.cyl(0.17, 0.17, W + 0.7 + off, 7, { pos: [0, y, -D / 2], rot: [0, 0, Math.PI / 2], color: LOG, jitter: 0.1 });
-      b.cyl(0.17, 0.17, D + 0.7 - off, 7, { pos: [W / 2, y + 0.15, 0], rot: [Math.PI / 2, 0, 0], color: LOG, jitter: 0.1 });
-      b.cyl(0.17, 0.17, D + 0.7 - off, 7, { pos: [-W / 2, y + 0.15, 0], rot: [Math.PI / 2, 0, 0], color: LOG, jitter: 0.1 });
-    }
-    // gables and roof
-    gable(b, W - 0.1, 1.9, 0.3, { pos: [0, H + 0.35, D / 2 - 0.05], color: WOOD_LIGHT });
-    gable(b, W - 0.1, 1.9, 0.3, { pos: [0, H + 0.35, -D / 2 + 0.05], color: WOOD_LIGHT });
-    const roofAng = Math.atan2(1.9, W / 2);
-    const slope = Math.hypot(W / 2, 1.9) + 0.7;
-    b.box(slope, 0.16, D + 2.2, { pos: [-W / 4 - 0.15, H + 0.35 + 0.95 + 0.1, 0.5], rot: [0, 0, roofAng], color: ROOF_GREEN });
-    b.box(slope, 0.16, D + 2.2, { pos: [W / 4 + 0.15, H + 0.35 + 0.95 + 0.1, 0.5], rot: [0, 0, -roofAng], color: ROOF_GREEN });
-    b.box(0.3, 0.2, D + 2.2, { pos: [0, H + 0.35 + 1.95, 0.5], color: 0x22382b });
-    // chimney
-    b.box(0.9, 5.2, 0.9, { pos: [W / 2 - 1.1, 2.6, -D / 2 + 1.2], color: STONE, jitter: 0.15 });
-    b.box(1.05, 0.25, 1.05, { pos: [W / 2 - 1.1, 5.25, -D / 2 + 1.2], color: 0x5a5650 });
-    // porch
-    b.box(W + 0.4, 0.2, 2.3, { pos: [0, 0.25, D / 2 + 1.35], color: WOOD });
-    for (const px of [-W / 2, -W / 6, W / 6, W / 2]) b.cyl(0.09, 0.1, 2.5, 6, { pos: [px, 1.5, D / 2 + 2.3], color: LOG });
-    b.box(W + 0.6, 0.12, 0.25, { pos: [0, 2.72, D / 2 + 2.3], color: LOG });
-    b.box(W + 0.4, 0.08, 0.08, { pos: [0, 1.0, D / 2 + 2.3], color: LOG });
-    // door and frame
-    b.box(1.1, 2.05, 0.08, { pos: [0.8, 1.35, D / 2 + 0.2], color: 0x7a2b1c });
-    b.box(1.3, 0.14, 0.12, { pos: [0.8, 2.42, D / 2 + 0.2], color: WOOD_DARK });
-    b.sphere(0.05, 6, 4, { pos: [1.2, 1.3, D / 2 + 0.27], color: 0xd9b23a });
-    // window frames
-    for (const wx of [-1.9]) {
-      b.box(1.2, 1.0, 0.1, { pos: [wx, 1.55, D / 2 + 0.2], color: WOOD_DARK });
-      b.box(0.9, 0.12, 0.3, { pos: [wx, 1.0, D / 2 + 0.3], color: WOOD_DARK });
-    }
-    b.box(0.1, 1.0, 1.2, { pos: [W / 2 + 0.2, 1.55, 0.3], color: WOOD_DARK });
-    // moose antlers over the door
-    for (const s of [-1, 1]) {
-      b.beam([0.8, 2.75, D / 2 + 0.35], [0.8 + s * 0.35, 2.95, D / 2 + 0.4], 0.04, 5, { color: 0xd8ccb0 });
-      b.box(0.55, 0.06, 0.35, { pos: [0.8 + s * 0.6, 3.1, D / 2 + 0.42], rot: [0.3, 0, s * 0.5], color: 0xd8ccb0 });
-    }
-    // bench and firewood
-    b.box(1.8, 0.08, 0.45, { pos: [-2, 0.75, D / 2 + 0.7], color: WOOD_LIGHT });
-    b.box(0.08, 0.4, 0.4, { pos: [-2.8, 0.55, D / 2 + 0.7], color: WOOD_DARK });
-    b.box(0.08, 0.4, 0.4, { pos: [-1.2, 0.55, D / 2 + 0.7], color: WOOD_DARK });
-    const rand = mulberry32(8);
-    for (let i = 0; i < 18; i++) {
-      const row = Math.floor(i / 6);
-      b.cyl(0.13, 0.13, 0.8, 6, {
-        pos: [-W / 2 - 0.8, 0.35 + row * 0.25, -2 + (i % 6) * 0.27 + (row % 2) * 0.12],
-        rot: [0, 0, Math.PI / 2 + (rand() - 0.5) * 0.2],
-        color: 0x9a7650,
-      });
-    }
-    // canoe on sawhorses beside the cabin
-    b.box(0.5, 0.7, 0.08, { pos: [W / 2 + 2.2, 0.35, -1.5], color: WOOD_DARK });
-    b.box(0.5, 0.7, 0.08, { pos: [W / 2 + 2.2, 0.35, 1.5], color: WOOD_DARK });
-    b.sphere(1, 10, 6, { pos: [W / 2 + 2.2, 0.85, 0], scale: [0.42, 0.28, 2.4], color: 0xc0331f });
-    const geo = b.build();
-    this.addMesh(geo, c.x, base, c.z, c.yaw);
-    // glowing windows (night)
-    const wg = new ModelBuilder();
-    wg.box(0.95, 0.75, 0.06, { pos: [-1.9, 1.55, D / 2 + 0.26], color: 0xffffff, jitter: 0 });
-    wg.box(0.06, 0.75, 0.95, { pos: [W / 2 + 0.26, 1.55, 0.3], color: 0xffffff, jitter: 0 });
-    this.addMesh(wg.build(), c.x, base, c.z, c.yaw, this.glowMat, { shadow: false });
-    const [mx, mz] = f.to(-1.9, D / 2 + 0.7);
-    this.nightLights.push(new THREE.Vector3(mx, base + 1.6, mz));
-    this.colliders.addBox(c.x, c.z, W / 2 + 0.4, D / 2 + 0.4, c.yaw);
-    const [px, pz] = f.to(0, D / 2 + 1.4);
-    this.colliders.addDeck(px, pz, W / 2 + 0.2, 1.15, c.yaw, base + 0.35);
-    const [ix, iz] = f.to(0.8, D / 2 + 1.6);
-    this.interactions.push({ id: 'cabin', label: 'Sleep', x: ix, z: iz, r: 2.6 });
-    const [cx, cz] = f.to(W / 2 - 1.1, -D / 2 + 1.2);
-    this.smokePoints.push(new THREE.Vector3(cx, base + 5.5, cz));
-    this.cabinBase = base;
-
-    // outhouse with a crescent moon
-    const of = frame(oh.x, oh.z, oh.yaw);
-    const ob = this.groundMax(of, 1, 1);
-    const o = new ModelBuilder();
-    o.box(1.3, 2.2, 1.3, { pos: [0, 1.1, 0], color: WOOD });
-    o.box(1.6, 0.12, 1.7, { pos: [0, 2.3, 0.1], rot: [0.15, 0, 0], color: ROOF_GREY });
-    o.box(0.8, 1.8, 0.05, { pos: [0, 0.95, 0.67], color: WOOD_LIGHT });
-    o.torus(0.09, 0.025, 4, 8, { pos: [0, 1.6, 0.7], arc: Math.PI, rot: [0, 0, -Math.PI / 2], color: 0x1a120a });
-    this.addMesh(o.build(), oh.x, ob, oh.z, oh.yaw);
-    this.colliders.addBox(oh.x, oh.z, 0.7, 0.7, oh.yaw);
-
-    // mailbox at the road
-    const road = this.nearestRoad(c.x, c.z);
-    if (road) {
-      const side = { x: c.x - road.x, z: c.z - road.z };
-      const l = Math.hypot(side.x, side.z) || 1;
-      const mx = road.x + (side.x / l) * (ROAD_HALF + 1.4);
-      const mz = road.z + (side.z / l) * (ROAD_HALF + 1.4);
-      const m = new ModelBuilder({ uvs: true });
-      m.box(0.1, 1.1, 0.1, { pos: [0, 0.55, 0], color: WOOD_DARK });
-      m.box(0.45, 0.4, 0.6, { pos: [0, 1.2, 0], color: 0x2a4a8a });
-      m.box(0.04, 0.25, 0.05, { pos: [0.25, 1.35, 0.2], color: RED });
-      const yaw = Math.atan2(road.x - mx, road.z - mz);
-      this.addMesh(m.build(), mx, this.world.heightAt(mx, mz), mz, yaw);
-      this.addSign('RUBEN', '', mx, this.world.heightAt(mx, mz) + 1.2, mz, yaw + Math.PI / 2, 0.5, 0.18);
-    }
-  }
-
-  // ---------------------------------------------------------- trading post
-  buildTradingPost(c) {
-    const f = frame(c.x, c.z, c.yaw);
-    const base = this.groundMax(f, 8, 7) + 0.4;
-    const b = new ModelBuilder();
-    const W = 13;
-    const D = 9;
-    b.box(W + 0.6, 2.2, D + 0.6, { pos: [0, -1.1, 0], color: STONE });
-    b.box(W, 4.4, D, { pos: [0, 2.2, 0], color: BARN_RED, jitter: 0.04 });
-    // vertical boards
-    for (let i = -6; i <= 6; i++) b.box(0.06, 4.4, 0.05, { pos: [i, 2.2, D / 2 + 0.02], color: 0x6a2418 });
-    // false front
-    b.box(W + 0.4, 2.6, 0.3, { pos: [0, 5.6, D / 2], color: BARN_RED });
-    b.box(W + 0.8, 0.25, 0.5, { pos: [0, 6.95, D / 2], color: WOOD_DARK });
-    // roof
-    const roofAng = Math.atan2(2.2, W / 2);
-    const slope = Math.hypot(W / 2, 2.2) + 0.6;
-    b.box(slope, 0.18, D + 0.8, { pos: [-W / 4, 4.4 + 1.1 + 0.1, 0], rot: [0, 0, roofAng], color: ROOF_GREY });
-    b.box(slope, 0.18, D + 0.8, { pos: [W / 4, 4.4 + 1.1 + 0.1, 0], rot: [0, 0, -roofAng], color: ROOF_GREY });
-    gable(b, W, 2.2, 0.2, { pos: [0, 4.4, -D / 2], color: BARN_RED });
-    // porch
-    b.box(W + 1, 0.22, 3, { pos: [0, 0.2, D / 2 + 1.5], color: WOOD });
-    for (let i = 0; i < 6; i++) {
-      const px = -W / 2 + (i * W) / 5;
-      b.cyl(0.11, 0.12, 3.4, 6, { pos: [px, 1.9, D / 2 + 2.85], color: WOOD_LIGHT });
-    }
-    b.box(W + 1.2, 0.14, 3.4, { pos: [0, 3.65, D / 2 + 1.55], rot: [0.12, 0, 0], color: ROOF_GREY });
-    b.box(W + 1, 0.08, 0.08, { pos: [0, 1.1, D / 2 + 2.85], color: WOOD_LIGHT });
-    // doors & windows
-    b.box(2.0, 2.5, 0.1, { pos: [0, 1.5, D / 2 + 0.06], color: 0x3a2416 });
-    b.box(0.06, 2.5, 0.12, { pos: [0, 1.5, D / 2 + 0.1], color: WOOD_LIGHT });
-    for (const wx of [-4.2, 4.2]) {
-      b.box(2.2, 1.6, 0.12, { pos: [wx, 2.0, D / 2 + 0.08], color: WOOD_LIGHT });
-    }
-    // barrels, crates, tires
-    const rand = mulberry32(21);
-    for (let i = 0; i < 4; i++) b.cyl(0.38, 0.38, 1.0, 10, { pos: [-W / 2 + 0.6 + i * 0.85, 0.8, D / 2 + 2.2], color: 0x5a3a20 });
-    for (let i = 0; i < 5; i++) {
-      const s = 0.6 + rand() * 0.3;
-      b.box(s, s, s, { pos: [W / 2 - 0.8 - (i % 3) * 0.9, 0.3 + s / 2 + Math.floor(i / 3) * 0.7, D / 2 + 2.1], rot: [0, rand(), 0], color: 0x9a7a50 });
-    }
-    for (let i = 0; i < 4; i++) b.torus(0.42, 0.16, 6, 12, { pos: [W / 2 + 1.4, 0.18 + i * 0.3, -2], rot: [Math.PI / 2, 0, 0], color: 0x1c1c1c });
-    // ice chest
-    b.box(1.6, 1.3, 0.8, { pos: [-W / 2 - 1.2, 0.65, 2.5], color: WHITE });
-    b.box(1.64, 0.3, 0.84, { pos: [-W / 2 - 1.2, 1.1, 2.5], color: 0x2a6aa8 });
-    this.addMesh(b.build(), c.x, base, c.z, c.yaw);
-    // window glow
-    const wg = new ModelBuilder();
-    for (const wx of [-4.2, 4.2]) {
-      wg.box(1.9, 1.3, 0.05, { pos: [wx, 2.0, D / 2 + 0.16], color: 0xffffff, jitter: 0 });
-      const [mx, mz] = f.to(wx, D / 2 + 0.7);
-      this.nightLights.push(new THREE.Vector3(mx, base + 2.0, mz));
-    }
-    this.addMesh(wg.build(), c.x, base, c.z, c.yaw, this.glowMat, { shadow: false });
-    // big sign on the false front
-    const [sx, sz] = f.to(0, D / 2 + 0.2);
-    this.addSign('Kenai Trading Post', 'FISH  ·  FUEL  ·  ARROWS  ·  TACKLE', sx, base + 5.6, sz, c.yaw, 11, 2.2);
-    const [ix2, iz2] = f.to(-W / 2 - 0.7, 2.5);
-    this.addSign('ICE', '', ix2, base + 1.1, iz2 + 0, c.yaw, 1.2, 0.35);
-    this.colliders.addBox(c.x, c.z, W / 2 + 0.3, D / 2 + 0.3, c.yaw);
-    const [px, pz] = f.to(0, D / 2 + 1.5);
-    this.colliders.addDeck(px, pz, W / 2 + 0.5, 1.5, c.yaw, base + 0.31);
-    const [dx, dz] = f.to(0, D / 2 + 1.6);
-    this.interactions.push({ id: 'post', label: 'Trade', x: dx, z: dz, r: 3.4 });
-    this.postBase = base;
-
-    // retro gas pump and flagpole out front
-    const [gx, gz] = f.to(-W / 2 + 1, D / 2 + 6.5);
-    const gy = this.world.heightAt(gx, gz);
-    const g = new ModelBuilder();
-    g.box(1.6, 0.2, 1.0, { pos: [0, 0.1, 0], color: CONCRETE });
-    g.box(0.65, 1.7, 0.5, { pos: [0, 1.05, 0], color: 0xc4261c });
-    g.box(0.5, 0.45, 0.06, { pos: [0, 1.35, 0.26], color: WHITE });
-    g.sphere(0.28, 10, 8, { pos: [0, 2.15, 0], color: WHITE, smooth: true });
-    g.beam([0.33, 1.2, 0], [0.55, 0.6, 0.1], 0.03, 5, { color: 0x111111 });
-    this.addMesh(g.build(), gx, gy, gz, c.yaw);
-    this.colliders.addBox(gx, gz, 0.6, 0.5, c.yaw);
-    const [fx, fz] = f.to(W / 2 + 1.5, D / 2 + 5);
-    const fy = this.world.heightAt(fx, fz);
-    const pole = new ModelBuilder();
-    pole.cyl(0.05, 0.08, 9, 6, { pos: [0, 4.5, 0], color: 0xd0d0d0 });
-    pole.sphere(0.12, 6, 4, { pos: [0, 9.05, 0], color: 0xd9b23a });
-    this.addMesh(pole.build(), fx, fy, fz, 0, this.metalMat);
-    // (hi: how tall it stands, for the paraglider)
-    this.colliders.addCircle(fx, fz, 0.15).hi = 9.2;
-    const flagGeo = new THREE.PlaneGeometry(2.2, 1.4, 12, 4);
-    flagGeo.translate(1.1, 0, 0);
-    const flag = new THREE.Mesh(
-      flagGeo,
-      new THREE.MeshStandardMaterial({ map: makeAlaskaFlagTexture(), side: THREE.DoubleSide, roughness: 0.9 })
-    );
-    flag.position.set(fx, fy + 8.2, fz);
-    flag.castShadow = true;
-    this.group.add(flag);
-    this.flag = flag;
-    this.flagBase = flagGeo.attributes.position.array.slice();
   }
 
   // ------------------------------------------------------------ bridge
@@ -468,7 +222,7 @@ export class Props {
     const deck = br.deck;
     const b = new ModelBuilder();
     const hw = 4.6;
-    b.box(hw * 2 + 0.4, 0.5, len, { pos: [0, -0.3, 0], color: 0x55524c });
+    b.box(hw * 2 + 0.4, 0.5, len, { pos: [0, -0.3, 0], color: 0x55524c, surf: 'concrete' });
     const panels = Math.max(4, Math.round(len / 6));
     const pl = len / panels;
     for (const side of [-1, 1]) {
@@ -496,10 +250,10 @@ export class Props {
       b.box(hw * 2 + 0.3, 0.3, 0.3, { pos: [0, 5.65, z], color: STEEL });
     }
     // abutments
-    for (const s of [-1, 1]) b.box(hw * 2 + 2, 5, 3, { pos: [0, -2.9, s * (len / 2 - 0.5)], color: CONCRETE, jitter: 0.08 });
+    for (const s of [-1, 1]) b.box(hw * 2 + 2, 5, 3, { pos: [0, -2.9, s * (len / 2 - 0.5)], color: CONCRETE, surf: 'concrete' });
     const riverBed = this.world.heightAt(cx, cz);
     const pierH = deck - riverBed + 2;
-    b.box(2.2, pierH, 2.2, { pos: [0, -pierH / 2, 0], color: CONCRETE });
+    b.box(2.2, pierH, 2.2, { pos: [0, -pierH / 2, 0], color: CONCRETE, surf: 'concrete' });
     this.addMesh(b.build(), cx, deck, cz, yaw);
     // colliders: truss walls and walkable deck
     const c = Math.cos(yaw);
@@ -513,301 +267,24 @@ export class Props {
     this.colliders.addBox(cx, cz, 1.1, 1.1, yaw, -50, deck - 0.6);
   }
 
-  // ------------------------------------------------------------ docks
-  buildDock(p) {
-    const d = p.dock;
-    const dx = d.x1 - d.x0;
-    const dz = d.z1 - d.z0;
-    const len = Math.hypot(dx, dz);
-    const yaw = Math.atan2(dx, dz);
-    const cx = (d.x0 + d.x1) / 2;
-    const cz = (d.z0 + d.z1) / 2;
-    const b = new ModelBuilder();
-    const n = Math.floor(len / 0.32);
-    for (let i = 0; i < n; i++) {
-      const z = -len / 2 + (i + 0.5) * (len / n);
-      b.box(d.width, 0.08, len / n - 0.04, { pos: [0, -0.04, z], color: i % 3 ? WOOD_LIGHT : WOOD, jitter: 0.08 });
-    }
-    for (const side of [-1, 1]) b.box(0.15, 0.2, len, { pos: [side * (d.width / 2 - 0.08), -0.18, 0], color: WOOD_DARK });
-    const f = frame(cx, cz, yaw);
-    for (let i = 0; i <= Math.floor(len / 3); i++) {
-      const z = -len / 2 + i * 3;
-      for (const side of [-1, 1]) {
-        const [wx, wz] = f.to(side * (d.width / 2 - 0.1), z);
-        const g = this.world.heightAt(wx, wz);
-        const h = d.top - g + 0.6;
-        b.cyl(0.11, 0.12, h, 6, { pos: [side * (d.width / 2 - 0.1), -h / 2 + 0.3, z], color: WOOD_DARK });
-      }
-    }
-    // a bench and a rod holder at the end
-    b.box(1.5, 0.08, 0.4, { pos: [0, 0.45, len / 2 - 1.5], color: WOOD });
-    b.box(0.08, 0.45, 0.35, { pos: [-0.6, 0.22, len / 2 - 1.5], color: WOOD_DARK });
-    b.box(0.08, 0.45, 0.35, { pos: [0.6, 0.22, len / 2 - 1.5], color: WOOD_DARK });
-    this.addMesh(b.build(), cx, d.top, cz, yaw);
-    this.colliders.addDeck(cx, cz, d.width / 2, len / 2, yaw, d.top);
-    // too low to pass under: the boat moors alongside instead
-    this.colliders.addBox(cx, cz, d.width / 2, len / 2, yaw, -50, d.top - 1.0);
-    // small rowboat tied alongside
-    const [bx, bz] = f.to(d.width / 2 + 1.2, len / 2 - 5);
-    const lvl = this.world.lakeById[p.water] ? this.world.lakeById[p.water].level : 0;
-    this.buildRowboat(bx, lvl - 0.2, bz, yaw);
-  }
-
-  buildRowboat(x, y, z, yaw) {
-    const b = new ModelBuilder();
-    b.sphere(1, 10, 6, { pos: [0, 0.2, 0], scale: [0.75, 0.42, 2.0], color: 0x2c5a7a });
-    b.box(1.2, 0.06, 0.3, { pos: [0, 0.45, 0.3], color: WOOD_LIGHT });
-    b.box(1.2, 0.06, 0.3, { pos: [0, 0.45, -0.8], color: WOOD_LIGHT });
-    b.beam([0.5, 0.5, 0], [1.5, 0.25, -1.2], 0.03, 4, { color: WOOD_LIGHT });
-    const m = this.addMesh(b.build(), x, y, z, yaw);
-    m.userData.bob = { y, phase: x * 0.1 };
-    this.bobbers = this.bobbers || [];
-    this.bobbers.push(m);
-  }
-
-  buildPier(p) {
-    const d = p.dock;
-    const dx = d.x1 - d.x0;
-    const dz = d.z1 - d.z0;
-    const len = Math.hypot(dx, dz);
-    const yaw = Math.atan2(dx, dz);
-    const cx = (d.x0 + d.x1) / 2;
-    const cz = (d.z0 + d.z1) / 2;
-    const f = frame(cx, cz, yaw);
-    const b = new ModelBuilder();
-    const n = Math.floor(len / 0.34);
-    for (let i = 0; i < n; i++) {
-      const z = -len / 2 + (i + 0.5) * (len / n);
-      b.box(d.width, 0.1, len / n - 0.04, { pos: [0, -0.05, z], color: i % 4 ? 0x8a7458 : 0x6a5842, jitter: 0.08 });
-    }
-    const posts = Math.floor(len / 4);
-    for (let i = 0; i <= posts; i++) {
-      const z = -len / 2 + i * 4;
-      for (const side of [-1, 1]) {
-        const lx = side * (d.width / 2 + 0.1);
-        const [wx, wz] = f.to(lx, z);
-        const g = Math.min(this.world.heightAt(wx, wz), 0);
-        const h = d.top - g + 0.2;
-        b.cyl(0.2, 0.22, h, 7, { pos: [lx, -h / 2 + 0.1, z], color: 0x3d3226 });
-        b.cyl(0.09, 0.09, 1.1, 6, { pos: [lx, 0.55, z], color: WOOD_DARK });
-      }
-    }
-    for (const side of [-1, 1]) {
-      b.box(0.1, 0.1, len, { pos: [side * (d.width / 2 + 0.1), 1.05, 0], color: WOOD_LIGHT });
-      b.box(0.08, 0.08, len, { pos: [side * (d.width / 2 + 0.1), 0.55, 0], color: WOOD_LIGHT });
-    }
-    // bait shack at the end
-    const ez = len / 2 - 3;
-    b.box(3.2, 2.5, 2.6, { pos: [-d.width / 2 + 1.4, 1.25, ez - 4], color: 0x3f6a8a });
-    b.box(3.6, 0.15, 3.2, { pos: [-d.width / 2 + 1.4, 2.6, ez - 4], rot: [0.12, 0, 0], color: ROOF_GREY });
-    // fish cleaning table
-    b.box(1.8, 0.1, 0.8, { pos: [d.width / 2 - 0.8, 0.95, ez - 8], color: WHITE });
-    b.box(0.1, 0.9, 0.7, { pos: [d.width / 2 - 1.5, 0.45, ez - 8], color: WOOD_DARK });
-    b.box(0.1, 0.9, 0.7, { pos: [d.width / 2 - 0.1, 0.45, ez - 8], color: WOOD_DARK });
-    // crab pots
-    for (let i = 0; i < 3; i++) b.box(0.9, 0.5, 0.9, { pos: [d.width / 2 - 0.7, 0.25 + i * 0.5, -len / 2 + 6], rot: [0, i * 0.3, 0], color: 0x2f5a3a });
-    // lamp posts
-    for (let i = 1; i < 4; i++) {
-      const z = -len / 2 + (i * len) / 4;
-      b.cyl(0.07, 0.09, 3.6, 6, { pos: [d.width / 2 + 0.1, 1.8, z], color: 0x222222 });
-      b.box(0.5, 0.08, 0.08, { pos: [d.width / 2 - 0.1, 3.6, z], color: 0x222222 });
-    }
-    this.addMesh(b.build(), cx, d.top, cz, yaw);
-    const lamps = new ModelBuilder();
-    for (let i = 1; i < 4; i++) {
-      const z = -len / 2 + (i * len) / 4;
-      lamps.sphere(0.18, 8, 6, { pos: [d.width / 2 - 0.3, 3.45, z], color: 0xffffff, jitter: 0 });
-      const [mx, mz] = f.to(d.width / 2 - 0.3, z);
-      this.nightLights.push(new THREE.Vector3(mx, d.top + 3.3, mz));
-    }
-    this.addMesh(lamps.build(), cx, d.top, cz, yaw, this.lampMat, { shadow: false });
-    this.colliders.addDeck(cx, cz, d.width / 2 + 0.1, len / 2, yaw, d.top);
-    // the pilings, below the deck: the boat threads between them
-    for (let i = 0; i <= posts; i++) {
-      for (const side of [-1, 1]) {
-        const [wx, wz] = f.to(side * (d.width / 2 + 0.1), -len / 2 + i * 4);
-        this.colliders.addBox(wx, wz, 0.25, 0.25, yaw, -50, d.top - 1.2);
-      }
-    }
-    for (const side of [-1, 1]) {
-      const [wx, wz] = f.to(side * (d.width / 2 + 0.35), 0);
-      // the rail stands 1.1 m; a glider just clearing it goes over
-      this.colliders.addBox(wx, wz, 0.2, len / 2 - 1.5, yaw, d.top - 1, d.top + 2).glideTop = d.top + 1.15;
-    }
-    const [shx, shz] = f.to(-d.width / 2 + 1.4, ez - 4);
-    this.colliders.addBox(shx, shz, 1.7, 1.4, yaw, d.top - 1, d.top + 3);
-    const [tx, tz] = f.to(d.width / 2 - 0.8, ez - 8);
-    this.colliders.addBox(tx, tz, 0.95, 0.45, yaw, d.top - 1, d.top + 1.5);
-    const [sx, sz] = f.to(-d.width / 2 + 1.4, ez - 2.65);
-    this.addSign('Bait & Tackle', '', sx, d.top + 2.1, sz, yaw, 2.6, 0.55);
-    // fishing skiff moored alongside
-    const [bx, bz] = f.to(d.width / 2 + 3.2, -len / 2 + 30);
-    const boat = new ModelBuilder();
-    boat.sphere(1, 12, 6, { pos: [0, 0.45, 0], scale: [1.5, 0.75, 4.2], color: WHITE });
-    boat.box(2.4, 0.2, 5.6, { pos: [0, 0.95, -0.3], color: 0x2a4a6a });
-    boat.box(1.6, 1.4, 1.8, { pos: [0, 1.7, 0.6], color: WHITE });
-    boat.box(1.7, 0.1, 1.9, { pos: [0, 2.45, 0.6], color: 0x2a4a6a });
-    boat.box(1.5, 0.6, 0.05, { pos: [0, 1.95, 1.52], color: 0x223344 });
-    boat.cyl(0.04, 0.04, 2.2, 5, { pos: [0, 3.5, 0.2], color: 0x222222 });
-    const bm = this.addMesh(boat.build(), bx, -0.2, bz, yaw);
-    bm.userData.bob = { y: -0.2, phase: 1.3 };
-    this.bobbers = this.bobbers || [];
-    this.bobbers.push(bm);
-    // (its cabin's roof, for the paraglider)
-    this.colliders.addCircle(bx, bz, 1.6).top = 2.3;
-  }
-
-  // ---------------------------------------------------- Bear Falls platform
-  buildFallsPlatform(c) {
-    const f = frame(c.x, c.z, c.yaw);
-    const g = this.groundMax(f, 3.2, 2.2);
-    const top = g + 2.4;
-    const b = new ModelBuilder();
-    b.box(6.4, 0.18, 4.4, { pos: [0, -0.09, 0], color: WOOD });
-    for (const [x, z] of [
-      [-3, -2],
-      [3, -2],
-      [-3, 2],
-      [3, 2],
-    ]) {
-      const [wx, wz] = f.to(x, z);
-      const h = top - this.world.heightAt(wx, wz) + 0.3;
-      b.cyl(0.14, 0.16, h, 6, { pos: [x, -h / 2, z], color: WOOD_DARK });
-      b.cyl(0.07, 0.07, 1.1, 5, { pos: [x, 0.55, z], color: WOOD_DARK });
-    }
-    b.box(6.4, 0.09, 0.09, { pos: [0, 1.05, 2.15], color: WOOD_LIGHT });
-    b.box(0.09, 0.09, 4.4, { pos: [3.15, 1.05, 0], color: WOOD_LIGHT });
-    b.box(0.09, 0.09, 4.4, { pos: [-3.15, 1.05, 0], color: WOOD_LIGHT });
-    // ramp down the back
-    const rampLen = 6.4;
-    const rampDrop = top - this.world.heightAt(...f.to(0, -2.2 - rampLen));
-    const ang = Math.atan2(rampDrop, rampLen);
-    b.box(1.5, 0.14, Math.hypot(rampLen, rampDrop), { pos: [0, -rampDrop / 2, -2.2 - rampLen / 2], rot: [-ang, 0, 0], color: WOOD });
-    this.addMesh(b.build(), c.x, top, c.z, c.yaw);
-    this.colliders.addDeck(c.x, c.z, 3.2, 2.2, c.yaw, top);
-    const [rx, rz] = f.to(0, -2.2 - rampLen / 2);
-    // sloped deck: height rises toward the platform (+z local)
-    this.colliders.addDeck(rx, rz, 0.8, rampLen / 2, c.yaw, top - rampDrop / 2, { slope: rampDrop / rampLen });
-    for (const side of [-1, 1]) {
-      const [wx, wz] = f.to(side * 3.25, 0);
-      this.colliders.addBox(wx, wz, 0.1, 2.2, c.yaw, top - 0.5, top + 1.2);
-    }
-    const [wx, wz] = f.to(0, 2.25);
-    this.colliders.addBox(wx, wz, 3.2, 0.1, c.yaw, top - 0.5, top + 1.2);
-    this.fallsPlatform = { x: c.x, z: c.z, top };
-  }
-
-  // ---------------------------------------------------------- lighthouse
-  buildLighthouse(c) {
-    const W = this.world;
-    // find the highest dry point nearby on the headland
-    let best = { x: c.x, z: c.z, h: W.heightAt(c.x, c.z) };
-    for (let i = 0; i < 60; i++) {
-      const a = (i / 60) * Math.PI * 2;
-      for (const r of [6, 14, 22]) {
-        const x = c.x + Math.cos(a) * r;
-        const z = c.z + Math.sin(a) * r;
-        const h = W.heightAt(x, z);
-        if (h > best.h && W.coastAt(x, z) > 8) best = { x, z, h };
-      }
-    }
-    const g = best.h;
-    const b = new ModelBuilder();
-    b.cyl(3.2, 3.4, 1.2, 12, { pos: [0, 0.2, 0], color: CONCRETE });
-    b.cyl(1.7, 2.4, 14, 14, { pos: [0, 7.8, 0], color: WHITE, jitter: 0.02 });
-    b.cyl(1.78, 1.9, 2.2, 14, { pos: [0, 10.2, 0], color: RED, jitter: 0.02 });
-    b.cyl(2.3, 2.3, 0.25, 14, { pos: [0, 14.9, 0], color: 0x2a2a2a });
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 12) * Math.PI * 2;
-      b.cyl(0.04, 0.04, 1.0, 4, { pos: [Math.cos(a) * 2.2, 15.5, Math.sin(a) * 2.2], color: 0x2a2a2a });
-    }
-    b.torus(2.2, 0.05, 4, 20, { pos: [0, 16.0, 0], rot: [Math.PI / 2, 0, 0], color: 0x2a2a2a });
-    b.cyl(1.5, 1.5, 0.2, 12, { pos: [0, 17.8, 0], color: 0x2a2a2a });
-    b.cone(1.7, 1.5, 12, { pos: [0, 18.6, 0], color: RED });
-    b.sphere(0.2, 6, 4, { pos: [0, 19.45, 0], color: 0x2a2a2a });
-    // keeper's house
-    b.box(6, 3, 5, { pos: [7, 1.5, 1], color: WHITE });
-    b.box(6.6, 0.2, 3.4, { pos: [7, 3.6, 2.4], rot: [0.55, 0, 0], color: RED });
-    b.box(6.6, 0.2, 3.4, { pos: [7, 3.6, -0.4], rot: [-0.55, 0, 0], color: RED });
-    b.box(1, 2, 0.1, { pos: [7, 1, 3.55], color: 0x2a4a6a });
-    this.addMesh(b.build(), best.x, g, best.z, 0.4);
-    const lantern = new ModelBuilder();
-    lantern.cyl(1.4, 1.4, 1.8, 12, { pos: [0, 16.8, 0], color: 0xffffff, jitter: 0 });
-    this.lantern = this.addMesh(lantern.build(), best.x, g, best.z, 0.4, new THREE.MeshBasicMaterial({ color: 0x556070, toneMapped: false }), { shadow: false });
-    this.colliders.addCircle(best.x, best.z, 3.0).hi = 19;
-    const hx = best.x + 7 * Math.cos(0.4) + 1 * Math.sin(0.4);
-    const hz = best.z - 7 * Math.sin(0.4) + 1 * Math.cos(0.4);
-    this.colliders.addBox(hx, hz, 3.1, 2.6, 0.4);
-    // rotating beam, visible at night
-    const beamGeo = new THREE.ConeGeometry(9, 180, 16, 1, true);
-    beamGeo.translate(0, -90, 0);
-    beamGeo.rotateZ(Math.PI / 2);
-    const beamMat = new THREE.MeshBasicMaterial({
-      color: 0xfff2c8,
-      transparent: true,
-      opacity: 0.0,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
-      fog: false,
-    });
-    const beam = new THREE.Mesh(beamGeo, beamMat);
-    beam.position.set(best.x, g + 16.8, best.z);
-    this.group.add(beam);
-    this.beam = beam;
-    this.lighthousePos = new THREE.Vector3(best.x, g, best.z);
-  }
-
-  // ------------------------------------------------------ tundra lookout
-  buildLookout(c) {
-    const f = frame(c.x, c.z, c.yaw);
-    const g = this.groundMax(f, 2.5, 2.5);
-    const top = g + 4.2;
-    const b = new ModelBuilder();
-    b.box(4.4, 0.2, 4.4, { pos: [0, -0.1, 0], color: WOOD });
-    for (const [x, z] of [
-      [-2, -2],
-      [2, -2],
-      [-2, 2],
-      [2, 2],
-    ]) {
-      const [wx, wz] = f.to(x, z);
-      const h = top - this.world.heightAt(wx, wz) + 0.2;
-      b.cyl(0.13, 0.16, h, 6, { pos: [x, -h / 2, z], color: WOOD_DARK });
-      b.cyl(0.07, 0.07, 1.8, 5, { pos: [x, 0.9, z], color: WOOD_DARK });
-    }
-    for (const [x, z, w, d] of [
-      [0, 2.1, 4.2, 0.08],
-      [2.1, 0, 0.08, 4.2],
-      [-2.1, 0, 0.08, 4.2],
-    ]) b.box(w, 0.08, d, { pos: [x, 1.05, z], color: WOOD_LIGHT });
-    b.box(4.8, 0.12, 4.8, { pos: [0, 1.85, 0], color: ROOF_GREY });
-    const rampLen = 9;
-    const rampDrop = top - this.world.heightAt(...f.to(0, -2.2 - rampLen));
-    const ang = Math.atan2(rampDrop, rampLen);
-    b.box(1.4, 0.14, Math.hypot(rampLen, rampDrop), { pos: [0, -rampDrop / 2, -2.2 - rampLen / 2], rot: [-ang, 0, 0], color: WOOD });
-    this.addMesh(b.build(), c.x, top, c.z, c.yaw);
-    this.colliders.addDeck(c.x, c.z, 2.2, 2.2, c.yaw, top);
-    const [rx, rz] = f.to(0, -2.2 - rampLen / 2);
-    this.colliders.addDeck(rx, rz, 0.75, rampLen / 2, c.yaw, top - rampDrop / 2, { slope: rampDrop / rampLen });
-    for (const [x, z, hx, hz] of [
-      [0, 2.15, 2.2, 0.1],
-      [2.15, 0, 0.1, 2.2],
-      [-2.15, 0, 0.1, 2.2],
-    ]) {
-      const [wx, wz] = f.to(x, z);
-      this.colliders.addBox(wx, wz, hx, hz, c.yaw, top - 0.5, top + 1.2);
-    }
-  }
-
   // ---------------------------------------------------------- glacier lake
   buildGlacierProps() {
     const p = this.world.place('glacier');
     const d = { x: -Math.sin(p.face), z: -Math.cos(p.face) };
     const x = p.x + d.z * 5 - d.x * 1;
     const z = p.z - d.x * 5 - d.z * 1;
+    // a kayak pulled up on the shore: its cockpit, the deck lines and the
+    // paddle beside it
     const b = new ModelBuilder();
-    b.sphere(1, 10, 6, { pos: [0, 0.3, 0], scale: [0.45, 0.3, 2.3], color: 0xc9731c });
+    b.sphere(1, 14, 6, { pos: [0, 0.3, 0], scale: [0.45, 0.3, 2.3], color: 0xc9731c });
+    b.sphere(1, 12, 4, { pos: [0, 0.56, 0.1], scale: [0.25, 0.06, 0.45], color: 0x1a1a1a });
+    b.torus(1, 0.03, 4, 18, { pos: [0, 0.58, 0.1], rot: [Math.PI / 2, 0, 0], scale: [0.27, 0.47, 1], color: 0x2a2a2a, jitter: 0 });
+    for (const sz of [-1.2, 1.2]) b.box(0.5, 0.02, 0.02, { pos: [0, 0.55, sz], color: 0x222222, jitter: 0 });
+    b.beam([0.75, 0.04, -1.0], [0.62, 0.04, 1.1], 0.017, 5, { color: 0x2a2a2a });
+    for (const [ex, ez] of [
+      [0.76, -1.1],
+      [0.61, 1.2],
+    ]) b.box(0.15, 0.015, 0.42, { pos: [ex, 0.05, ez], rot: [0, 0.06, 0], color: 0xe2b42a });
     this.addMesh(b.build(), x, this.world.heightAt(x, z) + 0.05, z, p.face + 0.4);
     this.colliders.addCircle(x, z, 1.0).hi = 0.6;
   }
@@ -824,7 +301,8 @@ export class Props {
     board.updateMatrix();
     board.matrixAutoUpdate = false;
     this.group.add(board);
-    const mat = new THREE.MeshStandardMaterial({ map: makeSignTexture(text, sub, opts), roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+    // (the picture in the board's own shape and about 100 texels a metre)
+    const mat = new THREE.MeshStandardMaterial({ map: makeSignTexture(text, sub, { ...opts, aspect: w / h, width: w }), roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
     const face = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
     face.position.set(x + Math.sin(yaw) * 0.043, y, z + Math.cos(yaw) * 0.043);
     face.rotation.y = yaw;
@@ -858,8 +336,7 @@ export class Props {
       const y = W.heightAt(x, z);
       const yaw = Math.atan2(-pk.side.x, -pk.side.z);
       const post = new ModelBuilder();
-      post.box(0.14, 2.3, 0.14, { pos: [-1.2, 1.15, 0], color: WOOD_DARK });
-      post.box(0.14, 2.3, 0.14, { pos: [1.2, 1.15, 0], color: WOOD_DARK });
+      signPosts(post, 2.9, 2.3);
       this.addMesh(post.build(), x, y, z, yaw);
       this.addSign(title, sub, x, y + 1.75, z, yaw, 2.9, 1.1);
       this.colliders.addBox(x, z, 1.4, 0.15, yaw);
@@ -869,7 +346,8 @@ export class Props {
     const jz = 428 - 7;
     const jy = W.heightAt(jx, jz);
     const pole = new ModelBuilder();
-    pole.box(0.18, 3.6, 0.18, { pos: [0, 1.8, 0], color: WOOD_DARK });
+    pole.cyl(0.11, 0.13, 3.9, 9, { pos: [0, 1.8, 0], color: 0x7a5a3a, surf: 'log' });
+    pole.cone(0.13, 0.22, 9, { pos: [0, 3.86, 0], color: 0x5a4a3a });
     this.addMesh(pole.build(), jx, jy, jz, 0);
     this.colliders.addCircle(jx, jz, 0.2).hi = 3.6;
     const arrows = [
@@ -895,8 +373,12 @@ export class Props {
         const a = (i / 4) * Math.PI * 2;
         b.beam([Math.cos(a) * 0.5, 0.05, Math.sin(a) * 0.5], [0, 0.45, 0], 0.07, 5, { color: 0x3a2618 });
       }
-      // log seat
-      b.cyl(0.25, 0.25, 1.8, 7, { pos: [0, 0.22, 2.0], rot: [0, 0.3, Math.PI / 2], color: LOG });
+      // a log seat and a stump
+      b.cyl(0.25, 0.25, 1.8, 9, { pos: [0, 0.22, 2.0], rot: [0, 0.3, Math.PI / 2], color: LOG, surf: 'log' });
+      b.cyl(0.24, 0.24, 0.02, 9, { pos: [Math.cos(0.3) * 0.91, 0.22, 2.0 - Math.sin(0.3) * 0.91], rot: [0, 0.3, Math.PI / 2], color: 0xc9a46a, jitter: 0 });
+      b.cyl(0.24, 0.24, 0.02, 9, { pos: [-Math.cos(0.3) * 0.91, 0.22, 2.0 + Math.sin(0.3) * 0.91], rot: [0, 0.3, Math.PI / 2], color: 0xc9a46a, jitter: 0 });
+      b.cyl(0.26, 0.3, 0.45, 9, { pos: [-1.9, 0.2, -0.6], color: 0x6a4a30, surf: 'log' });
+      b.cyl(0.26, 0.26, 0.02, 9, { pos: [-1.9, 0.43, -0.6], color: 0xc9a46a, jitter: 0 });
       this.addMesh(b.build(), x, y, z, 0);
       this.colliders.addCircle(x, z, 0.9).hi = 0.6;
       this.fires.push({ x, y, z, id });
@@ -907,8 +389,10 @@ export class Props {
   // Night-time glow, flag waving, bobbing boats, lighthouse beam.
   update(dt, t, env) {
     const night = env.night;
-    const glow = 0.15 + 0.85 * night;
-    this.glowMat.color.setRGB(0.16 + glow * 1.4, 0.14 + glow * 1.0, 0.12 + glow * 0.45);
+    // window glass: dark by day (the rooms are darker than outside), warm
+    // lamplight through it at night
+    const glow = night;
+    this.glowMat.color.setRGB(0.13 + glow * 1.43, 0.15 + glow * 0.99, 0.17 + glow * 0.42);
     this.lampMat.color.setRGB(0.3 + night * 2.2, 0.28 + night * 1.9, 0.22 + night * 1.2);
     if (this.lantern) this.lantern.material.color.setRGB(0.35 + night * 2.5, 0.38 + night * 2.2, 0.42 + night * 1.4);
     if (this.beam) {

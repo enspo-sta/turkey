@@ -4,6 +4,7 @@
 import { Noise2D } from '../util/noise.js';
 import { Path2D } from '../util/spline.js';
 import { clamp, lerp, smoothstep, smin, smax } from '../util/math.js';
+import { sitePads } from './sites.js';
 import {
   RIVER_POINTS,
   RIVER_LEVELS,
@@ -1007,6 +1008,40 @@ export class World {
     return this.places.find((p) => p.id === id);
   }
 
+  // Levels a yard (see world/sites.js): a rectangle in a frame (x, z, yaw;
+  // local x0..x1, z0..z1, +z its front) brought to the plane through the
+  // ground h0 at (0, zRef) falling `fall` per metre toward +z, blended into
+  // the land around it over `blend` metres. Roads and their shoulders keep
+  // their grade.
+  levelPad({ x, z, yaw, x0, x1, z0, z1, zRef = 0, h0, fall = 0, blend = 6 }) {
+    const c = Math.cos(yaw);
+    const s = Math.sin(yaw);
+    const R = Math.hypot(Math.max(-x0, x1), Math.max(-z0, z1)) + blend + CS;
+    const i0 = clamp(Math.floor((x - R + HALF) / CS), 0, N - 1);
+    const i1 = clamp(Math.ceil((x + R + HALF) / CS), 0, N - 1);
+    const j0 = clamp(Math.floor((z - R + HALF) / CS), 0, N - 1);
+    const j1 = clamp(Math.ceil((z + R + HALF) / CS), 0, N - 1);
+    const h = this.h;
+    for (let j = j0; j <= j1; j++) {
+      const pz = -HALF + j * CS;
+      for (let i = i0; i <= i1; i++) {
+        const px = -HALF + i * CS;
+        const dx = px - x;
+        const dz = pz - z;
+        const lx = dx * c - dz * s;
+        const lz = dx * s + dz * c;
+        const ox = Math.max(x0 - lx, 0, lx - x1);
+        const oz = Math.max(z0 - lz, 0, lz - z1);
+        const d = Math.sqrt(ox * ox + oz * oz);
+        if (d >= blend) continue;
+        const idx = j * N + i;
+        const k = (1 - smoothstep(0, blend, d)) * smoothstep(ROAD_HALF + 2, ROAD_HALF + 9, this.roadD[idx]);
+        if (k <= 0) continue;
+        h[idx] = lerp(h[idx], h0 - fall * (lz - zRef), k);
+      }
+    }
+  }
+
   coastGradient(x, z) {
     const e = 6;
     const gx = this.coastAt(x + e, z) - this.coastAt(x - e, z);
@@ -1123,5 +1158,9 @@ export async function generateWorld(seed = 1337, progress, yieldFn) {
   const w = new World(seed);
   await w.build(progress, yieldFn);
   w.finalizePlaces();
+  // level the yards of the cabin and the Trading Post, then stand the
+  // places on the ground they leave
+  for (const pad of sitePads(w)) w.levelPad(pad);
+  for (const p of w.places) if (!p.dock && p.standY === undefined) p.y = w.heightAt(p.x, p.z);
   return w;
 }

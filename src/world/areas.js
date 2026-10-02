@@ -12,8 +12,9 @@ import { ModelBuilder } from '../util/builder.js';
 import { makeSignTexture } from '../util/textures.js';
 import { clamp, lerp, mulberry32 } from '../util/math.js';
 import { GEYSER } from './layout.js';
+import { signPosts, crabPot } from './buildings.js';
+import { finishMaterial } from './finish.js';
 
-const WOOD = 0x6b4a2e;
 const WOOD_DARK = 0x4a3220;
 const WOOD_LIGHT = 0x8a6a45;
 const SINTER = 0xd8d2c0;
@@ -49,8 +50,7 @@ export function areaAvoid(W) {
 function signBoard(P, title, sub, x, z, yaw, opts = {}) {
   const y = P.world.heightAt(x, z);
   const post = new ModelBuilder();
-  post.box(0.14, 2.3, 0.14, { pos: [-1.2, 1.15, 0], color: WOOD_DARK });
-  post.box(0.14, 2.3, 0.14, { pos: [1.2, 1.15, 0], color: WOOD_DARK });
+  signPosts(post, 2.9, 2.3);
   P.addMesh(post.build(), x, y, z, yaw);
   P.addSign(title, sub, x, y + 1.75, z, yaw, 2.9, 1.1, opts);
   P.colliders.addBox(x, z, 1.4, 0.15, yaw);
@@ -120,7 +120,8 @@ function buildSprings(P) {
     const bz = hp.z + uz * r;
     const yaw = Math.atan2(-ux, -uz);
     const bench = new ModelBuilder();
-    bench.box(1.8, 0.08, 0.45, { pos: [0, 0.45, 0], color: WOOD_LIGHT });
+    bench.box(1.8, 0.08, 0.45, { pos: [0, 0.45, 0], color: WOOD_LIGHT, surf: 'plank' });
+    bench.box(1.8, 0.36, 0.05, { pos: [0, 0.74, -0.22], rot: [-0.12, 0, 0], color: WOOD_LIGHT, surf: 'plank' });
     bench.box(0.1, 0.45, 0.4, { pos: [-0.75, 0.22, 0], color: WOOD_DARK });
     bench.box(0.1, 0.45, 0.4, { pos: [0.75, 0.22, 0], color: WOOD_DARK });
     // towel rail with a striped towel
@@ -230,10 +231,21 @@ function buildFlats(P, L) {
   const vx = mx + perp.x * 3.4;
   const vz = mz + perp.z * 3.4;
   const vy = W.heightAt(vx, vz);
+  // the bug dope machine: a red cabinet on legs under a little roof, its
+  // label panel, a coin slot, the crank and the tray the cans drop into
   const vm = new ModelBuilder();
-  vm.box(0.9, 1.6, 0.6, { pos: [0, 0.8, 0], color: 0xb02a1e });
-  vm.box(0.6, 0.3, 0.05, { pos: [0, 1.25, 0.31], color: 0xf2e4b0 });
-  vm.box(0.3, 0.12, 0.05, { pos: [0, 0.55, 0.31], color: 0x222222 });
+  for (const lx of [-0.38, 0.38]) for (const lz of [-0.22, 0.22]) vm.box(0.06, 0.25, 0.06, { pos: [lx, 0.12, lz], color: 0x2a2a2a });
+  vm.box(0.9, 1.45, 0.6, { pos: [0, 0.98, 0], color: 0xb02a1e, surf: 'metal', surfScale: 0.35 });
+  vm.box(1.05, 0.06, 0.78, { pos: [0, 1.76, 0.04], rot: [0.12, 0, 0], color: 0x2a2a2a, surf: 'metal' });
+  vm.box(0.66, 0.42, 0.04, { pos: [0, 1.35, 0.31], color: 0xf2e4b0 });
+  vm.box(0.5, 0.06, 0.03, { pos: [0, 1.44, 0.34], color: 0xb02a1e, jitter: 0 });
+  vm.box(0.38, 0.04, 0.03, { pos: [0, 1.32, 0.34], color: 0x2a2a2a, jitter: 0 });
+  vm.box(0.12, 0.2, 0.05, { pos: [0.28, 1.0, 0.32], color: 0xb8bcbe });
+  vm.box(0.02, 0.07, 0.02, { pos: [0.28, 1.04, 0.35], color: 0x111111, jitter: 0 });
+  vm.cyl(0.05, 0.05, 0.06, 10, { pos: [-0.2, 1.0, 0.33], rot: [Math.PI / 2, 0, 0], color: 0xb8bcbe });
+  vm.box(0.22, 0.03, 0.03, { pos: [-0.12, 1.0, 0.37], rot: [0, 0, 0.5], color: 0xb8bcbe });
+  vm.box(0.36, 0.16, 0.12, { pos: [0, 0.48, 0.34], color: 0x2a2a2a });
+  vm.cyl(0.04, 0.04, 0.1, 8, { pos: [0.06, 0.48, 0.36], color: 0x3a7a2a });
   P.addMesh(vm.build(), vx, vy, vz, myaw);
   P.colliders.addBox(vx, vz, 0.45, 0.3, myaw);
   P.interactions.push({ id: 'bugdope', label: 'Bug dope', x: vx - side.x * 1.2, z: vz - side.z * 1.2, r: 2.4 });
@@ -260,9 +272,10 @@ function buildFlats(P, L) {
       for (let k = 0; k <= 4; k++) top = Math.max(top, W.heightAt(lerp(ax, bx, k / 4), lerp(az, bz, k / 4)));
       top += 0.45;
       const w = new ModelBuilder();
-      const planks = Math.floor(seg / 0.3);
-      for (let k = 0; k < planks; k++) w.box(1.6, 0.06, seg / planks - 0.03, { pos: [0, -0.03, -seg / 2 + (k + 0.5) * (seg / planks)], color: k % 4 ? WOOD_LIGHT : WOOD, jitter: 0.08 });
-      for (const sd of [-1, 1]) for (const zz of [-seg / 2 + 0.3, seg / 2 - 0.3]) w.cyl(0.07, 0.08, 0.9, 5, { pos: [sd * 0.7, -0.45, zz], color: WOOD_DARK });
+      const tone = new THREE.Color(WOOD_LIGHT).multiplyScalar(0.86 + rand() * 0.2).getHex();
+      w.box(1.6, 0.06, seg - 0.02, { pos: [0, -0.03, 0], color: tone, surf: 'deck', jitter: 0.02 });
+      for (const sd of [-1, 1]) w.box(0.08, 0.14, seg - 0.02, { pos: [sd * 0.74, -0.12, 0], color: WOOD_DARK, surf: 'plank' });
+      for (const sd of [-1, 1]) for (const zz of [-seg / 2 + 0.3, seg / 2 - 0.3]) w.cyl(0.07, 0.08, 0.9, 7, { pos: [sd * 0.7, -0.45, zz], color: WOOD_DARK, surf: 'log' });
       P.addMesh(w.build(), cx, top, cz, yaw);
       P.colliders.addDeck(cx, cz, 0.85, seg / 2 + 0.05, yaw, top);
     }
@@ -434,7 +447,7 @@ function buildWreck(P) {
   );
   b.add(hull(WRECK, true, () => 0x4a3a30), { keepColors: true });
   // deck planking, bulwark rails, hatch and a hole rusted through the side
-  b.box(6.4, 0.12, 21, { pos: [0, 4.05, -0.5], color: 0x6a5a48 });
+  b.box(6.4, 0.12, 21, { pos: [0, 4.05, -0.5], color: 0x6a5a48, surf: 'deck', surfSwap: true });
   for (let i = 0; i < WRECK.length - 1; i++) {
     const [z0, g0, , , , h0] = WRECK[i];
     const [z1, g1, , , , h1] = WRECK[i + 1];
@@ -443,27 +456,53 @@ function buildWreck(P) {
   b.box(2.6, 0.5, 2.6, { pos: [0, 4.3, 3.2], color: 0x3a3a36 });
   b.box(2.0, 0.1, 2.0, { pos: [0, 4.56, 3.2], color: 0x101010 });
   b.box(0.1, 1.2, 1.8, { pos: [3.32, 2.2, -3], color: 0x0c0c0c });
-  // the wheelhouse aft, white gone grey, with dark windows
-  b.box(4.6, 2.5, 4.2, { pos: [0, 5.35, -6.2], color: 0xbab4a6 });
-  b.box(5.0, 0.18, 4.6, { pos: [0, 6.68, -6.2], color: 0x5a2418 });
-  for (let i = 0; i < 4; i++) b.box(0.8, 0.7, 0.06, { pos: [-1.5 + i, 5.9, -4.08], color: 0x1c2428 });
-  for (const sd of [-1, 1]) b.box(0.06, 0.7, 2.4, { pos: [sd * 2.32, 5.9, -6.2], color: 0x1c2428 });
+  // the wheelhouse aft, white gone grey: framed windows forward and down
+  // the sides (one broken), a door aft with a porthole, the roof with its
+  // rail, radar, searchlight and the stack
+  b.box(4.6, 2.5, 4.2, { pos: [0, 5.35, -6.2], color: 0xbab4a6, surf: 'plank', jitter: 0.03 });
+  b.box(5.0, 0.18, 4.6, { pos: [0, 6.68, -6.2], color: 0x5a2418, surf: 'metal' });
+  b.box(4.7, 0.16, 4.3, { pos: [0, 4.18, -6.2], color: 0x5a2418 });
+  for (let i = 0; i < 4; i++) {
+    const x = -1.5 + i;
+    b.box(0.84, 0.74, 0.05, { pos: [x, 5.9, -4.09], color: 0x8a8478 });
+    b.box(0.72, 0.62, 0.05, { pos: [x, 5.9, -4.07], color: i === 2 ? 0x060606 : 0x1c2428, jitter: 0 });
+  }
+  for (const sd of [-1, 1]) {
+    for (const z of [-5.4, -7.0]) {
+      b.box(0.05, 0.74, 1.1, { pos: [sd * 2.31, 5.9, z], color: 0x8a8478 });
+      b.box(0.05, 0.62, 0.98, { pos: [sd * 2.33, 5.9, z], color: 0x1c2428, jitter: 0 });
+    }
+  }
+  b.box(0.9, 1.9, 0.06, { pos: [-1.0, 5.05, -8.32], color: 0x8a8478, surf: 'batten', surfScale: 0.5 });
+  b.torus(0.15, 0.04, 6, 12, { pos: [-1.0, 5.6, -8.36], color: 0x6a6458, jitter: 0 });
+  b.cyl(0.13, 0.13, 0.02, 10, { pos: [-1.0, 5.6, -8.36], rot: [Math.PI / 2, 0, 0], color: 0x1c2428, jitter: 0 });
+  for (const sd of [-1, 1]) {
+    b.box(0.05, 0.05, 4.4, { pos: [sd * 2.4, 7.25, -6.2], color: 0x8a8478, jitter: 0 });
+    for (let k = 0; k < 4; k++) b.box(0.04, 0.5, 0.04, { pos: [sd * 2.4, 7.0, -8.2 + k * 1.33], color: 0x8a8478, jitter: 0 });
+  }
+  b.cyl(0.06, 0.06, 1.3, 6, { pos: [0.8, 7.4, -7.0], color: 0x3a3a36 });
+  b.box(1.5, 0.12, 0.2, { pos: [0.8, 8.08, -7.0], rot: [0, 0.6, 0], color: 0x2a2a28 });
+  b.cyl(0.2, 0.24, 0.3, 10, { pos: [-1.3, 6.95, -4.6], rot: [0.3, 0, 0], color: 0x3a3a36 });
+  b.cyl(0.16, 0.16, 0.02, 10, { pos: [-1.3, 6.98, -4.44], rot: [Math.PI / 2 + 0.3, 0, 0], color: 0xd8d4c0, jitter: 0 });
+  b.cyl(0.22, 0.26, 1.6, 10, { pos: [1.3, 7.55, -7.6], color: 0x1e1e20 });
+  b.cyl(0.26, 0.26, 0.12, 10, { pos: [1.3, 8.4, -7.6], color: 0x5a2418 });
   // mast, boom and a tangle of rigging
   b.cyl(0.14, 0.18, 9, 8, { pos: [0, 8.5, 1.5], color: 0x4a3a2e });
   b.beam([0, 6.2, 1.5], [0, 5.4, 7.5], 0.09, 5, { color: 0x4a3a2e });
   for (const sd of [-1, 1]) b.beam([0, 12.8, 1.5], [sd * 3.2, 4.8, -1.0], 0.02, 3, { color: 0x222222 });
   b.beam([0, 12.8, 1.5], [0, 5.3, 12.5], 0.02, 3, { color: 0x222222 });
   // crab pots and a life ring
-  for (let i = 0; i < 4; i++) b.box(0.9, 0.5, 0.9, { pos: [-2.2 + (i % 2) * 1.0, 4.36 + Math.floor(i / 2) * 0.5, 6.6 + rand() * 0.4], rot: [0, rand() * 0.6, 0], color: 0x2f5a3a });
+  for (let i = 0; i < 4; i++) crabPot(b, -2.2 + (i % 2) * 1.0, 4.11 + Math.floor(i / 2) * 0.5, 6.6 + rand() * 0.4, rand() * 0.6);
   b.torus(0.38, 0.09, 6, 14, { pos: [2.36, 5.4, -5.0], rot: [0, Math.PI / 2, 0], color: 0xe86a1a });
   const f = frame(w.x, w.z, w.yaw);
-  // rusty steel: a little metal, mostly rough
-  if (!P.rustMat) P.rustMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0.25 });
+  // rusty steel: a little metal, mostly rough (with the finishes: deck
+  // planks, the wheelhouse's boards)
+  if (!P.rustMat) P.rustMat = finishMaterial(P.finishTex, { roughness: 0.78, metalness: 0.25, key: 'rust' });
   const m = P.addMesh(b.build(), w.x, baseY, w.z, w.yaw, P.rustMat);
   m.rotation.set(-pitch, w.yaw, roll, 'YXZ');
   m.updateMatrix();
   // the name on both bows
-  const tex = makeSignTexture('Unsinkable II', 'Homer, Alaska', { bg: '#1e1e20', fg: '#e8e2d0' });
+  const tex = makeSignTexture('Unsinkable II', 'Homer, Alaska', { bg: '#1e1e20', fg: '#e8e2d0', aspect: 3.4 / 1.2, width: 3.4 });
   const nameMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8, transparent: false });
   for (const sd of [-1, 1]) {
     const plate = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 1.2), nameMat);
@@ -494,9 +533,17 @@ function buildWreck(P) {
   const gx = (sx + bx) / 2;
   const gz = (sz + bz) / 2;
   const slope = (by - sy) / len;
+  // planks on two stringers with cleats across, a rope rail each side
   const plank = new ModelBuilder();
-  const n = Math.floor(len / 0.4);
-  for (let i = 0; i < n; i++) plank.box(1.3, 0.07, len / n - 0.05, { pos: [0, -0.03 + (i + 0.5 - n / 2) * (len / n) * slope, -len / 2 + (i + 0.5) * (len / n)], color: i % 3 ? WOOD_LIGHT : WOOD });
+  const ga = Math.atan(slope);
+  const gl = Math.hypot(len, len * slope);
+  plank.box(1.3, 0.07, gl, { pos: [0, -0.03, 0], rot: [-ga, 0, 0], color: WOOD_LIGHT, surf: 'deck' });
+  for (const sd of [-1, 1]) plank.box(0.08, 0.16, gl, { pos: [sd * 0.6, -0.12, 0], rot: [-ga, 0, 0], color: WOOD_DARK, surf: 'plank' });
+  const n = Math.floor(len / 0.45);
+  for (let i = 1; i < n; i++) {
+    const t = i / n - 0.5;
+    plank.box(1.2, 0.03, 0.05, { pos: [0, 0.015 + t * len * slope, t * len], color: WOOD_DARK, jitter: 0.04 });
+  }
   for (const sd of [-1, 1]) plank.beam([sd * 0.7, 0.9 - (len / 2) * slope, -len / 2], [sd * 0.7, 0.9 + (len / 2) * slope, len / 2], 0.04, 4, { color: WOOD_DARK });
   P.addMesh(plank.build(), gx, (sy + by) / 2, gz, gyaw);
   // sea stacks off the cove, white with birds

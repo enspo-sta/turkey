@@ -393,8 +393,14 @@ function shade(hex, f) {
 
 // Painted wooden sign with a place name.
 export function makeSignTexture(text, sub = '', opts = {}) {
-  const W = 512;
-  const H = 192;
+  // as wide as the board is long (about 100 texels a metre, 512 to 1024
+  // across) and in its shape (opts.aspect, width over height), so the
+  // letters keep their own proportions on long boards and short ones; the
+  // lettering is sized for a board 192 texels tall
+  const aspect = opts.aspect || 512 / 192;
+  const W = Math.round(Math.min(1024, Math.max(512, (opts.width || 0) * 100)));
+  const H = Math.max(48, Math.round(W / aspect));
+  const k = H / 192;
   const c = canvas(W, H);
   const g = c.getContext('2d');
   g.fillStyle = opts.bg || '#5a3b22';
@@ -402,28 +408,34 @@ export function makeSignTexture(text, sub = '', opts = {}) {
   const rand = mulberry32(text.length * 31 + 7);
   for (let i = 0; i < 38; i++) {
     g.strokeStyle = `rgba(${30 + rand() * 30},${18 + rand() * 18},${8},${0.25 + rand() * 0.3})`;
-    g.lineWidth = 1 + rand() * 3;
+    g.lineWidth = (1 + rand() * 3) * k;
     g.beginPath();
     const y = rand() * H;
     g.moveTo(0, y);
-    g.bezierCurveTo(W * 0.3, y + (rand() - 0.5) * 12, W * 0.6, y + (rand() - 0.5) * 12, W, y + (rand() - 0.5) * 8);
+    g.bezierCurveTo(W * 0.3, y + (rand() - 0.5) * 12 * k, W * 0.6, y + (rand() - 0.5) * 12 * k, W, y + (rand() - 0.5) * 8 * k);
     g.stroke();
   }
   g.strokeStyle = 'rgba(20,10,4,0.8)';
-  g.lineWidth = 10;
-  g.strokeRect(5, 5, W - 10, H - 10);
+  g.lineWidth = 10 * k;
+  g.strokeRect(5 * k, 5 * k, W - 10 * k, H - 10 * k);
   g.fillStyle = opts.fg || '#f3e3c0';
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  let size = 78;
-  g.font = `800 ${size}px "Barlow Condensed", "Avenir Next Condensed", "Arial Narrow", sans-serif`;
-  while (g.measureText(text.toUpperCase()).width > W - 50 && size > 30) {
-    size -= 4;
-    g.font = `800 ${size}px "Barlow Condensed", "Avenir Next Condensed", "Arial Narrow", sans-serif`;
+  let size = 78 * k;
+  const font = (px) => `800 ${Math.round(px)}px "Barlow Condensed", "Avenir Next Condensed", "Arial Narrow", sans-serif`;
+  g.font = font(size);
+  while (g.measureText(text.toUpperCase()).width > W - 50 * k && size > 30 * k) {
+    size -= 4 * k;
+    g.font = font(size);
   }
   g.fillText(text.toUpperCase(), W / 2, sub ? H * 0.42 : H / 2);
   if (sub) {
-    g.font = `600 34px "Barlow Condensed", "Avenir Next Condensed", "Arial Narrow", sans-serif`;
+    let ss = 34 * k;
+    g.font = `600 ${Math.round(ss)}px "Barlow Condensed", "Avenir Next Condensed", "Arial Narrow", sans-serif`;
+    while (g.measureText(sub).width > W - 40 * k && ss > 14 * k) {
+      ss -= 2 * k;
+      g.font = `600 ${Math.round(ss)}px "Barlow Condensed", "Avenir Next Condensed", "Arial Narrow", sans-serif`;
+    }
     g.globalAlpha = 0.85;
     g.fillText(sub, W / 2, H * 0.76);
     g.globalAlpha = 1;

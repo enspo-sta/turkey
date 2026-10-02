@@ -12,6 +12,7 @@ import { GrassField } from './world/grass.js';
 import { Colliders } from './world/colliders.js';
 import { makeWorldTextures } from './world/worldtex.js';
 import { Props } from './world/props.js';
+import { prepareFinishes } from './world/finish.js';
 import { buildRoads } from './world/roads.js';
 import { Scenery } from './world/scenery.js';
 import { Floaters } from './world/floaters.js';
@@ -76,6 +77,9 @@ export class Game {
     this.camera.rotation.order = 'YXZ';
     this.scene.add(this.camera);
 
+    // the buildings' surface patterns, drawn by a worker while the world is
+    // generated (see world/finish.js)
+    prepareFinishes();
     // world data
     this.world = await generateWorld(
       1337,
