@@ -171,11 +171,14 @@ const CRATERS = [
 function moonAlbedo(lat, lon, rays) {
   let a = 0.86;
   let sea = 0;
+  // the seas' shores are ragged and their lava uneven
+  const wobble = 0.72 + 0.56 * valueNoise(lon + 200, lat + 200, 7, 3);
   for (const [la, lo, r] of MARIA) {
     const dl = (lon - lo) * Math.cos(lat * DEG);
-    const dd = Math.hypot(dl, lat - la) / r;
-    if (dd < 1.4) sea = Math.max(sea, 1 - smoothstep(0.75, 1.4, dd));
+    const dd = (Math.hypot(dl, lat - la) / r) * wobble;
+    if (dd < 1.4) sea = Math.max(sea, 1 - smoothstep(0.7, 1.35, dd));
   }
+  sea *= 0.8 + 0.35 * valueNoise(lon + 300, lat + 300, 3.5, 5);
   a -= sea * 0.42;
   for (const [la, lo, r, b, ray] of CRATERS) {
     const dl = (lon - lo) * Math.cos(lat * DEG);
@@ -189,8 +192,8 @@ function moonAlbedo(lat, lon, rays) {
     }
   }
   // the speckle of smaller craters in the highlands
-  const n = Math.sin(lat * 1.7) * Math.sin(lon * 2.3) * Math.sin(lat * 3.1 + lon * 1.3);
-  a += (1 - sea) * 0.06 * n;
+  const n = valueNoise(lon + 500, lat + 500, 1.6, 11) - 0.5;
+  a += (1 - sea) * 0.14 * n;
   return clamp(a, 0.1, 1.3);
 }
 
@@ -223,8 +226,9 @@ function drawMoon(g, cx, cy, r, phaseAngle, limbAngle, earthshine) {
       const lat = Math.asin(ny) / DEG;
       const lon = Math.atan2(nx, nz) / DEG;
       const alb = moonAlbedo(lat, lon, rays);
-      // the terminator is ragged with crater shadows
-      const rough = 0.05 * Math.sin(lat * 0.9 + lon * 0.4) * Math.sin(lat * 2.7 - lon * 1.9) + 0.03 * Math.sin(lat * 7 + lon * 5);
+      // the terminator is ragged with crater shadows: blotches a few
+      // degrees across, and smaller ones
+      const rough = 0.1 * (valueNoise(lon + 700, lat + 700, 4, 17) - 0.5) + 0.06 * (valueNoise(lon + 900, lat + 900, 1.4, 19) - 0.5);
       const mu0 = nx * sx + ny * sy + nz * sz + rough * (1 - Math.abs(nx * sx + ny * sy + nz * sz));
       let B = 0;
       if (mu0 > 0) B = Math.min(1.35, (2 * mu0) / (mu0 + nz + 1e-3)) * smoothstep(0, 0.05, mu0);
@@ -512,16 +516,24 @@ export function drawEyepiece(cv, T, info) {
         [0.35, 'rgba(180,182,175,0.16)'],
         [1, 'rgba(150,150,150,0)'],
       ]);
-      // the dust lane hugging the bulge on the north-west side
+      // the dust lanes hugging the bulge on the north-west side, soft-edged:
+      // faint stacked strokes, the wider ones shorter, so the lane is
+      // darkest in the middle and tapers away at its ends
       g.save();
       g.translate(cx, cy);
       g.rotate(rot);
-      g.globalAlpha = 0.22;
       g.strokeStyle = '#000';
-      g.lineWidth = p * 1.6;
-      g.beginPath();
-      g.ellipse(0, 0, p * 30, p * 7.5, 0, Math.PI * 1.22, Math.PI * 1.78);
-      g.stroke();
+      g.lineCap = 'round';
+      for (const [a, b, k] of [[30, 7.5, 1], [45, 12, 0.55]]) {
+        for (let i = 0; i < 4; i++) {
+          const half = (0.15 + i * 0.045) * Math.PI;
+          g.globalAlpha = 0.075 * k;
+          g.lineWidth = p * (3.6 - i * 0.85);
+          g.beginPath();
+          g.ellipse(0, 0, p * a, p * b, 0, Math.PI * 1.5 - half, Math.PI * 1.5 + half);
+          g.stroke();
+        }
+      }
       g.restore();
       // Messier 32 just south of the core, Messier 110 to the north-west
       glow(g, cx + p * 2, cy + p * 24, p * 5, p * 4, 0, [

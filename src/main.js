@@ -902,19 +902,29 @@ class Session {
     const out = [];
     const clear = env.weather.cloud < 0.8;
     if (!clear) return out;
-    const at = (id, dir, size) => {
+    // (placed 550 m out for the camera's framing; far is how far away or
+    // how high it really is, for the viewfinder and the album)
+    const at = (id, dir, size, far) => {
       if (dir.y < 0.03) return;
-      out.push({ id, x: eye.x + dir.x * 550, y: eye.y + dir.y * 550, z: eye.z + dir.z * 550, size });
+      out.push({ id, x: eye.x + dir.x * 550, y: eye.y + dir.y * 550, z: eye.z + dir.z * 550, size, far });
     };
+    const km = (n) => `${Math.round(n).toLocaleString('en-GB')} km away`;
     const moon = env.uniforms.uMoonPos.value;
-    if (env.astro && env.astro.moon.illum > 0.08) at('moon', moon, 12);
-    if (env.uniforms.uAurora.value > 0.25) at('aurora', this._north || (this._north = new THREE.Vector3(0, Math.sin(0.45), -Math.cos(0.45))), 300);
-    if (env.night > 0.8 && env.moonUp < 0.35) at('milkyway', eqVector(300, 36, this._mw || (this._mw = new THREE.Vector3())).applyMatrix3(env.uniforms.uEq.value), 250);
-    if (g.satellites.issVisible) at('iss', g.satellites.issDir, 8);
+    if (env.astro && env.astro.moon.illum > 0.08) at('moon', moon, 12, km(env.astro.moon.km));
+    if (env.uniforms.uAurora.value > 0.25) at('aurora', this._north || (this._north = new THREE.Vector3(0, Math.sin(0.45), -Math.cos(0.45))), 300, '100 to 300 km up');
+    if (env.night > 0.8 && env.moonUp < 0.35) at('milkyway', eqVector(300, 36, this._mw || (this._mw = new THREE.Vector3())).applyMatrix3(env.uniforms.uEq.value), 250, '26,000 light-years to its centre');
+    if (g.satellites.issVisible) {
+      // the straight line to a station 420 km up, seen this high
+      const v = g.satellites.issDir;
+      const R = 6371;
+      const s = Math.max(0, v.y);
+      at('iss', v, 8, km(Math.round((Math.sqrt((R + 420) ** 2 - R * R * (1 - s * s)) - R * s) / 10) * 10));
+    }
     for (const k of g.meteors.streaks) {
       if (!k.active || k.t / k.dur > 0.85) continue;
       const head = k.from.clone().lerp(k.to, Math.min(1, (k.t / k.dur) * 1.05)).normalize();
-      at(k.width > 3 ? 'fireball' : 'meteor', head, k.width > 3 ? 60 : 30);
+      const big = k.width > 3;
+      at(big ? 'fireball' : 'meteor', head, big ? 60 : 30, big ? '20 to 100 km up' : 'about 100 km up');
     }
     return out;
   }

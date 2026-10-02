@@ -266,8 +266,8 @@ export class PhotoCamera {
     const g = this.game;
     const W = g.wildlife;
     const out = [];
-    const add = (id, x, y, z, size) => {
-      if (PHOTO_SUBJECTS[id]) out.push({ id, x, y, z, size: size ?? PHOTO_SUBJECTS[id].size });
+    const add = (id, x, y, z, size, far) => {
+      if (PHOTO_SUBJECTS[id]) out.push({ id, x, y, z, size: size ?? PHOTO_SUBJECTS[id].size, far });
     };
     for (const a of W.animals) if (!a.dead && a.alive !== false && a.visible !== false) add(a.species, a.x, a.y + a.cfg.height * a.scale * 0.55, a.z, a.cfg.height * a.scale);
     for (const b of g.bears.bears) if (!b.dead && b.state !== 'gone' && b.visible !== false) add(b.kind === 'black' ? 'blackbear' : 'bear', b.x, (b.y || 0) + 0.8, b.z);
@@ -286,7 +286,7 @@ export class PhotoCamera {
     if (m && g.time < m.until) add(m.id, m.x, m.y, m.z);
     // the Moon, the northern lights, the Milky Way, the space station and
     // meteors
-    for (const k of g.skySubjects?.() || []) add(k.id, k.x, k.y, k.z, k.size);
+    for (const k of g.skySubjects?.() || []) add(k.id, k.x, k.y, k.z, k.size, k.far);
     return out;
   }
 
@@ -424,7 +424,7 @@ export class PhotoCamera {
     const old = A.shots[subject.id];
     const stars = '★'.repeat(subject.stars) + '☆'.repeat(3 - subject.stars);
     if (!old || subject.stars >= old.stars) {
-      A.shots[subject.id] = { img, stars: subject.stars, dist: Math.round(subject.d || 0), ...when };
+      A.shots[subject.id] = { img, stars: subject.stars, ...(subject.far ? { far: subject.far } : { dist: Math.round(subject.d || 0) }), ...when };
       const saved = this.persist();
       // the sale is kept in the save game, so a lost album never sells twice
       const sold = g.state.photoSold;

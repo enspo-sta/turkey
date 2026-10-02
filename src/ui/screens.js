@@ -1221,14 +1221,16 @@ export class Screens {
     }
     if (A.roll.length) html += `<h3>Camera roll</h3><div class="album">${A.roll.map((p, i) => `<button class="photo" data-roll="${i}"><div class="ph"><img src="${p.img}" alt="Photo ${i + 1}"></div><small>${when(p)}</small></button>`).join('')}</div>`;
     this.body.innerHTML = html;
-    const show = (p, title) => {
+    // (sky pictures say how far away the thing really is; ones taken before
+    // that was kept have only the camera's 550 m framing distance: no distance)
+    const show = (p, title, sky = false) => {
       const v = document.createElement('div');
       v.className = 'photo-view';
-      v.innerHTML = `<img src="${p.img}" alt="${esc(title)}"><p><b>${esc(title)}</b>${p.stars ? ` ${'★'.repeat(p.stars)}${'☆'.repeat(3 - p.stars)}` : ''}<br>${when(p)}${p.dist ? ` · ${p.dist} m away` : ''}</p><small>Tap to close</small>`;
+      v.innerHTML = `<img src="${p.img}" alt="${esc(title)}"><p><b>${esc(title)}</b>${p.stars ? ` ${'★'.repeat(p.stars)}${'☆'.repeat(3 - p.stars)}` : ''}<br>${when(p)}${p.far ? ` · ${esc(p.far)}` : p.dist && !sky ? ` · ${p.dist} m away` : ''}</p><small>Tap to close</small>`;
       v.addEventListener('click', () => v.remove());
       this.body.appendChild(v);
     };
-    this.body.querySelectorAll('[data-photo]').forEach((b) => b.addEventListener('click', () => show(A.shots[b.dataset.photo], PHOTO_SUBJECTS[b.dataset.photo].name)));
+    this.body.querySelectorAll('[data-photo]').forEach((b) => b.addEventListener('click', () => show(A.shots[b.dataset.photo], PHOTO_SUBJECTS[b.dataset.photo].name, PHOTO_SUBJECTS[b.dataset.photo].group === 'sky')));
     this.body.querySelectorAll('[data-roll]').forEach((b) => b.addEventListener('click', () => show(A.roll[Number(b.dataset.roll)], 'Camera roll')));
   }
 

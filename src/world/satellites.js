@@ -63,7 +63,7 @@ varying float vAlpha;
 varying vec3 vColor;
 void main() {
   vec2 c = gl_PointCoord - 0.5;
-  float a = exp(-dot(c, c) * 18.0) * vAlpha;
+  float a = (exp(-dot(c, c) * 22.0) + 0.35 * exp(-dot(c, c) * 6.0)) * vAlpha;
   if (a < 0.004) discard;
   gl_FragColor = vec4(vColor, a);
   #include <tonemapping_fragment>
@@ -154,7 +154,8 @@ export class Satellites {
           const a = lit * smoothstep(0.02, 0.12, v.y) * smoothstep(0.2, 0.6, env.night) * (1 - env.weather.cloud * 0.6);
           pos.setXYZ(0, v.x * 2800, v.y * 2800, v.z * 2800);
           alpha.setX(0, a);
-          size.setX(0, (5 + 3 * v.y) * dpr);
+          // brighter than any star: a bigger, fuller point
+          size.setX(0, (9 + 4 * v.y) * dpr);
           // going orange at the edge of the shadow
           col.setXYZ(0, 1, 0.75 + 0.22 * lit, 0.45 + 0.5 * lit);
           this.issDir.copy(v);

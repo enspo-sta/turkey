@@ -644,7 +644,7 @@ export class HUD {
     if (vf) {
       const f = g.photo.focus;
       const name = f ? PHOTO_SUBJECTS[f.id].name : '';
-      const lbl = f ? (f.stars > 0 ? `${name} · ${Math.round(f.d)} m · ${'★'.repeat(f.stars)}${'☆'.repeat(3 - f.stars)}` : `${name} · too far, zoom in`) : '';
+      const lbl = f ? (f.stars > 0 ? `${name} · ${f.far || `${Math.round(f.d)} m`} · ${'★'.repeat(f.stars)}${'☆'.repeat(3 - f.stars)}` : `${name} · too far, zoom in`) : '';
       set('vfLabel', lbl, (v) => (el.vfLabel.textContent = v));
       set('vfZoom', g.photo.zoom, (v) => (el.vfZoom.textContent = v + '×'));
       el.viewfinder.classList.toggle('lock', !!(f && f.stars > 0));

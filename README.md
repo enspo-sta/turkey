@@ -253,7 +253,9 @@ night sky), with pictures and the tests:
   this scale and how long sunlight takes to reach it, and its model at true
   scale on a post: most of them are specks, which is the point.
 - The camera's album has a Night sky page: the Moon, the northern lights, the
-  Milky Way, the space station, a shooting star and a fireball. Five
+  Milky Way, the space station, a shooting star and a fireball, each with how
+  far away or how high it really is (the Moon at its true distance that
+  night, the space station about 1,200 km off when it is low). Five
   challenges belong to the sky: five objects through the telescope, the solar
   system walk, the space station, a meteorite and four planets.
 
