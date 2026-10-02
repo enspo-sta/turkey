@@ -1,0 +1,5 @@
+{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":2500},
+{"eval":"(()=>{const g=__rhf.game; document.getElementById('hud').hidden=true; g.env.setTime(11); g.player.lookLocked=true; return 'rod'})()"},
+{"wait":2500},{"shot":"arm-rod.jpg"},
+{"eval":"(()=>{const g=__rhf.game; g.viewmodel.applyLook({gloves:'none', skin:'fair', shirt:'blue'}); return 'bare'})()"},{"wait":2500},{"shot":"arm-rod-bare.jpg"}
+]}

@@ -11,10 +11,19 @@ import { Bigfoot } from './entities/bigfoot.js';
 import { Glider } from './entities/glider.js';
 import { Secret, GUS_NOTES } from './world/secret.js';
 import { Oddities } from './world/oddities.js';
+import { Pitstop, PITSTOP, clearPitstop } from './world/pitstop.js';
+import { Observatory } from './world/observatory.js';
+import { SolarWalk } from './world/solarwalk.js';
+import { Meteors } from './world/meteors.js';
+import { Satellites } from './world/satellites.js';
+import { SkyGuide } from './ui/skyguide.js';
+import { eqVector } from './world/astro.js';
+import { KP_WORDS, kpForNight } from './world/spaceweather.js';
 import { Screens } from './ui/screens.js';
 import { GameState } from './gameplay/state.js';
 import { Player } from './entities/player.js';
 import { HotRod } from './entities/hotrod.js';
+import { RaceCar } from './entities/racecar.js';
 import { Boat } from './entities/boat.js';
 import { Areas } from './world/areas.js';
 import { Viewmodel } from './entities/viewmodel.js';
@@ -64,8 +73,24 @@ class Session {
     g.player = new Player(g);
     g.player.onStep = (surf, water, sprint) => g.audio.step(surf, water, sprint);
     g.hotrod = new HotRod(g);
+    g.racer = new RaceCar(g);
+    // the car you are in, or the one you last drove
+    g.car = g.hotrod;
     g.boat = new Boat(g);
-    g.scene.add(g.hotrod.group);
+    g.scene.add(g.hotrod.group, g.racer.group);
+    // the race car waits under a tarp at the end of an old logging track
+    clearPitstop(g);
+    g.pitstop = new Pitstop(g);
+    g.racer.place(PITSTOP.x, PITSTOP.z, PITSTOP.yaw);
+    g.pitstop.cover(g.racer, false);
+    // the night sky: the observatory on the tundra, the scale model of the
+    // solar system on the Lighthouse Road, meteors, satellites and the guide
+    // to the constellations
+    g.observatory = new Observatory(g);
+    g.solarwalk = new SolarWalk(g);
+    g.meteors = new Meteors(g);
+    g.satellites = new Satellites(g);
+    g.skyguide = new SkyGuide(g);
     g.viewmodel = new Viewmodel(g);
     g.overlay = { scene: g.viewmodel.scene, camera: g.viewmodel.camera, enabled: false };
     g.fishing = new Fishing(g);
@@ -94,6 +119,8 @@ class Session {
     };
     g.onQualityDrop = (name) => g.hud.toast(`Graphics set to ${name.toUpperCase()} to keep the game smooth. Change it in Settings.`);
     g.toTitle = () => this.toTitle();
+    g.waitForDark = () => this.waitForDark();
+    g.skySubjects = () => this.skySubjects();
     g.haptic = (kind) => this.haptic(kind);
     g.events = { emit: (type, data) => this.onPlayerEvent(type, data) };
     g.addSystem(this);
@@ -120,6 +147,7 @@ class Session {
       g.fishing.resize(w * g.dpr, h * g.dpr);
       g.viewmodel.resize(w, h);
       g.hud.minimap?.resize();
+      g.skyguide.resize();
       this.checkOrientation();
     };
     g.systems.push({ resize });
@@ -162,6 +190,12 @@ class Session {
     show(g.fishing.float);
     show(g.fishing.line);
     show(g.hotrod.group);
+    show(g.racer.group);
+    show(g.pitstop.group);
+    show(g.observatory.group);
+    show(g.solarwalk.group);
+    show(g.meteors.group);
+    for (const k of g.meteors.streaks) show(k.mesh);
     show(g.insects.group);
     show(g.glider.canopy);
     for (const s of [g.secret.glint, ...g.secret.glows]) if (s) show(s);
@@ -285,6 +319,7 @@ class Session {
     if (g.player.mode === 'drive') this.exitCar(true);
     if (g.player.mode === 'boat' || g.player.boat) g.boat.leave(true);
     g.glider.end();
+    this.endGaze();
     g.audio.stopEngine();
     g.audio.updateOutboard?.(0, 0, 999, false);
     g.announcer.stop();
@@ -321,6 +356,9 @@ class Session {
     g.player.boat = null;
     g.hotrod.occupied = false;
     g.hotrod.driver.visible = false;
+    g.racer.occupied = false;
+    g.racer.driver.visible = false;
+    g.car = g.hotrod;
     g.player.tool = 'rod';
     g.viewmodel.setTool('rod');
     g.hotrod.setPaint(s.gear.paint);
@@ -329,6 +367,14 @@ class Session {
     g.viewmodel.applyLook(s.look);
     if (continueSave && s.car) g.hotrod.place(s.car.x, s.car.z, s.car.yaw);
     else this.placeAtStart();
+    // the race car: where you left it once found, else under its tarp
+    const found = !!s.flags.racer;
+    if (continueSave && found && s.racer) g.racer.place(s.racer.x, s.racer.z, s.racer.yaw);
+    else g.racer.place(PITSTOP.x, PITSTOP.z, PITSTOP.yaw);
+    g.pitstop.cover(g.racer, found);
+    // a fireball's stone still lying where it fell
+    this.endGaze();
+    g.meteors.restore(s.meteorite);
     if (continueSave && s.player) g.player.place(s.player.x, s.player.z, s.player.yaw);
     else {
       // start on the riverbank in front of the cabin, facing the water
@@ -473,7 +519,7 @@ class Session {
     s.time = g.env.time;
     s.day = g.env.day;
     s.health = Math.max(30, Math.round(g.player.health));
-    let P = g.player.mode === 'drive' ? g.hotrod.exitPoint(1) : g.player.pos;
+    let P = g.player.mode === 'drive' ? g.car.exitPoint(1) : g.player.pos;
     let yaw = g.player.yaw;
     // out on the boat: remember that, and a spot on the shore to fall back on
     const aboard = g.player.mode === 'boat' || !!g.player.boat;
@@ -486,6 +532,7 @@ class Session {
     s.player = { x: P.x, z: P.z, yaw, aboard };
     s.boat = g.boat.toJSON();
     s.car = { x: g.hotrod.pos.x, z: g.hotrod.pos.z, yaw: g.hotrod.yaw };
+    s.racer = { x: g.racer.pos.x, z: g.racer.pos.z, yaw: g.racer.yaw };
     const ok = s.save();
     if (ok) g.hud.savedFlash();
     else if (!this.saveWarned) {
@@ -506,13 +553,15 @@ class Session {
   async withFade(text, fn) {
     if (this.fadeBusy) return;
     this.fadeBusy = true;
+    // a trip, a sleep or a knock-out gets you up out of a deck chair
+    this.endGaze();
     this.fade(true, text);
     await new Promise((r) => setTimeout(r, 700));
     await fn();
     // after a jump, finish the ground detail while the screen is dark
     // instead of two chunks a frame after the fade has lifted
     const g = this.game;
-    const at = g.player.mode === 'drive' ? g.hotrod.pos : g.player.pos;
+    const at = g.player.mode === 'drive' ? g.car.pos : g.player.pos;
     g.terrain.prime(at.x, at.z);
     await new Promise((r) => setTimeout(r, 900));
     this.fade(false);
@@ -679,10 +728,15 @@ class Session {
     this.withFade(`Driving to ${p.name}…`, () => {
       g.glider.end();
       const wasDriving = g.player.mode === 'drive';
-      g.hotrod.place(pk.x, pk.z, pk.yaw);
-      g.hotrod.speed = 0;
+      // on foot the hot rod comes along; in the race car, the race car
+      const car = wasDriving ? g.car : g.hotrod;
+      car.place(pk.x, pk.z, pk.yaw);
+      // the other car is parked there already: stop beside it
+      const other = car === g.hotrod ? g.racer : g.hotrod;
+      if (Math.hypot(other.pos.x - pk.x, other.pos.z - pk.z) < 5.5) car.place(pk.x + Math.cos(pk.yaw) * 4.6, pk.z - Math.sin(pk.yaw) * 4.6, pk.yaw);
+      car.speed = 0;
       if (!wasDriving) {
-        const ex = g.hotrod.exitPoint(1);
+        const ex = car.exitPoint(1);
         g.player.place(ex.x, ex.z, Math.atan2(-(p.x - ex.x), -(p.z - ex.z)));
       }
       g.env.setTime(g.env.time + hours);
@@ -731,24 +785,174 @@ class Session {
     });
   }
 
-  enterCar() {
+  enterCar(car = this.game.hotrod) {
     const g = this.game;
     g.fishing.cancel();
     g.hunting.reset();
     g.player.mode = 'drive';
-    g.hotrod.occupied = true;
-    g.hotrod.camYaw = 0;
-    g.hotrod.camPitch = -0.05;
+    g.car = car;
+    car.occupied = true;
+    car.camYaw = 0;
+    car.camPitch = car.spec.cam.pitch;
     g.input.leftZoneMode = 'move';
+    g.hud.setCar?.(car);
+    if (car === g.racer) {
+      g.audio.racerStart?.();
+      if (!g.state.flags.racerDriven) {
+        g.state.flags.racerDriven = true;
+        g.hud.hint('It sits two fingers off the ground: crawl it to the road, then let it fly. No headlights.', 7);
+      } else g.hud.hint(IS_TOUCH ? 'Hold GAS, steer by dragging on the left.' : 'W gas, S brake, A/D steer, C camera, E to get out.', 4);
+      return;
+    }
     g.audio.tone?.('square', 200, 0.05, 0.05);
     g.hud.hint(IS_TOUCH ? 'Hold GAS, steer by dragging on the left. Camera button for the outside view.' : 'W gas, S brake, A/D steer, C camera, H horn, E to get out.', 5);
+  }
+
+  // Speed marks in the race car, and the best top speed kept.
+  racerRecords(car) {
+    const g = this.game;
+    const s = g.state;
+    const kmh = Math.abs(car.speed) * 3.6;
+    if (kmh > (s.racerTop || 0) + 0.5) s.racerTop = Math.round(kmh);
+    for (const mark of [200, 250, 300]) {
+      if (kmh >= mark && !s.flags['racer' + mark]) {
+        s.flags['racer' + mark] = true;
+        g.announcer.say('speed', { sub: `${mark} KM/H`, kind: 'legend' });
+        g.audio.chime();
+        g.onEvent({ type: 'racerSpeed', kmh: mark });
+      }
+    }
+  }
+
+  // Under the tarp at the end of the logging track.
+  revealRacer() {
+    const g = this.game;
+    const s = g.state;
+    if (s.flags.racer) return;
+    s.flags.racer = true;
+    g.pitstop.reveal();
+    g.audio.chime();
+    g.audio.tarpPull?.();
+    g.announcer.say('racer', { sub: 'IN THE MIDDLE OF THE WOODS', kind: 'legend' });
+    g.hud.toast("A Formula One car under a tarp, keys in it. A note on the seat: 'Back after the salmon run. Do not touch. The team'", 'good', 8);
+    setTimeout(() => g.hud.hint(IS_TOUCH ? 'Walk up to it and tap DRIVE' : 'Walk up to it and press E to DRIVE', 5), 3500);
+    g.haptic('success');
+    g.onEvent({ type: 'racer' });
+    this.save();
+  }
+
+  // ------------------------------------------------------------ the sky
+  // Lie back in a deck chair at the observatory: the night slows to a game
+  // hour every two minutes and the sky guide names what is up there. Any
+  // move gets you up again.
+  startGaze(chair) {
+    const g = this.game;
+    const P = g.player;
+    g.fishing.cancel();
+    g.hunting.reset();
+    this.gaze = { tool: P.tool };
+    P.place(chair.x, chair.z, chair.yaw ?? 0);
+    P.eye = 0.95;
+    P.pitch = 0.7;
+    P.moveLocked = true;
+    if (P.tool !== 'camera') {
+      P.tool = 'none';
+      g.viewmodel.setTool('none');
+    }
+    g.env.stargazing = true;
+    g.skyguide.forced = true;
+    g.audio.tick(1);
+    g.hud.hint(IS_TOUCH ? 'Drag to look around the sky. Move to get up.' : 'Look around the sky. The night passes slower here. Move to get up.', 6);
+  }
+
+  endGaze() {
+    const g = this.game;
+    if (!this.gaze) return;
+    const P = g.player;
+    P.moveLocked = false;
+    P.eye = 1.66;
+    P.pitch = Math.min(P.pitch, 0.3);
+    g.env.stargazing = false;
+    g.skyguide.forced = false;
+    P.tool = this.gaze.tool;
+    g.viewmodel.setTool(P.tool === 'camera' ? 'none' : P.tool);
+    this.gaze = null;
+  }
+
+  // From the observatory: sit out the evening until the stars come out.
+  waitForDark() {
+    const g = this.game;
+    const t = g.env.time;
+    if (t < 5 || t >= 22.8) return;
+    this.withFade('Waiting for the stars…', () => {
+      g.env.setTime(23);
+      g.bears.clearThreat();
+      g.hud.toast('Dark at last. The stars are out', 'good');
+      this.save();
+    });
+  }
+
+  // The sky in the camera's view: the Moon, the northern lights, the Milky
+  // Way, the space station and meteors, about 550 m out along their
+  // directions (see gameplay/camera.js).
+  skySubjects() {
+    const g = this.game;
+    const env = g.env;
+    const eye = g.camera.position;
+    const out = [];
+    const clear = env.weather.cloud < 0.8;
+    if (!clear) return out;
+    const at = (id, dir, size) => {
+      if (dir.y < 0.03) return;
+      out.push({ id, x: eye.x + dir.x * 550, y: eye.y + dir.y * 550, z: eye.z + dir.z * 550, size });
+    };
+    const moon = env.uniforms.uMoonPos.value;
+    if (env.astro && env.astro.moon.illum > 0.08) at('moon', moon, 12);
+    if (env.uniforms.uAurora.value > 0.25) at('aurora', this._north || (this._north = new THREE.Vector3(0, Math.sin(0.45), -Math.cos(0.45))), 300);
+    if (env.night > 0.8 && env.moonUp < 0.35) at('milkyway', eqVector(300, 36, this._mw || (this._mw = new THREE.Vector3())).applyMatrix3(env.uniforms.uEq.value), 250);
+    if (g.satellites.issVisible) at('iss', g.satellites.issDir, 8);
+    for (const k of g.meteors.streaks) {
+      if (!k.active || k.t / k.dur > 0.85) continue;
+      const head = k.from.clone().lerp(k.to, Math.min(1, (k.t / k.dur) * 1.05)).normalize();
+      at(k.width > 3 ? 'fireball' : 'meteor', head, k.width > 3 ? 60 : 30);
+    }
+    return out;
+  }
+
+  // The night's space weather: an alert at dusk when a storm is due, and
+  // the strongest aurora you have seen kept in the sky log.
+  updateSkyEvents(dt) {
+    const g = this.game;
+    const env = g.env;
+    const s = g.state;
+    const sw = env.spaceWeather;
+    const night = sw.nightOf(env);
+    if (night !== this.alertNight && env.time > 21.2 && env.time < 22.9) {
+      this.alertNight = night;
+      // (tonight's own Kp: the space weather may not have caught up yet
+      // on the first frame after a Continue)
+      const kp = kpForNight(Math.max(1, night));
+      if (kp >= 5) {
+        g.announcer.say('storm', { sub: `KP ${kp}: ${KP_WORDS[kp].toUpperCase()}`, kind: 'legend' });
+        g.hud.toast(`Aurora alert: a geomagnetic storm tonight (Kp ${kp}, ${KP_WORDS[kp]}). The northern lights may reach overhead, red at the top. Find a dark spot with a view north`, 'good', 8);
+      }
+    }
+    const aur = env.uniforms.uAurora.value;
+    if (aur > 0.3 && env.weather.cloud < 0.7 && sw.kp > (s.sky.kpMax || 0)) {
+      this.aurT = (this.aurT || 0) + dt;
+      if (this.aurT > 4) {
+        this.aurT = 0;
+        s.sky.kpMax = sw.kp;
+        if (sw.kp >= 4) g.hud.toast(`The northern lights at Kp ${sw.kp}: your strongest aurora yet`, 'good', 5);
+      }
+    }
   }
 
   // Where to step out of the car: the driver's side, or the other side when
   // that is deep water or blocked.
   exitSpot() {
     const g = this.game;
-    const car = g.hotrod;
+    const car = g.car;
     for (const side of [1, -1]) {
       const e = car.exitPoint(side);
       const w = g.world.waterAt(e.x, e.z);
@@ -761,7 +965,7 @@ class Session {
 
   exitCar(force = false) {
     const g = this.game;
-    const car = g.hotrod;
+    const car = g.car;
     car.driver.visible = false;
     if (!force && Math.abs(car.speed) > 3) {
       g.hud.toast('Stop the car first');
@@ -797,13 +1001,17 @@ class Session {
     g.audio.update(dt, g);
     if (this.mode === 'title') {
       this.updateTitle(dt);
+      g.skyguide.update(dt);
       input.endFrame();
       return;
     }
     if (g.menuOpen) {
       g.paused = true;
+      g.skyguide.update(dt);
+      // the dome and the dish turn to what the observatory's screen picks
+      g.observatory.update(dt);
       g.player.applyCamera(g.camera);
-      if (g.player.mode === 'drive') g.hotrod.applyCamera(g.camera, 0, input);
+      if (g.player.mode === 'drive') g.car.applyCamera(g.camera, 0, input);
       else if (g.player.mode === 'boat') g.boat.applyCamera(g.camera, 0, input);
       else if (g.player.mode === 'glide') g.glider.applyCamera(g.camera);
       input.endFrame();
@@ -811,11 +1019,11 @@ class Session {
     }
     g.paused = false;
     const P = g.player;
-    const car = g.hotrod;
+    const car = g.car;
 
     // tool switch: rod, longbow, camera (once bought), empty hands (Q
     // cycles, 1 2 3 4 pick directly)
-    if (P.mode === 'foot' && g.fishing.state === 'idle' && !g.hud.blocking) {
+    if (P.mode === 'foot' && g.fishing.state === 'idle' && !g.hud.blocking && !this.gaze) {
       let next = null;
       const hasCam = g.photo.owned();
       if (input.pressed('tool') || input.keyPressed('KeyQ')) next = P.tool === 'rod' ? 'bow' : P.tool === 'bow' ? (hasCam ? 'camera' : 'none') : P.tool === 'camera' ? 'none' : 'rod';
@@ -851,6 +1059,15 @@ class Session {
     if (ia && (input.pressed('interact') || input.keyPressed('KeyE') || input.keyPressed('KeyF'))) ia.act();
     else if (g.interaction2 && (input.pressed('interact2') || input.keyPressed('KeyV'))) g.interaction2.act();
 
+    // lying back in a deck chair: any move gets you up, and so does dawn
+    if (this.gaze) {
+      const mv = input.readMove();
+      if (Math.hypot(mv.x, mv.y) > 0.5 || P.mode !== 'foot') this.endGaze();
+      else if (g.env.night < 0.15) {
+        this.endGaze();
+        g.hud.toast('Dawn. The stars fade, and the chair is cold', 'good');
+      }
+    }
     if (P.mode === 'foot') {
       P.update(dt, input);
       // place the camera now so fishing and hunting use this frame's view
@@ -872,15 +1089,26 @@ class Session {
       // driving controls
       if (input.pressed('cam') || input.keyPressed('KeyC')) car.camMode = car.camMode === 'cockpit' ? 'chase' : 'cockpit';
       if (input.pressed('horn') || input.keyPressed('KeyH')) {
-        g.audio.horn();
-        g.wildlife.scare(car.pos.x, car.pos.z, 80);
+        // a race car has no horn: the radio squawks instead
+        if (car === g.racer) g.audio.radioBeep?.();
+        else {
+          g.audio.horn();
+          g.wildlife.scare(car.pos.x, car.pos.z, 80);
+        }
       }
       P.pos.copy(car.pos);
       P.tick(dt);
+      if (car === g.racer) this.racerRecords(car);
     }
-    car.update(dt, input, g.state);
+    g.hotrod.update(dt, input, g.state);
+    // the race car only matters near the camera or with you in it
+    if (g.racer.occupied || g.racer.pos.distanceToSquared(g.camera.position) < 400 * 400) g.racer.update(dt, input, g.state);
+    g.pitstop.update(dt);
     g.boat.update(dt, input);
-    g.audio.updateEngine(car.rpm || 850, car.throttle, P.mode === 'drive' ? 0 : car.pos.distanceTo(g.camera.position), car.occupied);
+    const inRod = P.mode === 'drive' && car === g.hotrod;
+    const inRacer = P.mode === 'drive' && car === g.racer;
+    g.audio.updateEngine(g.hotrod.rpm || 850, g.hotrod.throttle, inRod ? 0 : g.hotrod.pos.distanceTo(g.camera.position), g.hotrod.occupied);
+    g.audio.updateRacer?.(g.racer.rpm, g.racer.throttle, inRacer ? 0 : g.racer.pos.distanceTo(g.camera.position), g.racer.occupied);
 
     g.fishing.update(dt);
     g.hunting.update(dt);
@@ -894,6 +1122,11 @@ class Session {
     g.oddities.update(dt);
     this.updatePlaces(dt);
     g.bears.update(dt);
+    g.observatory.update(dt);
+    g.solarwalk.update(dt);
+    g.meteors.update(dt);
+    g.satellites.update(dt);
+    this.updateSkyEvents(dt);
 
     // camera
     if (P.mode === 'foot') P.applyCamera(g.camera);
@@ -957,6 +1190,9 @@ class Session {
       this.save();
     }
 
+    g.skyguide.update(dt);
+    // stars and planets as big on a sharp screen as on any other
+    g.env.starfield.uniforms.uScale.value = g.renderer.getPixelRatio();
     g.hud.update(dt);
     input.endFrame();
   }
@@ -965,6 +1201,7 @@ class Session {
     const g = this.game;
     const P = g.player;
     const car = g.hotrod;
+    const R = g.racer;
     const B = g.boat;
     let ia = null;
     // a second action beside the first: the boat's launch, load and board
@@ -977,8 +1214,9 @@ class Session {
     }
     if (P.mode === 'drive') {
       ia = { label: 'EXIT', icon: 'car', act: () => this.exitCar() };
-      if (B.canLaunch()) ia2 = { label: 'LAUNCH', icon: 'boat', act: () => B.launch() };
-      else if (B.canLoad()) ia2 = { label: 'LOAD BOAT', icon: 'boat', act: () => B.load() };
+      // the boat rides behind the hot rod only
+      if (g.car === car && B.canLaunch()) ia2 = { label: 'LAUNCH', icon: 'boat', act: () => B.launch() };
+      else if (g.car === car && B.canLoad()) ia2 = { label: 'LOAD BOAT', icon: 'boat', act: () => B.load() };
     } else if (P.mode === 'boat') {
       if (Math.abs(B.speed) < 1.5) ia = { label: 'FISH', icon: 'rod', act: () => B.fishHere() };
       if (B.canLoad()) ia2 = { label: 'LOAD BOAT', icon: 'boat', act: () => B.load() };
@@ -989,7 +1227,11 @@ class Session {
       if (B.nearShore()) ia2 = { label: 'ASHORE', icon: 'hand', act: () => B.leave() };
     } else {
       const dCar = Math.hypot(car.pos.x - P.pos.x, car.pos.z - P.pos.z);
-      if (dCar < 3.6) ia = { label: 'DRIVE', icon: 'car', act: () => this.enterCar() };
+      if (dCar < 3.6) ia = { label: 'DRIVE', icon: 'car', act: () => this.enterCar(car) };
+      // the race car: first the tarp, then the keys
+      const dR = Math.hypot(R.pos.x - P.pos.x, R.pos.z - P.pos.z);
+      if (dR < 4.3 && !g.state.flags.racer) ia = { label: 'PULL TARP', icon: 'hand', act: () => this.revealRacer() };
+      else if (dR < 3.9 && g.state.flags.racer && !(dCar < dR && ia)) ia = { label: 'DRIVE', icon: 'car', act: () => this.enterCar(R) };
       for (const it of g.props.interactions) {
         const d = Math.hypot(it.x - P.pos.x, it.z - P.pos.z);
         if (d < it.r) {
@@ -1004,6 +1246,15 @@ class Session {
           if (it.id === 'goldchest' && !fl.treasure && Math.abs(P.pos.y - it.y) < 1.6) ia = { label: 'OPEN', icon: fl.key ? 'key' : 'claim', act: () => this.openGoldChest() };
           // the strange things in the woods (see world/oddities.js)
           if (it.id.startsWith('odd:')) ia = g.oddities.action(it.id.slice(4)) || ia;
+          // the Tundra Observatory (see world/observatory.js)
+          if (it.id === 'scope') ia = { label: 'TELESCOPE', icon: 'scope', act: () => g.screens.open('telescope', { tab: 'scope' }) };
+          if (it.id === 'radio') ia = { label: 'RADIO DISH', icon: 'dish', act: () => g.screens.open('telescope', { tab: 'radio' }) };
+          if (it.id === 'board') ia = { label: 'TONIGHT', icon: 'book', act: () => g.screens.open('telescope', { tab: 'tonight' }) };
+          if (it.id === 'chair' && Math.abs(P.pos.y - it.y) < 1.4 && !this.gaze) {
+            const t = g.env.time;
+            if (g.env.night > 0.4) ia = { label: 'STARGAZE', icon: 'star', act: () => this.startGaze(g.observatory.chairNear(P.pos)) };
+            else if (t >= 5 && t < 22.8) ia = { label: 'WAIT FOR DARK', icon: 'clock', act: () => this.waitForDark() };
+          }
           if (it.id === 'cabin') {
             const t = g.env.time;
             const canSleep = t > 19.5 || t < 5;
@@ -1024,6 +1275,12 @@ class Session {
       }
       const claim = g.hunting.claimable();
       if (claim) ia = { label: 'CLAIM', icon: 'claim', act: () => g.hunting.claim(claim) };
+      // a fireball's stone
+      if (g.meteors.near(P.pos)) ia = { label: 'PICK UP', icon: 'rock', act: () => g.meteors.pickUp() };
+      if (this.gaze) {
+        ia = { label: 'GET UP', icon: 'hand', act: () => this.endGaze() };
+        ia2 = null;
+      }
       if (B.canBoard()) ia2 = { label: 'BOARD', icon: 'boat', act: () => B.board() };
       else if (B.owned) {
         // standing by the trailer

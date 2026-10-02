@@ -31,6 +31,14 @@ const LINES = {
   key: [['A SECRET KEY!', 1]],
   jobDone: [['CHA-CHING!', 2], ['JOB DONE!', 1]],
   bigfoot: [['BIGFOOT?!', 1]],
+  racer: [['A FORMULA ONE CAR!', 1]],
+  speed: [['FLAT OUT!', 2], ['WHAT A SPEED!', 1]],
+  fireball: [['A FIREBALL!', 2], ['LOOK AT THE SKY!', 1]],
+  meteorite: [['A METEORITE!', 2], ['A PIECE OF SPACE!', 1]],
+  iss: [['THE SPACE STATION!', 1]],
+  storm: [['NORTHERN LIGHTS!', 1]],
+  scope: [['NEW IN THE SKY LOG!', 1]],
+  planets: [['ALL FIVE BRIGHT PLANETS!', 1]],
 };
 
 function pick(list) {

@@ -291,7 +291,7 @@ export class AmbientFish {
   scan() {
     const g = this.game;
     const W = g.world;
-    const P = g.player.mode === 'drive' ? g.hotrod.pos : g.player.mode === 'boat' ? g.boat.pos : g.player.pos;
+    const P = g.player.mode === 'drive' ? g.car.pos : g.player.mode === 'boat' ? g.boat.pos : g.player.pos;
     const hs = g.fishing ? g.fishing.hotspots : [];
     const place = g.fishing ? g.fishing.hotPlace : null;
     for (let i = this.schools.length - 1; i >= 0; i--) {

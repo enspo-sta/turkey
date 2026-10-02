@@ -50,6 +50,14 @@ export const PHOTO_SUBJECTS = {
   seal: { name: 'Harbor seal', group: 'sea', value: 30, size: 0.4 },
   geyser: { name: 'Old Faceful erupting', group: 'moments', value: 60, size: 14 },
   bigfoot: { name: 'Bigfoot (probably)', group: 'moments', value: 300, size: 2.6 },
+  // the sky: placed about 550 m out along its direction (see skySubjects in
+  // main.js), sized so the long lens fills the picture
+  moon: { name: 'The Moon', group: 'sky', value: 40, size: 12 },
+  aurora: { name: 'The northern lights', group: 'sky', value: 120, size: 300 },
+  milkyway: { name: 'The Milky Way', group: 'sky', value: 80, size: 250 },
+  iss: { name: 'The space station', group: 'sky', value: 150, size: 8 },
+  meteor: { name: 'A shooting star', group: 'sky', value: 90, size: 30 },
+  fireball: { name: 'A fireball', group: 'sky', value: 200, size: 60 },
 };
 for (const id of SPECIES_IDS) PHOTO_SUBJECTS['fish:' + id] = { name: FISH[id].name, group: 'fish', value: 0, size: 0.5 };
 
@@ -58,6 +66,7 @@ export const PHOTO_GROUPS = [
   ['birds', 'Birds'],
   ['sea', 'Sea mammals'],
   ['moments', 'Moments'],
+  ['sky', 'Night sky'],
   ['fish', 'Fish'],
 ];
 
@@ -275,6 +284,9 @@ export class PhotoCamera {
     // a moment in progress: the geyser blowing
     const m = this.moment;
     if (m && g.time < m.until) add(m.id, m.x, m.y, m.z);
+    // the Moon, the northern lights, the Milky Way, the space station and
+    // meteors
+    for (const k of g.skySubjects?.() || []) add(k.id, k.x, k.y, k.z, k.size);
     return out;
   }
 
@@ -422,7 +434,7 @@ export class PhotoCamera {
         const pay = info.value ? Math.round((info.value * subject.stars) / 3 / 5) * 5 : 0;
         if (pay > 0) g.state.addMoney(pay);
         g.hud.toast(`${stars} ${info.name}: new in the album${pay ? `. Alaska Outdoors buys it for $${pay}` : ''}`, 'good');
-        const animals = Object.keys(sold).filter((id) => !id.startsWith('fish:') && PHOTO_SUBJECTS[id] && PHOTO_SUBJECTS[id].group !== 'moments').length;
+        const animals = Object.keys(sold).filter((id) => !id.startsWith('fish:') && PHOTO_SUBJECTS[id] && PHOTO_SUBJECTS[id].group !== 'moments' && PHOTO_SUBJECTS[id].group !== 'sky').length;
         g.onEvent({ type: 'photo', id: subject.id, stars: subject.stars, animals });
       } else if (!old) g.hud.toast(`${stars} ${info.name}: back in the album`, 'good');
       else g.hud.toast(`${stars} ${info.name}: a better shot for the album`, 'good');

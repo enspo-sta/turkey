@@ -6,6 +6,8 @@ import { ModelBuilder } from '../util/builder.js';
 import { makeFishModel } from './fishmodels.js';
 import { arrowGeometry } from '../gameplay/hunting.js';
 import { ARROWS, lookColors } from '../gameplay/data.js';
+import { addHand, addSleeve, handFrame, POSES } from './hands.js';
+import { shirtTexture } from './cloth.js';
 import { clamp, damp, lerp } from '../util/math.js';
 
 const ROD_LEN = 2.3;
@@ -89,86 +91,72 @@ function buildReel() {
   return g;
 }
 
-// The colour of sleeve band i: flannel checks alternate two colours, the
-// loud shirts cycle through three.
-function sleeve(c, i) {
-  const S = c.shirt;
-  if (S.alt) return [S.main, S.band, S.main, S.alt][i % 4];
-  return i % 2 ? S.band : S.main;
+// The arms: a jointed hand (entities/hands.js) and a sleeve in the shirt's
+// cloth (entities/cloth.js), as two meshes in one group per arm.
+const v3 = (a, b, k = 1) => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k];
+const unit = (d) => {
+  const n = Math.hypot(d[0], d[1], d[2]);
+  return [d[0] / n, d[1] / n, d[2] / n];
+};
+// where a closed fist holds its bar, and the hook of a drawing hand, in the
+// hand's frame
+const FIST = [0, -0.028, 0.072];
+const HOOK = [0, -0.025, 0.128];
+
+function armParts(build) {
+  const hand = new ModelBuilder();
+  const cloth = new ModelBuilder({ uvs: true });
+  build(hand, cloth);
+  return { hand: hand.build(), cloth: cloth.build() };
 }
 
+// A sleeve leaving the wrist W along direction d, bending by bend on its
+// way out of view.
+function sleeveFrom(hand, cloth, c, W, d, bend = [0, 0, 0], { r0 = 0.046, r1 = 0.062, len = 0.48 } = {}) {
+  const u = unit(d);
+  const p0 = v3(W, u, 0.045);
+  const p1 = v3(v3(W, u, len * 0.45), bend, 0.4);
+  const p2 = v3(v3(W, u, len), bend);
+  addSleeve(cloth, hand, c, [p0, p1, p2], r0, r1, { wrist: W });
+}
+
+// The right hand on the rod at the reel seat, the reel's stem between the
+// second and third fingers and the index finger along the blank; the forearm
+// runs back toward the camera. Rod pivot frame: the rod along -z.
 function buildHand(c) {
-  const b = new ModelBuilder();
-  const color = c.glove;
-  b.box(0.075, 0.085, 0.1, { pos: [0, 0, 0], color });
-  b.box(0.03, 0.03, 0.06, { pos: [-0.04, 0.02, -0.04], rot: [0, 0.3, 0], color });
-  // fingerless wool: the fingertips poke out
-  if (c.gloves === 'wool') b.box(0.077, 0.03, 0.03, { pos: [0, 0.02, -0.052], color: c.skin });
-  // sleeve and cuff
-  b.cyl(0.055, 0.062, 0.34, 8, { pos: [0.03, -0.06, 0.22], rot: [1.25, 0, 0], color: c.shirt.main });
-  b.cyl(0.0625, 0.0625, 0.05, 8, { pos: [0.03, -0.075, 0.27], rot: [1.25, 0, 0], color: c.shirt.band });
-  b.cyl(0.063, 0.063, 0.04, 8, { pos: [0.03, -0.1, 0.33], rot: [1.25, 0, 0], color: c.shirt.alt ?? 0x1a1a1a });
-  return b.build();
-}
-
-// Bare hand and flannel sleeve for holding up a catch. Built in the fish
-// rig's frame (x right, y up, z toward the camera) with the grip point at the
-// origin: side 1 grips the tail wrist, side -1 cradles the belly.
-// Hand colours for the wardrobe's gloves: leather covers palm and fingers,
-// fingerless wool the palm only.
-function handColors(c) {
-  const palm = c.gloves === 'none' ? c.skin : c.glove;
-  const leather = c.gloves === 'leather';
-  return { palm, finger: leather ? c.glove : c.skin, crease: leather ? c.glove : c.crease };
+  return armParts((hand, cloth) => {
+    // the knuckles run along the rod, the back of the hand up and to the
+    // left where the eye sees it, the wrist off to the right
+    const X = addHand(hand, c, POSES.grip, handFrame([0, 0, 1], [-0.55, 0.8, 0], FIST, [0, 0, -0.2]), true);
+    sleeveFrom(hand, cloth, c, X([0, 0, -0.012]), [0.5, -0.35, 0.8], [0.05, -0.08, 0]);
+  });
 }
 
 // Under the paraglider: a fist round a red brake toggle, the forearm down to
 // the elbow below the view and the brake line up to the wing. Built in camera
 // space with the toggle at the origin; side -1 is the left hand.
 function buildGlideArm(side, c) {
-  const b = new ModelBuilder();
-  const h = handColors(c);
-  b.cyl(0.014, 0.014, 0.11, 6, { pos: [0, 0, 0], rot: [0, 0, Math.PI / 2], color: 0xd8322a });
-  b.box(0.072, 0.086, 0.074, { pos: [0, 0, 0.006], color: h.palm });
-  for (let i = 0; i < 4; i++) b.box(0.017, 0.062, 0.02, { pos: [-0.027 + i * 0.018, 0, -0.036], color: i % 2 ? h.finger : h.crease });
-  b.box(0.024, 0.05, 0.024, { pos: [-side * 0.044, 0.012, -0.012], rot: [0, 0, side * 0.3], color: h.finger });
-  // the forearm in its sleeve, out past the edge of the view, and the cuff
-  b.beam([0, -0.03, 0.02], [side * 0.16, -0.17, 0.3], 0.042, 8, { color: c.shirt.main });
-  b.beam([0, -0.04, 0.025], [side * 0.02, -0.07, 0.07], 0.046, 8, { color: c.shirt.band });
-  // the brake line
-  b.beam([0, 0.012, 0], [side * 0.14, 2.4, -0.55], 0.0018, 3, { color: 0x222222, jitter: 0 });
-  return b.build();
+  return armParts((hand, cloth) => {
+    hand.cyl(0.014, 0.014, 0.12, 10, { pos: [0, 0, 0], rot: [0, 0, Math.PI / 2], color: 0xd8322a, jitter: 0, smooth: true });
+    hand.beam([0, 0.012, 0], [side * 0.14, 2.4, -0.55], 0.0018, 3, { color: 0x222222, jitter: 0 });
+    const X = addHand(hand, c, POSES.grip, handFrame([-1, 0, 0], [0, 0.4, 0.9], FIST, [0, 0, 0]), side > 0);
+    sleeveFrom(hand, cloth, c, X([0, 0, -0.012]), [side * 0.25, -0.85, 0.45], [side * 0.05, 0, 0.04], { r0: 0.044, r1: 0.058 });
+  });
 }
 
+// Holding up a catch, in the fish rig's frame (x right, y up, z toward the
+// camera) with the grip point at the origin: side 1 grips the tail wrist,
+// side -1 cradles the belly.
 function buildFishArm(side, c) {
-  const b = new ModelBuilder();
-  const skin = c.skin;
-  const h = handColors(c);
-  if (side > 0) {
-    // fist closed around the tail wrist, knuckles toward the camera
-    b.box(0.068, 0.084, 0.07, { pos: [0, 0, 0], color: h.palm });
-    for (let i = 0; i < 4; i++) b.box(0.064, 0.019, 0.024, { pos: [-0.004, 0.031 - i * 0.021, 0.04], color: i % 2 ? h.finger : h.crease });
-    // thumb hooked over the top
-    b.box(0.052, 0.022, 0.028, { pos: [-0.026, 0.05, 0.016], rot: [0, 0, 0.22], color: h.finger });
-  } else {
-    // flat palm under the belly, fingers reaching round the far side
-    b.box(0.1, 0.03, 0.085, { pos: [0, -0.004, 0], color: h.palm });
-    for (let i = 0; i < 4; i++) b.box(0.02, 0.052, 0.02, { pos: [-0.036 + i * 0.024, 0.02, -0.042], color: i % 2 ? h.crease : h.finger });
-    // thumb along the near side
-    b.box(0.022, 0.046, 0.022, { pos: [0.046, 0.018, 0.036], rot: [0, 0, -0.3], color: h.finger });
-  }
-  // forearm running down and out of view toward the camera
-  const dir = side > 0 ? [0.3, -0.62, 0.72] : [-0.36, -0.58, 0.72];
-  const n = Math.hypot(dir[0], dir[1], dir[2]);
-  const at = (t) => [(dir[0] / n) * t, (dir[1] / n) * t, (dir[2] / n) * t];
-  b.beam(at(0.02), at(0.1), 0.03, 12, { r2: 0.034, color: skin, smooth: true });
-  b.beam(at(0.09), at(0.13), 0.049, 14, { r2: 0.05, color: c.cuff, smooth: true });
-  // the sleeve in bands of the shirt's colours
-  for (let i = 0; i < 7; i++) {
-    const t0 = 0.13 + i * 0.07;
-    b.beam(at(t0), at(t0 + 0.07), 0.051 + i * 0.004, 14, { r2: 0.055 + i * 0.004, color: sleeve(c, i), smooth: true });
-  }
-  return b.build();
+  return armParts((hand, cloth) => {
+    if (side > 0) {
+      const X = addHand(hand, c, POSES.grip, handFrame([-1, 0, 0], [0, 0.5, 0.87], FIST, [0, 0, 0]), true);
+      sleeveFrom(hand, cloth, c, X([0, 0, -0.012]), [0.3, -0.62, 0.72], [0.03, 0, 0.03]);
+    } else {
+      const X = addHand(hand, c, POSES.cradle, handFrame([1, 0, 0], [0, -1, 0.05], [0, -0.0155, 0.045], [0, 0, 0]), false);
+      sleeveFrom(hand, cloth, c, X([0, 0, -0.012]), [-0.36, -0.58, 0.72], [-0.03, 0, 0.03]);
+    }
+  });
 }
 
 // Longbow along +y with the grip at the origin, the belly (facing the
@@ -231,48 +219,22 @@ function bowTip(bend, side, out) {
   return out.set(0, side * (BOW_HALF - 0.015) * (1 - 0.07 * bend), bend + 0.002);
 }
 
-// Left hand closed round the grip, forearm and flannel sleeve running back
+// Left hand closed round the bow's grip, the forearm and sleeve running back
 // toward the shoulder.
 function buildBowArm(c) {
-  const b = new ModelBuilder();
-  const skin = c.skin;
-  const h = handColors(c);
-  b.box(0.05, 0.09, 0.05, { pos: [-0.008, -0.004, 0.024], color: h.palm });
-  for (let i = 0; i < 4; i++) b.box(0.056, 0.02, 0.022, { pos: [-0.006, 0.03 - i * 0.021, -0.024], color: i % 2 ? h.crease : h.finger });
-  b.box(0.022, 0.05, 0.024, { pos: [0.024, 0.02, 0.02], rot: [0, 0, -0.35], color: h.finger });
-  const dir = [-0.42, -0.46, 0.78];
-  const n = Math.hypot(dir[0], dir[1], dir[2]);
-  const at = (t, o = [0, 0, 0]) => [o[0] + (dir[0] / n) * t, o[1] + (dir[1] / n) * t, o[2] + (dir[2] / n) * t];
-  const w = [-0.01, -0.02, 0.04];
-  b.beam(at(0, w), at(0.12, w), 0.026, 12, { r2: 0.029, color: skin, smooth: true });
-  b.beam(at(0.11, w), at(0.15, w), 0.042, 12, { r2: 0.043, color: c.cuff, smooth: true });
-  for (let i = 0; i < 7; i++) {
-    const t0 = 0.15 + i * 0.07;
-    b.beam(at(t0, w), at(t0 + 0.07, w), 0.045 + i * 0.004, 12, { r2: 0.049 + i * 0.004, color: sleeve(c, i), smooth: true });
-  }
-  return b.build();
+  return armParts((hand, cloth) => {
+    const X = addHand(hand, c, POSES.grip, handFrame([0, -1, 0], [-0.7, 0, 0.7], FIST, [0, 0, 0.02]), false);
+    sleeveFrom(hand, cloth, c, X([0, 0, -0.012]), [-0.42, -0.46, 0.78], [0, -0.03, 0], { len: 0.55 });
+  });
 }
 
-// Right hand hooking the string with three fingers, forearm back past the
-// cheek toward the raised elbow.
+// Right hand hooking the string with three fingers, the forearm back past
+// the cheek toward the raised elbow.
 function buildDrawArm(c) {
-  const b = new ModelBuilder();
-  const skin = c.skin;
-  const h = handColors(c);
-  for (let i = 0; i < 3; i++) b.box(0.02, 0.018, 0.05, { pos: [-0.004, 0.022 - i * 0.022, -0.004], color: i % 2 ? h.crease : h.finger });
-  b.box(0.05, 0.07, 0.06, { pos: [0.022, 0.0, 0.036], color: h.palm });
-  b.box(0.02, 0.02, 0.05, { pos: [0.036, 0.034, 0.012], rot: [0.3, 0, 0], color: h.finger });
-  const dir = [0.42, -0.1, 0.9];
-  const n = Math.hypot(dir[0], dir[1], dir[2]);
-  const at = (t, o) => [o[0] + (dir[0] / n) * t, o[1] + (dir[1] / n) * t, o[2] + (dir[2] / n) * t];
-  const w = [0.03, -0.006, 0.06];
-  b.beam(at(0, w), at(0.11, w), 0.025, 12, { r2: 0.028, color: skin, smooth: true });
-  b.beam(at(0.1, w), at(0.14, w), 0.041, 12, { r2: 0.042, color: c.cuff, smooth: true });
-  for (let i = 0; i < 6; i++) {
-    const t0 = 0.14 + i * 0.07;
-    b.beam(at(t0, w), at(t0 + 0.07, w), 0.044 + i * 0.004, 12, { r2: 0.048 + i * 0.004, color: sleeve(c, i), smooth: true });
-  }
-  return b.build();
+  return armParts((hand, cloth) => {
+    const X = addHand(hand, c, POSES.draw, handFrame([0, 1, 0], [0.9, 0, 0.3], HOOK, [0, 0, 0]), true);
+    sleeveFrom(hand, cloth, c, X([0, 0, -0.012]), [0.42, -0.1, 0.9], [0.02, -0.02, 0], { len: 0.5 });
+  });
 }
 
 const _ta = new THREE.Vector3();
@@ -314,11 +276,11 @@ export class Viewmodel {
     this.reel = buildReel();
     this.reel.position.set(0, -0.012, -0.2);
     this.rodPivot.add(this.reel);
-    const handMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 });
+    const handMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62 });
     this.handMat = handMat;
     const look = lookColors(null);
-    this.rodHand = new THREE.Mesh(buildHand(look), handMat);
-    this.rodHand.position.set(0.0, -0.02, 0.02);
+    this.clothMat = new THREE.MeshStandardMaterial({ map: shirtTexture(look.shirt), vertexColors: true, roughness: 0.86 });
+    this.rodHand = this.makeArm(buildHand(look));
     this.rodPivot.add(this.rodHand);
     this.root.add(this.rodRig);
     this.rodBase = new THREE.Vector3(0.24, -0.3, -0.46);
@@ -330,8 +292,8 @@ export class Viewmodel {
     this.bowAsh = new THREE.Mesh(buildBow(false), bowMat);
     this.bowYew = new THREE.Mesh(buildBow(true), bowMat);
     this.bowYew.visible = false;
-    this.bowArm = new THREE.Mesh(buildBowArm(look), handMat);
-    this.drawArm = new THREE.Mesh(buildDrawArm(look), handMat);
+    this.bowArm = this.makeArm(buildBowArm(look));
+    this.drawArm = this.makeArm(buildDrawArm(look));
     const stringMat = new THREE.MeshStandardMaterial({ color: 0xe6dfcc, roughness: 0.9 });
     const stringGeo = new THREE.CylinderGeometry(0.0013, 0.0013, 1, 4, 1, true);
     stringGeo.translate(0, 0.5, 0);
@@ -347,7 +309,7 @@ export class Viewmodel {
 
     // under the paraglider: hands on the brakes, risers up to the wing
     this.glideRig = new THREE.Group();
-    this.glideHands = [new THREE.Mesh(buildGlideArm(-1, look), handMat), new THREE.Mesh(buildGlideArm(1, look), handMat)];
+    this.glideHands = [this.makeArm(buildGlideArm(-1, look)), this.makeArm(buildGlideArm(1, look))];
     const risers = new ModelBuilder();
     for (const sd of [-1, 1]) {
       risers.beam([sd * 0.26, -0.3, 0.05], [sd * 0.5, 2.2, -0.3], 0.011, 4, { color: 0x1c2a4a, jitter: 0 });
@@ -363,7 +325,7 @@ export class Viewmodel {
     this.fishRig = new THREE.Group();
     this.root.add(this.fishRig);
     this.fishModel = null;
-    this.fishHands = [new THREE.Mesh(buildFishArm(1, look), handMat), new THREE.Mesh(buildFishArm(-1, look), handMat)];
+    this.fishHands = [this.makeArm(buildFishArm(1, look)), this.makeArm(buildFishArm(-1, look))];
     for (const h of this.fishHands) this.fishRig.add(h);
 
     this.tool = 'rod';
@@ -393,12 +355,22 @@ export class Viewmodel {
     this.switchT = 0;
   }
 
+  // An arm: the hand and the sleeve, one group.
+  makeArm(parts) {
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(parts.hand, this.handMat), new THREE.Mesh(parts.cloth, this.clothMat));
+    return g;
+  }
+
   // Dress the arms in the wardrobe's shirt, skin and gloves.
   applyLook(look) {
     const c = lookColors(look);
-    const swap = (mesh, geo) => {
-      mesh.geometry.dispose();
-      mesh.geometry = geo;
+    const swap = (group, parts) => {
+      const [h, cl] = group.children;
+      h.geometry.dispose();
+      h.geometry = parts.hand;
+      cl.geometry.dispose();
+      cl.geometry = parts.cloth;
     };
     swap(this.rodHand, buildHand(c));
     swap(this.bowArm, buildBowArm(c));
@@ -407,6 +379,11 @@ export class Viewmodel {
     swap(this.fishHands[1], buildFishArm(-1, c));
     swap(this.glideHands[0], buildGlideArm(-1, c));
     swap(this.glideHands[1], buildGlideArm(1, c));
+    const tex = shirtTexture(c.shirt);
+    if (this.clothMat.map !== tex) {
+      this.clothMat.map = tex;
+      this.clothMat.needsUpdate = true;
+    }
   }
 
   setBowWood(yew) {

@@ -45,6 +45,26 @@ export class Colliders {
     if (i >= 0) this.boxes.splice(i, 1);
   }
 
+  // Take out every circle in the box x0..x1, z0..z1 that test(c) picks
+  // (trees felled for a track after the forest has grown). Returns them.
+  removeCircles(x0, z0, x1, z1, test) {
+    const gone = new Set();
+    for (let i = Math.floor(x0 / CELL) - 1; i <= Math.floor(x1 / CELL) + 1; i++) {
+      for (let j = Math.floor(z0 / CELL) - 1; j <= Math.floor(z1 / CELL) + 1; j++) {
+        const k = this.key(i, j);
+        const arr = this.grid.get(k);
+        if (!arr) continue;
+        const keep = arr.filter((c) => {
+          if (c.x < x0 || c.x > x1 || c.z < z0 || c.z > z1 || !test(c)) return true;
+          gone.add(c);
+          return false;
+        });
+        if (keep.length !== arr.length) this.grid.set(k, keep);
+      }
+    }
+    return [...gone];
+  }
+
   // Walkable raised surface: oriented rectangle with a flat top height.
   addDeck(x, z, hx, hz, rot, top, opts = {}) {
     const d = { x, z, hx, hz, rot, cos: Math.cos(rot), sin: Math.sin(rot), top, ...opts };

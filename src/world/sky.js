@@ -3,6 +3,9 @@
 import * as THREE from 'three';
 import { SunLight } from 'three/examples/jsm/lights/SunLight.js';
 import { clamp, lerp, smoothstep, DEG } from '../util/math.js';
+import { gameDate, skyAt, skyMatrix, eqVector, SITE } from './astro.js';
+import { Starfield, milkyWayTexture } from './stars.js';
+import { SpaceWeather } from './spaceweather.js';
 
 const skyVert = /* glsl */ `
 varying vec3 vDir;
@@ -29,7 +32,32 @@ uniform float uTime;
 uniform float uRainbow;
 uniform float uSunVeil;
 uniform sampler2D uCloudTex;
+uniform sampler2D uMilkyWay;
+uniform mat3 uEq;
+uniform vec3 uMoonPos;
+uniform vec3 uMoonSun;
+uniform vec3 uMoonUp;
+uniform float uMoonSize;
+uniform float uAuroraReach;
+uniform float uAuroraRed;
 varying vec3 vDir;
+
+// The Moon's near side as seen from here: the dark seas (maria) where old
+// lava flooded the great basins, and Tycho's bright young crater. p is the
+// disc from -1 to 1, x toward the west on the sky, y toward celestial north.
+float moonAlbedo(vec2 p) {
+  float a = 1.0;
+  a -= 0.3 * smoothstep(0.28, 0.0, length(p - vec2(-0.32, 0.42)));
+  a -= 0.28 * smoothstep(0.17, 0.0, length(p - vec2(0.18, 0.4)));
+  a -= 0.3 * smoothstep(0.2, 0.0, length(p - vec2(0.33, 0.12)));
+  a -= 0.28 * smoothstep(0.11, 0.0, length(p - vec2(0.68, 0.3)));
+  a -= 0.22 * smoothstep(0.14, 0.0, length(p - vec2(0.55, -0.12)));
+  a -= 0.2 * smoothstep(0.17, 0.0, length(p - vec2(-0.12, -0.3)));
+  a -= 0.25 * smoothstep(0.42, 0.0, length((p - vec2(-0.62, 0.12)) * vec2(1.0, 0.7)));
+  a -= 0.18 * smoothstep(0.1, 0.0, length(p - vec2(-0.42, -0.38)));
+  a += 0.22 * smoothstep(0.06, 0.0, length(p - vec2(-0.12, -0.72)));
+  return a;
+}
 
 // Hue from violet (0) to red (1).
 vec3 spectrum(float x) {
@@ -57,42 +85,62 @@ void main() {
   float disc = smoothstep(0.99925, 0.99965, sd);
   col += uSunColor * disc * 7.0 * smoothstep(-0.03, 0.02, uSunDir.y) * (1.0 - 0.6 * uSunVeil);
 
-  // stars
+  // the Milky Way: our own galaxy seen edge-on from inside, looked up in
+  // the sky's own frame so it turns with the stars (the stars themselves
+  // are points drawn over the sky: world/stars.js)
   if (uNight > 0.01 && h > -0.02) {
-    vec3 p = d * 260.0;
-    vec3 cell = floor(p);
-    float r = hash13(cell);
-    if (r > 0.9955) {
-      vec3 c = cell + 0.5 + (vec3(hash13(cell + 1.7), hash13(cell + 3.1), hash13(cell + 5.3)) - 0.5) * 0.6;
-      float s = smoothstep(0.42, 0.0, length(p - c)) * (r - 0.9955) / 0.0045;
-      float tw = 0.65 + 0.35 * sin(uTime * (2.0 + r * 30.0) + r * 91.0);
-      col += vec3(0.9, 0.95, 1.0) * s * uNight * tw * 1.6 * smoothstep(0.0, 0.15, h);
-    }
-    // milky band
-    float band = exp(-pow(dot(d, normalize(vec3(0.6, 0.2, -0.77))) * 3.2, 2.0));
-    col += vec3(0.05, 0.06, 0.09) * band * uNight * texture2D(uCloudTex, d.xz * 1.8).b;
+    vec3 e = transpose(uEq) * d;
+    vec2 muv = vec2(atan(e.y, e.x) / 6.2831853, 0.5 + asin(clamp(e.z, -1.0, 1.0)) / 3.1415927);
+    float mw = texture2D(uMilkyWay, muv).r;
+    float moonUp = smoothstep(-0.05, 0.1, uMoonPos.y);
+    col += vec3(0.075, 0.08, 0.1) * mw * uNight * smoothstep(0.0, 0.2, h) * (1.0 - 0.55 * moonUp);
   }
 
-  // moon
-  float md = dot(d, uMoonDir);
-  col += vec3(0.85, 0.9, 1.0) * smoothstep(0.99955, 0.99975, md) * uNight * 1.4;
-  col += vec3(0.15, 0.2, 0.3) * pow(max(md, 0.0), 120.0) * uNight * 0.6;
+  // the Moon where it really is, lit from where the Sun really is: its
+  // phase, the seas on its face, a faint earthshine on the dark side
+  float md = dot(d, uMoonPos);
+  if (md > uMoonSize - 0.0002 && h > -0.03) {
+    vec3 right = normalize(cross(uMoonPos, uMoonUp));
+    vec3 o = d - uMoonPos * md;
+    float R = sqrt(1.0 - uMoonSize * uMoonSize);
+    vec2 mp = vec2(dot(o, right), dot(o, uMoonUp)) / R;
+    float rr = dot(mp, mp);
+    if (rr < 1.0) {
+      vec3 n = right * mp.x + uMoonUp * mp.y - uMoonPos * sqrt(1.0 - rr);
+      float lit = smoothstep(-0.04, 0.12, dot(n, uMoonSun));
+      float edge = smoothstep(1.0, 0.94, rr);
+      vec3 mc = vec3(0.95, 0.93, 0.88) * moonAlbedo(mp) * (lit * 1.5 + 0.035 * uNight);
+      col = mix(col, col * (1.0 - 0.9 * uNight * edge) + mc * (0.45 + 0.55 * uNight), edge);
+    }
+  }
+  col += vec3(0.15, 0.2, 0.3) * pow(max(md, 0.0), 160.0) * uNight * 0.6 * smoothstep(-0.05, 0.05, uMoonPos.y) * (0.25 + 0.75 * smoothstep(-0.2, 0.6, dot(uMoonPos, -uMoonSun)));
 
   // aurora borealis: curtains in the northern sky
+  // in a geomagnetic storm the curtains reach overhead and south, with red
+  // oxygen glow high above the green
+  // (the azimuth jumps from pi to -pi in the south: the texture lookups go
+  // round a whole number of times, and their filtering is told how fast the
+  // azimuth really changes, so no seam shows when a storm reaches south)
+  float az = atan(d.x, -d.z);
+  float dax = dFdx(az);
+  float day = dFdy(az);
+  dax -= 6.2831853 * floor(dax / 6.2831853 + 0.5);
+  day -= 6.2831853 * floor(day / 6.2831853 + 0.5);
   if (uAurora > 0.01 && h > 0.0) {
-    float az = atan(d.x, -d.z);
-    float north = smoothstep(-0.3, 0.5, -d.z);
+    float north = smoothstep(-0.3 - uAuroraReach * 1.2, 0.5 - uAuroraReach * 0.7, -d.z);
     vec3 acc = vec3(0.0);
+    const float K1 = 0.31830989;
+    const float K2 = 3.0239439;
     for (int i = 0; i < 3; i++) {
       float fi = float(i);
-      float curtain = texture2D(uCloudTex, vec2(az * 0.22 + fi * 0.31 + uTime * 0.004, 0.2 + fi * 0.13)).r;
+      float curtain = textureGrad(uCloudTex, vec2(az * K1 + fi * 0.31 + uTime * 0.004, 0.2 + fi * 0.13), vec2(dax * K1, 0.0), vec2(day * K1, 0.0)).r;
       float wave = sin(az * (7.0 + fi * 3.0) + curtain * 7.0 + uTime * (0.25 + fi * 0.07)) * 0.5 + 0.5;
-      float base = 0.16 + fi * 0.05 + curtain * 0.1;
+      float base = (0.16 + fi * 0.05 + curtain * 0.1) * (1.0 + uAuroraReach * 0.8);
       float el = h - base;
       float v = smoothstep(-0.015, 0.02, el) * exp(-max(el, 0.0) * (5.0 + fi * 2.0));
-      float streak = texture2D(uCloudTex, vec2(az * 3.0 + fi, uTime * 0.02)).g;
+      float streak = textureGrad(uCloudTex, vec2(az * K2 + fi, uTime * 0.02), vec2(dax * K2, 0.0), vec2(day * K2, 0.0)).g;
       v *= 0.35 + 0.65 * wave * (0.6 + 0.8 * streak);
-      vec3 c = mix(vec3(0.15, 1.0, 0.5), vec3(0.55, 0.25, 0.95), smoothstep(0.02, 0.28, el));
+      vec3 c = mix(vec3(0.15, 1.0, 0.5), mix(vec3(0.55, 0.25, 0.95), vec3(0.95, 0.2, 0.3), uAuroraRed), smoothstep(0.02, 0.28, el));
       acc += c * v;
     }
     col += acc * uAurora * north * 0.9;
@@ -285,6 +333,15 @@ export class Environment {
       uRainbow: { value: 0 },
       uSunVeil: { value: 0 },
       uCloudTex: { value: cloudTex },
+      uMilkyWay: { value: milkyWayTexture() },
+      uEq: { value: new THREE.Matrix3() },
+      uMoonPos: { value: new THREE.Vector3(0, -1, 0) },
+      uMoonSun: { value: new THREE.Vector3(0, -1, 0) },
+      uMoonUp: { value: new THREE.Vector3(0, 1, 0) },
+      // the disc a little bigger than the real half degree, to show its phase
+      uMoonSize: { value: Math.cos(0.62 * DEG) },
+      uAuroraReach: { value: 0 },
+      uAuroraRed: { value: 0 },
     };
     const mat = new THREE.ShaderMaterial({
       uniforms: this.uniforms,
@@ -300,6 +357,13 @@ export class Environment {
     this.sky.renderOrder = -10;
     this.sky.frustumCulled = false;
     scene.add(this.sky);
+    // the real night sky: stars and planets, turning with the sidereal clock
+    this.starfield = new Starfield(this.uniforms);
+    scene.add(this.starfield.points);
+    this.astro = null;
+    this.astroKey = '';
+    this.moonUp = 0;
+    this.spaceWeather = new SpaceWeather();
 
     // sun (or moon) with two shadow cascades fitted to the view: sharp
     // shadows up close, softer tree shadows out to the shadow distance
@@ -348,7 +412,9 @@ export class Environment {
   // Advance time. Nights pass three times faster.
   advance(dt) {
     const isNight = this.time >= 22 || this.time < 4.5;
-    this.time += dt * this.timeScale * (isNight ? 3 : 1);
+    // lying back in a deck chair at the observatory, the night slows down to
+    // a game hour every two minutes, so the sky can be watched turning
+    this.time += dt * this.timeScale * (this.stargazing ? 0.5 : isNight ? 3 : 1);
     if (this.time >= 24) {
       this.time -= 24;
       this.day++;
@@ -435,7 +501,12 @@ export class Environment {
 
     this.night = 1 - smoothstep(-10, -2, e);
     u.uNight.value = this.night;
-    u.uAurora.value = this.night * (1 - overcast) * (0.7 + 0.3 * Math.sin(u.uTime.value * 0.05));
+    this.updateSky(dt);
+    // the aurora follows the night's space weather (world/spaceweather.js)
+    const aw = this.spaceWeather.update(this, dt);
+    u.uAurora.value = this.night * (1 - overcast) * aw.strength;
+    u.uAuroraReach.value = aw.reach;
+    u.uAuroraRed.value = aw.red;
 
     // light: sun by day, moon by night
     const lightI = lerpKey(e, 'lightI');
@@ -446,10 +517,13 @@ export class Environment {
       this.lightDir.y = 0.08;
       this.lightDir.normalize();
     }
-    this.sun.intensity = lightI * (1 - overcast * 0.55);
+    // moonlit nights are brighter than moonless ones
+    const moonK = e > -2 ? 1 : 0.8 + 0.45 * this.moonUp;
+    this.sun.intensity = lightI * (1 - overcast * 0.55) * moonK;
     lerpKey(e, 'hemiSky', this.hemi.color);
     lerpKey(e, 'hemiGround', this.hemi.groundColor);
-    this.hemi.intensity = lerpKey(e, 'hemiI') * (1 + overcast * 0.1);
+    // (and a fireball lights up the land for a moment: world/meteors.js)
+    this.hemi.intensity = lerpKey(e, 'hemiI') * (1 + overcast * 0.1) + (this.fireFlash || 0) * 1.4 * this.night;
 
     lerpKey(e, 'fog', this.fog.color);
     if (overcast > 0) this.fog.color.lerp(_fogGrey.copy(FOG_GREY).multiplyScalar(0.3 + 0.7 * smoothstep(-6, 20, e)), overcast * 0.6);
@@ -459,7 +533,39 @@ export class Environment {
     this.sun.position.copy(this.lightDir);
 
     this.sky.position.copy(focus);
+    this.starfield.points.position.copy(focus);
     if (Math.abs(e - this.lastEnvElevation) > 2.5) this.envDirty = true;
+  }
+
+  // The real sky for this game day and hour: the sidereal rotation every
+  // frame, the Sun, Moon and planets once a game minute.
+  updateSky() {
+    const u = this.uniforms;
+    const key = this.day * 1440 + Math.floor(this.time * 60);
+    if (key !== this.astroKey) {
+      this.astroKey = key;
+      this.date = gameDate(this.day, this.time);
+      this.astro = skyAt(this.date);
+      this.starfield.setPlanets(this.astro.planets);
+      this.astroHours = this.time;
+    }
+    const A = this.astro;
+    // the sky turns 1.0027 times as fast as the clock
+    let dh = this.time - this.astroHours;
+    if (dh < -12) dh += 24;
+    const lst = A.lst + dh * 1.00273791;
+    skyMatrix(lst, u.uEq.value);
+    this.lst = lst;
+    const M = u.uEq.value;
+    eqVector(A.moon.ra, A.moon.dec, u.uMoonPos.value).applyMatrix3(M);
+    eqVector(A.sun.ra, A.sun.dec, u.uMoonSun.value).applyMatrix3(M);
+    const m = u.uMoonPos.value;
+    const pole = new THREE.Vector3(0, Math.sin(SITE.lat * DEG), -Math.cos(SITE.lat * DEG));
+    u.uMoonUp.value.copy(pole).addScaledVector(m, -pole.dot(m)).normalize();
+    // how much moonlight there is: up, and how full
+    this.moonUp = smoothstep(-0.03, 0.15, m.y) * A.moon.illum;
+    // faint stars drown in moonlight and twilight
+    this.starfield.uniforms.uLimit.value = 6.0 - 1.6 * this.moonUp - 2.5 * (1 - this.night);
   }
 
   get isNight() {

@@ -1,19 +1,23 @@
 # Hotrod Outdoor Alaska Fishing
 
 A first-person fishing and hunting adventure in Alaska, made for iPhone and iPad.
-Drive Ruben's flame-painted hot rod between twelve places on a wild Alaskan
+Drive Ruben's flame-painted hot rod between thirteen places on a wild Alaskan
 peninsula, tow a fishing boat to any lake, river or the bay, cast with a timing
 bar, fight salmon and halibut, hunt caribou and moose with a longbow, take
 pictures of the wildlife, and keep your bow close: grizzlies smell the fish in
-your cooler.
+your cooler. After dark the real night sky comes out over the Kenai Peninsula:
+look through the telescope at the Tundra Observatory, listen to pulsars with its
+radio dish, watch the northern lights and the space station, and go after the
+meteorites the fireballs drop. And something very fast is hidden in the woods.
 
 ![Title screen](docs/screenshots/title.jpg)
 
 Everything you see and hear is generated in code at start-up: the terrain,
-rivers, glacier, forests, animals, the hot rod, the fish, the sky, the weather,
-the sound effects and the music. There are no downloaded models, textures or
-audio files, so the whole game is a single 1.2 MB HTML file (about 420 KB
-compressed).
+rivers, glacier, forests, animals, the cars, the fish, the sky, the weather,
+the sound effects and the music. The night sky comes from real data packed
+into the game: a star catalogue and the planets' and the Moon's motions.
+There are no downloaded models, textures or audio files, so the whole game is
+a single 1.8 MB HTML file (about 640 KB compressed).
 
 | | |
 |---|---|
@@ -26,9 +30,15 @@ compressed).
 | ![Driftwood riding the river](docs/screenshots/driftwood.jpg) | ![A cascade down the cliffs](docs/screenshots/cascade.jpg) |
 | ![A rainbow over Ruben's cabin as an evening shower passes](docs/screenshots/rainbow.jpg) | ![Morning mist over the river at Hotrod Landing](docs/screenshots/mist.jpg) |
 | ![Puddles and wet ground after rain by the Trading Post](docs/screenshots/puddles.jpg) | ![An epic salmon shark landed at Halibut Pier, with the small map in the corner](docs/screenshots/shark.jpg) |
+| ![The rebuilt hot rod at Hotrod Landing](docs/screenshots/hotrod.jpg) | ![The first-person hands on the rod, in a flannel shirt](docs/screenshots/arms.jpg) |
+| ![The Tundra Observatory by Caribou Tundra](docs/screenshots/observatory.jpg) | ![Saturn through the observatory's telescope](docs/screenshots/telescope.jpg) |
+| ![Stargazing from a deck chair with the sky guide](docs/screenshots/stargaze.jpg) | ![A fireball coming down over the tundra](docs/screenshots/fireball.jpg) |
 
-What changed in the latest round, with pictures, the audit and the tests:
-[docs/hotrod-update.html](docs/hotrod-update.html). The earlier graphics rounds:
+What changed in the latest round (the arms, the hot rod, the race car and the
+night sky), with pictures and the tests:
+[docs/cars-sky-update.html](docs/cars-sky-update.html). Earlier rounds:
+[docs/hotrod-buildings.html](docs/hotrod-buildings.html),
+[docs/hotrod-update.html](docs/hotrod-update.html) and
 [docs/graphics-update.html](docs/graphics-update.html).
 
 ## What is in the game
@@ -46,7 +56,9 @@ What changed in the latest round, with pictures, the audit and the tests:
   short; red gives you a backlash to untangle.
 - The bite follows the time and the weather: fish feed hardest at dawn and
   dusk, when a front rolls in and with rain on the water, sulk deep under a
-  bright midday sun and go quiet at night; on the sea the tide matters, and
+  bright midday sun and go quiet at night; on the sea the tide matters (it
+  follows the real Moon: high water a few hours after the Moon crosses the
+  sky, the strongest currents at spring tides after new and full Moon), and
   every species keeps its own hours (kings at dawn, pike in the midday sun,
   halibut on a running tide, burbot at night). The **BITE** readout under the
   map button says SLOW, FAIR, GOOD or HOT; tap it to hear why. The map shows
@@ -114,9 +126,22 @@ What changed in the latest round, with pictures, the audit and the tests:
   on Halibut Pier sells through its service window. Wood, shingles, stone,
   concrete and corrugated metal have real surfaces (board joints, bark,
   shingle rows, mortar, ridges and rust) that cost no extra draws.
-- Twelve places joined by gravel roads and truss bridges: Hotrod Landing
+- The hot rod, rebuilt in detail: a 1932 Ford roadster body with smooth
+  curved panels and flames edged in pinstripes (Ruben's name in script on the
+  deck lid), a chrome grille shell, headlamp buckets on a light bar, a dropped
+  I-beam front axle on hairpins with a transverse spring and shocks, a blown
+  big-block with finned valve covers, heat-tinted headers, side pipes and a
+  6-71 blower under a bug-catcher scoop, a quick-change rear end on ladder
+  bars, steel wheels with whitewalls, trim rings and baby moons, a rolled and
+  pleated interior, gauges whose needles follow the speed and the revs, an
+  8-ball shift knob, and a steering wheel that turns with the front wheels.
+  Ruben sits at the wheel in your wardrobe's clothes, his hands on the rim. It
+  runs 0 to 100 km/h in 3.2 seconds and tops out at 166 km/h with the best
+  engine.
+- Thirteen places joined by gravel roads and truss bridges: Hotrod Landing
   (Ruben's cabin), Kenai Trading Post, Salmon Bend, Bear Falls, Glacier Lake,
-  Moose Lake, Halibut Pier, Caribou Tundra, Kachemak Light and three newer ones:
+  Moose Lake, Halibut Pier, Caribou Tundra, Kachemak Light, the Tundra
+  Observatory (see The night sky below) and three newer ones:
   - Steaming Springs: a warm green trout pond in a basin of white and orange
     sinter, steam vents, bubbling mud pots, a hot pool to **SOAK** in (it heals
     you and passes an hour) and Old Faceful, a geyser that rumbles and blows
@@ -153,8 +178,84 @@ What changed in the latest round, with pictures, the audit and the tests:
   (caps, a beanie, a bucket hat, a cowboy hat and a moose antler hat), beards
   and moustaches, hair colour, skin tone and gloves. You see your sleeves and
   gloves in first person, and Ruben at the wheel wears it all.
+- Your arms in first person, rebuilt: hands with jointed fingers, knuckles and
+  nails, a thumb that wraps the grip, posed for the rod, the bow hand, the
+  three-finger draw on the string and a fish cradled in both hands; sleeves
+  with folds, a turned-back cuff and a button, in the shirt's own cloth
+  (flannel checks, denim twill, camo, hi-vis tape, Hawaiian flowers), with a
+  bare wrist above the glove.
 - Fast travel from the map to any place you have already discovered (the trip
   costs in-game time), and sleep at the cabin to skip the night.
+
+**The night sky**
+
+- The real sky over the Kenai Peninsula for the game's date (day 1 is
+  20 August 2026) and hour: 2,560 stars to magnitude 5.6 from the Extended
+  Hipparcos Compilation, in their true colours and places, turning with the
+  sidereal clock round Polaris, which stands 60 degrees up in the north. The
+  Milky Way from its real outline. Faint stars drown in moonlight and twilight,
+  stars dim and twinkle near the horizon, and clouds hide what is behind them.
+- The five planets you can see without a telescope where they really are, as
+  bright as they really are, and the Moon with its real phase, lit from the
+  Sun's side, with earthshine on a thin crescent. Moonlit nights are brighter
+  than moonless ones, and the Moon drives the tide on the coast, with spring
+  tides after new and full Moon and neap tides after the quarters.
+- The northern lights follow each night's space weather. Every night has its
+  own planetary K index, Kp, from 0 (quiet) to 9 (a great storm): the stronger
+  the storm, the further south and higher the curtains reach, red at the top in
+  big storms, flaring in substorms through the night. An aurora alert comes at
+  dusk when a storm is due.
+- Shooting stars after dark, about one every half minute. Some nights a
+  fireball lights up the land, its sonic boom arriving long after the light,
+  and drops a meteorite in the woods: the map circles where to look, the stone
+  glints when you are close, and the Trading Post pays by the kilogram (iron,
+  stony or a rare pallasite with olive-green crystals).
+- Some evenings and mornings the International Space Station passes over: a
+  bright, steady light crossing low through the southern sky from west to east
+  in about a minute (its orbit never takes it further north than 51.6
+  degrees, so from here it never climbs above about 20 degrees), fading orange
+  into Earth's shadow. Fainter satellites drift over too.
+- The Tundra Observatory on the open tundra by Caribou Tundra, where the sky is
+  darkest: a white dome that turns and opens its shutter at night, a control
+  hut, a six-metre radio dish that points at what it listens to, a weather mast,
+  an all-sky meteor camera, red lamps (as at real observatories, to keep eyes
+  used to the dark), a notice board and a deck with two reclining chairs
+  facing north-west, where the skyline is lowest.
+  - **TELESCOPE**: eighteen targets, each drawn in a round eyepiece view from
+    the real sky at that moment, with what the observatory's notes say about
+    it: the Sun through the solar filter with the day's sunspots, the Moon at
+    its real phase, Mercury and Venus showing their phases, Mars with its polar
+    cap, Jupiter with its belts, the Great Red Spot and its four big moons where
+    they really are that night, Saturn with its rings at their true tilt, the
+    Andromeda Galaxy, the Pleiades, the Orion Nebula, the Ring Nebula, Albireo,
+    Mizar and Alcor, the Double Cluster, the Hercules Cluster, the Dumbbell
+    Nebula, Polaris and Bode's Galaxy with the Cigar. The telescope finds the
+    bright planets in daylight too, never points within 12 degrees of the Sun,
+    and galaxies need a dark sky. Each new object goes in the sky log and pays
+    $20.
+  - **RADIO DISH**: six sources to listen to, with a chart recorder trace: the
+    pulsar B0329+54 ticking every 0.714 seconds, the Crab pulsar's buzz of 30
+    pulses a second, Jupiter's radio storms, the Sun's bursts, the hydrogen
+    line at 1,420 megahertz, and the hiss of the Big Bang's afterglow. Radio
+    passes through cloud, so it works in any weather.
+  - **TONIGHT**: the night's almanac on the board and in the observatory's
+    screen: the Moon's phase and when it is up, which planets are up and where,
+    the aurora forecast, the space station's pass and what is out right now.
+  - **STARGAZE** from a deck chair: the night slows to a game hour every two
+    minutes so you can watch the sky turn, and the sky guide draws the
+    constellations and names them, the bright stars and the planets. In the
+    day the chairs offer **WAIT FOR DARK**. The sky guide also shows whenever
+    you look up at a dark sky (Settings > Sky guide).
+- A scale model of the solar system along the Lighthouse Road at one to 7.5
+  billion, after the Sweden Solar System: the Sun a glowing ball 19 cm across
+  at the Trading Post end, Earth a grain of sand 20 m down the road, Jupiter
+  104 m, Neptune 600 m. Each body has a sign with its distance, its size at
+  this scale and how long sunlight takes to reach it, and its model at true
+  scale on a post: most of them are specks, which is the point.
+- The camera's album has a Night sky page: the Moon, the northern lights, the
+  Milky Way, the space station, a shooting star and a fireball. Five
+  challenges belong to the sky: five objects through the telescope, the solar
+  system walk, the space station, a meteorite and four planets.
 
 **Hunting and wildlife**
 
@@ -250,6 +351,29 @@ What changed in the latest round, with pictures, the audit and the tests:
 </details>
 
 <details>
+<summary>The race car in the woods (spoilers)</summary>
+
+![The race car in its clearing, by its spare slicks and tool chest](docs/screenshots/racecar.jpg)
+
+- A Formula One car waits under a tarp in a clearing at the end of an old
+  logging track east of the River Road, between the Trading Post and Salmon
+  Bend; a KEEP OUT sign marks where the track leaves the road. Its team left
+  it there with the spare slicks in their warming blankets, a tool chest, a
+  jerry can and a pit board that still says BOX BOX.
+- **PULL TARP** to find it, then **DRIVE**. It runs 0 to 100 km/h in 2.6
+  seconds and 287 km/h flat out, grips like nothing else on the road and
+  brakes from top speed in about 100 metres, but it sits two fingers off the
+  ground: on the forest floor it crawls at about 40 km/h, it cannot wade more
+  than about 30 cm of water, and it has no headlights. The rear wing's flap
+  opens on the straights, the rain light blinks in the dark and the rain, the
+  steering wheel has its own display, and the announcer calls 200, 250 and
+  300 km/h. Its livery is navy with aurora green, number 99, with the Kenai
+  Trading Post and Moose Lake Bait & Tackle on it.
+- The map and the compass show it once found, and the game keeps where you
+  left it.
+</details>
+
+<details>
 <summary>The strange things in the woods (spoilers)</summary>
 
 - A fridge humming in the spruce east of the Trading Post, its cord running
@@ -332,13 +456,14 @@ What changed in the latest round, with pictures, the audit and the tests:
   the river current, petals and leaves float on the rivers and lakes, yellow
   pond lilies and pondweed cover the shallows of Moose Lake, and small ice floes
   drift on Glacier Lake.
-- Day and night with sunrise and sunset, stars, the moon and the northern
-  lights, rain showers, a waterfall with mist, a glacier that calves slabs of
+- Day and night with sunrise and sunset, the real stars, planets and Moon,
+  the northern lights, rain showers, a waterfall with mist, a glacier that calves slabs of
   ice into Glacier Lake with a boom and a wave, a lighthouse beam at night, and
   animals that react to where you are.
-- 27 challenges with cash rewards guide you through the game, from "Catch your
+- 32 challenges with cash rewards guide you through the game, from "Catch your
   first fish at Hotrod Landing" through the boat, the springs, the wreck, the
-  strange things in the woods and the camera to "Complete the Fish Journal".
+  strange things in the woods, the night sky and the camera to "Complete the
+  Fish Journal".
 - Progress saves automatically.
 - Graphics presets in Settings. High is the default (the game is made for
   iPhone 13 and newer) and adds a soft bloom on bright light, sun rays through
@@ -476,13 +601,20 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 |---|---|
 | `src/main.js` | Game session: title screen, start and continue, the per-frame gameplay loop, interactions, saving, fast travel and the debug hooks used by the tests |
 | `src/game.js` | Engine core: renderer, scene, cameras, lights and shadows, dynamic resolution and the frame loop |
-| `src/world/layout.js` | The peninsula: coastline, river, lakes, glacier, roads and the twelve places |
+| `src/world/layout.js` | The peninsula: coastline, river, lakes, glacier, roads and the twelve places laid out with the world (the thirteenth, the observatory, joins after it is made) |
 | `src/world/areas.js` | Steaming Springs (the geyser, the hot pool, steam vents and mud pots), Mosquito Flats (the giant mosquito, the boardwalk, the bug dope machine) and Shipwreck Cove (the wreck, its deck, gangplank and sea chest, the sea stacks) |
 | `src/world/worldgen.js` | Height field, river and lake carving, road grading, surface types and water queries |
 | `src/world/terrain.js`, `worldtex.js` | Chunked terrain with levels of detail, the ground material with per-surface detail, and the world textures (height, colour, surfaces, water levels) |
 | `src/world/worldfx.js` | Shading shared by every material: haze and valley mist, light under water with caustics, mountain and cloud shadows, sky occlusion, gusts of wind, and wet ground with puddles |
 | `src/world/lighting.js` | The mountain shadow and sky visibility maps, computed on the graphics processor |
-| `src/world/sky.js` | Sky dome with sun, moon, stars, clouds, rainbows and northern lights, the cascaded sun shadows, the weather, and the day and night cycle |
+| `src/world/sky.js` | Sky dome with the sun, the real Moon and Milky Way, clouds, rainbows and northern lights, the cascaded sun shadows, the weather, and the day and night cycle |
+| `src/world/astro.js` | The game's calendar and clock as a real date, sidereal time, and the Sun, Moon, planets and Jupiter's moons from astronomy-engine |
+| `src/world/stars.js`, `skydata.js` | The 2,560 real stars and the planets as points of light, and the Milky Way's texture; `skydata.js` is packed by `tools/mkstars.mjs` |
+| `src/world/spaceweather.js` | Each night's Kp index and the aurora's strength, reach, red tops and substorms |
+| `src/world/meteors.js`, `satellites.js` | Shooting stars, fireballs and their meteorites; the space station's passes and the fainter satellites |
+| `src/world/observatory.js` | The Tundra Observatory: the turning dome and its telescope, the radio dish, the hut, the deck chairs, the notice board, the mast and the all-sky camera |
+| `src/world/solarwalk.js` | The scale model of the solar system along the Lighthouse Road |
+| `src/world/pitstop.js` | (spoilers) The race car's clearing at the end of the logging track, its props, and the tarp draped over the car |
 | `src/world/water.js`, `effects.js`, `calving.js` | River, lake and sea surfaces with animated waves and reflections, the waterfall, splashes, ripples, rain, mist and dust, and the calving glacier |
 | `src/world/scatter.js`, `grass.js`, `props.js`, `roads.js`, `colliders.js` | Forests, ground plants and rocks, wind-blown grass, where the buildings stand, bridges, trailhead signs and campfires, gravel roads and collision |
 | `src/world/buildings.js` | The buildings in detail: Ruben's cabin, its yard, outhouse and mailbox, the Kenai Trading Post, Kachemak Light and the keeper's house, Halibut Pier and its bait shack, the lake docks and rowboats, the Bear Falls platform, the tundra lookout and the sign posts |
@@ -492,7 +624,12 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/world/floaters.js` | Driftwood, branches, petals and leaves on the water, pond lilies, pondweed and ice floes |
 | `src/world/post.js` | Bloom, sun rays and the colour grade of the High preset |
 | `src/entities/insects.js` | Butterflies, bumblebees, dragonflies, mosquitoes, moths and cottonwood fluff |
-| `src/entities/player.js`, `hotrod.js`, `boat.js`, `viewmodel.js` | Walking, the drivable hot rod, the fishing boat and its trailer, and the first-person rod, longbow and hands in the clothes from the wardrobe |
+| `src/entities/player.js`, `boat.js`, `viewmodel.js` | Walking, the fishing boat and its trailer, and the first-person rod, longbow and hands in the clothes from the wardrobe |
+| `src/entities/car.js` | The driving model the cars share: grip, gears, engine revs, wading, the cameras and the colliders, set by each car's specification |
+| `src/entities/hotrod.js`, `racecar.js` | The hot rod and (spoilers) the Formula One car: their models, materials, handling and animation |
+| `src/entities/carparts.js` | Shape tools for the cars: lofted bodies, tubes, coils, turned parts, tyres and painted canvas textures |
+| `src/entities/drivers.js` | The driver at the wheel: head, beard and hats or a helmet, body, arms that reach the rim and hands on it |
+| `src/entities/hands.js`, `cloth.js` | The first-person hands with jointed fingers in their poses and the folded sleeves, and the shirts' cloth textures |
 | `src/entities/glider.js` | The paraglider: launching from an edge, flying, steering, landing and the wing overhead |
 | `src/world/secret.js` | The secret on the mountain (spoilers): Gus's launch, the cairns, the grotto on the ledge, the chest behind Bear Falls, the glint and the lanterns |
 | `src/world/oddities.js` | The strange things in the woods (spoilers): where the ten stand, their models, and finding them, the ringing payphone, the humming, the wandering gnome, the fairy ring's luck and what each gives |
@@ -501,13 +638,18 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/gameplay/hunting.js`, `bears.js` | The longbow, the five kinds of arrow in flight and their hit zones, and the grizzly and black bear encounters |
 | `src/gameplay/bite.js` | How hungry the fish are: time of day, fronts, rain, sunshine and the tide, and each species' own hours |
 | `src/gameplay/camera.js` | The camera, the star rating of a shot and the photo album |
+| `src/gameplay/skytargets.js`, `skywatch.js`, `tonight.js` | The telescope's and radio dish's targets and their notes, whether each can be reached right now and the sky log, and the night's almanac |
 | `src/gameplay/data.js`, `state.js` | Fish, lures, rods, gear, places and challenges, and the save game |
 | `src/audio/audio.js` | All sound and music, synthesised with the Web Audio interface |
 | `src/audio/announcer.js` | The announcer's lines, spoken with the device's speech synthesis, and their banners |
-| `src/ui/` | HUD, the small map, menus, the Trading Post, garage, map and journal, touch and keyboard input, and styles |
+| `src/ui/` | HUD, the small map, menus, the Trading Post, garage, map and journal, the observatory's screens, touch and keyboard input, and styles |
+| `src/ui/eyepiece.js`, `skyguide.js` | The telescope's eyepiece views, and the constellation figures and names drawn over the sky |
 | `ios/` | The Xcode project for the native iOS app |
 | `tools/shot.mjs`, `tools/scenarios/` | Headless screenshot and gameplay test harness with scripted scenarios |
 | `tools/make-icons.mjs`, `tools/serve.mjs`, `tools/preview-map.mjs` | Icon drawing, the local network server, and a top-down map preview of the world |
+| `tools/mkstars.mjs` | Packs the stars, constellation figures, star names and Milky Way outline from the d3-celestial package into `src/world/skydata.js` |
+| `tools/cartest.mjs`, `tools/planetcheck.mjs`, `tools/almanactest.mjs`, `tools/skytables.mjs` | Checks run with Node alone: the cars' acceleration, top speed, braking and off-road speed; which planets the telescope can reach on each game day; the almanac for sample nights; and a table of the first fourteen nights |
+| `tools/lab/handlab.mjs` | Renders the first-person hand poses from four sides, for checking them |
 
 ## Testing
 
@@ -566,6 +708,18 @@ node tools/shot.mjs tools/scenarios/oddities-6.json  # (spoilers) the hats and t
 node tools/shot.mjs tools/scenarios/fish-look-1.json # a King Salmon, a Rainbow Trout, a Dolly Varden and a Northern Pike held up close
 node tools/shot.mjs tools/scenarios/fish-look-2.json # a Yelloweye Rockfish, an Arctic Grayling, a Pacific Halibut and a Coastal Cutthroat Trout held up close
 node tools/shot.mjs tools/scenarios/minimap.json      # the small map on foot and driving, its goal marker, and a tap to the full map
+node tools/shot.mjs tools/scenarios/hotrod-look.json  # the rebuilt hot rod from all round, its engine, its interior and the driver
+node tools/shot.mjs tools/scenarios/hotrod-drive.json # the hot rod on the road from the cockpit and the chase camera, and its lights at night
+node tools/shot.mjs tools/scenarios/racer-find.json   # (spoilers) the logging track, the tarp, PULL TARP and DRIVE
+node tools/shot.mjs tools/scenarios/racer-look.json   # (spoilers) the race car from all round, onboard and on the road
+node tools/shot.mjs tools/scenarios/arms.json         # the first-person arms with the rod, the bow, the draw, the paraglider and a fish held up
+node tools/shot.mjs tools/scenarios/arms-rod.json     # the rod hand in different shirts and gloves
+node tools/shot.mjs tools/scenarios/observatory.json  # the Tundra Observatory by day and at night, the telescope on Venus, the Sun and Jupiter, the radio dish and the almanac
+node tools/shot.mjs tools/scenarios/telescope.json    # every telescope view at a time it is up, the radio dish (the pulsar and the hydrogen line), the almanac and the sky log
+node tools/shot.mjs tools/scenarios/stargaze.json     # the dome open at night, STARGAZE from a deck chair with the sky guide to the north, south and east, and getting up
+node tools/shot.mjs tools/scenarios/sky-events.json   # a fireball, the map's search circle, picking up the meteorite, a space station pass and its picture, a Kp 7 storm, the sky guide on foot, the solar system signs and the Journal's Sky page
+node tools/shot.mjs tools/scenarios/gallery-cars.json # the title screen and the hot rod on the River Road for the pictures at the top of this page
+node tools/shot.mjs tools/scenarios/sky-night.json    # the real night sky to the north, south, east and overhead, and the Moon
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot
 node tools/shot.mjs tools/scenarios/fish-views.json   # fish schools, a fish approaching the float and the fight
 node tools/shot.mjs tools/scenarios/light-views.json  # morning, noon, evening, sunset and night lighting
@@ -594,6 +748,15 @@ node tools/shot.mjs tools/scenarios/refl-debug.json   # saves the six faces of t
 Playwright is not a project dependency; install it with `npm install --no-save playwright`
 and `npx playwright install chromium` when you want to run these.
 
+Three checks need only Node:
+
+```sh
+node tools/cartest.mjs      # both cars on the River Road: 0-100 km/h, top speed, a lap's average, braking and the forest floor
+node tools/planetcheck.mjs  # each planet's highest point by day and by night, 12 degrees or more from the Sun (as the telescope requires), every third game day
+node tools/almanactest.mjs  # the observatory's almanac for five sample nights
+node tools/skytables.mjs    # the first fourteen nights: Kp, the Moon, the tides, the space station's pass and the planets
+```
+
 ## Credits and licences
 
 - 3D rendering: [three.js](https://threejs.org/), MIT licence
@@ -605,5 +768,16 @@ and `npx playwright install chromium` when you want to run these.
   [Yellowtail](https://fonts.google.com/specimen/Yellowtail) by Astigmatic,
   under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 - Bundling: [esbuild](https://esbuild.github.io/), MIT licence.
+- The positions of the Sun, the Moon, the planets and Jupiter's moons:
+  [Astronomy Engine](https://github.com/cosinekitty/astronomy) by Don Cross,
+  MIT licence.
+- The stars, constellation figures and names and the Milky Way's outline:
+  [d3-celestial](https://github.com/ofrohn/d3-celestial) by Olaf Frohn, BSD
+  3-Clause licence; its stars come from the Extended Hipparcos Compilation
+  (Anderson and Francis 2012,
+  [Astronomy Letters 38, 331](https://doi.org/10.1134/S1063773712050015)).
+- The solar system walk is inspired by the
+  [Sweden Solar System](https://www.swedensolarsystem.se/), the world's largest
+  scale model of the solar system.
 - Everything else (world, models, textures, animation, sound, music and the app
   icon) is original and generated by the code in this repository.

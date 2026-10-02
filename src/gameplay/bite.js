@@ -3,6 +3,7 @@
 // bright midday sun and go quiet at night. On the salt water the tide
 // matters most: moving water feeds the bottom fish, slack water does not.
 import { clamp } from '../util/math.js';
+import { lunarTide, gameDate } from '../world/astro.js';
 
 export const BITE_LEVELS = [
   { id: 'slow', label: 'SLOW', min: 0 },
@@ -11,13 +12,22 @@ export const BITE_LEVELS = [
   { id: 'hot', label: 'HOT', min: 1.8 },
 ];
 
-// Two high tides a day, 12 hours 25 minutes apart.
-const TIDE_PERIOD = 12.42;
-
+// The tide, raised by the real Moon (see world/astro.js): two high waters a
+// lunar day, spring tides after new and full Moon and neap tides after the
+// quarters. flow above zero: the tide is coming in; near 1 or -1 at full
+// run. Worked out once every two game minutes.
+const _tide = { key: null, v: null };
 export function tideAt(day, hour) {
-  const ph = (((day - 1) * 24 + hour + 3.1) / TIDE_PERIOD) * Math.PI * 2;
-  // flow above zero: the tide is coming in
-  return { height: Math.sin(ph), flow: Math.cos(ph) };
+  const key = Math.round(((day - 1) * 24 + hour) * 30);
+  if (_tide.key === key) return _tide.v;
+  const now = lunarTide(gameDate(day, hour));
+  const a = lunarTide(gameDate(day, hour - 0.1));
+  const b = lunarTide(gameDate(day, hour + 0.1));
+  // the fastest the height can change: twice the Moon's 14.5 degrees an hour
+  const flow = clamp((b.height - a.height) / 0.2 / (0.506 * Math.max(0.75, now.range)), -1, 1);
+  _tide.key = key;
+  _tide.v = { height: now.height, flow, range: now.range, spring: now.range > 0.92, neap: now.range < 0.58 };
+  return _tide.v;
 }
 
 // The part of the day that decides the bite.
@@ -80,8 +90,8 @@ export function biteOutlook(env, water = null) {
     tide = tideAt(env.day, hour);
     const f = Math.abs(tide.flow);
     if (f > 0.6) {
-      k *= 1.35;
-      reasons.push(tide.flow > 0 ? 'Flood tide running' : 'Ebb tide running');
+      k *= tide.spring ? 1.45 : 1.35;
+      reasons.push(tide.spring ? `Spring tide ${tide.flow > 0 ? 'flooding' : 'ebbing'} hard` : tide.flow > 0 ? 'Flood tide running' : 'Ebb tide running');
     } else if (f < 0.25) {
       k *= 0.7;
       reasons.push(tide.height > 0 ? 'Slack high tide' : 'Slack low tide');

@@ -896,6 +896,72 @@ export class AudioEngine {
     e.rg.gain.setTargetAtTime(0.25 + throttle * 0.3, t, 0.1);
   }
 
+  // The race car's turbocharged V6: a hard, high wail well above the hot
+  // rod's burble (six cylinders firing every other turn: rpm / 20 a
+  // second), a harmonic on top, and the turbo's whistle over it. Built on
+  // first use; with nobody in it the engine is off.
+  updateRacer(rpm, throttle, dist, on) {
+    if (!this.ready) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    if (!this.racer) {
+      if (!on) return;
+      const o1 = ctx.createOscillator();
+      o1.type = 'sawtooth';
+      const o2 = ctx.createOscillator();
+      o2.type = 'square';
+      const o3 = ctx.createOscillator();
+      o3.type = 'sine';
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.Q.value = 0.9;
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 4200;
+      const g2 = ctx.createGain();
+      g2.gain.value = 0.35;
+      const g = ctx.createGain();
+      g.gain.value = 0.0001;
+      const gw = ctx.createGain();
+      gw.gain.value = 0.0001;
+      o1.connect(bp);
+      o2.connect(g2).connect(bp);
+      bp.connect(lp).connect(g).connect(this.sfx);
+      o3.connect(gw).connect(this.sfx);
+      o1.start();
+      o2.start();
+      o3.start();
+      this.racer = { o1, o2, o3, bp, g, gw };
+    }
+    const e = this.racer;
+    const fire = Math.max(30, rpm / 20);
+    e.o1.frequency.setTargetAtTime(fire, t, 0.03);
+    e.o2.frequency.setTargetAtTime(fire * 1.5, t, 0.03);
+    e.bp.frequency.setTargetAtTime(420 + rpm * 0.11 + throttle * 700, t, 0.05);
+    e.o3.frequency.setTargetAtTime(2600 + rpm * 0.22, t, 0.12);
+    const near = Math.max(0, 1 - dist / 170);
+    e.g.gain.setTargetAtTime(Math.max(0.0001, on ? (0.06 + throttle * 0.11) * near : 0), t, 0.06);
+    e.gw.gain.setTargetAtTime(Math.max(0.0001, on ? throttle * 0.01 * near : 0), t, 0.1);
+  }
+
+  // The starter's whine, then the engine catches with a bark.
+  racerStart() {
+    this.tone('sawtooth', 90, 0.55, 0.05, { f2: 700 });
+    this.noise(0.35, 0.08, { type: 'bandpass', freq: 600, q: 0.7, f2: 1800, when: 0.5 });
+    this.tone('square', 260, 0.25, 0.06, { f2: 520, when: 0.55 });
+  }
+
+  // A race car has no horn: two pips on the team radio instead.
+  radioBeep() {
+    this.tone('sine', 1250, 0.07, 0.05);
+    this.tone('sine', 1250, 0.07, 0.05, { when: 0.14 });
+  }
+
+  // A tarp dragged off something.
+  tarpPull() {
+    this.noise(0.7, 0.12, { type: 'bandpass', freq: 400, q: 0.8, f2: 1600 });
+  }
+
   // The outboard: a buzzy two-stroke that rises with the throttle. Built on
   // first use; rpm 0 silences it.
   updateOutboard(rpm, throttle, dist, on) {
@@ -930,6 +996,108 @@ export class AudioEngine {
     const near = Math.max(0, 1 - dist / 120);
     const vol = rpm ? (on ? 0.07 + throttle * 0.08 : 0.04) * near : 0;
     e.g.gain.setTargetAtTime(Math.max(0.0001, vol), t, 0.1);
+  }
+
+  // ---------------------------------------------------------- the night sky
+  // A fireball's sonic boom, minutes after the light: a double crack from
+  // far off rolling into thunder, and its echo off the hills.
+  boom() {
+    if (!this.ready) return;
+    this.tone('sine', 48, 1.6, 0.5, { f2: 26, attack: 0.02 });
+    this.noise(0.5, 0.35, { type: 'lowpass', freq: 420, f2: 120, buf: this.brown, attack: 0.01 });
+    this.noise(0.5, 0.3, { type: 'lowpass', freq: 380, f2: 110, buf: this.brown, attack: 0.01, when: 0.22 });
+    this.noise(4.5, 0.32, { type: 'lowpass', freq: 260, f2: 50, q: 0.5, buf: this.brown, attack: 0.3, when: 0.3 });
+    this.noise(2.5, 0.12, { type: 'lowpass', freq: 200, f2: 60, buf: this.brown, attack: 0.2, when: 1.6 });
+  }
+
+  // The radio telescope's loudspeaker: each source's signal turned into
+  // sound. listen(id) tunes in (null switches off); update() keeps the
+  // pulses coming. The music rests while it plays.
+  listen(id) {
+    if (!this.ready) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    this.radioId = id;
+    this.radioT = 0.2;
+    // the receiver's own hiss under everything
+    if (!this.radioHiss) {
+      const s = this.noiseSource(this.pink, true);
+      const f = ctx.createBiquadFilter();
+      f.type = 'bandpass';
+      f.frequency.value = 1800;
+      f.Q.value = 0.4;
+      const g = ctx.createGain();
+      g.gain.value = 0.0001;
+      s.connect(f).connect(g).connect(this.sfx);
+      s.start();
+      this.radioHiss = { s, f, g };
+    }
+    const H = this.radioHiss;
+    const level = { pulsar: 0.05, crab: 0.04, jupiter: 0.03, sun: 0.07, hydrogen: 0.06, cmb: 0.12 }[id] ?? 0;
+    H.g.gain.setTargetAtTime(Math.max(0.0001, level), t, 0.15);
+    H.f.frequency.setTargetAtTime(id === 'hydrogen' ? 1420 : id === 'cmb' ? 3000 : 1800, t, 0.1);
+    H.f.Q.setTargetAtTime(id === 'hydrogen' ? 3 : 0.4, t, 0.1);
+    // the Crab pulsar: a steady buzz of 29.6 pulses a second
+    if (id === 'crab' && !this.crab) {
+      const o = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = 29.6;
+      const f = ctx.createBiquadFilter();
+      f.type = 'bandpass';
+      f.frequency.value = 1100;
+      f.Q.value = 1.4;
+      const g = ctx.createGain();
+      g.gain.value = 0.0001;
+      g.gain.setTargetAtTime(0.11, t, 0.2);
+      o.connect(f).connect(g).connect(this.sfx);
+      o.start();
+      this.crab = { o, g };
+    } else if (id !== 'crab' && this.crab) {
+      const c = this.crab;
+      c.g.gain.setTargetAtTime(0.0001, t, 0.08);
+      c.o.stop(t + 0.5);
+      this.crab = null;
+    }
+  }
+
+  updateRadio(dt) {
+    const id = this.radioId;
+    this.radioT -= dt;
+    if (this.radioT > 0) return;
+    if (id === 'pulsar') {
+      // one pulse every 0.714 seconds, its high notes arriving a moment
+      // before the low ones (the gas between the stars slows low
+      // frequencies), each a little brighter or dimmer than the last
+      this.radioT += 0.714519;
+      this.radioPulse = (this.radioPulse || 0) + 1;
+      const v = 0.16 + Math.random() * 0.12;
+      this.noise(0.05, v, { freq: 2600, f2: 650, q: 2.2, attack: 0.002 });
+      this.tone('triangle', 180, 0.05, v * 0.25, { f2: 90 });
+    } else if (id === 'jupiter') {
+      // long swells like waves on a beach, and now and then a burst of pops
+      this.radioT = 1.2 + Math.random() * 2.6;
+      this.noise(1.4 + Math.random(), 0.1 + Math.random() * 0.08, { type: 'lowpass', freq: 1600, f2: 450, q: 0.6, attack: 0.5 });
+      if (Math.random() < 0.45) {
+        this.radioPulse = (this.radioPulse || 0) + 1;
+        const n = 5 + Math.floor(Math.random() * 12);
+        let w = 0.3 + Math.random();
+        for (let i = 0; i < n; i++) {
+          this.noise(0.008, 0.16 + Math.random() * 0.1, { freq: 2800 + Math.random() * 1200, q: 2.5, when: w });
+          w += 0.02 + Math.random() * 0.05;
+        }
+      }
+    } else if (id === 'sun') {
+      // a radio burst from a flare: a roar sweeping down the dial
+      this.radioT = 3 + Math.random() * 7;
+      this.radioPulse = (this.radioPulse || 0) + 1;
+      const v = 0.08 + Math.random() * 0.12;
+      this.noise(0.9 + Math.random() * 0.8, v, { freq: 3400, f2: 280, q: 2.6, attack: 0.05 });
+      if (Math.random() < 0.3) this.noise(3, v * 0.7, { freq: 900, f2: 300, q: 1.5, attack: 0.6, when: 0.6 });
+    } else if (id === 'cmb') {
+      // static, and the odd crackle
+      this.radioT = 0.2 + Math.random() * 1.5;
+      this.noise(0.01, 0.12, { type: 'highpass', freq: 2500, q: 0.7 });
+    } else this.radioT = 1;
   }
 
   // ------------------------------------------------------------- per frame
@@ -1006,7 +1174,8 @@ export class AudioEngine {
       }
       if (this.creakAmt > 0.05 && Math.random() < dt * 4) this.noise(0.25, 0.08 * this.creakAmt, { freq: 280, q: 5, buf: this.brown });
     }
-    this.updateMusic(dt, g);
+    if (this.radioId) this.updateRadio(dt);
+    else this.updateMusic(dt, g);
   }
 
   // ----------------------------------------------------------------- music

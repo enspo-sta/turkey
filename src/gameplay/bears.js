@@ -131,7 +131,7 @@ export class Bears {
 
   playerPos() {
     const g = this.game;
-    return g.player.mode === 'drive' ? g.hotrod.pos : g.player.mode === 'boat' ? g.boat.pos : g.player.pos;
+    return g.player.mode === 'drive' ? g.car.pos : g.player.mode === 'boat' ? g.boat.pos : g.player.pos;
   }
 
   // On your own two feet on land: in the car or out on the boat a bear

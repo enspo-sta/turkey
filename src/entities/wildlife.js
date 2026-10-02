@@ -415,7 +415,7 @@ export class Wildlife {
   // ------------------------------------------------------------ interaction
   threatPos() {
     const g = this.game;
-    if (g.player.mode === 'drive') return { x: g.hotrod.pos.x, z: g.hotrod.pos.z, loud: 1.3 + Math.abs(g.hotrod.speed) / 20 };
+    if (g.player.mode === 'drive') return { x: g.car.pos.x, z: g.car.pos.z, loud: (g.car === g.racer ? 2.2 : 1.3) + Math.abs(g.car.speed) / 20 };
     if (g.player.mode === 'boat') return { x: g.boat.pos.x, z: g.boat.pos.z, loud: 1 + Math.abs(g.boat.speed) / 8 };
     const run = g.player.speed > 5 ? 1.35 : g.player.speed > 1 ? 1.0 : 0.75;
     return { x: g.player.pos.x, z: g.player.pos.z, loud: run };

@@ -33,7 +33,7 @@ export class GameState {
   constructor() {
     this.listeners = [];
     this.reset();
-    this.settings = { quality: null, volume: 0.8, music: 0.55, sens: 1, invert: false, haptics: true, showFps: false, autoQuality: true, minimap: true, announcer: true };
+    this.settings = { quality: null, volume: 0.8, music: 0.55, sens: 1, invert: false, haptics: true, showFps: false, autoQuality: true, minimap: true, announcer: true, skyGuide: true };
     this.loadSettings();
   }
 
@@ -84,6 +84,15 @@ export class GameState {
     this.day = 1;
     this.player = null;
     this.car = null;
+    // the race car from the woods: where it stands, and its best top speed
+    this.racer = null;
+    this.racerTop = 0;
+    // the night sky: objects seen through the telescope (id: day), radio
+    // sources heard, meteorites found, space station passes watched, the
+    // strongest aurora seen and the scale model's planets visited
+    this.sky = { seen: {}, heard: {}, meteorites: [], iss: 0, kpMax: 0, walk: {} };
+    // the last fireball's stone, where it lies (see world/meteors.js)
+    this.meteorite = null;
     this.health = 100;
     this.started = false;
     this.salmonRun = null;
@@ -216,6 +225,19 @@ export class GameState {
         if (ev.count >= 3) complete('strange3');
         if (ev.count >= 10) complete('strangeall');
         break;
+      case 'scope':
+        if (ev.count >= 5) complete('stargaze');
+        if (ev.planets >= 4) complete('planets');
+        break;
+      case 'iss':
+        complete('iss');
+        break;
+      case 'meteorite':
+        complete('meteorite');
+        break;
+      case 'solarwalk':
+        if (ev.count >= 9) complete('solarwalk');
+        break;
       case 'photo':
         // animals only: fish pictures do not count
         if ((ev.animals || 0) >= 8) complete('photo');
@@ -260,6 +282,10 @@ export class GameState {
       day: this.day,
       player: this.player,
       car: this.car,
+      racer: this.racer,
+      racerTop: this.racerTop,
+      sky: this.sky,
+      meteorite: this.meteorite,
       health: this.health,
       started: this.started,
     };
@@ -321,6 +347,10 @@ export class GameState {
         day: d.day ?? 1,
         player: d.player || null,
         car: d.car || null,
+        racer: d.racer && typeof d.racer === 'object' ? d.racer : null,
+        racerTop: Number(d.racerTop) || 0,
+        sky: { ...this.sky, ...(d.sky && typeof d.sky === 'object' ? d.sky : {}) },
+        meteorite: d.meteorite && typeof d.meteorite === 'object' ? d.meteorite : null,
         health: d.health ?? 100,
         started: !!d.started,
       });

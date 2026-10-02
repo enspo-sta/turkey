@@ -10,9 +10,20 @@ import { GUS_NOTES } from '../world/secret.js';
 import { formatMoney, formatTime, clamp } from '../util/math.js';
 import { privacyHTML, PRIVACY_UPDATED } from './privacy.js';
 import { renderMapRGBA, worldToMap } from '../world/maprender.js';
+import { TARGETS, RADIO, WALK } from '../gameplay/skytargets.js';
+import { targetStatus, radioStatus, dayLight, logSeen, logHeard, planetsSeen } from '../gameplay/skywatch.js';
+import { almanac, almanacLines, upcomingNight, clock } from '../gameplay/tonight.js';
+import { drawEyepiece } from './eyepiece.js';
+import { jupiterMoonsView, dateLabel } from '../world/astro.js';
+import { METEORITES } from '../world/meteors.js';
+import { KP_WORDS } from '../world/spaceweather.js';
 import { HALF, SIZE } from '../world/worldgen.js';
 
 const $ = (id) => document.getElementById(id);
+const smoothstepUI = (a, b, v) => {
+  const t = clamp((v - a) / (b - a), 0, 1);
+  return t * t * (3 - 2 * t);
+};
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 function hex(c) {
@@ -550,6 +561,11 @@ export class Screens {
     this.game.audio?.click();
     if (this.opts && this.opts.onClose) this.opts.onClose();
     if (was === 'shop' || was === 'wardrobe') this.game.save();
+    if (was === 'telescope') {
+      cancelAnimationFrame(this.radioRAF);
+      this.game.audio?.listen?.(null);
+      this.radioSel = null;
+    }
   }
 
   setTabs(list, active) {
@@ -578,6 +594,7 @@ export class Screens {
     else if (n === 'lure') this.renderLures();
     else if (n === 'dialog') this.renderDialog();
     else if (n === 'wardrobe') this.renderWardrobe();
+    else if (n === 'telescope') this.renderTelescope();
   }
 
   // ------------------------------------------------------------- wardrobe
@@ -705,7 +722,7 @@ export class Screens {
       .map((p) => {
         const known = g.state.discovered[p.id];
         const run = g.state.salmonRun && g.state.salmonRun.place === p.id ? ' · Salmon run!' : '';
-        const kind = p.kind === 'fishing' ? 'Fishing' : p.kind === 'hunting' ? 'Hunting' : p.kind === 'service' ? 'Trading Post' : 'Landmark';
+        const kind = p.kind === 'fishing' ? 'Fishing' : p.kind === 'hunting' ? 'Hunting' : p.kind === 'service' ? 'Trading Post' : p.kind === 'observatory' ? 'Observatory' : 'Landmark';
         return `<button class="place-btn ${known ? '' : 'unknown'} ${this.selPlace === p.id ? 'sel' : ''}" data-id="${p.id}"><b>${known ? esc(p.name) : 'Undiscovered'}</b><small>${kind}${known ? run : ''}</small></button>`;
       })
       .join('');
@@ -771,7 +788,7 @@ export class Screens {
       redraw();
     });
     $('map-me').addEventListener('click', () => {
-      const P = g.player.mode === 'drive' ? g.hotrod.pos : g.player.pos;
+      const P = g.player.mode === 'drive' ? g.car.pos : g.player.pos;
       this.mapView.cx = P.x;
       this.mapView.cz = P.z;
       this.mapView.scale = Math.max(this.mapView.scale, this.mapView.fill);
@@ -893,7 +910,7 @@ export class Screens {
       return;
     }
     const known = g.state.discovered[p.id];
-    const pos = g.player.mode === 'drive' ? g.hotrod.pos : g.player.pos;
+    const pos = g.player.mode === 'drive' ? g.car.pos : g.player.pos;
     const d = Math.hypot(p.x - pos.x, p.z - pos.z);
     const dist = d > 1000 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m';
     const hours = Math.max(0.25, d / 15000 + 0.25);
@@ -953,7 +970,7 @@ export class Screens {
     const fit = Math.min(W, H) / SIZE;
     const fill = Math.max(W, H) / SIZE;
     if (!this.mapView) {
-      const P = g.player.mode === 'drive' ? g.hotrod.pos : g.player.pos;
+      const P = g.player.mode === 'drive' ? g.car.pos : g.player.pos;
       this.mapView = { cx: P.x, cz: P.z, scale: fill, min: fit, fill, max: 4 * dpr };
     }
     const v = this.mapView;
@@ -987,7 +1004,7 @@ export class Screens {
       if (x < -60 * k || y < -60 * k || x > W + 60 * k || y > H + 60 * k) continue;
       ctx.beginPath();
       ctx.arc(x, y, (this.selPlace === p.id ? 11 : 8) * k, 0, Math.PI * 2);
-      ctx.fillStyle = !known ? 'rgba(20,20,20,0.6)' : p.kind === 'fishing' ? '#ff7a1a' : p.kind === 'hunting' ? '#c8231b' : p.kind === 'service' ? '#ffcc3a' : '#5fc8c0';
+      ctx.fillStyle = !known ? 'rgba(20,20,20,0.6)' : p.kind === 'fishing' ? '#ff7a1a' : p.kind === 'hunting' ? '#c8231b' : p.kind === 'service' ? '#ffcc3a' : p.kind === 'observatory' ? '#a493ff' : '#5fc8c0';
       ctx.fill();
       ctx.lineWidth = 2.5 * k;
       ctx.strokeStyle = this.selPlace === p.id ? '#ffffff' : '#0d1a1f';
@@ -1006,16 +1023,42 @@ export class Screens {
         ctx.fillText('SALMON RUN', x, y + 26 * k);
       }
     }
-    // hot rod
-    const car = g.hotrod;
-    ctx.save();
-    ctx.translate(sx(car.pos.x), sy(car.pos.z));
-    ctx.rotate(-car.yaw + Math.PI);
-    ctx.fillStyle = '#c8231b';
-    ctx.fillRect(-5 * k, -9 * k, 10 * k, 18 * k);
-    ctx.fillStyle = '#ffcc3a';
-    ctx.fillRect(-5 * k, -9 * k, 10 * k, 5 * k);
-    ctx.restore();
+    // the hot rod, and the race car once it is found
+    const carMark = (c, body, nose) => {
+      ctx.save();
+      ctx.translate(sx(c.pos.x), sy(c.pos.z));
+      ctx.rotate(-c.yaw + Math.PI);
+      ctx.fillStyle = body;
+      ctx.fillRect(-5 * k, -9 * k, 10 * k, 18 * k);
+      ctx.fillStyle = nose;
+      ctx.fillRect(-5 * k, -9 * k, 10 * k, 5 * k);
+      ctx.restore();
+    };
+    // where a fireball's stone came down: a dashed search circle
+    const fall = s.meteorite;
+    if (fall && !fall.found) {
+      ctx.save();
+      ctx.setLineDash([8 * k, 6 * k]);
+      ctx.lineWidth = 2.5 * k;
+      ctx.strokeStyle = '#ffd36a';
+      ctx.fillStyle = 'rgba(255,211,106,0.12)';
+      ctx.beginPath();
+      ctx.arc(sx(fall.cx), sy(fall.cz), fall.r * v.scale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = `700 ${15 * k}px "Barlow Condensed", "Arial Narrow", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 4 * k;
+      ctx.strokeStyle = 'rgba(10,20,24,0.85)';
+      ctx.strokeText('FIREBALL CAME DOWN HERE', sx(fall.cx), sy(fall.cz) - fall.r * v.scale - 8 * k);
+      ctx.fillStyle = '#ffd36a';
+      ctx.fillText('FIREBALL CAME DOWN HERE', sx(fall.cx), sy(fall.cz) - fall.r * v.scale - 8 * k);
+      ctx.restore();
+    }
+    const car = g.player.mode === 'drive' ? g.car : g.hotrod;
+    carMark(g.hotrod, '#c8231b', '#ffcc3a');
+    if (g.racer && s.flags.racer) carMark(g.racer, '#0b1a3a', '#3dff9a');
     // the boat, when it is in the water
     const B = g.boat;
     if (B && B.owned && B.where === 'water') {
@@ -1079,6 +1122,7 @@ export class Screens {
         ['trophies', 'Hunting'],
         ['photos', `Photos ${g.photo.count()}/${Object.keys(PHOTO_SUBJECTS).length}`],
         ['goals', 'Challenges'],
+        ['sky', 'Sky'],
         ['stats', 'Stats'],
       ],
       tab
@@ -1115,6 +1159,8 @@ export class Screens {
       this.body.innerHTML = `<h3>Hunting log</h3><div class="list">${rows}</div><h3 style="margin-top:16px">Trophies to sell</h3><div class="list">${held}</div>`;
     } else if (tab === 'photos') {
       this.renderAlbum();
+    } else if (tab === 'sky') {
+      this.body.innerHTML = this.skyLogHTML();
     } else if (tab === 'goals') {
       const cur = s.currentChallenge();
       // Gus's notes, once you have found them (see world/secret.js)
@@ -1137,6 +1183,7 @@ export class Screens {
       const st = s.stats;
       const rows = [
         ['Days in Alaska', g.env.day],
+        ['Date', dateLabel(g.env.day)],
         ['Casts', st.casts],
         ['Perfect casts', st.perfects],
         ['Fish caught', st.caught],
@@ -1539,6 +1586,8 @@ export class Screens {
       <div class="setting"><label>Adjust graphics automatically</label><div class="seg" id="s-auto"><button data-v="0" class="${st.autoQuality === false ? 'on' : ''}">OFF</button><button data-v="1" class="${st.autoQuality === false ? '' : 'on'}">ON</button></div></div>
       <div class="setting"><label>Small map</label><div class="seg" id="s-minimap"><button data-v="0" class="${st.minimap === false ? 'on' : ''}">OFF</button><button data-v="1" class="${st.minimap === false ? '' : 'on'}">ON</button></div></div>
       <div class="setting"><label>Announcer voice</label><div class="seg" id="s-announcer"><button data-v="0" class="${st.announcer === false ? 'on' : ''}">OFF</button><button data-v="1" class="${st.announcer === false ? '' : 'on'}">ON</button></div></div>
+      <div class="setting"><label>Sky guide</label><div class="seg" id="s-skyGuide"><button data-v="0" class="${st.skyGuide === false ? 'on' : ''}">OFF</button><button data-v="1" class="${st.skyGuide === false ? '' : 'on'}">ON</button></div></div>
+      <p class="setting-note">Names the constellations, bright stars and planets when you look up at a dark sky, and always from the observatory's deck chairs.</p>
       <div class="setting"><label>Show frame rate</label><div class="seg" id="s-fps"><button data-v="0" class="${st.showFps ? '' : 'on'}">OFF</button><button data-v="1" class="${st.showFps ? 'on' : ''}">ON</button></div></div>
       <div class="setting"><label for="s-vol">Sound volume</label><input type="range" id="s-vol" min="0" max="1" step="0.05" value="${st.volume}"></div>
       <div class="setting"><label for="s-music">Music volume</label><input type="range" id="s-music" min="0" max="1" step="0.05" value="${st.music}"></div>
@@ -1582,7 +1631,7 @@ export class Screens {
         this.render();
       })
     );
-    for (const key of ['minimap', 'announcer'])
+    for (const key of ['minimap', 'announcer', 'skyGuide'])
       this.body.querySelectorAll(`#s-${key} button`).forEach((b) =>
         b.addEventListener('click', () => {
           st[key] = b.dataset.v === '1';
@@ -1637,7 +1686,7 @@ export class Screens {
         <p><b>Timing:</b> a white marker sweeps back and forth across the timing bar. Tap when it is on the dark green line in the middle.</p>
         <div class="demo-meter timing" style="background:${timingGradient()}"><i class="demo-cursor" style="left:48%"></i></div>
         <ul><li>The dark green line: a <b>PERFECT CAST</b> into the ring and better bites. When the meter shows a gold hotspot, the power must be in the gold too.</li><li>Green: the lure lands in the ring.</li><li>Orange: left of the line hooks it left, right of it slices it right, and it falls short.</li><li>Red: a backlash to untangle.</li></ul></section>
-      <section><h4>Bites</h4><p>Watch the float. Small twitches are nibbles, so wait. When it plunges under, tap <b>HOOK!</b> fast.</p><p>The <b>BITE</b> readout under the map button says how hungry the fish are: <b>SLOW</b>, <b>FAIR</b>, <b>GOOD</b> or <b>HOT</b>. Tap it to hear why. Fish feed hardest at dawn and dusk, when a front rolls in and with rain on the water; they sulk under a bright midday sun and go quiet at night. On the sea, fish a running tide. The map shows the bite at each place and when each fish bites best.</p><p>Tap <b>REEL</b> while waiting to twitch the lure, hold it to retrieve. The line only comes in when you reel: the current carries the float along but never back to your feet, and a lure that lands on the bank stays there until you hold <b>REEL</b>.</p></section>
+      <section><h4>Bites</h4><p>Watch the float. Small twitches are nibbles, so wait. When it plunges under, tap <b>HOOK!</b> fast.</p><p>The <b>BITE</b> readout under the map button says how hungry the fish are: <b>SLOW</b>, <b>FAIR</b>, <b>GOOD</b> or <b>HOT</b>. Tap it to hear why. Fish feed hardest at dawn and dusk, when a front rolls in and with rain on the water; they sulk under a bright midday sun and go quiet at night. On the sea, fish a running tide: the tide follows the real Moon, with high water a few hours after the Moon crosses the sky and the strongest currents at spring tides, after new and full Moon (the observatory's board gives the times). The map shows the bite at each place and when each fish bites best.</p><p>Tap <b>REEL</b> while waiting to twitch the lure, hold it to retrieve. The line only comes in when you reel: the current carries the float along but never back to your feet, and a lure that lands on the bank stays there until you hold <b>REEL</b>.</p></section>
       <section><h4>Rare fish</h4><p>Every fish is <b>common</b>, <b>uncommon</b>, <b>rare</b> or <b>epic</b>. Rarer fish bite less often and sell for more. A cast to a gold hotspot or a <b>PERFECT CAST</b> raises the odds of a rare one, and the right lure matters: each lure in the Trading Post says what it catches. The epic big skate and salmon shark live off Halibut Pier.</p></section>
       <section><h4>The fight</h4><ul><li>Hold <b>REEL</b> to bring the fish in. Keep the needle in the green. Only reeling brings it closer: let go and it stays out.</li><li>When it runs, let go before the line snaps, then reel again.</li><li>Steer the rod against the run: ${touch ? 'drag left or right on the left side' : 'press <kbd>A</kbd> or <kbd>D</kbd>'}.</li><li>When it jumps, release REEL or it throws the hook.</li></ul></section>
       <section><h4>Driving</h4><p>${touch ? 'Hold <b>GAS</b> and <b>BRAKE</b>, steer by dragging on the left side.' : '<kbd>W</kbd> gas, <kbd>S</kbd> brake and reverse, <kbd>A</kbd>/<kbd>D</kbd> steer.'} Tap the camera button to see the hot rod from behind, and the horn to say hello. Street tires slide on gravel and tundra.</p></section>
@@ -1649,6 +1698,7 @@ export class Screens {
       <section><h4>Money and upgrades</h4><p>Sell fish and trophies at the Kenai Trading Post. Buy rods that can handle kings and halibut, new lures, arrows, a yew longbow and a bow sight, a bigger cooler, a better engine and new paint.</p><p>Sleep at Ruben's cabin to skip the night. Watch for the northern lights first.</p></section>
       <section><h4>Odd jobs</h4><p>The board in the Trading Post (<b>Odd jobs</b> tab) always has three jobs from the locals: a fish for someone's dinner, a picture for the paper, an errand. Take one, do it, and come back to collect. Fish jobs are handed in from your cooler. And keep your camera handy at dawn and dusk: some say Bigfoot walks the forest edges.</p></section>
       <section><h4>Places to find</h4><p><b>Steaming Springs</b> has fat trout in a warm pond, a hot pool to <b>SOAK</b> in (it heals you) and a geyser that blows every minute or two: stand back. <b>Mosquito Flats</b> has pike and sheefish in the bog and the World's Largest Mosquito; buy bug dope there or the real ones will have opinions. At <b>Shipwreck Cove</b>, walk the gangplank onto the old trawler, fish from her deck and look in the wheelhouse.</p></section>
+      <section><h4>The night sky</h4><p>The stars, the planets and the Moon are where they really are over southern Alaska on the game's date, which starts on 20 August 2026. The northern lights follow each night's space weather: a geomagnetic storm (a high Kp number) brings them overhead, red at the top. Shooting stars cross the sky after dark; a fireball some nights drops a meteorite, and the map circles where to look. Some evenings the International Space Station passes over.</p><p>The <b>Tundra Observatory</b> by Caribou Tundra has a <b>TELESCOPE</b> (planets, the Moon, the Sun through a filter, galaxies and star clusters), a <b>RADIO DISH</b> that hears pulsars and Jupiter through any cloud, a board with <b>TONIGHT</b>'s almanac, and deck chairs: <b>STARGAZE</b> to lie back while the night slows down and the sky guide names the constellations. A scale model of the solar system runs down the Lighthouse Road from the Trading Post.</p></section>
       <section><h4>Saving</h4><p>The game saves by itself every 45 seconds and whenever you keep a fish, trade, sleep or travel. A <b>SAVED</b> note flashes under the clock. To save right now, open the pause menu${touch ? ' (top right)' : ' (<kbd>Esc</kbd>)'} and choose <b>Save game</b>. Next time, choose <b>Continue</b> on the title screen.</p></section>
       ${touch ? '' : '<section><h4>Keyboard</h4><p><kbd>Space</kbd> or click: cast and reel; hold and let go to shoot the bow. <kbd>Right click</kbd> aim. <kbd>E</kbd> interact, or keep a catch (<kbd>R</kbd> releases it). <kbd>Q</kbd> next tool, or <kbd>1</kbd> rod, <kbd>2</kbd> longbow, <kbd>4</kbd> camera, <kbd>3</kbd> empty hands. <kbd>T</kbd> switch arrows. <kbd>Z</kbd> zoom the camera. <kbd>V</kbd> the boat button (launch, board, ashore, load). <kbd>G</kbd> bear spray. <kbd>X</kbd> first aid kit. <kbd>L</kbd> lures. <kbd>M</kbd> map. <kbd>J</kbd> journal. <kbd>C</kbd> camera. <kbd>H</kbd> horn. <kbd>Esc</kbd> pause.</p></section>'}
     </div><div class="dialog-actions"><button class="btn big hot" id="h-done">Got it</button></div>`;
@@ -1663,6 +1713,251 @@ export class Screens {
       this.current = 'settings';
       this.render();
     });
+  }
+
+  // ---------------------------------------------------------- observatory
+  // The Tundra Observatory: the telescope, the radio dish, the night ahead
+  // and the sky log.
+  renderTelescope() {
+    const g = this.game;
+    const sky = g.state.sky;
+    this.title.textContent = 'Tundra Observatory';
+    const tab = this.tab || 'scope';
+    cancelAnimationFrame(this.radioRAF);
+    if (tab !== 'radio') {
+      g.audio?.listen?.(null);
+      g.observatory?.aimDish(null);
+      this.radioSel = null;
+    }
+    if (tab === 'scope') this.renderScope();
+    else if (tab === 'radio') this.renderRadio();
+    else if (tab === 'tonight') this.renderTonight();
+    else this.body.innerHTML = this.skyLogHTML();
+    // (after the view: it may have just logged something)
+    this.setTabs(
+      [
+        ['scope', 'Telescope'],
+        ['radio', 'Radio dish'],
+        ['tonight', 'Tonight'],
+        ['log', `Sky log ${Object.keys(sky.seen).length}/${TARGETS.length}`],
+      ],
+      tab
+    );
+  }
+
+  // Keep the list where it was when a pick redraws the sheet.
+  rerender() {
+    const keep = this.body.scrollTop;
+    this.render();
+    this.body.scrollTop = keep;
+  }
+
+  renderScope() {
+    const g = this.game;
+    const env = g.env;
+    const sky = g.state.sky;
+    const st = TARGETS.map((T) => ({ T, S: targetStatus(g, T) }));
+    if (!this.scopeSel || !st.some((x) => x.T.id === this.scopeSel)) this.scopeSel = (st.find((x) => x.S.ok) || st[0]).T.id;
+    const { T, S } = st.find((x) => x.T.id === this.scopeSel);
+    const list = st
+      .map(
+        (x) =>
+          `<button class="target ${x.S.ok ? 'up' : 'off'}${sky.seen[x.T.id] ? ' logged' : ''}${x.T.id === this.scopeSel ? ' sel' : ''}" data-t="${x.T.id}"><i>${sky.seen[x.T.id] ? '✓' : ''}</i><b>${esc(x.T.name)}</b><small>${esc(x.S.ok ? x.S.where : x.S.why)}</small></button>`
+      )
+      .join('');
+    const view = S.ok ? `<canvas id="eyepiece" class="eyepiece" width="512" height="512" aria-label="${esc(T.name)} through the telescope"></canvas><div class="cap" id="eyecap"></div>` : `<div class="scope-off">${esc(T.name)}<br><br>${esc(S.why)}</div>`;
+    const visible = st.filter((x) => x.S.ok).length;
+    this.body.innerHTML = `<div class="scope"><div class="scope-view">${view}<div class="facts"><small>${esc(T.kind)}</small><h4>${esc(T.name)}</h4>${T.facts
+      .map((f) => `<p>${esc(f)}</p>`)
+      .join('')}</div></div><div class="scope-list"><p class="catch-info" style="margin:0 0 4px">${visible} of ${TARGETS.length} in reach now. Tap one to swing the telescope to it; each new one goes in the sky log.</p>${list}</div></div>`;
+    this.body.querySelectorAll('[data-t]').forEach((b) =>
+      b.addEventListener('click', () => {
+        this.scopeSel = b.dataset.t;
+        g.audio?.click();
+        this.rerender();
+      })
+    );
+    if (!S.ok) {
+      g.observatory?.aim(null);
+      return;
+    }
+    const info = {
+      astro: env.astro,
+      sunUp: dayLight(env),
+      cloud: smoothstepUI(0.45, 0.85, env.weather.cloud) * 0.8,
+      day: env.day,
+      jmoons: T.id === 'jupiter' ? jupiterMoonsView(env.date) : [],
+      hours: (env.day - 1) * 24 + env.time,
+    };
+    const { caption, fov } = drawEyepiece($('eyepiece'), T, info);
+    $('eyecap').textContent = `${caption} · field ${fov >= 1 ? fov + ' arcminutes' : Math.round(fov * 60) + ' arcseconds'} · north up`;
+    g.observatory?.aim(S.dir);
+    logSeen(g, T);
+  }
+
+  renderRadio() {
+    const g = this.game;
+    const sky = g.state.sky;
+    const st = RADIO.map((R) => ({ R, S: radioStatus(g, R) }));
+    const sel = this.radioSel ? st.find((x) => x.R.id === this.radioSel) : null;
+    const list = st
+      .map(
+        (x) =>
+          `<button class="target ${x.S.ok ? 'up' : 'off'}${sky.heard[x.R.id] ? ' logged' : ''}${sel && sel.R.id === x.R.id ? ' sel' : ''}" data-r="${x.R.id}"><i>${sky.heard[x.R.id] ? '✓' : ''}</i><b>${esc(x.R.name)}</b><small>${esc(x.S.ok ? x.R.sub : x.S.why)}</small></button>`
+      )
+      .join('');
+    const facts = sel
+      ? `<div class="facts"><small>${esc(sel.S.ok ? 'On the loudspeaker: ' + sel.R.sub : sel.S.why)}</small><h4>${esc(sel.R.name)}</h4><p>${esc(sel.R.facts)}</p><p class="catch-info">${esc(sel.S.where)}</p></div>`
+      : `<div class="facts"><small>Six metres across</small><h4>The radio dish</h4><p>It hears what eyes cannot: radio waves from dead stars, storms on Jupiter, the Sun, cold hydrogen between the stars and the afterglow of the Big Bang itself. Radio waves pass through cloud, so the dish works in any weather, by day and by night.</p><p>Tap a source to point the dish at it and turn up the loudspeaker.</p></div>`;
+    this.body.innerHTML = `<div class="scope"><div class="scope-view"><canvas class="radio-trace" id="radio-trace" width="880" height="240" aria-label="The receiver's signal"></canvas>${facts}</div><div class="scope-list">${list}</div></div>`;
+    this.body.querySelectorAll('[data-r]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const x = st.find((y) => y.R.id === b.dataset.r);
+        this.radioSel = x.R.id;
+        if (x.S.ok) {
+          g.audio?.listen?.(x.R.id);
+          g.observatory?.aimDish(x.S.dir);
+          logHeard(g, x.R);
+        } else {
+          g.audio?.listen?.(null);
+          g.observatory?.aimDish(null);
+          g.audio?.click();
+        }
+        this.rerender();
+      })
+    );
+    // the receiver's trace, scrolling like a chart recorder
+    const cv = $('radio-trace');
+    const ctx = cv.getContext('2d');
+    const W = cv.width;
+    const H = cv.height;
+    const buf = new Float32Array(W);
+    const id = sel && sel.S.ok ? sel.R.id : null;
+    let last = performance.now();
+    let t = 0;
+    let pulse = g.audio?.radioPulse ?? 0;
+    let burst = 0;
+    const step = () => {
+      if (this.current !== 'telescope' || this.tab !== 'radio') return;
+      const now = performance.now();
+      const dt = Math.min(0.1, (now - last) / 1000);
+      last = now;
+      t += dt;
+      ctx.fillStyle = '#061012';
+      ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(95,200,192,0.12)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < W; x += 55) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, H);
+        ctx.stroke();
+      }
+      for (let y = 0; y < H; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = '#7fe8b0';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      if (id === 'hydrogen') {
+        // a spectrum: the 21 cm line, shifted by the gas's motion
+        for (let x = 0; x < W; x++) {
+          const f = (x / W - 0.5) * 8;
+          const y = H * 0.8 - H * 0.55 * (Math.exp(-((f - 0.6) ** 2) * 3) + 0.45 * Math.exp(-((f + 1.4) ** 2) * 5)) - (Math.random() - 0.5) * 10;
+          if (x) ctx.lineTo(x, y);
+          else ctx.moveTo(x, y);
+        }
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(160,220,200,0.8)';
+        ctx.font = '600 22px "Barlow Condensed", "Arial Narrow", sans-serif';
+        ctx.fillText('1,420.4 megahertz', W * 0.52, H * 0.15);
+      } else {
+        // scroll on, and add this frame's samples
+        const n = Math.max(1, Math.round(dt * 220));
+        buf.copyWithin(0, n);
+        const rp = g.audio?.radioPulse ?? pulse;
+        const fresh = rp !== pulse;
+        pulse = rp;
+        if (fresh) burst = 1;
+        for (let k = 0; k < n; k++) {
+          let v = (Math.random() - 0.5) * (id === 'cmb' ? 0.5 : 0.18);
+          if (id === 'pulsar') {
+            const ph = g.audio?.ready ? (k === n - 1 && fresh ? 0 : 1) : (t % 0.714) / 0.714;
+            if (ph < 0.03) v += 0.9;
+          } else if (id === 'crab') v += (Math.sin(t * 29.6 * Math.PI * 2 + k * 0.8) > 0.92 ? 0.55 : 0) + (Math.random() - 0.5) * 0.15;
+          else if (id === 'jupiter') v += (0.25 + 0.2 * Math.sin(t * 1.3)) * (Math.random() - 0.5) * 2 + burst * 0.6 * Math.random();
+          else if (id === 'sun') v += burst * 0.8 * (Math.random() * 0.6 + 0.4) + 0.08 * Math.sin(t * 3);
+          buf[W - n + k] = v;
+        }
+        burst = Math.max(0, burst - dt * 1.4);
+        for (let x = 0; x < W; x++) {
+          const y = H * 0.62 - buf[x] * H * 0.5;
+          if (x) ctx.lineTo(x, y);
+          else ctx.moveTo(x, y);
+        }
+        ctx.stroke();
+        if (!id) {
+          ctx.fillStyle = 'rgba(160,220,200,0.7)';
+          ctx.font = '600 22px "Barlow Condensed", "Arial Narrow", sans-serif';
+          ctx.fillText('Receiver noise: pick a source', 18, 30);
+        }
+      }
+      this.radioRAF = requestAnimationFrame(step);
+    };
+    this.radioRAF = requestAnimationFrame(step);
+  }
+
+  renderTonight() {
+    const g = this.game;
+    const env = g.env;
+    const A = almanac(upcomingNight(env));
+    const light = env.sunElevation > 0 ? 'daylight' : env.night > 0.6 ? 'dark' : 'twilight';
+    const cloud = env.weather.cloud > 0.85 ? 'overcast' : env.weather.cloud > 0.5 ? 'partly cloudy' : 'clear';
+    const moon = env.uniforms.uMoonPos.value.y > 0 ? 'up' : 'down';
+    const kp = env.spaceWeather.kp;
+    const aur = env.uniforms.uAurora.value;
+    const now = [
+      ['Now', `${clock(env.time)}, ${light}, ${cloud}. The Moon is ${moon}`],
+      ['Space weather', `Kp ${kp}, ${KP_WORDS[kp]}${env.night > 0.5 ? (aur > 0.3 ? '. The aurora is out: look north' : aur > 0.08 ? '. A faint aurora low in the north' : '. No aurora to speak of') : ''}`],
+    ];
+    const canWait = env.time >= 5 && env.time < 22.8;
+    this.body.innerHTML = `<h3>${esc(A.date)}: the night ahead</h3><div class="list almanac">${almanacLines(A)
+      .map(([k, v]) => `<div class="li note"><b>${esc(k)}</b><span>${esc(v)}</span></div>`)
+      .join('')}</div><h3 style="margin-top:14px">Right now</h3><div class="list almanac">${now
+      .map(([k, v]) => `<div class="li note"><b>${esc(k)}</b><span>${esc(v)}</span></div>`)
+      .join('')}</div><p class="catch-info" style="margin-top:12px">The Sun keeps Alaska's late-summer hours here: it sets at 22:00 and it is dark from about 23:00 to 04:00. Lie back in a chair on the deck to watch the sky turn.</p>${
+      canWait ? '<div class="dialog-actions"><button class="btn big hot" id="wait-dark">Wait here until dark</button></div>' : ''
+    }`;
+    if (canWait)
+      $('wait-dark').addEventListener('click', () => {
+        this.close();
+        g.waitForDark?.();
+      });
+  }
+
+  // The sky log: the Journal's Sky page and the observatory's last tab.
+  skyLogHTML() {
+    const g = this.game;
+    const s = g.state;
+    const sky = s.sky;
+    const day = (d) => (d ? `Day ${d}` : 'Not yet');
+    const rows = (items) => `<div class="list">${items.join('')}</div>`;
+    const seen = TARGETS.map((T) => `<div class="li"><b>${sky.seen[T.id] ? '✓ ' : ''}${esc(T.name)}</b><span>${esc(T.kind)}</span><span class="v">${day(sky.seen[T.id])}</span></div>`);
+    const heard = RADIO.map((R) => `<div class="li"><b>${sky.heard[R.id] ? '✓ ' : ''}${esc(R.name)}</b><span>${esc(R.sub)}</span><span class="v">${day(sky.heard[R.id])}</span></div>`);
+    const rocks = (sky.meteorites || []).length
+      ? sky.meteorites.map((m) => `<div class="li"><b>${esc(METEORITES[m.kind].name)}</b><span>${m.kg} kg · day ${m.day}</span><span class="v">${formatMoney(m.pay)}</span></div>`)
+      : ['<div class="li note"><span>None yet. Some nights a fireball lights up the land: the map then shows where its stone came down.</span></div>'];
+    const walk = WALK.filter((w) => sky.walk[w.id]).length;
+    const other = [
+      `<div class="li"><b>Space station passes watched</b><span>The observatory's board says when</span><span class="v">${sky.iss || 0}</span></div>`,
+      `<div class="li"><b>Strongest aurora seen</b><span>${sky.kpMax ? KP_WORDS[sky.kpMax] : 'Watch the north after dark'}</span><span class="v">${sky.kpMax ? 'Kp ' + sky.kpMax : 'Not yet'}</span></div>`,
+      `<div class="li"><b>Solar system walk</b><span>Signs on the Lighthouse Road</span><span class="v">${walk}/${WALK.length}</span></div>`,
+      `<div class="li"><b>Planets through the telescope</b><span>Mercury, Venus, Mars, Jupiter, Saturn</span><span class="v">${planetsSeen(sky)}/5</span></div>`,
+    ];
+    return `<h3>Through the telescope ${Object.keys(sky.seen).length}/${TARGETS.length}</h3>${rows(seen)}<h3 style="margin-top:16px">Heard with the radio dish ${Object.keys(sky.heard).length}/${RADIO.length}</h3>${rows(heard)}<h3 style="margin-top:16px">Meteorites</h3>${rows(rocks)}<h3 style="margin-top:16px">Sky watching</h3>${rows(other)}`;
   }
 
   // --------------------------------------------------------------- dialogs

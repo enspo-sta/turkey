@@ -23,6 +23,10 @@ const OBJECTIVE_PLACE = {
   moose: 'moose',
   rare: 'falls',
   epic: 'pier',
+  stargaze: 'observatory',
+  iss: 'observatory',
+  planets: 'observatory',
+  solarwalk: 'post',
 };
 
 export class HUD {
@@ -155,11 +159,12 @@ export class HUD {
     this.root.hidden = !on;
   }
 
-  buildSpeedo() {
+  buildSpeedo(top = 160) {
+    this.speedoTop = top;
     const g = $('speedo-ticks');
     let html = '';
     for (let i = 0; i <= 8; i++) {
-      const v = i * 20;
+      const v = Math.round((i * top) / 8);
       const a = Math.PI + (i / 8) * Math.PI;
       const x1 = 100 + Math.cos(a) * 80;
       const y1 = 110 + Math.sin(a) * 80;
@@ -665,15 +670,18 @@ export class HUD {
 
     // speedometer
     if (driving) {
-      const v = mode === 'boat' ? g.boat.speed : g.hotrod.speed;
+      const v = mode === 'boat' ? g.boat.speed : g.car.speed;
       const kmh = Math.abs(v) * 3.6;
-      const f = clamp(kmh / 160, 0, 1);
+      // the race car's dial goes to 360
+      const top = mode !== 'boat' && g.car === g.racer ? 360 : 160;
+      if (this.speedoTop !== top) this.buildSpeedo(top);
+      const f = clamp(kmh / top, 0, 1);
       const a = Math.PI + f * Math.PI;
       el.speedoNeedle.setAttribute('x2', (100 + Math.cos(a) * 66).toFixed(1));
       el.speedoNeedle.setAttribute('y2', (110 + Math.sin(a) * 66).toFixed(1));
       el.speedoArc.setAttribute('stroke-dasharray', `${(f * 251).toFixed(1)} 999`);
       set('kmh', Math.round(kmh), (v) => (el.speedoVal.textContent = v));
-      set('gear', v < -0.3 ? 'R' : mode === 'boat' ? (Math.abs(v) < 0.3 ? 'N' : 'F') : String(g.hotrod.gear), (x) => (el.speedoGear.textContent = x));
+      set('gear', v < -0.3 ? 'R' : mode === 'boat' ? (Math.abs(v) < 0.3 ? 'N' : 'F') : String(g.car.gear), (x) => (el.speedoGear.textContent = x));
     }
 
     // the paraglider's instruments
@@ -732,6 +740,20 @@ export class HUD {
       const dz = g.hotrod.pos.z - pz;
       const d = Math.hypot(dx, dz);
       if (d > 20) items.push({ key: 'car', a: Math.atan2(dx, -dz), t: 'Hot rod', d, cls: 'marker' });
+      if (g.racer && s.flags.racer) {
+        const rx = g.racer.pos.x - px;
+        const rz = g.racer.pos.z - pz;
+        const rd = Math.hypot(rx, rz);
+        if (rd > 20) items.push({ key: 'racer', a: Math.atan2(rx, -rz), t: 'Race car', d: rd, cls: 'marker' });
+      }
+    }
+    // a fireball's stone waiting to be found
+    const fall = s.meteorite;
+    if (fall && !fall.found) {
+      const dx = fall.cx - px;
+      const dz = fall.cz - pz;
+      const d = Math.hypot(dx, dz);
+      if (d > fall.r * 0.5) items.push({ key: 'rock', a: Math.atan2(dx, -dz), t: 'Fireball', d, cls: 'marker' });
     }
     if (g.bears && g.bears.threat) {
       const b = g.bears.threat;

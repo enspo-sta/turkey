@@ -51,7 +51,7 @@ export class Minimap {
     this.t = 1 / 15;
     if (!this.image || this.button.offsetParent === null) return;
     if (this.px <= 1) this.resize();
-    const focus = driving ? g.hotrod.pos : g.player.mode === 'boat' ? g.boat.pos : g.player.pos;
+    const focus = driving ? g.car.pos : g.player.mode === 'boat' ? g.boat.pos : g.player.pos;
     const moved = Math.abs(focus.x - this.last.x) + Math.abs(focus.z - this.last.z);
     const turned = Math.abs(heading - this.last.h);
     const threat = g.bears && g.bears.threat;
@@ -140,9 +140,31 @@ export class Minimap {
         ctx.restore();
       } else dot(q, 3 * unit, '#f4ead6', '#1a1208');
     }
-    if (g.player.mode !== 'drive') {
+    // the cars you are not in: the hot rod red, the race car, once found,
+    // in its aurora green
+    const inCar = g.player.mode === 'drive' ? g.car : null;
+    if (inCar !== g.hotrod) {
       const q = at(g.hotrod.pos.x, g.hotrod.pos.z, true);
       if (q) dot(q, 3.6 * unit, '#e8452c', '#1a0804');
+    }
+    if (g.racer && g.state.flags.racer && inCar !== g.racer) {
+      const q = at(g.racer.pos.x, g.racer.pos.z, true);
+      if (q) dot(q, 3.6 * unit, '#3dff9a', '#0b1a3a');
+    }
+    // where a fireball's stone came down
+    const fall = g.state.meteorite;
+    if (fall && !fall.found) {
+      const q = at(fall.cx, fall.cz, true);
+      if (q) {
+        ctx.save();
+        ctx.setLineDash([3 * unit, 2.5 * unit]);
+        ctx.lineWidth = 1.4 * unit;
+        ctx.strokeStyle = '#ffd36a';
+        ctx.beginPath();
+        ctx.arc(q[0], q[1], q[2] ? 4 * unit : Math.max(4 * unit, fall.r * perM), 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
     }
     // the boat, moored or anchored somewhere
     const B = g.boat;

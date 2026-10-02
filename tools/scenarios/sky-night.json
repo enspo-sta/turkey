@@ -1,0 +1,9 @@
+{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":2500},
+{"eval":"(()=>{const g=__rhf.game; document.getElementById('hud').hidden=true; g.player.tool='none'; g.viewmodel.setTool('none'); g.env.day=2; g.env.setTime(0.3); g.env.weather.cloud=g.env.weather.cloudTarget=0.12; g.env.weather.rain=g.env.weather.rainTarget=0; g.env.weather.timer=9999; g.player.place(650, -470, 0); g.player.lookLocked=true; g.player.pitch=0.42; return 'north kp '+g.env.spaceWeather.kp})()"},
+{"wait":3500},{"shot":"sky-north.jpg"},
+{"eval":"(()=>{const g=__rhf.game; g.player.yaw=Math.PI; g.player.pitch=0.6; return 'south'})()"},{"wait":3000},{"shot":"sky-south.jpg"},
+{"eval":"(()=>{const g=__rhf.game; g.player.yaw=-Math.PI/2; g.player.pitch=0.2; return 'east'})()"},{"wait":3000},{"shot":"sky-east.jpg"},
+{"eval":"(()=>{const g=__rhf.game; g.player.yaw=-Math.PI/2; g.player.pitch=1.25; return 'zenith'})()"},{"wait":3000},{"shot":"sky-zenith.jpg"},
+{"eval":"(()=>{const g=__rhf.game; g.env.day=14; g.env.setTime(3.5); g.player.yaw=Math.atan2(-Math.sin(150*Math.PI/180), Math.cos(150*Math.PI/180)); g.player.pitch=0.7; g.zoom=1; g.baseFov=g.baseFov; return 'moon'})()"},{"wait":3500},{"shot":"sky-moon.jpg"},
+{"eval":"(()=>{const g=__rhf.game; const m=g.env.uniforms.uMoonPos.value; g.player.yaw=Math.atan2(-m.x, -m.z); g.player.pitch=Math.asin(m.y); g.photo && (g.player.tool='camera', g.viewmodel.setTool('none')); return 'moon dir '+m.x.toFixed(2)+','+m.y.toFixed(2)+','+m.z.toFixed(2)})()"},{"wait":2500},{"shot":"sky-moon2.jpg"}
+]}

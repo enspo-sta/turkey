@@ -1237,8 +1237,13 @@ export const CHALLENGES = [
   { id: 'sheefish', text: 'Catch a Sheefish at Mosquito Flats', reward: 500 },
   { id: 'deck', text: 'Walk the gangplank onto the Unsinkable II at Shipwreck Cove', reward: 120 },
   { id: 'strange3', text: 'Find 3 strange things in the woods (the Journal keeps the rumours)', reward: 250 },
+  { id: 'stargaze', text: 'Log 5 objects through the telescope at the Tundra Observatory', reward: 300 },
+  { id: 'solarwalk', text: 'Walk the solar system: visit all 9 signs of the scale model on the Lighthouse Road', reward: 250 },
+  { id: 'iss', text: 'Watch the International Space Station pass over (the observatory knows when)', reward: 200 },
+  { id: 'meteorite', text: 'Find a meteorite where a fireball came down', reward: 400 },
   { id: 'wolfeel', text: 'Land a Wolf Eel at Shipwreck Cove', reward: 900 },
   { id: 'photo', text: 'Photograph 8 different animals with the camera', reward: 400 },
+  { id: 'planets', text: 'See 4 planets through the telescope (it finds the bright ones in daylight too)', reward: 500 },
   { id: 'strangeall', text: 'Find all 10 strange things in the woods', reward: 1000 },
   { id: 'journal', text: `Complete the Fish Journal (all ${SPECIES_IDS.length} species)`, reward: 5000 },
 ];

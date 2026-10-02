@@ -1,0 +1,13 @@
+{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":2500},
+{"eval":"(()=>{const g=__rhf.game; const w=g.env.weather; w.cloud=w.cloudTarget=0.08; w.rain=w.rainTarget=0; w.timer=99999; g.env.day=5; g.env.setTime(1.2); const o=g.observatory; o.shutterOpen=1; const d=o.deckAt; g.player.place(d.x+2.5, d.z-6.5, 0); g.player.yaw=Math.atan2(-(656-(d.x+2.5)), -(-449-(d.z-6.5))); g.player.pitch=0.18; __rhf.settle(); return 'dome from the north, kp '+g.env.spaceWeather.kp})()"},
+{"wait":6000},{"shot":"dome-open.jpg"},
+{"eval":"(()=>{const g=__rhf.game; const o=g.observatory; __rhf.session.startGaze(o.chairs[0]); return 'gazing'})()"},
+{"wait":5000},{"shot":"gaze-north.jpg"},
+{"eval":"(()=>{const g=__rhf.game; return 'interaction '+(g.interaction&&g.interaction.label)+' stargazing '+g.env.stargazing+' guide '+g.skyguide.alpha.toFixed(2)})()"},
+{"eval":"(()=>{const g=__rhf.game; g.player.yaw=Math.PI; g.player.pitch=0.75; return 'south'})()"},
+{"wait":4000},{"shot":"gaze-south.jpg"},
+{"eval":"(()=>{const g=__rhf.game; g.player.yaw=-Math.PI/2; g.player.pitch=0.45; return 'east'})()"},
+{"wait":4000},{"shot":"gaze-east.jpg"},
+{"eval":"(()=>{const g=__rhf.game; __rhf.hold('interact', true); return 'press get up'})()"},{"wait":800},
+{"eval":"(()=>{const g=__rhf.game; __rhf.hold('interact', false); return 'gaze '+!!__rhf.session.gaze+' eye '+g.player.eye+' stargazing '+g.env.stargazing})()"}
+]}

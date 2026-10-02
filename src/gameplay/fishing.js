@@ -1437,7 +1437,7 @@ export class Fishing {
 
   updateHotspots(dt) {
     const g = this.game;
-    const P = g.player.mode === 'drive' ? g.hotrod.pos : g.player.mode === 'boat' ? g.boat.pos : g.player.pos;
+    const P = g.player.mode === 'drive' ? g.car.pos : g.player.mode === 'boat' ? g.boat.pos : g.player.pos;
     // nearest fishing place
     let near = null;
     let nd = 1e9;

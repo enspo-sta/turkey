@@ -32,6 +32,8 @@
   },
   "homepage": "https://github.com/enspo-sta/turkey#readme",
   "devDependencies": {
+    "astronomy-engine": "^2.1.19",
+    "d3-celestial": "^0.7.35",
     "esbuild": "^0.28.2",
     "three": "^0.186.1"
   }

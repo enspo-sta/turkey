@@ -1,0 +1,8 @@
+{"width":960,"height":540,"steps":[{"wait":1000},{"eval":"__rhf.start(false)"},{"wait":2500},
+{"eval":"(()=>{const g=__rhf.game; g.env.setTime(14); __rhf.session.enterCar(); g.hotrod.camMode='cockpit'; return 'in'})()"},
+{"wait":2500},{"shot":"hd-cockpit.jpg"},
+{"eval":"(()=>{const g=__rhf.game; __rhf.hold('gas', true); return 'gas'})()"},{"wait":2500},
+{"eval":"(()=>{const g=__rhf.game; __rhf.hold('gas', false); g.hotrod.camMode='chase'; return 'chase '+g.hotrod.speed.toFixed(1)})()"},{"wait":2500},{"shot":"hd-chase.jpg"},
+{"eval":"(()=>{const g=__rhf.game; g.env.setTime(23.6); return 'night'})()"},{"wait":3000},{"shot":"hd-night.jpg"},
+{"eval":"(()=>{const g=__rhf.game; g.hotrod.camMode='cockpit'; return 'night cockpit'})()"},{"wait":2500},{"shot":"hd-night-cockpit.jpg"}
+]}
