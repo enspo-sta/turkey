@@ -70,8 +70,10 @@ export class Input {
     root.addEventListener(
       'touchmove',
       (e) => {
+        let mine = false;
         for (const t of e.changedTouches) {
           if (t.identifier === this.stick.id) {
+            mine = true;
             const R = 58;
             let dx = t.clientX - this.stick.ox;
             let dy = t.clientY - this.stick.oy;
@@ -87,13 +89,16 @@ export class Input {
             this.stick.y = dy / R;
             this.moveStick(dx, dy);
           } else if (t.identifier === this.lookTouch.id) {
+            mine = true;
             this.look.dx += t.clientX - this.lookTouch.x;
             this.look.dy += t.clientY - this.lookTouch.y;
             this.lookTouch.x = t.clientX;
             this.lookTouch.y = t.clientY;
           }
         }
-        e.preventDefault();
+        // only the walking and looking fingers are the game's: a finger that
+        // started on a button keeps its tap
+        if (mine && e.cancelable) e.preventDefault();
       },
       opts
     );
@@ -293,6 +298,47 @@ export class Input {
     el.addEventListener('mousedown', down);
     window.addEventListener('mouseup', up);
     return state;
+  }
+
+  // A button that does one thing when tapped (a menu, the map). It acts as
+  // the finger lifts over it, not on the browser's click: iOS drops the
+  // click of a tap whose finger wobbles while the game is taking touches
+  // for walking and looking. A mouse click or Enter still works.
+  bindTap(el, fn) {
+    let touchId = null;
+    let touchAt = -1e9;
+    el.addEventListener(
+      'touchstart',
+      (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.usingTouch = true;
+        this.lastTouchTime = touchAt = performance.now();
+        touchId = e.changedTouches[0].identifier;
+        el.classList.add('down');
+      },
+      { passive: false }
+    );
+    const end = (e, act) => {
+      for (const t of e.changedTouches) {
+        if (t.identifier !== touchId) continue;
+        touchId = null;
+        el.classList.remove('down');
+        if (e.cancelable) e.preventDefault();
+        if (!act) return;
+        // (a finger that slid off the button lets it go without acting)
+        const r = el.getBoundingClientRect();
+        const m = 18;
+        if (t.clientX > r.left - m && t.clientX < r.right + m && t.clientY > r.top - m && t.clientY < r.bottom + m) fn();
+      }
+    };
+    el.addEventListener('touchend', (e) => end(e, true), { passive: false });
+    el.addEventListener('touchcancel', (e) => end(e, false));
+    el.addEventListener('click', () => {
+      // the click a touch may still make is already done
+      if (performance.now() - touchAt < 900) return;
+      fn();
+    });
   }
 
   button(name) {

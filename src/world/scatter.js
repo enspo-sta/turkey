@@ -1469,134 +1469,152 @@ export class Scatter {
   }
 
   // Rebuild visible instance lists when the camera moved or turned enough.
+  // Which instances to draw: everything near the camera and, further out,
+  // what is in a wide view ahead. Rebuilt when the camera has moved 7 m or
+  // turned about 11 degrees. The rebuild is spread over frames, a few kinds
+  // of plant a frame within 2.5 ms, so looking round never stalls a frame
+  // (the wide view hides the wait); after a jump, or forced, it is all done
+  // at once.
   update(camera, force = false) {
     const pos = camera.position;
-    const dir = camera.getWorldDirection(new THREE.Vector3());
+    const dir = camera.getWorldDirection(this._dir || (this._dir = new THREE.Vector3()));
+    const jump = pos.distanceTo(this.lastPos) > 60;
     const moved = pos.distanceTo(this.lastPos) > 7;
     const turned = dir.dot(this.lastDir) < Math.cos(0.2);
-    if (!force && !moved && !turned) return false;
-    this.lastPos.copy(pos);
-    this.lastDir.copy(dir);
+    if (force || jump || moved || turned) {
+      this.lastPos.copy(pos);
+      this.lastDir.copy(dir);
+      const pc = this.projCam;
+      pc.fov = Math.min(170, camera.fov + 34);
+      pc.aspect = camera.aspect * 1.1;
+      pc.near = 0.5;
+      pc.far = 1200;
+      pc.position.copy(camera.position);
+      pc.quaternion.copy(camera.quaternion);
+      pc.updateProjectionMatrix();
+      pc.updateMatrixWorld(true);
+      const m = (this._m || (this._m = new THREE.Matrix4())).multiplyMatrices(pc.projectionMatrix, pc.matrixWorldInverse);
+      this.frustum.setFromProjectionMatrix(m);
+      this.snapX = pos.x;
+      this.snapZ = pos.z;
+      // the kinds still waiting go first, then the rest
+      const all = Object.values(this.types);
+      const waiting = this.pending || [];
+      this.pending = waiting.concat(all.filter((t) => !waiting.includes(t)));
+      if (force || jump) force = true;
+    }
+    if (!this.pending || !this.pending.length) return false;
+    const t0 = performance.now();
+    while (this.pending.length) {
+      this.buildType(this.pending.shift(), this.snapX, this.snapZ);
+      if (!force && performance.now() - t0 > 2.5) break;
+    }
+    return true;
+  }
 
-    const pc = this.projCam;
-    pc.fov = Math.min(170, camera.fov + 34);
-    pc.aspect = camera.aspect * 1.1;
-    pc.near = 0.5;
-    pc.far = 1200;
-    pc.position.copy(camera.position);
-    pc.quaternion.copy(camera.quaternion);
-    pc.updateProjectionMatrix();
-    pc.updateMatrixWorld(true);
-    const m = new THREE.Matrix4().multiplyMatrices(pc.projectionMatrix, pc.matrixWorldInverse);
-    this.frustum.setFromProjectionMatrix(m);
-
-    const cx = pos.x;
-    const cz = pos.z;
-    for (const t of Object.values(this.types)) {
-      const lods = t.lods;
-      const meshes = t.meshes;
-      const counts = new Array(lods.length).fill(0);
-      const rm = t.reflect;
-      let rc = 0;
-      const maxD = t.maxDist * this.distScale;
-      const maxD2 = maxD * maxD;
-      const i0 = clamp(Math.floor((cx - maxD + HALF) / CELL), 0, GRID - 1);
-      const i1 = clamp(Math.floor((cx + maxD + HALF) / CELL), 0, GRID - 1);
-      const j0 = clamp(Math.floor((cz - maxD + HALF) / CELL), 0, GRID - 1);
-      const j1 = clamp(Math.floor((cz + maxD + HALF) / CELL), 0, GRID - 1);
-      const lodD2 = lods.map((l) => (l.maxDist * this.distScale) ** 2);
-      for (let j = j0; j <= j1; j++) {
-        for (let i = i0; i <= i1; i++) {
-          const list = t.cells[j * GRID + i];
-          if (list.length === 0) continue;
-          const ccx = -HALF + (i + 0.5) * CELL;
-          const ccz = -HALF + (j + 0.5) * CELL;
-          const ddx = ccx - cx;
-          const ddz = ccz - cz;
-          const cd2 = ddx * ddx + ddz * ddz;
-          if (cd2 > (maxD + CELL) ** 2) continue;
-          const near = cd2 < 70 * 70;
-          if (!near) {
-            this.sphere.center.set(ccx, t.y[list[0]] + 8, ccz);
-            this.sphere.radius = CELL * 0.75 + 25;
-            if (!this.frustum.intersectsSphere(this.sphere)) continue;
-          }
-          for (let q = 0; q < list.length; q++) {
-            const idx = list[q];
-            const dx = t.x[idx] - cx;
-            const dz = t.z[idx] - cz;
-            const d2 = dx * dx + dz * dz;
-            if (d2 > maxD2) continue;
-            let lod = 0;
-            while (lod < lods.length - 1 && d2 > lodD2[lod]) lod++;
-            const mesh = meshes[lod];
-            const c = counts[lod];
-            if (c >= lods[lod].capacity) continue;
-            const arr = mesh.instanceMatrix.array;
-            const o = c * 16;
-            const s = idx * 12;
-            const M = t.m;
-            arr[o] = M[s];
-            arr[o + 1] = M[s + 1];
-            arr[o + 2] = M[s + 2];
-            arr[o + 3] = 0;
-            arr[o + 4] = M[s + 3];
-            arr[o + 5] = M[s + 4];
-            arr[o + 6] = M[s + 5];
-            arr[o + 7] = 0;
-            arr[o + 8] = M[s + 6];
-            arr[o + 9] = M[s + 7];
-            arr[o + 10] = M[s + 8];
-            arr[o + 11] = 0;
-            arr[o + 12] = M[s + 9];
-            arr[o + 13] = M[s + 10];
-            arr[o + 14] = M[s + 11];
-            arr[o + 15] = 1;
-            if (mesh.instanceColor) {
-              const ca = mesh.instanceColor.array;
-              ca[c * 3] = t.tint[idx * 3];
-              ca[c * 3 + 1] = t.tint[idx * 3 + 1];
-              ca[c * 3 + 2] = t.tint[idx * 3 + 2];
-            }
-            counts[lod] = c + 1;
-            if (rm && rc < t.reflectCap) {
-              rm.instanceMatrix.array.set(arr.subarray(o, o + 16), rc * 16);
-              if (rm.instanceColor) {
-                const ra = rm.instanceColor.array;
-                ra[rc * 3] = t.tint[idx * 3];
-                ra[rc * 3 + 1] = t.tint[idx * 3 + 1];
-                ra[rc * 3 + 2] = t.tint[idx * 3 + 2];
-              }
-              rc++;
-            }
-          }
+  buildType(t, cx, cz) {
+    const lods = t.lods;
+    const meshes = t.meshes;
+    const counts = new Array(lods.length).fill(0);
+    const rm = t.reflect;
+    let rc = 0;
+    const maxD = t.maxDist * this.distScale;
+    const maxD2 = maxD * maxD;
+    const i0 = clamp(Math.floor((cx - maxD + HALF) / CELL), 0, GRID - 1);
+    const i1 = clamp(Math.floor((cx + maxD + HALF) / CELL), 0, GRID - 1);
+    const j0 = clamp(Math.floor((cz - maxD + HALF) / CELL), 0, GRID - 1);
+    const j1 = clamp(Math.floor((cz + maxD + HALF) / CELL), 0, GRID - 1);
+    const lodD2 = lods.map((l) => (l.maxDist * this.distScale) ** 2);
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        const list = t.cells[j * GRID + i];
+        if (list.length === 0) continue;
+        const ccx = -HALF + (i + 0.5) * CELL;
+        const ccz = -HALF + (j + 0.5) * CELL;
+        const ddx = ccx - cx;
+        const ddz = ccz - cz;
+        const cd2 = ddx * ddx + ddz * ddz;
+        if (cd2 > (maxD + CELL) ** 2) continue;
+        const near = cd2 < 70 * 70;
+        if (!near) {
+          this.sphere.center.set(ccx, t.y[list[0]] + 8, ccz);
+          this.sphere.radius = CELL * 0.75 + 25;
+          if (!this.frustum.intersectsSphere(this.sphere)) continue;
         }
-      }
-      if (rm) {
-        rm.count = rc;
-        rm.instanceMatrix.clearUpdateRanges();
-        rm.instanceMatrix.addUpdateRange(0, rc * 16);
-        rm.instanceMatrix.needsUpdate = true;
-        if (rm.instanceColor) {
-          rm.instanceColor.clearUpdateRanges();
-          rm.instanceColor.addUpdateRange(0, rc * 3);
-          rm.instanceColor.needsUpdate = true;
-        }
-      }
-      for (let l = 0; l < meshes.length; l++) {
-        const mesh = meshes[l];
-        mesh.count = counts[l];
-        mesh.instanceMatrix.clearUpdateRanges();
-        mesh.instanceMatrix.addUpdateRange(0, counts[l] * 16);
-        mesh.instanceMatrix.needsUpdate = true;
-        if (mesh.instanceColor) {
-          mesh.instanceColor.clearUpdateRanges();
-          mesh.instanceColor.addUpdateRange(0, counts[l] * 3);
-          mesh.instanceColor.needsUpdate = true;
+        for (let q = 0; q < list.length; q++) {
+          const idx = list[q];
+          const dx = t.x[idx] - cx;
+          const dz = t.z[idx] - cz;
+          const d2 = dx * dx + dz * dz;
+          if (d2 > maxD2) continue;
+          let lod = 0;
+          while (lod < lods.length - 1 && d2 > lodD2[lod]) lod++;
+          const mesh = meshes[lod];
+          const c = counts[lod];
+          if (c >= lods[lod].capacity) continue;
+          const arr = mesh.instanceMatrix.array;
+          const o = c * 16;
+          const s = idx * 12;
+          const M = t.m;
+          arr[o] = M[s];
+          arr[o + 1] = M[s + 1];
+          arr[o + 2] = M[s + 2];
+          arr[o + 3] = 0;
+          arr[o + 4] = M[s + 3];
+          arr[o + 5] = M[s + 4];
+          arr[o + 6] = M[s + 5];
+          arr[o + 7] = 0;
+          arr[o + 8] = M[s + 6];
+          arr[o + 9] = M[s + 7];
+          arr[o + 10] = M[s + 8];
+          arr[o + 11] = 0;
+          arr[o + 12] = M[s + 9];
+          arr[o + 13] = M[s + 10];
+          arr[o + 14] = M[s + 11];
+          arr[o + 15] = 1;
+          if (mesh.instanceColor) {
+            const ca = mesh.instanceColor.array;
+            ca[c * 3] = t.tint[idx * 3];
+            ca[c * 3 + 1] = t.tint[idx * 3 + 1];
+            ca[c * 3 + 2] = t.tint[idx * 3 + 2];
+          }
+          counts[lod] = c + 1;
+          if (rm && rc < t.reflectCap) {
+            rm.instanceMatrix.array.set(arr.subarray(o, o + 16), rc * 16);
+            if (rm.instanceColor) {
+              const ra = rm.instanceColor.array;
+              ra[rc * 3] = t.tint[idx * 3];
+              ra[rc * 3 + 1] = t.tint[idx * 3 + 1];
+              ra[rc * 3 + 2] = t.tint[idx * 3 + 2];
+            }
+            rc++;
+          }
         }
       }
     }
-    return true;
+    if (rm) {
+      rm.count = rc;
+      rm.instanceMatrix.clearUpdateRanges();
+      rm.instanceMatrix.addUpdateRange(0, rc * 16);
+      rm.instanceMatrix.needsUpdate = true;
+      if (rm.instanceColor) {
+        rm.instanceColor.clearUpdateRanges();
+        rm.instanceColor.addUpdateRange(0, rc * 3);
+        rm.instanceColor.needsUpdate = true;
+      }
+    }
+    for (let l = 0; l < meshes.length; l++) {
+      const mesh = meshes[l];
+      mesh.count = counts[l];
+      mesh.instanceMatrix.clearUpdateRanges();
+      mesh.instanceMatrix.addUpdateRange(0, counts[l] * 16);
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) {
+        mesh.instanceColor.clearUpdateRanges();
+        mesh.instanceColor.addUpdateRange(0, counts[l] * 3);
+        mesh.instanceColor.needsUpdate = true;
+      }
+    }
   }
 
   // Distant tree LODs cast shadows into the far shadow cascade.

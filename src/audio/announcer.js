@@ -1,8 +1,9 @@
-// The announcer: an arcade voice that shouts the big moments ("FISH ON!",
-// "IT THREW THE HOOK!", "NEW SPECIES! NORTHERN PIKE!") with a banner to
-// match. The voice is the device's own speech synthesis, pitched down and
-// hyped up; with the voice off in Settings, or no speech on the device, the
-// banners still show.
+// The announcer: a voice that calls the big moments ("FISH ON!", "IT THREW
+// THE HOOK!", "NEW SPECIES! NORTHERN PIKE!") with a banner to match. The
+// voice is the device's own speech synthesis: the most natural English voice
+// it has (an enhanced or premium voice where one is installed), at its own
+// pitch, never one of the novelty voices. Settings can pick another one or
+// turn it off; with no speech on the device the banners still show.
 
 const LINES = {
   fishOn: [['FISH ON!', 5], ['FISH ON! FISH ON!', 2], ['HOOKED UP!', 1], ['GOT ONE!', 1]],
@@ -41,6 +42,34 @@ const LINES = {
   planets: [['ALL FIVE BRIGHT PLANETS!', 1]],
 };
 
+// Apple's novelty and robotic voices (and the Eloquence family, which sounds
+// like a 1990s synthesiser), by name.
+const NOVELTY = /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Deranged|Fred|Good News|Hysterical|Jester|Junior|Kathy|Organ|Pipe Organ|Princess|Ralph|Superstar|Trinoids|Whisper|Wobble|Zarvox|Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley)\b/i;
+// Voices known to sound natural: Apple's (iPhone, iPad, Mac), Google's
+// (Android, Chrome) and Microsoft's online voices (Edge, Windows).
+const NATURAL = /^(Ava|Evan|Zoe|Nathan|Tom|Allison|Susan|Samantha|Aaron|Nicky|Daniel|Arthur|Martha|Karen|Catherine|Gordon|Lee|Moira|Tessa|Rishi|Serena|Alex|Google (US|UK) English|Microsoft (Aria|Jenny|Guy|Andrew|Brian|Christopher|Eric|Emma|Michelle|Roger|Steffan|Sonia|Ryan|Libby|Natasha|William))/i;
+const MALE = /^(Evan|Nathan|Tom|Aaron|Daniel|Arthur|Gordon|Lee|Rishi|Alex|Google UK English Male|Microsoft (Guy|Andrew|Brian|Christopher|Eric|Roger|Steffan|Ryan|William))/i;
+
+function voiceScore(v) {
+  if (!/^en([-_]|$)/i.test(v.lang || '') || NOVELTY.test(v.name)) return 0;
+  let s = 10;
+  // a voice the device downloaded in its best quality
+  if (/premium|enhanced|natural|neural/i.test(v.name)) s += 100;
+  if (NATURAL.test(v.name)) s += 60;
+  if (/^en[-_]US/i.test(v.lang)) s += 8;
+  else if (/^en[-_](GB|AU|IE|CA|NZ)/i.test(v.lang)) s += 6;
+  if (v.localService) s += 4;
+  // an announcer's voice, all else equal
+  if (MALE.test(v.name)) s += 5;
+  return s;
+}
+
+// "FISH ON! NORTHERN PIKE!" reads as "Fish on! Northern pike!": capitals
+// make some voices spell words out.
+function sentenceCase(text) {
+  return text.toLowerCase().replace(/(^|[.!?]\s+)([a-z])/g, (m, p, c) => p + c.toUpperCase()).replace(/\bi\b/g, 'I');
+}
+
 function pick(list) {
   let sum = 0;
   for (const [, w] of list) sum += w;
@@ -70,19 +99,47 @@ export class Announcer {
     }
   }
 
-  // An English voice, a deep one where the device has it.
-  pickVoice() {
-    const voices = this.synth.getVoices ? this.synth.getVoices() : [];
-    if (!voices.length) return;
-    const prefer = ['Fred', 'Daniel', 'Alex', 'Aaron', 'Arthur', 'Ralph', 'Google UK English Male', 'Google US English', 'Microsoft Guy', 'Microsoft David'];
-    for (const name of prefer) {
-      const v = voices.find((x) => x.name.startsWith(name) && /^en/i.test(x.lang));
-      if (v) {
-        this.voice = v;
-        return;
-      }
+  // Every English voice worth hearing, best first. Novelty voices are left
+  // out: Apple ships robots and gags (Fred, Zarvox, Bad News) and an old
+  // synthesiser family (Eddy, Flo, Grandpa) beside its natural voices, and
+  // Fred used to be the announcer here.
+  goodVoices() {
+    const voices = this.synth?.getVoices ? this.synth.getVoices() : [];
+    const out = [];
+    for (const v of voices) {
+      const sc = voiceScore(v);
+      if (sc > 0) out.push([sc, v]);
     }
-    this.voice = voices.find((x) => /^en[-_]US/i.test(x.lang)) || voices.find((x) => /^en/i.test(x.lang)) || null;
+    out.sort((a, b) => b[0] - a[0] || a[1].name.localeCompare(b[1].name));
+    return out.map((x) => x[1]);
+  }
+
+  pickVoice() {
+    const good = this.goodVoices();
+    if (!good.length) {
+      // the device's default English voice
+      this.voice = null;
+      return;
+    }
+    const want = this.game.state?.settings?.voiceName;
+    this.voice = (want && good.find((v) => v.name === want)) || good[0];
+  }
+
+  // Settings: the next good voice, said aloud so you can hear it.
+  nextVoice() {
+    const good = this.goodVoices();
+    if (!good.length) return null;
+    const i = this.voice ? good.findIndex((v) => v.name === this.voice.name) : -1;
+    this.voice = good[(i + 1) % good.length];
+    const st = this.game.state?.settings;
+    if (st) st.voiceName = this.voice.name;
+    this.lastKey = null;
+    this.speak('FISH ON! A BEAUTIFUL KING SALMON!', 'sample');
+    return this.voice.name;
+  }
+
+  get voiceName() {
+    return this.voice ? this.voice.name.replace(/\s*\(.*\)\s*$/, '') + (/premium|enhanced|natural|neural/i.test(this.voice.name) ? ' (enhanced)' : '') : 'Device default';
   }
 
   // Speech needs a first touch on iOS: an empty line spoken inside the tap
@@ -115,7 +172,10 @@ export class Announcer {
   }
 
   speak(text, key) {
-    if (!this.synth || !this.voiceOn) return;
+    // (the sample in Settings plays with the voice off too)
+    if (!this.synth || (!this.voiceOn && key !== 'sample')) return;
+    // voices arrive late on some browsers, the saved choice with the save
+    if (!this.voice || (this.game.state?.settings?.voiceName && this.voice.name !== this.game.state.settings.voiceName)) this.pickVoice();
     const now = performance.now() / 1000;
     // a new line cuts off the last one, but the same line twice in a row
     // within a moment is just noise
@@ -124,12 +184,12 @@ export class Announcer {
     this.lastAt = now;
     try {
       this.synth.cancel();
-      const u = new SpeechSynthesisUtterance(text.toLowerCase());
+      const u = new SpeechSynthesisUtterance(sentenceCase(text));
       if (this.voice) u.voice = this.voice;
       u.lang = this.voice?.lang || 'en-US';
-      // an arcade announcer: low, fast and loud
-      u.pitch = 0.75;
-      u.rate = 1.12;
+      // the voice as it was recorded, a touch quicker for the excitement
+      u.pitch = 1;
+      u.rate = 1.04;
       u.volume = Math.min(1, (this.game.state?.settings?.volume ?? 0.8) * 1.15);
       this.synth.speak(u);
     } catch (e) {

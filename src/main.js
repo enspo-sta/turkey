@@ -138,6 +138,11 @@ class Session {
     // refreshing the map never switches the main sky's shader
     const skyClone = new THREE.Mesh(g.env.sky.geometry, reflectionMaterial(g.env.skyMaterial));
     this.envScene.add(skyClone);
+    // the sky is drawn into one small cube and filtered into one reflection
+    // map, both made once and reused: a fresh map each time the sun moved
+    // cost a big allocation and a hitch every few seconds at dusk
+    this.envCube = new THREE.WebGLCubeRenderTarget(128, { type: THREE.HalfFloatType });
+    this.envCubeCam = new THREE.CubeCamera(1, 5000, this.envCube);
     this.updateEnvMap();
     // resize hooks
     const resize = () => {
@@ -232,9 +237,9 @@ class Session {
   updateEnvMap() {
     const g = this.game;
     try {
-      const rt = this.pmrem.fromScene(this.envScene, 0.02, 1, 5000);
-      if (g.scene.environment) g.scene.environment.dispose?.();
-      g.scene.environment = rt.texture;
+      this.envCubeCam.update(g.renderer, this.envScene);
+      this.envRT = this.pmrem.fromCubemap(this.envCube.texture, this.envRT || null);
+      if (g.scene.environment !== this.envRT.texture) g.scene.environment = this.envRT.texture;
       g.scene.environmentIntensity = 0.6 + (1 - g.env.night) * 0.4;
       this.lastEnvElevation = g.env.sunElevation;
     } catch (e) {
@@ -1186,10 +1191,14 @@ class Session {
       }
     }
 
-    // env map refresh when the light changes
+    // env map refresh when the light changes: every 4 degrees of the sun,
+    // not more often than every 5 seconds, and not at all deep in the night
+    // (the dark sky barely changes)
     this.envT -= dt;
-    if (this.envT <= 0 && Math.abs(g.env.sunElevation - (this.lastEnvElevation ?? -999)) > 3) {
-      this.envT = 2;
+    const el = g.env.sunElevation;
+    const last = this.lastEnvElevation ?? -999;
+    if (this.envT <= 0 && Math.abs(el - last) > 4 && !(el < -12 && last < -12)) {
+      this.envT = 5;
       this.updateEnvMap();
     }
 

@@ -139,20 +139,18 @@ export class HUD {
     input.bindButton(this.el.interact, 'interact');
     input.bindButton(this.el.interact2, 'interact2');
     input.setStickElements($('stick'), $('stick-knob'));
-    $('btn-map').addEventListener('click', () => game.screens.open('map'));
+    input.bindTap($('btn-map'), () => game.screens.open('map'));
     // the always-on minimap; tapping it opens the full map
     this.minimap = new Minimap(game, $('minimap'), $('minimap-canvas'), $('minimap-n'), () => {
       const ch = game.state.currentChallenge();
       return ch ? OBJECTIVE_PLACE[ch.id] : null;
     });
-    $('minimap').addEventListener('click', () => game.screens.open('map'));
+    input.bindTap($('minimap'), () => game.screens.open('map'));
     this.minimapEl = $('minimap');
-    $('btn-journal').addEventListener('click', () => game.screens.open('journal'));
-    $('btn-wardrobe').addEventListener('click', () => game.screens.open('wardrobe'));
-    $('btn-pause').addEventListener('click', () => game.screens.open('pause'));
-    for (const id of ['btn-map', 'btn-journal', 'btn-pause', 'btn-wardrobe', 'catch', 'minimap']) {
-      $(id).addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
-    }
+    input.bindTap($('btn-journal'), () => game.screens.open('journal'));
+    input.bindTap($('btn-wardrobe'), () => game.screens.open('wardrobe'));
+    input.bindTap($('btn-pause'), () => game.screens.open('pause'));
+    $('catch').addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
   }
 
   show(on) {

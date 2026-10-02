@@ -1588,6 +1588,8 @@ export class Screens {
       <div class="setting"><label>Adjust graphics automatically</label><div class="seg" id="s-auto"><button data-v="0" class="${st.autoQuality === false ? 'on' : ''}">OFF</button><button data-v="1" class="${st.autoQuality === false ? '' : 'on'}">ON</button></div></div>
       <div class="setting"><label>Small map</label><div class="seg" id="s-minimap"><button data-v="0" class="${st.minimap === false ? 'on' : ''}">OFF</button><button data-v="1" class="${st.minimap === false ? '' : 'on'}">ON</button></div></div>
       <div class="setting"><label>Announcer voice</label><div class="seg" id="s-announcer"><button data-v="0" class="${st.announcer === false ? 'on' : ''}">OFF</button><button data-v="1" class="${st.announcer === false ? '' : 'on'}">ON</button></div></div>
+      <div class="setting"><label>Voice</label><button class="btn ghost" id="s-voice">${esc(g.announcer?.voiceName || 'Device default')}</button></div>
+      <p class="setting-note">Tap to hear the next voice. An iPhone or iPad has more natural voices to download under Settings, Accessibility, Spoken Content, Voices, English: the enhanced and premium ones.</p>
       <div class="setting"><label>Sky guide</label><div class="seg" id="s-skyGuide"><button data-v="0" class="${st.skyGuide === false ? 'on' : ''}">OFF</button><button data-v="1" class="${st.skyGuide === false ? '' : 'on'}">ON</button></div></div>
       <p class="setting-note">Names the constellations, bright stars and planets when you look up at a dark sky, and always from the observatory's deck chairs.</p>
       <div class="setting"><label>Show frame rate</label><div class="seg" id="s-fps"><button data-v="0" class="${st.showFps ? '' : 'on'}">OFF</button><button data-v="1" class="${st.showFps ? 'on' : ''}">ON</button></div></div>
@@ -1599,6 +1601,11 @@ export class Screens {
       <div class="setting"><label>Privacy</label><button class="btn ghost" id="s-privacy">Privacy policy</button></div>
       <button class="btn big hot" id="s-done">Done</button>
     </div>`;
+    $('s-voice').addEventListener('click', () => {
+      g.announcer?.nextVoice();
+      g.state.saveSettings();
+      $('s-voice').textContent = g.announcer?.voiceName || 'Device default';
+    });
     $('s-privacy').addEventListener('click', () => {
       this.current = 'privacy';
       this.render();

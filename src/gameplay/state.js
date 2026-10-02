@@ -33,7 +33,7 @@ export class GameState {
   constructor() {
     this.listeners = [];
     this.reset();
-    this.settings = { quality: null, volume: 0.8, music: 0.55, sens: 1, invert: false, haptics: true, showFps: false, autoQuality: true, minimap: true, announcer: true, skyGuide: true };
+    this.settings = { quality: null, volume: 0.8, music: 0.55, sens: 1, invert: false, haptics: true, showFps: false, autoQuality: true, minimap: true, announcer: true, voiceName: null, skyGuide: true };
     this.loadSettings();
   }
 

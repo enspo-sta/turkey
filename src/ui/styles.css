@@ -244,6 +244,7 @@ svg { width: 1em; height: 1em; display: block; }
 /* speedometer */
 #speedo { position: absolute; left: 50%; bottom: calc(var(--sab) + 8px); transform: translateX(-50%); width: 190px; }
 #speedo svg { width: 190px; height: 114px; filter: drop-shadow(0 3px 6px rgba(0,0,0,.6)); }
+@media (max-width: 720px) { #speedo { width: 160px; } #speedo svg { width: 160px; height: 96px; } }
 #speedo-ticks line { stroke: rgba(244,234,214,.75); }
 #speedo-ticks text { fill: var(--ink); font: 700 11px var(--ui); text-anchor: middle; }
 .speedo-read { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-variant-numeric: tabular-nums; }
@@ -292,10 +293,10 @@ svg { width: 1em; height: 1em; display: block; }
 #btn-gas { right: calc(var(--sar) + 22px); bottom: calc(var(--sab) + 26px); background: radial-gradient(circle at 35% 30%, #9ae07a, #3a8a2a 55%, #1a4a12); border-color: #c8f0b0; }
 #btn-brake { right: calc(var(--sar) + 136px); bottom: calc(var(--sab) + 18px); width: 84px; height: 84px; background: radial-gradient(circle at 35% 30%, #ff8a7a, var(--candy) 55%, #5a0806); border-color: #ffb0a0; }
 .btn.pill.driving { right: calc(var(--sar) + 12px); bottom: auto; top: calc(var(--sat) + 100px); }
-.btn.pill { position: absolute; right: calc(var(--sar) + 150px); bottom: calc(var(--sab) + 190px); border-radius: 30px; padding: 12px 18px; font-size: 17px; font-weight: 800;
+.btn.pill { position: absolute; right: calc(var(--sar) + 150px); bottom: calc(var(--sab) + 226px); border-radius: 30px; padding: 12px 18px; font-size: 17px; font-weight: 800;
   background: linear-gradient(180deg, rgba(40,58,62,.95), rgba(14,26,30,.95)); border: 2px solid var(--flame-2); color: var(--flame-2); box-shadow: var(--shadow); }
 .btn.pill svg { width: 24px; height: 24px; }
-.btn.pill.second { bottom: calc(var(--sab) + 246px); }
+.btn.pill.second { bottom: calc(var(--sab) + 164px); right: calc(var(--sar) + 240px); }
 .btn.pill.second.driving { bottom: auto; top: calc(var(--sat) + 156px); }
 #stick { position: absolute; width: 126px; height: 126px; margin: -63px 0 0 -63px; border-radius: 50%; border: 3px solid rgba(244,234,214,.28); background: radial-gradient(circle, rgba(14,26,30,.2), rgba(14,26,30,.45)); opacity: 0; transition: opacity .15s ease; pointer-events: none; }
 #stick.on { opacity: 1; }
@@ -500,15 +501,15 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
   .btn.primary { width: 84px; height: 84px; }
   .btn.secondary { width: 62px; height: 62px; right: calc(var(--sar) + 116px); }
   .btn.tool { bottom: calc(var(--sab) + 120px); width: 56px; height: 56px; }
-  #btn-spray { right: calc(var(--sar) + 160px); bottom: calc(var(--sab) + 90px); }
-  #btn-med { right: calc(var(--sar) + 100px); bottom: calc(var(--sab) + 150px); }
-  #btn-horn { bottom: calc(var(--sab) + 130px); }
-  #btn-cam { bottom: calc(var(--sab) + 146px); right: calc(var(--sar) + 96px); }
+  #btn-spray { right: calc(var(--sar) + 170px); bottom: calc(var(--sab) + 90px); }
+  #btn-med { right: calc(var(--sar) + 108px); bottom: calc(var(--sab) + 116px); }
+  #btn-horn { bottom: calc(var(--sab) + 102px); right: calc(var(--sar) + 130px); }
+  #btn-cam { bottom: calc(var(--sab) + 122px); right: calc(var(--sar) + 40px); }
   #btn-run { bottom: calc(var(--sab) + 108px); width: 54px; height: 54px; }
-  .btn.pill { bottom: calc(var(--sab) + 164px); right: calc(var(--sar) + 130px); padding: 9px 14px; }
-  .btn.pill.driving { right: calc(var(--sar) + 12px); bottom: auto; top: calc(var(--sat) + 96px); }
-  .btn.pill.second { bottom: calc(var(--sab) + 212px); }
-  .btn.pill.second.driving { bottom: auto; top: calc(var(--sat) + 146px); }
+  .btn.pill { bottom: calc(var(--sab) + 176px); right: calc(var(--sar) + 130px); padding: 9px 14px; }
+  .btn.pill.driving { right: calc(var(--sar) + 12px); bottom: auto; top: calc(var(--sat) + 90px); }
+  .btn.pill.second { bottom: calc(var(--sab) + 124px); right: calc(var(--sar) + 230px); }
+  .btn.pill.second.driving { bottom: auto; top: calc(var(--sat) + 90px); right: calc(var(--sar) + 124px); }
   .btn.pedal { width: 88px; height: 88px; }
   #btn-brake { width: 74px; height: 74px; right: calc(var(--sar) + 120px); }
   .stat.money { font-size: 22px; }
@@ -528,7 +529,7 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
    the safe area of a notch. The buttons are smaller on short screens. */
 @media (max-height: 430px) {
   #compass { width: min(420px, 38vw, 100vw - 408px - 2 * max(var(--sal), var(--sar))); }
-  #objective { max-width: min(60vw, 100vw - 408px - 2 * max(var(--sal), var(--sar))); }
+  #objective { top: calc(var(--sat) + 41px); max-width: min(60vw, 100vw - 408px - 2 * max(var(--sal), var(--sar))); }
 }
 /* very wide screens have the clock and the bite beside the buttons too */
 @media (min-width: 1500px) and (min-height: 600px) {
@@ -555,6 +556,40 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   #banner.show, #place-title.show { animation: none !important; opacity: 1; }
   #prompt.show { animation: none !important; }
+}
+
+/* Shorter still: a phone on its side in a browser, under the browser's bar,
+   or in an app's viewer. The RUN button goes beside the small map instead of
+   under it, and the toasts keep clear of it. */
+@media (max-height: 384px) {
+  #btn-run { top: calc(var(--sat) + 109px); bottom: auto; left: calc(var(--sal) + 102px); }
+  #toasts { width: min(560px, 100vw - 2 * (max(var(--sal), var(--sar)) + 170px)); }
+}
+/* The shortest: smaller buttons all round, and the action pills along the
+   bottom, left of the round buttons, out of the way of the top buttons. */
+@media (max-height: 340px) {
+  .top-icons .btn.icon { width: 38px; height: 38px; }
+  .top-icons .btn.icon svg { width: 21px; height: 21px; }
+  .top-right { gap: 4px; }
+  .btn.primary { width: 76px; height: 76px; bottom: calc(var(--sab) + 18px); }
+  .btn.secondary { width: 56px; height: 56px; right: calc(var(--sar) + 106px); bottom: calc(var(--sab) + 16px); }
+  .btn.tool { width: 50px; height: 50px; bottom: calc(var(--sab) + 104px); right: calc(var(--sar) + 34px); }
+  .btn.small { width: 46px; height: 46px; }
+  #btn-spray { right: calc(var(--sar) + 104px); bottom: calc(var(--sab) + 84px); }
+  #btn-med { right: calc(var(--sar) + 92px); bottom: calc(var(--sab) + 138px); }
+  .btn.pill { bottom: calc(var(--sab) + 16px); right: calc(var(--sar) + 174px); padding: 8px 12px; font-size: 15px; }
+  .btn.pill svg { width: 20px; height: 20px; }
+  .btn.pill.second { bottom: calc(var(--sab) + 64px); right: calc(var(--sar) + 174px); }
+  .btn.pill.driving { top: calc(var(--sat) + 80px); }
+  .btn.pill.second.driving { top: calc(var(--sat) + 80px); right: calc(var(--sar) + 112px); }
+  #btn-horn { right: calc(var(--sar) + 116px); bottom: calc(var(--sab) + 92px); }
+  #btn-cam { right: calc(var(--sar) + 34px); bottom: calc(var(--sab) + 110px); }
+  #compass { height: 26px; }
+  #compass-strip span { top: 3px; }
+  #objective { top: calc(var(--sat) + 37px); font-size: 12px; }
+  #btn-run { width: 48px; height: 48px; top: calc(var(--sat) + 112px); font-size: 13px; }
+  .btn.pedal { width: 78px; height: 78px; }
+  #btn-brake { width: 66px; height: 66px; right: calc(var(--sar) + 110px); }
 }
 
 /* frame rate readout (Settings > Frame rate) */

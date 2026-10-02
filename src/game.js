@@ -268,11 +268,16 @@ export class Game {
   // again (up to the quality preset) when there is headroom.
   adaptResolution(rawDt) {
     if (!this.quality || rawDt <= 0 || rawDt > 0.5) return;
-    const a = this.adapt || (this.adapt = { avg: 1 / 60, t: 0, good: 0 });
+    const a = this.adapt || (this.adapt = { avg: 1 / 60, t: 0, good: 0, clock: 0, hold: 0, backoff: 20 });
     a.avg = a.avg * 0.95 + rawDt * 0.05;
     a.t += rawDt;
+    a.clock += rawDt;
     if (a.t < 2.5) return;
     a.t = 0;
+    // Every change of resolution rebuilds the frame buffers, a hitch of its
+    // own. A step up that soon has to come back down means the device sits
+    // on the edge: wait longer each time before trying again, so the
+    // resolution does not see-saw (and stutter) every few seconds.
     const maxDpr = Math.min(window.devicePixelRatio || 1, this.quality.dpr);
     const minDpr = Math.min(1, maxDpr);
     if (a.avg > 1 / 40 && this.dpr > minDpr + 0.01) {
@@ -281,6 +286,8 @@ export class Game {
       this.resize();
       a.good = 0;
       a.slow = 0;
+      if (a.clock - (a.raisedAt ?? -1e9) < 20) a.backoff = Math.min(600, a.backoff * 2);
+      a.hold = a.clock + a.backoff;
     } else if (a.avg > 1 / 40 && this.started && !this.paused && !this.menuOpen) {
       // already at the lowest resolution: step the graphics preset down after
       // a few slow checks in a row, if the player allows it
@@ -294,13 +301,14 @@ export class Game {
         this.state.saveSettings?.();
         this.onQualityDrop?.(next);
       }
-    } else if (a.avg < 1 / 55 && this.dpr < maxDpr - 0.01) {
+    } else if (a.avg < 1 / 55 && this.dpr < maxDpr - 0.01 && a.clock >= a.hold) {
       a.good++;
       if (a.good >= 4) {
         this.dpr = Math.min(maxDpr, this.dpr + 0.25);
         this.renderer.setPixelRatio(this.dpr);
         this.resize();
         a.good = 0;
+        a.raisedAt = a.clock;
       }
     } else {
       a.good = 0;
