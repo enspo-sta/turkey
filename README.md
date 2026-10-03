@@ -44,10 +44,12 @@ a single 1.9 MB HTML file (about 690 KB compressed).
 | ![Starfall Clearing: the pod and the trees laid flat round it](docs/screenshots/crash.jpg) | ![Zib comes out from behind the pod](docs/screenshots/zib.jpg) |
 | ![Isaac Newton's bust in marble at the Tundra Observatory](docs/screenshots/newton.jpg) | ![The Journal's Scientists page](docs/screenshots/scientists.jpg) |
 
-What changed in the latest round (steadier frames, the sound of each place
-and the busts of 34 scientists), with pictures, recordings and the tests:
-[docs/sound-scientists-update.html](docs/sound-scientists-update.html).
-Earlier rounds: [docs/science-update.html](docs/science-update.html),
+What changed in the latest round (RUN up out of the walking thumb's way, a
+full-screen button and the announcer's own natural voice), with pictures,
+recordings and the tests:
+[docs/fullscreen-voice-update.html](docs/fullscreen-voice-update.html).
+Earlier rounds: [docs/sound-scientists-update.html](docs/sound-scientists-update.html),
+[docs/science-update.html](docs/science-update.html),
 [docs/cars-sky-update.html](docs/cars-sky-update.html),
 [docs/hotrod-buildings.html](docs/hotrod-buildings.html),
 [docs/hotrod-update.html](docs/hotrod-update.html) and

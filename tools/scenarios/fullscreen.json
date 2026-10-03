@@ -28,6 +28,8 @@
 {"key": "Escape"}, 
 {"wait": 500}, 
 {"eval": "'Esc after that (not in full screen): paused ' + (__rhf.game.screens.current || 'no')"}, 
+{"eval": "(() => { __rhf.game.screens.close(); return 'pause menu closed: ' + (__rhf.game.screens.current || 'nothing open'); })()"}, 
+{"wait": 800}, 
 {"clickSel": "canvas"}, 
 {"wait": 800}, 
 {"eval": "'a click on the view after that: mouse capture asked ' + window.__locks + ' time(s)'"}]}
