@@ -10,6 +10,8 @@
       <symbol id="i-arrow" viewBox="0 0 32 32"><path d="M5 27L24 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M28 4l-8 2 6 6z" fill="currentColor"/><path d="M5 27l-1-6 3 3zM5 27l6 1-3-3z" fill="currentColor"/><path d="M9 23l-3-1M11 21l-3-1M9 23l1 3M11 21l1 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
       <symbol id="i-map" viewBox="0 0 32 32"><path d="M3 7l8-3 10 3 8-3v21l-8 3-10-3-8 3zM11 4v21M21 7v21" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></symbol>
       <symbol id="i-book" viewBox="0 0 32 32"><path d="M5 5h9a3 3 0 0 1 3 3v19a3 3 0 0 0-3-3H5zM27 5h-7a3 3 0 0 0-3 3v19a3 3 0 0 1 3-3h7z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></symbol>
+      <symbol id="i-full" viewBox="0 0 32 32"><path d="M5 12V5h7M20 5h7v7M27 20v7h-7M12 27H5v-7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-full-exit" viewBox="0 0 32 32"><path d="M12 5v7H5M27 12h-7V5M20 27v-7h7M5 20h7v7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
       <symbol id="i-pause" viewBox="0 0 32 32"><rect x="8" y="6" width="5" height="20" rx="1.5" fill="currentColor"/><rect x="19" y="6" width="5" height="20" rx="1.5" fill="currentColor"/></symbol>
       <symbol id="i-rod" viewBox="0 0 32 32"><path d="M5 28L27 4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="10" cy="22" r="3.2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M27 4v14" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 2"/><path d="M25 18h4l-2 4z" fill="currentColor"/></symbol>
       <symbol id="i-bow" viewBox="0 0 32 32"><path d="M9 3c10 5 14 13 0 26" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M9 3v26" stroke="currentColor" stroke-width="1.3"/><path d="M4 16h22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M29 16l-5-3v6z" fill="currentColor"/></symbol>
@@ -64,6 +66,7 @@
 
     <div class="top-right">
       <div class="top-icons">
+        <button class="btn icon" id="btn-full" aria-label="Full screen"><svg><use href="#i-full"/></svg></button>
         <button class="btn icon" id="btn-wardrobe" aria-label="Wardrobe"><svg><use href="#i-shirt"/></svg></button>
         <button class="btn icon" id="btn-map" aria-label="Map"><svg><use href="#i-map"/></svg></button>
         <button class="btn icon" id="btn-journal" aria-label="Journal"><svg><use href="#i-book"/></svg></button>
@@ -177,6 +180,7 @@
 
   <!-- title screen -->
   <div id="title" class="screen" hidden>
+    <button class="btn icon title-full" id="btn-full-title" aria-label="Full screen"><svg><use href="#i-full"/></svg></button>
     <div class="title-inner">
       <div class="logo" role="img" aria-label="Hotrod Outdoor Alaska Fishing">
         <span class="logo-hotrod">Hotrod</span>

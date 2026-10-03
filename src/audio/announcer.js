@@ -1,47 +1,13 @@
 // The announcer: a voice that calls the big moments ("FISH ON!", "IT THREW
 // THE HOOK!", "NEW SPECIES! NORTHERN PIKE!") with a banner to match. The
-// voice is the device's own speech synthesis: the most natural English voice
-// it has (an enhanced or premium voice where one is installed), at its own
-// pitch, never one of the novelty voices. Settings can pick another one or
-// turn it off; with no speech on the device the banners still show.
+// voice is the game's own: every line and name recorded with a natural
+// neural voice and shipped with the game (voice.js), so it sounds the same on
+// every device. Settings can switch to one of the device's own voices
+// instead (the most natural English ones, never the novelty voices) or turn
+// the announcer off; the banners show either way.
 
-const LINES = {
-  fishOn: [['FISH ON!', 5], ['FISH ON! FISH ON!', 2], ['HOOKED UP!', 1], ['GOT ONE!', 1]],
-  bigOne: [["IT'S A BIG ONE!", 3], ['MONSTER ON THE LINE!', 1], ['HOLD ON TIGHT!', 1]],
-  jump: [["IT'S JUMPING!", 2], ['LOOK AT IT GO!', 1], ['AIRBORNE!', 1]],
-  threwHook: [['IT THREW THE HOOK!', 1]],
-  hookOff: [['OH NO, THE HOOK CAME OFF!', 2], ['OH NO! IT SHOOK THE HOOK!', 1]],
-  snap: [['SNAP! THE LINE BROKE!', 2], ['OH NO! IT BROKE OFF!', 1]],
-  spooled: [['SPOOLED! IT TOOK ALL YOUR LINE!', 1]],
-  gotAway: [['IT GOT AWAY!', 1]],
-  missed: [['TOO SLOW!', 2], ['MISSED IT!', 1]],
-  early: [['TOO EARLY!', 1]],
-  perfect: [['PERFECT CAST!', 1]],
-  backlash: [["BIRD'S NEST!", 1]],
-  landed: [['NICE FISH!', 3], ['LANDED!', 2], ['WHAT A CATCH!', 1], ['BEAUTIFUL!', 1]],
-  newSpecies: [['NEW SPECIES!', 1]],
-  best: [['PERSONAL BEST!', 1]],
-  legend: [['LEGENDARY!', 1]],
-  bite: [['THE BITE IS ON!', 1]],
-  eagle: [['AN EAGLE STOLE IT!', 1]],
-  bear: [['LOOK OUT!', 1]],
-  bullseye: [['BULLSEYE!', 1]],
-  photo: [['WHAT A SHOT!', 2], ['FRAME IT!', 1]],
-  treasure: [['TREASURE!', 1]],
-  glider: [['A PARAGLIDER!', 1]],
-  key: [['A SECRET KEY!', 1]],
-  jobDone: [['CHA-CHING!', 2], ['JOB DONE!', 1]],
-  bigfoot: [['BIGFOOT?!', 1]],
-  racer: [['A FORMULA ONE CAR!', 1]],
-  speed: [['FLAT OUT!', 2], ['WHAT A SPEED!', 1]],
-  fireball: [['A FIREBALL!', 2], ['LOOK AT THE SKY!', 1]],
-  meteorite: [['A METEORITE!', 2], ['A PIECE OF SPACE!', 1]],
-  iss: [['THE SPACE STATION!', 1]],
-  storm: [['NORTHERN LIGHTS!', 1]],
-  scope: [['NEW IN THE SKY LOG!', 1]],
-  planets: [['ALL FIVE BRIGHT PLANETS!', 1]],
-  topout: [['TOPPED OUT!', 2], ['WHAT A CLIMB!', 1], ['ON TOP OF THE WORLD!', 1]],
-};
+import { LINES } from './lines.js';
+import { Voice } from './voice.js';
 
 // Apple's novelty and robotic voices (and the Eloquence family, which sounds
 // like a 1990s synthesiser), by name.
@@ -66,7 +32,7 @@ function voiceScore(v) {
 }
 
 // "FISH ON! NORTHERN PIKE!" reads as "Fish on! Northern pike!": capitals
-// make some voices spell words out.
+// make some device voices spell words out.
 function sentenceCase(text) {
   return text.toLowerCase().replace(/(^|[.!?]\s+)([a-z])/g, (m, p, c) => p + c.toUpperCase()).replace(/\bi\b/g, 'I');
 }
@@ -86,6 +52,7 @@ export class Announcer {
   constructor(game) {
     this.game = game;
     this.synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
+    this.clips = new Voice(game.audio);
     this.voice = null;
     this.lastAt = -10;
     this.lastKey = null;
@@ -100,8 +67,13 @@ export class Announcer {
     }
   }
 
-  // Every English voice worth hearing, best first. Novelty voices are left
-  // out: Apple ships robots and gags (Fred, Zarvox, Bad News) and an old
+  // The game's own voice unless Settings picked one of the device's.
+  get gameVoice() {
+    return !this.game.state?.settings?.voiceName;
+  }
+
+  // Every English device voice worth hearing, best first. Novelty voices are
+  // left out: Apple ships robots and gags (Fred, Zarvox, Bad News) and an old
   // synthesiser family (Eddy, Flo, Grandpa) beside its natural voices, and
   // Fred used to be the announcer here.
   goodVoices() {
@@ -115,6 +87,8 @@ export class Announcer {
     return out.map((x) => x[1]);
   }
 
+  // The device voice to use when Settings picked one (or when a line has no
+  // recording): the one picked, else the best there is.
   pickVoice() {
     const good = this.goodVoices();
     if (!good.length) {
@@ -126,26 +100,37 @@ export class Announcer {
     this.voice = (want && good.find((v) => v.name === want)) || good[0];
   }
 
-  // Settings: the next good voice, said aloud so you can hear it.
+  // Settings: the next voice, said aloud so you can hear it. The game's own
+  // comes first, then the device's good ones.
   nextVoice() {
-    const good = this.goodVoices();
-    if (!good.length) return null;
-    const i = this.voice ? good.findIndex((v) => v.name === this.voice.name) : -1;
-    this.voice = good[(i + 1) % good.length];
     const st = this.game.state?.settings;
-    if (st) st.voiceName = this.voice.name;
+    const names = [null, ...this.goodVoices().map((v) => v.name)];
+    const now = st?.voiceName || null;
+    const i = names.indexOf(now);
+    const next = names[(i + 1) % names.length];
+    if (st) st.voiceName = next;
+    if (next) this.pickVoice();
+    // (the tap that got here lets the sound start)
+    this.game.audio?.unlock();
+    this.unlock();
     this.lastKey = null;
-    this.speak('FISH ON! A BEAUTIFUL KING SALMON!', 'sample');
-    return this.voice.name;
+    this.speak('FISH ON!', 'sample', 'A BEAUTIFUL KING SALMON!');
+    return this.voiceName;
   }
 
   get voiceName() {
+    if (this.gameVoice) return 'Game voice';
     return this.voice ? this.voice.name.replace(/\s*\(.*\)\s*$/, '') + (/premium|enhanced|natural|neural/i.test(this.voice.name) ? ' (enhanced)' : '') : 'Device default';
   }
 
   // Speech needs a first touch on iOS: an empty line spoken inside the tap
-  // that starts the game opens the way for the rest.
+  // that starts the game opens the way for the rest. The game's voice needs
+  // the sound started, and its most heard lines decoded ahead.
   unlock() {
+    if (this.game.audio?.ready && !this.warmed) {
+      this.warmed = true;
+      this.clips.warm(['FISH ON!', 'FISH ON! FISH ON!', 'HOOKED UP!', 'GOT ONE!', 'NICE FISH!', 'LANDED!', "IT'S A BIG ONE!", "IT'S JUMPING!", 'TOO SLOW!', 'TOO EARLY!', 'PERFECT CAST!']);
+    }
     if (!this.synth || this.unlocked) return;
     this.unlocked = true;
     try {
@@ -155,6 +140,10 @@ export class Announcer {
     } catch (e) {
       /* no speech */
     }
+  }
+
+  get lines() {
+    return LINES;
   }
 
   get voiceOn() {
@@ -169,21 +158,43 @@ export class Announcer {
     if (!list) return;
     const text = pick(list);
     if (banner) g.hud?.banner(text, kind, sub, place);
-    this.speak(sub ? `${text} ${sub}` : text, key);
+    this.speak(text, key, sub);
   }
 
-  speak(text, key) {
+  speak(text, key, sub = null) {
     // (the sample in Settings plays with the voice off too)
-    if (!this.synth || (!this.voiceOn && key !== 'sample')) return;
-    // voices arrive late on some browsers, the saved choice with the save
-    if (!this.voice || (this.game.state?.settings?.voiceName && this.voice.name !== this.game.state.settings.voiceName)) this.pickVoice();
+    if (!this.voiceOn && key !== 'sample') return;
     const now = performance.now() / 1000;
     // a new line cuts off the last one, but the same line twice in a row
     // within a moment is just noise
     if (key === this.lastKey && now - this.lastAt < 1.5) return;
     this.lastKey = key;
     this.lastAt = now;
+    const vol = this.game.state?.settings?.volume ?? 0.8;
+    if (this.gameVoice && this.game.audio?.ready && this.clips.has(text)) {
+      try {
+        this.synth?.cancel();
+      } catch (e) {
+        /* no speech */
+      }
+      // (the game's sound is already at the volume setting)
+      this.clips.say(text, sub, 1.1).then((ok) => {
+        if (!ok) this.speakDevice(sub ? `${text} ${sub}` : text, vol);
+      });
+      return;
+    }
+    this.speakDevice(sub ? `${text} ${sub}` : text, vol);
+    this.hintBetterVoice(key);
+  }
+
+  // One of the device's own voices, through its speech synthesis.
+  speakDevice(text, vol) {
+    if (!this.synth) return;
+    // voices arrive late on some browsers, the saved choice with the save
+    const want = this.game.state?.settings?.voiceName;
+    if (!this.voice || (want && this.voice.name !== want)) this.pickVoice();
     try {
+      this.clips.stop();
       this.synth.cancel();
       const u = new SpeechSynthesisUtterance(sentenceCase(text));
       if (this.voice) u.voice = this.voice;
@@ -191,21 +202,20 @@ export class Announcer {
       // the voice as it was recorded, a touch quicker for the excitement
       u.pitch = 1;
       u.rate = 1.04;
-      u.volume = Math.min(1, (this.game.state?.settings?.volume ?? 0.8) * 1.15);
+      u.volume = Math.min(1, vol * 1.15);
       this.synth.speak(u);
     } catch (e) {
       /* no speech */
     }
-    this.hintBetterVoice(key);
   }
 
   // An iPhone or iPad ships only its compact voices, which sound flat; the
   // natural ones (Enhanced, Premium) are a free download. Say so once, the
-  // first time the announcer speaks with a compact voice on one.
+  // first time the announcer speaks with a compact device voice on one.
   hintBetterVoice(key) {
     const g = this.game;
     const flags = g.state?.flags;
-    if (!flags || flags.voiceHint || key === 'sample' || !this.voiceOn) return;
+    if (!flags || flags.voiceHint || key === 'sample' || !this.voiceOn || this.gameVoice) return;
     // an iPhone or iPad (an iPad's Safari can say it is a Mac: it has touch)
     const ua = navigator.userAgent || '';
     const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
@@ -215,7 +225,7 @@ export class Announcer {
     setTimeout(
       () =>
         g.hud?.toast(
-          'For a more natural announcer, download a better voice: iPhone Settings, Accessibility, Spoken Content, Voices, English, and pick one marked Enhanced or Premium. Then choose it in the game under Settings, Voice',
+          'For a more natural device voice, download a better one: iPhone Settings, Accessibility, Spoken Content, Voices, English, and pick one marked Enhanced or Premium. Or go back to the game\'s own voice under Settings, Voice',
           'good',
           10
         ),
@@ -224,6 +234,7 @@ export class Announcer {
   }
 
   stop() {
+    this.clips.stop();
     try {
       this.synth?.cancel();
     } catch (e) {

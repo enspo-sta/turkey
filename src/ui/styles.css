@@ -69,6 +69,8 @@ svg { width: 1em; height: 1em; display: block; }
 .tagline { margin: 6px 0 4px; font-size: 17px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 600; color: var(--ink); text-shadow: 0 2px 8px rgba(0,0,0,.6); text-align: center; }
 .title-buttons { display: grid; grid-template-columns: repeat(2, minmax(150px, 1fr)); gap: 10px; width: min(420px, 92vw); }
 .title-foot { margin: 6px 0 0; font-size: 13px; color: var(--ink-dim); letter-spacing: 0.06em; text-align: center; }
+.title-foot.note { color: var(--ink); max-width: 560px; line-height: 1.45; }
+.title-full { position: absolute; top: calc(var(--sat) + 12px); right: calc(var(--sar) + 12px); z-index: 1; }
 
 /* ---------- buttons ---------- */
 .btn {
@@ -92,7 +94,7 @@ svg { width: 1em; height: 1em; display: block; }
 #hud .btn, #hud #left-hint { pointer-events: auto; }
 /* a label or icon swapped while a finger is down must not take the touch with it */
 .btn * { pointer-events: none; }
-.top-left { position: absolute; top: calc(var(--sat) + 10px); left: calc(var(--sal) + 12px); display: flex; flex-direction: column; gap: 6px; }
+.top-left { position: absolute; top: calc(var(--sat) + 10px); left: calc(var(--sal) + 12px); display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .stat { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
 .stat svg { width: 18px; height: 18px; }
 .stat.money { font-family: var(--display); font-size: 26px; color: var(--flame-2); letter-spacing: 0.02em; line-height: 1; text-shadow: 0 2px 0 #5a1a06, 0 2px 8px rgba(0,0,0,.6); }
@@ -130,7 +132,7 @@ svg { width: 1em; height: 1em; display: block; }
 .saved-note.show { opacity: 1; }
 #hud-day { color: var(--ink-dim); font-weight: 600; font-size: 13px; }
 
-#compass { position: absolute; top: calc(var(--sat) + 10px); left: 50%; width: min(420px, 38vw, 100vw - 452px - 2 * max(var(--sal), var(--sar))); height: 30px; transform: translateX(-50%); overflow: hidden;
+#compass { position: absolute; top: calc(var(--sat) + 10px); left: 50%; width: min(420px, 38vw, 100vw - 560px - 2 * max(var(--sal), var(--sar))); height: 30px; transform: translateX(-50%); overflow: hidden;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); }
 #compass-strip { position: absolute; inset: 0; }
 #compass-strip span { position: absolute; top: 5px; transform: translateX(-50%); font-weight: 800; font-size: 14px; letter-spacing: 0.06em; text-shadow: 0 1px 3px rgba(0,0,0,.8); white-space: nowrap; }
@@ -140,7 +142,7 @@ svg { width: 1em; height: 1em; display: block; }
 #compass-strip span.marker.goal { color: var(--glacier); }
 #compass-strip span.marker.bear { color: #ff5a4a; }
 .compass-needle { position: absolute; left: 50%; bottom: 0; width: 2px; height: 7px; background: var(--flame); transform: translateX(-50%); }
-#objective { position: absolute; top: calc(var(--sat) + 44px); left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: 600; letter-spacing: 0.04em; color: var(--ink); text-shadow: 0 1px 4px rgba(0,0,0,.85); white-space: nowrap; max-width: min(60vw, 100vw - 452px - 2 * max(var(--sal), var(--sar))); overflow: hidden; text-overflow: ellipsis; }
+#objective { position: absolute; top: calc(var(--sat) + 44px); left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: 600; letter-spacing: 0.04em; color: var(--ink); text-shadow: 0 1px 4px rgba(0,0,0,.85); white-space: nowrap; max-width: min(60vw, 100vw - 560px - 2 * max(var(--sal), var(--sar))); overflow: hidden; text-overflow: ellipsis; }
 #objective b { color: var(--flame-2); font-weight: 800; letter-spacing: 0.1em; margin-right: 6px; }
 
 #toasts { position: absolute; top: calc(var(--sat) + 70px); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(560px, 80vw); }
@@ -286,8 +288,9 @@ svg { width: 1em; height: 1em; display: block; }
 #btn-med { right: calc(var(--sar) + 110px); bottom: calc(var(--sab) + 164px); }
 #btn-horn { right: calc(var(--sar) + 40px); bottom: calc(var(--sab) + 150px); }
 #btn-cam { right: calc(var(--sar) + 104px); bottom: calc(var(--sab) + 164px); }
-/* run on and off, on the walking side */
-#btn-run { left: calc(var(--sal) + 20px); bottom: calc(var(--sab) + 150px); width: 60px; height: 60px; font-size: 14px; font-weight: 800; }
+/* run on and off: up under the small map, out of the way of the thumb that
+   walks (beside the map on a phone on its side, see below) */
+#btn-run { left: calc(var(--sal) + 44px); top: calc(var(--sat) + 256px); width: 60px; height: 60px; font-size: 14px; font-weight: 800; }
 #btn-run.on { background: radial-gradient(circle at 35% 30%, #ffae5a, var(--flame) 45%, #b2360a); border-color: #ffd9a8; color: #fffaf0; text-shadow: 0 1px 0 rgba(90,20,0,.7); }
 .btn.pedal { width: 100px; height: 100px; font-size: 17px; font-weight: 800; }
 #btn-gas { right: calc(var(--sar) + 22px); bottom: calc(var(--sab) + 26px); background: radial-gradient(circle at 35% 30%, #9ae07a, #3a8a2a 55%, #1a4a12); border-color: #c8f0b0; }
@@ -508,7 +511,8 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
   #btn-med { right: calc(var(--sar) + 108px); bottom: calc(var(--sab) + 116px); }
   #btn-horn { bottom: calc(var(--sab) + 102px); right: calc(var(--sar) + 130px); }
   #btn-cam { bottom: calc(var(--sab) + 122px); right: calc(var(--sar) + 40px); }
-  #btn-run { bottom: calc(var(--sab) + 108px); width: 54px; height: 54px; }
+  #btn-run { top: calc(var(--sat) + 109px); left: calc(var(--sal) + 102px); width: 54px; height: 54px; }
+  #toasts { width: min(560px, 100vw - 2 * (max(var(--sal), var(--sar)) + 170px)); }
   .btn.pill { bottom: calc(var(--sab) + 176px); right: calc(var(--sar) + 130px); padding: 9px 14px; }
   .btn.pill.driving { right: calc(var(--sar) + 12px); bottom: auto; top: calc(var(--sat) + 90px); }
   .btn.pill.second { bottom: calc(var(--sab) + 124px); right: calc(var(--sar) + 230px); }
@@ -531,12 +535,12 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
    top buttons: 12 px margin, the buttons and 6 px clear on each side, with
    the safe area of a notch. The buttons are smaller on short screens. */
 @media (max-height: 430px) {
-  #compass { width: min(420px, 38vw, 100vw - 408px - 2 * max(var(--sal), var(--sar))); }
-  #objective { top: calc(var(--sat) + 41px); max-width: min(60vw, 100vw - 408px - 2 * max(var(--sal), var(--sar))); }
+  #compass { width: min(420px, 38vw, 100vw - 504px - 2 * max(var(--sal), var(--sar))); }
+  #objective { top: calc(var(--sat) + 41px); max-width: min(60vw, 100vw - 504px - 2 * max(var(--sal), var(--sar))); }
 }
 /* very wide screens have the clock and the bite beside the buttons too */
 @media (min-width: 1500px) and (min-height: 600px) {
-  #objective { max-width: min(60vw, 100vw - 940px - 2 * max(var(--sal), var(--sar))); }
+  #objective { max-width: min(60vw, 100vw - 1048px - 2 * max(var(--sal), var(--sar))); }
 }
 /* too narrow for a gap (a phone held upright, a narrow split view on an
    iPad): smaller top buttons clear of the health bar, the bite readout over
@@ -544,8 +548,10 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
    (and under the SAVED note and the driving buttons), right of the small
    map */
 @media (max-width: 599px) {
-  .top-icons { gap: 6px; }
-  .top-icons .btn.icon { width: 42px; height: 42px; }
+  .top-icons { gap: 5px; }
+  .top-icons .btn.icon { width: 38px; height: 38px; }
+  .top-icons .btn.icon svg { width: 21px; height: 21px; }
+  .stat.health .bar { width: 100px; }
   .top-status { flex-direction: column; align-items: flex-end; }
   #compass { top: calc(var(--sat) + 146px); left: calc(var(--sal) + 148px); right: calc(var(--sar) + 12px); width: auto; transform: none; }
   #objective { top: calc(var(--sat) + 182px); left: calc(var(--sal) + 148px); right: calc(var(--sar) + 12px); max-width: none; transform: none; text-align: center; }
@@ -561,13 +567,6 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
   #prompt.show { animation: none !important; }
 }
 
-/* Shorter still: a phone on its side in a browser, under the browser's bar,
-   or in an app's viewer. The RUN button goes beside the small map instead of
-   under it, and the toasts keep clear of it. */
-@media (max-height: 384px) {
-  #btn-run { top: calc(var(--sat) + 109px); bottom: auto; left: calc(var(--sal) + 102px); }
-  #toasts { width: min(560px, 100vw - 2 * (max(var(--sal), var(--sar)) + 170px)); }
-}
 /* The shortest: smaller buttons all round, and the action pills along the
    bottom, left of the round buttons, out of the way of the top buttons. */
 @media (max-height: 340px) {

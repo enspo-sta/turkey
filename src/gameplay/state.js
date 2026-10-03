@@ -34,7 +34,7 @@ export class GameState {
   constructor() {
     this.listeners = [];
     this.reset();
-    this.settings = { quality: null, volume: 0.8, music: 0.55, sens: 1, invert: false, haptics: true, showFps: false, autoQuality: true, minimap: true, announcer: true, voiceName: null, skyGuide: true };
+    this.settings = { quality: null, volume: 0.8, music: 0.55, sens: 1, invert: false, haptics: true, showFps: false, autoQuality: true, minimap: true, announcer: true, voiceName: null, gameVoice: true, skyGuide: true };
     this.loadSettings();
   }
 
@@ -486,7 +486,13 @@ export class GameState {
     if (!s) return;
     try {
       const raw = s.getItem(SETTINGS_KEY);
-      if (raw) this.settings = { ...this.settings, ...JSON.parse(raw) };
+      if (raw) {
+        const saved = JSON.parse(raw);
+        // the game's own voice came after these settings: a device voice
+        // picked before then gives way to it once (Settings can pick it again)
+        if (!('gameVoice' in saved)) saved.voiceName = null;
+        this.settings = { ...this.settings, ...saved, gameVoice: true };
+      }
     } catch (e) {
       /* ignore */
     }

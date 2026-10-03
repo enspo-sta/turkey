@@ -5,6 +5,7 @@ import { LURES, FISH, CHALLENGES, RARITY, ARROWS, timingGradient } from '../game
 import { Minimap } from './minimap.js';
 import { biteOutlook } from '../gameplay/bite.js';
 import { PHOTO_SUBJECTS } from '../gameplay/camera.js';
+import { canFullscreen, isFullscreen, startedFullscreen, toggleFullscreen, onFullscreenChange, fullscreenHelp } from './fullscreen.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -154,7 +155,67 @@ export class HUD {
     input.bindTap($('btn-journal'), () => game.screens.open('journal'));
     input.bindTap($('btn-wardrobe'), () => game.screens.open('wardrobe'));
     input.bindTap($('btn-pause'), () => game.screens.open('pause'));
+    this.bindFullscreen();
     $('catch').addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+  }
+
+  // The full-screen buttons, in the top row and on the title screen: in and
+  // out where the browser allows it; where it does not (an iPhone), a note
+  // on what does. Hidden when the game already fills the screen by how it
+  // was started (from the Home Screen, or the iOS app).
+  bindFullscreen() {
+    const buttons = [$('btn-full'), $('btn-full-title')].filter(Boolean);
+    const show = !startedFullscreen();
+    const update = () => {
+      const on = isFullscreen();
+      for (const b of buttons) {
+        b.hidden = !show;
+        const use = b.querySelector('use');
+        if (use) use.setAttribute('href', on ? '#i-full-exit' : '#i-full');
+        b.setAttribute('aria-label', on ? 'Leave full screen' : 'Full screen');
+        b.setAttribute('aria-pressed', String(on));
+      }
+    };
+    const say = (text, kind, secs) => {
+      // on the title screen the HUD is hidden: the note goes under its buttons
+      const foot = $('title-foot');
+      if (this.root.hidden && foot) {
+        if (this.footWas == null) this.footWas = foot.textContent;
+        foot.textContent = text;
+        foot.classList.add('note');
+        clearTimeout(this.footTimer);
+        this.footTimer = setTimeout(() => {
+          foot.textContent = this.footWas;
+          this.footWas = null;
+          foot.classList.remove('note');
+        }, secs * 1000);
+      } else this.toast(text, kind, secs);
+    };
+    let tries = 0;
+    const act = () => {
+      if (!canFullscreen()) {
+        say(fullscreenHelp(), '', 9);
+        return;
+      }
+      const entering = !isFullscreen();
+      const n = ++tries;
+      toggleFullscreen().then(update, () => {
+        update();
+        say('The browser did not let the game fill the screen here.', 'bad', 5);
+      });
+      // some browsers ignore the request without a word (an iPhone can):
+      // if nothing has happened a moment later, say what works there
+      if (entering)
+        setTimeout(() => {
+          if (n === tries && !isFullscreen()) say(fullscreenHelp(), '', 9);
+        }, 1500);
+    };
+    for (const b of buttons) this.game.input.bindTap(b, act);
+    // the change event, and the resize that comes with it (some browsers send
+    // the event late), and Esc or a swipe that leaves full screen without us
+    onFullscreenChange(update);
+    window.addEventListener('resize', update);
+    update();
   }
 
   show(on) {

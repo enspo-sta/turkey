@@ -78,8 +78,13 @@ Earlier rounds: [docs/science-update.html](docs/science-update.html),
 - An announcer calls the big moments, in a voice and in big arcade letters:
   **FISH ON!**, **IT THREW THE HOOK!**, **OH NO, THE HOOK CAME OFF!**, **SNAP!
   THE LINE BROKE!**, **NEW SPECIES! NORTHERN PIKE!**, **PERSONAL BEST!**,
-  **LEGENDARY!** and **THE BITE IS ON!** The voice can be switched off in
-  Settings.
+  **LEGENDARY!** and **THE BITE IS ON!** The voice is the game's own: every
+  line, fish, legend, star and place name it says was recorded with a natural
+  neural voice ([Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M), see the credits) and ships
+  with the game, so it sounds the same on every phone with nothing to
+  download, and the wind, water and music dip while it talks. Settings,
+  Voice can switch to one of the device's own voices, or turn the announcer
+  off.
 - Watch the float: nibbles are twitches, a real bite pulls it under and you have
   a moment to tap **HOOK!** The line only comes in when you reel: the current
   carries the float along but never back to your feet, and a lure that lands on
@@ -182,6 +187,16 @@ Earlier rounds: [docs/science-update.html](docs/science-update.html),
 - A small map in the top left corner that turns as you do and shows the land
   around you, the places you know, the hot rod, the boat, your next goal and a
   charging grizzly. It zooms out while you drive, and a tap opens the full map.
+  **RUN** sits right by it, high up on the left, where the thumb that walks
+  does not reach.
+- A full-screen button, first in the row at the top right and in the corner of
+  the title screen. It fills the screen through the browser's
+  [Fullscreen API](https://developer.mozilla.org/en-US/docs/Web/API/Fullscreen_API)
+  and changes to a leave button while it does. Safari on iPhone lets only
+  videos fill the screen, so there the button says what works instead: added
+  to the Home Screen and started from its icon, the game opens full screen.
+  Started that way, or in the iOS app, it already fills the screen and the
+  button stays out of the way.
 - The full map fills the screen: drag it, pinch or use the buttons to zoom,
   and tap a place, or the lake, river or sea it fishes, to see what lives there
   (only at places you have been to), the bite there right now and when each
@@ -626,7 +641,8 @@ Earlier rounds: [docs/science-update.html](docs/science-update.html),
 | Action | Touch (iPhone and iPad) | Keyboard and mouse |
 |---|---|---|
 | Walk | Drag on the left half of the screen | `W` `A` `S` `D`, hold `Shift` to jog |
-| Run | **RUN** on the left: tap to run, tap again to walk | Hold `Shift` |
+| Run | **RUN** up under the small map (beside it on a phone on its side), clear of the thumb that walks: tap to run, tap again to walk | Hold `Shift` |
+| Full screen | The four-corners button, first at the top right and in the corner of the title screen; tap it again to leave (on iPhone, see below) | The same button; `Esc` leaves |
 | Look | Drag on the right half | Drag the mouse (click the view to lock the pointer) |
 | Cast, hook, reel | Big orange button (**CAST** / **HOOK!** / **REEL**) | `Space` or left click |
 | Draw and loose the longbow | Hold the big orange button (**DRAW**), let go to loose | Hold `Space` or the left mouse button, let go to loose |
@@ -664,7 +680,10 @@ warning if the browser blocks saving.
 ### In a browser
 
 Open `dist/index.html` in Safari, Chrome, Edge or Firefox. It is completely
-self-contained and also works straight from disk.
+self-contained and also works straight from disk. The four-corners button at
+the top right fills the screen, on a computer, an iPad or an Android phone;
+`Esc` or the same button leaves full screen. Inside another page (an embedded
+frame that does not allow full screen) the button says so instead.
 
 ### On an iPhone or iPad without Xcode
 
@@ -672,10 +691,13 @@ self-contained and also works straight from disk.
 2. In the repository folder run `npm run serve`. It prints an address such as
    `http://192.168.1.20:8080/`.
 3. On the iPhone or iPad (same Wi-Fi network), open that address in Safari.
-4. Tap the Share button, then **Add to Home Screen**
+4. Tap the Share button (on iOS 26 it is in the **···** menu beside the
+   address bar), then **Add to Home Screen**, and leave **Open as Web App** on
    ([Apple's guide](https://support.apple.com/guide/iphone/bookmark-favorite-webpages-iph42ab2f3a7/ios)).
    The game then opens full screen from its own icon, and your progress is kept
-   on the device.
+   on the device. This is the only way to fill an iPhone's screen: Safari on
+   iPhone lets only videos go full screen, so the full-screen button there
+   explains these steps instead.
 
 ### As a native iOS app
 
@@ -741,6 +763,22 @@ npm run icons     # redraw the app icons (needs Playwright, see below)
 `npm run build` also writes `build/artifact.html`, a fragment of the same game
 without the document wrapper, used for publishing it as a web page on claude.ai.
 
+The announcer's voice is made ahead of time and kept in the repository
+(`src/audio/voice-clips.js`), so a build needs nothing more. To make it again,
+after changing a line in `src/audio/lines.js` or adding a fish, use Python 3.10
+or newer and the model files from the
+[kokoro-onnx releases](https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0)
+(`kokoro-v1.0.onnx` and `voices-v1.0.bin`):
+
+```sh
+python3 -m venv .venv && . .venv/bin/activate
+pip install kokoro-onnx lameenc
+node tools/voice/lines.mjs > tools/out/voice-lines.json
+python3 tools/voice/make-voice.py tools/out/voice-lines.json kokoro-v1.0.onnx voices-v1.0.bin
+```
+
+A line without a recording is still said, in the device's own voice.
+
 The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 [esbuild](https://esbuild.github.io/) for bundling.
 
@@ -803,13 +841,15 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/audio/audio.js` | All sound and music, synthesised with the Web Audio interface |
 | `src/audio/ambience.js` | The sound of the place: wind, water, rain, birds and other singers, footsteps, placed in space with a reverb |
 | `src/audio/bake.js` | The ambience's textures, footsteps and reverb made ahead of time, a little a frame |
-| `src/audio/announcer.js` | The announcer's lines, spoken with the device's speech synthesis, and their banners |
+| `src/audio/announcer.js`, `lines.js` | The announcer's lines and their banners, said in the game's voice or, if Settings picks one, a device voice |
+| `src/audio/voice.js`, `voice-clips.js` | The game's voice: every line and name as a small MP3 (made by `tools/voice`), decoded when first needed |
 | `src/ui/` | HUD, the small map, menus, the Trading Post, garage, map and journal, the observatory's screens, touch and keyboard input, and styles |
 | `src/ui/eyepiece.js`, `skyguide.js` | The telescope's eyepiece views, and the constellation figures and names drawn over the sky |
 | `ios/` | The Xcode project for the native iOS app |
 | `tools/shot.mjs`, `tools/scenarios/` | Headless screenshot and gameplay test harness with scripted scenarios |
 | `tools/make-icons.mjs`, `tools/serve.mjs`, `tools/preview-map.mjs` | Icon drawing, the local network server, and a top-down map preview of the world |
 | `tools/mkstars.mjs` | Packs the stars, constellation figures, star names and Milky Way outline from the d3-celestial package into `src/world/skydata.js` |
+| `tools/voice/` | Makes the announcer's voice: `lines.mjs` lists every line and name, `make-voice.py` speaks them with Kokoro and packs `src/audio/voice-clips.js` |
 | `tools/cartest.mjs`, `tools/planetcheck.mjs`, `tools/almanactest.mjs`, `tools/skytables.mjs` | Checks run with Node alone: the cars' acceleration, top speed, braking and off-road speed; which planets the telescope can reach on each game day; the almanac for sample nights; and a table of the first fourteen nights |
 | `tools/lab/handlab.mjs` | Renders the first-person hand poses from four sides, for checking them |
 
@@ -855,7 +895,12 @@ node tools/shot.mjs tools/scenarios/areas.json        # Steaming Springs with th
 node tools/shot.mjs tools/scenarios/jobs-bigfoot.json # the odd jobs board, a picture of Bigfoot for the radio show, the cannery's three sockeye and the album
 node tools/shot.mjs tools/scenarios/layout-ipad.json  # the top bar, compass and bite readout on an iPad-sized screen
 node tools/shot.mjs tools/scenarios/layout-phone-small.json # the same on a small phone
-node tools/shot.mjs tools/scenarios/layout-sizes.json # the top bar with the longest goal at ten screen sizes, phones upright and sideways (with the notch), iPads and desktops
+node tools/shot.mjs tools/scenarios/layout-sizes.json # the top bar with the longest goal at ten screen sizes, phones upright and sideways (with the notch), iPads and desktops: no overlaps, and RUN in the upper half
+node tools/shot.mjs tools/scenarios/fullscreen.json   # the full-screen button on the title screen and in the game: in and out, its icon and label, and Esc still pausing afterwards
+node tools/shot.mjs tools/scenarios/fullscreen-iphone.json # an iPhone without the Fullscreen API: the note on the title screen and in the game
+node tools/shot.mjs tools/scenarios/fullscreen-home.json   # started from the Home Screen: no full-screen button on the title screen or in the game
+node tools/shot.mjs tools/scenarios/top-buttons-touch.json # real taps on an imitated iPhone: each button at the top right opens its screen, the full-screen note, the bite readout, and RUN on and off
+node tools/shot.mjs tools/scenarios/voice-pick.json   # the game's own voice: a line and a name, a personal best's fish, the music dipping while it talks, every recording decoded, Settings, Voice through an imitated iPhone's voices, and old settings moving to the game's voice
 node tools/shot.mjs tools/scenarios/bigfoot-forest.json # Bigfoot from deep in the forest at dusk: he only steps out where no tree or bush hides him
 node tools/shot.mjs tools/scenarios/fish-species.json # lands each of the twelve newer fish, then shows the journal by rarity and the tackle box
 node tools/shot.mjs tools/scenarios/secret.json       # (spoilers) the hidden chest from the bank and locked from the shelf, Gus's launch, TAKE PARAGLIDER and the edge with GLIDE
@@ -966,5 +1011,12 @@ node tools/skytables.mjs    # the first fourteen nights: Kp, the Moon, the tides
 - The solar system walk is inspired by the
   [Sweden Solar System](https://www.swedensolarsystem.se/), the world's largest
   scale model of the solar system.
+- The announcer's voice: spoken by the
+  [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) speech model by hexgrad
+  (voice `af_heart`), Apache License 2.0, run with
+  [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx) (MIT licence) and
+  encoded with [LAME](https://lame.sourceforge.io/) through
+  [lameenc](https://github.com/chrisstaite/lameenc). Only the recordings ship
+  with the game, not the model.
 - Everything else (world, models, textures, animation, sound, music and the app
   icon) is original and generated by the code in this repository.

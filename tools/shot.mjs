@@ -38,6 +38,9 @@ const page = await context.newPage();
 // both processes (gigabytes in a minute) and slow everything down: no
 // pointer lock unless the scenario is about it.
 if (!scenario.pointerLock) await page.addInitScript(() => (Element.prototype.requestPointerLock = () => Promise.resolve()));
+// a scenario's own script run before the page's (to imitate a browser that
+// lacks an API, say)
+if (scenario.init) await page.addInitScript({ content: scenario.init });
 const logs = [];
 page.on('console', (m) => logs.push(`[${m.type()}] ${m.text()}`));
 page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}\n${e.stack || ''}`));

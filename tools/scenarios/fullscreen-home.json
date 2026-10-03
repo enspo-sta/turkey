@@ -1,0 +1,10 @@
+{"width": 844, "height": 390, "touch": true, "mobile": true, "timeout": 200000,
+ "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+ "init": "Object.defineProperty(Navigator.prototype, 'standalone', { get: () => true, configurable: true });",
+ "steps": [
+{"wait": 1500},
+{"eval": "'started from the Home Screen: title button shown ' + !document.getElementById('btn-full-title').hidden"},
+{"eval": "__rhf.start(false)"},
+{"wait": 2500},
+{"eval": "'in the game: button shown ' + !document.getElementById('btn-full').hidden"}
+]}

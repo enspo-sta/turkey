@@ -1,6 +1,7 @@
 // Procedural Web Audio: the sound of the place (see ambience.js), wildlife
 // calls, fishing and longbow sound effects, the hot rod's V8 and a
-// plucked-guitar folk soundtrack. Everything is synthesised; no audio files.
+// plucked-guitar folk soundtrack. Everything is synthesised; the one
+// exception is the announcer's voice (voice.js).
 import { Ambience } from './ambience.js';
 
 const PENTA = [0, 2, 4, 7, 9];
@@ -44,9 +45,15 @@ export class AudioEngine {
     this.sfx = ctx.createGain();
     this.amb = ctx.createGain();
     this.mus = ctx.createGain();
+    // the sound of the place and the music go through one more gain, which
+    // dips while the announcer talks (see voice.js); the voice has its own
+    this.bed = ctx.createGain();
+    this.voiceOut = ctx.createGain();
     this.sfx.connect(this.master);
-    this.amb.connect(this.master);
-    this.mus.connect(this.master);
+    this.amb.connect(this.bed);
+    this.mus.connect(this.bed);
+    this.bed.connect(this.master);
+    this.voiceOut.connect(this.master);
     this.setVolumes(this.volume, this.musicVolume);
     // iOS unlock with a silent buffer
     const b = ctx.createBuffer(1, 1, sr);

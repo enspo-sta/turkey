@@ -1,0 +1,18 @@
+{"width": 844, "height": 390, "touch": true, "mobile": true, "timeout": 200000, "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1", "init": "delete Element.prototype.requestFullscreen; delete Element.prototype.webkitRequestFullscreen; Object.defineProperty(Document.prototype, 'fullscreenEnabled', { get: () => false, configurable: true }); const st = window.setTimeout; window.setTimeout = (f, ms, ...a) => st(f, ms >= 5000 ? ms * 10 : ms, ...a);", "steps": [
+{"wait": 1500}, 
+{"eval": "(() => { const b = document.getElementById('btn-full-title'); return 'iPhone imitation: API ' + !!document.documentElement.requestFullscreen + ', title button shown ' + !b.hidden; })()"}, 
+{"tapSel": "#btn-full-title"}, 
+{"wait": 600}, 
+{"eval": "'title note: ' + document.getElementById('title-foot').textContent"}, 
+{"shot": "fs3-iphone-title.jpg"}, 
+{"eval": "__rhf.start(false)"}, 
+{"wait": 2500}, 
+{"eval": "(() => { const g = __rhf.game; g.env.setTime(10); g.hud.hint('', 0); return 'in the game: button shown ' + !document.getElementById('btn-full').hidden; })()"}, 
+{"tapSel": "#btn-full"}, 
+{"wait": 600}, 
+{"eval": "'toast: ' + [...document.querySelectorAll('#toasts .toast')].map((t) => t.textContent).join(' / ') + ' | full screen ' + !!document.fullscreenElement + ', paused ' + (__rhf.game.screens.current || 'no')"}, 
+{"shot": "fs4-iphone-game.jpg"}, 
+{"eval": "(() => { Element.prototype.requestFullscreen = function () { window.__asked = (window.__asked || 0) + 1; }; Object.defineProperty(Document.prototype, 'fullscreenEnabled', { get: () => undefined, configurable: true }); document.querySelectorAll('#toasts .toast').forEach((t) => t.remove()); __rhf.game.hud.toastList.length = 0; return 'now a browser that takes the request and ignores it without a word: API ' + !!document.documentElement.requestFullscreen; })()"}, 
+{"tapSel": "#btn-full"}, 
+{"waitFor": "document.querySelectorAll('#toasts .toast').length > 0", "timeout": 30000}, 
+{"eval": "'after a tap: asked ' + (window.__asked || 0) + ' time(s), full screen ' + !!document.fullscreenElement + ', note: ' + [...document.querySelectorAll('#toasts .toast')].map((t) => t.textContent.slice(0, 90)).join(' / ')"}]}
