@@ -503,9 +503,12 @@ export class Observatory {
       const acam = P.addMesh(ab.build(), c.x, cy, c.z, 0);
       acam.removeFromParent();
       this.group.add(acam);
+      // plain clear glass: a "transmission" material here made three.js
+      // draw the whole scene a second time every frame the observatory was
+      // anywhere in view, for a bubble 24 cm across
       const bubble = new THREE.Mesh(
         new THREE.SphereGeometry(0.12, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-        new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.05, transmission: 0.9, transparent: true, opacity: 0.45, metalness: 0 })
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.05, transparent: true, opacity: 0.3, metalness: 0, depthWrite: false })
       );
       bubble.position.set(c.x, cy + 1.63, c.z);
       this.group.add(bubble);

@@ -256,6 +256,7 @@ const _sq = new THREE.Quaternion();
 const _cm = new THREE.Matrix4();
 const _cs = new THREE.Vector3();
 const _cv = new THREE.Vector3();
+const _invQ = new THREE.Quaternion();
 
 // Place a unit-height cylinder (along +y from its base) between a and b.
 function stretch(mesh, a, b) {
@@ -493,7 +494,7 @@ export class Viewmodel {
     this.sun.intensity = env.sun.intensity * 0.85 * this.sunVis * (1 - env.uniforms.uSunVeil.value);
     const ld = env.lightDir;
     // light direction into camera space
-    const inv = game.camera.quaternion.clone().invert();
+    const inv = _invQ.copy(game.camera.quaternion).invert();
     this.sun.position.copy(ld).applyQuaternion(inv);
     this.scene.environment = game.scene.environment;
 

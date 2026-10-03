@@ -11,11 +11,14 @@ import { Bigfoot } from './entities/bigfoot.js';
 import { Glider } from './entities/glider.js';
 import { Secret, GUS_NOTES } from './world/secret.js';
 import { Oddities } from './world/oddities.js';
+import { Scientists } from './world/scientists.js';
+import { SCIENTIST, SCIENTISTS } from './world/scientistdata.js';
 import { Pitstop, PITSTOP, clearPitstop } from './world/pitstop.js';
 import { Observatory } from './world/observatory.js';
 import { SolarWalk } from './world/solarwalk.js';
 import { Tors } from './world/tors.js';
 import { TeslaMemorial } from './world/tesla.js';
+import { DetailCull } from './world/detailcull.js';
 import { Visitor } from './gameplay/visitor.js';
 import { Climbing } from './gameplay/climbing.js';
 import { Meteors } from './world/meteors.js';
@@ -122,12 +125,25 @@ class Session {
     g.glider = new Glider(g);
     g.secret = new Secret(g);
     g.oddities = new Oddities(g);
+    // the scientists' busts, by the places their work belongs to
+    g.scientists = new Scientists(g);
     g.screens = new Screens(g);
     g.onEvent = (ev) => this.onEvent(ev);
     g.save = () => this.save();
     g.fastTravel = (id, hours) => this.fastTravel(id, hours);
+    // the world's shaders differ with and without the finish: the new set is
+    // compiled and drawn once at the change, not one by one as things come
+    // into view
     g.onPostChanged = () => {
-      if (this.fishProbes) this.precompile();
+      if (!this.fishProbes) return;
+      // in a frame of its own, followed by the whole view: the warm draw
+      // leaves a single pixel in the drawing buffer
+      this.precompile().then(() =>
+        requestAnimationFrame(() => {
+          this.warmDraw();
+          g.render();
+        })
+      );
     };
     g.onQualityDrop = (name) => g.hud.toast(`Graphics set to ${name.toUpperCase()} to keep the game smooth. Change it in Settings.`);
     g.toTitle = () => this.toTitle();
@@ -176,74 +192,163 @@ class Session {
     this.bindLifecycle();
     // place the car at the cabin for the title shot
     this.placeAtStart(true);
+    // small parts far away are left out of the frame (see detailcull.js)
+    g.detailCull = new DetailCull(g);
+    for (const o of [g.props.group, g.observatory.group, g.racer.group, g.hotrod.group, g.pitstop.group, g.tors.group, g.solarwalk.group, g.tesla.group, g.boat.group, g.scientists.group]) g.detailCull.add(o);
     // every light (the hot rod's headlight too) also shines in the water
     // reflections, so the probe and the main view share one light setup
     g.scene.traverse((o) => {
       if (o.isLight) o.layers.enable(REFLECT_LAYER);
     });
-    this.precompile();
+    this.warm = this.precompile();
+  }
+
+  // Show everything for a moment: every hidden part, one of every kind of
+  // instanced thing, nothing left out for being off screen. Returns the undo.
+  revealAll(roots) {
+    this.game.detailCull?.reset();
+    const undo = [];
+    for (const root of roots) {
+      root.traverse((o) => {
+        if (!o.visible) {
+          o.visible = true;
+          undo.push(() => (o.visible = false));
+        }
+        if (o.frustumCulled) {
+          o.frustumCulled = false;
+          undo.push(() => (o.frustumCulled = true));
+        }
+        if (o.isInstancedMesh && o.count === 0 && o.instanceMatrix.count > 0) {
+          o.count = 1;
+          undo.push(() => (o.count = 0));
+        }
+      });
+    }
+    return () => {
+      for (let i = undo.length - 1; i >= 0; i--) undo[i]();
+    };
   }
 
   // Compile every shader up front so the first arrow, fish or bear
   // does not stall a frame.
   precompile() {
     const g = this.game;
-    const hidden = [];
-    const show = (o) => {
-      o.traverse((c) => {
-        if (!c.visible) {
-          hidden.push(c);
-          c.visible = true;
-        }
-      });
-    };
-    for (const h of Object.values(g.wildlife.herds)) {
-      h.mesh.count = Math.max(1, h.mesh.count);
-    }
-    const arrowCount = g.hunting.mesh.count;
-    g.hunting.mesh.count = Math.max(1, arrowCount);
-    show(g.wildlife.group);
-    show(g.viewmodel.scene);
-    show(g.fishing.float);
-    show(g.fishing.line);
-    show(g.hotrod.group);
-    show(g.racer.group);
-    show(g.pitstop.group);
-    show(g.observatory.group);
-    show(g.solarwalk.group);
-    show(g.meteors.group);
-    for (const k of g.meteors.streaks) show(k.mesh);
-    show(g.insects.group);
-    show(g.glider.canopy);
-    for (const s of [g.secret.glint, ...g.secret.glows]) if (s) show(s);
     // a fish in the world (under water, fog) and in the hands (no fog), so the
     // first bite and the first catch do not stall on shader compiles
-    const fishWorld = makeFishModel('pink');
-    const fishHand = makeFishModel('pink');
+    if (!this.fishProbes) this.fishProbes = [makeFishModel('pink'), makeFishModel('pink')];
+    const [fishWorld, fishHand] = this.fishProbes;
     g.scene.add(fishWorld);
     g.viewmodel.scene.add(fishHand);
+    // the hands reflect the same sky as the world once the game is on (see
+    // Viewmodel.update): compiled without it, all their shaders would be
+    // built again on the first frame of the game
+    g.viewmodel.scene.environment = g.scene.environment;
+    const undo = this.revealAll([g.scene, g.viewmodel.scene]);
+    // compileAsync starts every compile at once and, where the browser can
+    // say when a shader is done without waiting for it, resolves when they
+    // all are (see warmDraw)
+    let ready = Promise.resolve();
     try {
       // the world is compiled for the buffer it is drawn into (the High
       // finish draws it in linear light), the hands for the screen
       g.renderer.setRenderTarget(g.post.worldTarget);
-      g.renderer.compile(g.scene, g.camera);
+      const world = g.renderer.compileAsync(g.scene, g.camera);
       g.renderer.setRenderTarget(null);
-      g.renderer.compile(g.viewmodel.scene, g.viewmodel.camera);
+      const hands = g.renderer.compileAsync(g.viewmodel.scene, g.viewmodel.camera);
+      ready = Promise.all([world, hands]).catch(() => {});
     } catch (e) {
       /* compile is only an optimisation */
     }
     g.renderer.setRenderTarget(null);
+    undo();
     // keep the probes (not their place in the scenes): disposing them would
     // release the compiled programs again
     fishWorld.removeFromParent();
     fishHand.removeFromParent();
-    this.fishProbes = [fishWorld, fishHand];
-    for (const c of hidden) c.visible = false;
-    for (const h of Object.values(g.wildlife.herds)) {
-      h.mesh.count = 0;
-      h.mesh.visible = false;
+    return ready;
+  }
+
+  // A compiled shader is not the end of it: the graphics driver builds the
+  // program it really runs (one for each shader, target and kind of mesh)
+  // the first time something is drawn with it, and that is the stall when a
+  // bear, the boat or a building first comes into view. So everything is
+  // drawn once here, behind the loading screen: the whole world, its
+  // shadows, its reflection and the hands, into a single pixel of the view
+  // (the driver's work does not depend on how much is drawn).
+  warmDraw() {
+    const g = this.game;
+    const r = g.renderer;
+    // the world brought up to the camera first (its ground, its plants, the
+    // reflections), and only then everything shown for the draw: shown
+    // first, the update's own changes (chunks of ground made visible) would
+    // be undone with the rest. No time passes, and none has yet at load
+    // (the first frame sets g.dt).
+    try {
+      g.dt = 0;
+      g.updateWorld(0);
+    } catch (e) {
+      /* only an optimisation */
     }
-    g.hunting.mesh.count = arrowCount;
+    const [fishWorld, fishHand] = this.fishProbes;
+    g.scene.add(fishWorld);
+    g.viewmodel.scene.add(fishHand);
+    g.viewmodel.scene.environment = g.scene.environment;
+    const undo = this.revealAll([g.scene, g.viewmodel.scene]);
+    const overlayWas = g.overlay.enabled;
+    g.overlay.enabled = true;
+    // the finish's buffers at their size now: sizing them in the draw would
+    // reset the one-pixel scissor and draw the whole view
+    if (g.post.enabled) {
+      const size = r.getDrawingBufferSize(this._warmSize || (this._warmSize = new THREE.Vector2()));
+      g.post.setSize(size.x, size.y);
+    }
+    const t = g.post.worldTarget;
+    if (t) {
+      t.scissor.set(0, 0, 1, 1);
+      t.scissorTest = true;
+    }
+    r.setScissor(0, 0, 1, 1);
+    r.setScissorTest(true);
+    // the sun rays too, which are drawn only when the sun is in view
+    g.post.warm = true;
+    try {
+      g.render();
+    } catch (e) {
+      /* only an optimisation */
+    } finally {
+      g.post.warm = false;
+      if (t) t.scissorTest = false;
+      r.setScissorTest(false);
+      undo();
+      g.overlay.enabled = overlayWas;
+      fishWorld.removeFromParent();
+      fishHand.removeFromParent();
+    }
+  }
+
+  // Behind the loading screen, once the compiles are done (or have had their
+  // time): draw everything once, then wait for the last shader that left
+  // compiling. On a phone that is a few seconds more of loading bar instead
+  // of a frozen title screen or stalls in the first minutes of the game.
+  finishWarmUp() {
+    const g = this.game;
+    // the title's camera where the title will show it, so the drawing builds
+    // the ground round it and not round the middle of the map
+    try {
+      this.updateTitle(0);
+    } catch (e) {
+      /* the first frame places it anyway */
+    }
+    this.warmDraw();
+    try {
+      const gl = g.renderer.getContext();
+      const P = g.renderer.info.programs;
+      // the browser runs the compiles in order: asking about the last one
+      // waits for them all
+      if (P.length) gl.getProgramParameter(P[P.length - 1].program, gl.LINK_STATUS);
+    } catch (e) {
+      /* only an optimisation */
+    }
   }
 
   updateEnvMap() {
@@ -549,6 +654,20 @@ class Session {
       this.onEvent({ type: 'tesla' });
       this.save();
     }
+  }
+
+  // A scientist's bust: the plaque's full text, and the count of plaques read.
+  readBust(id) {
+    const g = this.game;
+    const s = SCIENTIST[id];
+    if (!s) return;
+    g.screens.note(`${s.name}, ${s.years}`, [`<b>${s.line}</b>`, ...s.note]);
+    if (g.state.busts[id]) return;
+    g.state.busts[id] = g.env.day;
+    const n = Object.keys(g.state.busts).length;
+    g.hud.toast(n < SCIENTISTS.length ? `Plaques read: ${n} of ${SCIENTISTS.length}. The Journal says where the others stand` : `All ${SCIENTISTS.length} plaques read`, 'good', 5);
+    this.onEvent({ type: 'bust', id, count: n });
+    this.save();
   }
 
   runCoil() {
@@ -1278,6 +1397,7 @@ class Session {
     g.sculptLeft = 3;
     g.visitor.update(dt);
     g.tesla.update(dt);
+    g.scientists.update();
     g.meteors.update(dt);
     g.satellites.update(dt);
     this.updateSkyEvents(dt);
@@ -1419,6 +1539,11 @@ class Session {
           if (it.id === 'sample' && Math.abs(P.pos.y - it.y) < 1.5 && (!g.state.climb.sample || (g.state.job && !g.state.job.done && g.state.job.id === 'geologist'))) ia = { label: 'TAKE A ROCK SAMPLE', icon: 'rock', act: () => this.takeSample() };
           // the Tesla Memorial at Bear Falls (see world/tesla.js)
           if (it.id === 'tesla' && Math.abs(P.pos.y - it.y) < 1.6) ia = { label: 'READ THE PLAQUE', icon: 'book', act: () => this.readTesla() };
+          // the scientists' busts (see world/scientists.js)
+          if (it.id.startsWith('bust:') && Math.abs(P.pos.y - it.y) < 1.8) {
+            const id = it.id.slice(5);
+            ia = { label: 'READ THE PLAQUE', icon: 'book', act: () => this.readBust(id) };
+          }
           if (it.id === 'coil') ia = { label: g.tesla.coilRunning ? 'CRACKLING' : 'RUN THE TESLA COIL', icon: 'bolt', act: () => this.runCoil() };
           if (it.id === 'hydro') ia = { label: 'BEAR FALLS HYDRO', icon: 'book', act: () => this.readHydro() };
           // Zib, the visitor from the sky (see gameplay/visitor.js)
@@ -1520,6 +1645,12 @@ async function boot() {
     const session = new Session(game);
     window.__rhf.session = session;
     await session.setup();
+    // every shader compiles now, while the loading bar is up
+    label.textContent = 'Preparing the view';
+    fill.style.width = '96%';
+    await new Promise((r) => requestAnimationFrame(() => r()));
+    await Promise.race([session.warm, new Promise((r) => setTimeout(r, 15000))]);
+    session.finishWarmUp();
     fill.style.width = '100%';
     $('loading').hidden = true;
     session.showTitle();

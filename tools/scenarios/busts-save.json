@@ -1,0 +1,40 @@
+{
+"width": 640,
+"height": 360,
+"timeout": 300000,
+"steps": [
+{
+"wait": 1000
+},
+{
+"eval": "__rhf.start(false)"
+},
+{
+"wait": 1500
+},
+{
+"eval": "(()=>{const g=__rhf.game; __rhf.session.readBust('darwin'); __rhf.session.readBust('curie'); __rhf.session.readBust('tharp'); g.screens.close(); __rhf.session.save(); const sci=g.state.science; return 'read '+Object.keys(g.state.busts).join(',')+'; science busts10 '+(!!sci.busts10)})()"
+},
+{
+"reload": true
+},
+{
+"eval": "__rhf.start(true)"
+},
+{
+"wait": 1500
+},
+{
+"eval": "(()=>{const g=__rhf.game; const n=Object.keys(g.state.busts).length; g.screens.open('journal',{tab:'people'}); const tab=[...document.querySelectorAll('[data-tab]')].map(b=>b.textContent).find(t=>t.startsWith('Scientists')); return 'after reload: '+n+' plaques read ('+Object.keys(g.state.busts).join(',')+'); tab label: '+tab})()"
+},
+{
+"wait": 600
+},
+{
+"shot": "busts-journal.jpg"
+},
+{
+"eval": "(()=>{const g=__rhf.game; g.screens.close(); for(const id of ['galileo','kepler','newton','leavitt','hubble','lovelace','angstrom']) __rhf.session.readBust(id); g.screens.close(); return 'read '+Object.keys(g.state.busts).length+'; busts10 done: '+(!!g.state.science.busts10)+'; money '+g.state.money})()"
+}
+]
+}

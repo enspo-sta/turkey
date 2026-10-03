@@ -1,6 +1,7 @@
-// Procedural Web Audio: ambience (wind, river, ocean, rain), wildlife calls,
-// fishing and longbow sound effects, the hot rod's V8 and a plucked-guitar
-// folk soundtrack. Everything is synthesised; no audio files.
+// Procedural Web Audio: the sound of the place (see ambience.js), wildlife
+// calls, fishing and longbow sound effects, the hot rod's V8 and a
+// plucked-guitar folk soundtrack. Everything is synthesised; no audio files.
+import { Ambience } from './ambience.js';
 
 const PENTA = [0, 2, 4, 7, 9];
 
@@ -15,9 +16,11 @@ export class AudioEngine {
     this.reelOn = false;
     this.reelT = 0;
     this.stepCount = 0;
-    this.nextBird = 3;
-    this.nextCall = 20;
     this.music = { next: 0, bar: 0, beat: 0, chord: 0, rest: 0, mode: 'day', tension: 0 };
+    // the ambience bakes its sounds from the title screen on, before the
+    // first tap lets the sound start
+    this.ambience = new Ambience(this);
+    this.wolfT = 90;
   }
 
   // Must be called from a user gesture (tap/click).
@@ -73,7 +76,7 @@ export class AudioEngine {
     this.echoLp.connect(this.echoOut);
     this.echoOut.connect(this.sfx);
 
-    this.buildAmbience();
+    this.ambience.start(ctx);
     this.buildPlucks();
     this.ready = true;
   }
@@ -126,31 +129,6 @@ export class AudioEngine {
     s.buffer = buf;
     s.loop = loop;
     return s;
-  }
-
-  // ---------------------------------------------------------------- ambience
-  buildAmbience() {
-    const ctx = this.ctx;
-    const loop = (buf, type, freq, q, gain) => {
-      const src = this.noiseSource(buf);
-      const f = ctx.createBiquadFilter();
-      f.type = type;
-      f.frequency.value = freq;
-      f.Q.value = q;
-      const g = ctx.createGain();
-      g.gain.value = gain;
-      src.connect(f);
-      f.connect(g);
-      g.connect(this.amb);
-      src.start(0, Math.random() * 1.5);
-      return { src, f, g };
-    };
-    this.wind = loop(this.pink, 'bandpass', 500, 0.6, 0.0);
-    this.river = loop(this.white, 'bandpass', 900, 0.5, 0.0);
-    this.riverLow = loop(this.brown, 'lowpass', 300, 0.7, 0.0);
-    this.ocean = loop(this.brown, 'lowpass', 500, 0.5, 0.0);
-    this.rainN = loop(this.white, 'highpass', 2500, 0.4, 0.0);
-    this.falls = loop(this.pink, 'lowpass', 1400, 0.4, 0.0);
   }
 
   // ---------------------------------------------------------------- plucks
@@ -581,11 +559,13 @@ export class AudioEngine {
     }
   }
   eagle(x, z) {
+    if (this.ambience.ctx) return this.ambience.eagle(x, this.listener.y + 25, z);
     const sp = this.spatial(x, z, 300);
     if (sp.vol < 0.02) return;
     for (let i = 0; i < 5; i++) this.tone('sine', 2600 - i * 80, 0.09, 0.05 * sp.vol, { f2: 3200, pan: sp.pan, when: i * 0.11, dest: this.amb });
   }
   raven(x, z) {
+    if (this.ambience.ctx) return this.ambience.raven(x, this.listener.y + 8, z);
     const sp = this.spatial(x, z, 250);
     if (sp.vol < 0.02) return;
     for (let i = 0; i < 2; i++) {
@@ -594,6 +574,7 @@ export class AudioEngine {
     }
   }
   gull(x, z) {
+    if (this.ambience.ctx) return this.ambience.gull(x, this.listener.y + 12, z);
     const sp = this.spatial(x, z, 200);
     if (sp.vol < 0.02) return;
     this.tone('triangle', 1300, 0.28, 0.06 * sp.vol, { f2: 850, pan: sp.pan, dest: this.amb });
@@ -601,6 +582,7 @@ export class AudioEngine {
   }
   loon(x, z) {
     if (!this.ready) return;
+    if (this.ambience.ctx) return this.ambience.loonCall(x, this.game.world?.heightAt?.(x, z) ?? 0, z, 1, Math.random() < 0.6 ? 'wail' : 'tremolo');
     const sp = this.spatial(x, z, 600);
     if (sp.vol < 0.02) return;
     const ctx = this.ctx;
@@ -634,6 +616,7 @@ export class AudioEngine {
   }
   wolf() {
     if (!this.ready) return;
+    if (this.ambience.ctx) return this.ambience.wolves();
     const ctx = this.ctx;
     const t = ctx.currentTime;
     const pan = Math.random() * 1.6 - 0.8;
@@ -730,6 +713,8 @@ export class AudioEngine {
   // -------------------------------------------------------------- footsteps
   step(surface, water, sprint) {
     if (!this.ready) return;
+    // the baked footsteps for the ground (until they are baked, these)
+    if (this.ambience.step(surface, water, sprint)) return;
     const v = sprint ? 0.2 : 0.14;
     if (water && water.depth > 0.1) {
       this.noise(0.18, v * 1.4, { type: 'lowpass', freq: 2200, f2: 500, q: 0.8 });
@@ -1183,67 +1168,27 @@ export class AudioEngine {
 
   // ------------------------------------------------------------- per frame
   update(dt, g) {
+    // the ambience's sounds are baked a little each frame, from the title
+    // screen on (the context only exists after the first tap)
+    this.ambience.bake(this.ready ? 1.2 : 2);
     if (!this.ready || !g.world) return;
-    const ctx = this.ctx;
-    const t = ctx.currentTime;
     const cam = g.camera;
     const dir = cam.getWorldDirection(this._d || (this._d = cam.position.clone()));
     this.listener.x = cam.position.x;
     this.listener.y = cam.position.y;
     this.listener.z = cam.position.z;
     this.listener.heading = Math.atan2(dir.x, -dir.z);
-    const W = g.world;
-    const px = cam.position.x;
-    const pz = cam.position.z;
     const inMenu = g.menuOpen || !g.started;
     const duck = inMenu ? 0.35 : 1;
-
-    // river & falls proximity
-    let riverV = 0;
-    let fallsV = 0;
-    if (W.inBounds(px, pz)) {
-      const k = W.cellIndex(px, pz);
-      const rd = W.riverD[k];
-      if (rd < 150) {
-        const s = W.riverS[k];
-        const w = W.riverWidth(s);
-        const grad = W.riverGradient(s);
-        riverV = Math.max(0, 1 - Math.max(0, rd - w) / 120) * (0.35 + Math.min(1, grad * 20) * 0.65);
-        if (W.fallsS > 0) {
-          const fd = Math.abs(s - W.fallsS);
-          fallsV = Math.max(0, 1 - Math.hypot(fd, Math.max(0, rd - w)) / 220);
-        }
-      }
-    }
-    const coast = W.inBounds(px, pz) ? W.coastD[W.cellIndex(px, pz)] : 0;
-    const oceanV = Math.max(0, 1 - Math.max(0, coast) / 350);
-    const altitude = cam.position.y;
-    // under the paraglider the air rushes past
-    const glide = g.player?.mode === 'glide' ? g.glider.speed / 10 : 0;
-    const windV = 0.12 + Math.min(0.5, Math.max(0, altitude - 60) / 400) + g.env.weather.rain * 0.2 + glide * 0.55;
-    const rainV = g.env.weather.rain;
-    const set = (node, v, tc = 0.3) => node.g.gain.setTargetAtTime(v * duck, t, tc);
-    set(this.river, riverV * 0.2);
-    set(this.riverLow, riverV * 0.25);
-    set(this.falls, fallsV * 0.5);
-    this.ocean.g.gain.setTargetAtTime(oceanV * (0.12 + 0.12 * (0.5 + 0.5 * Math.sin(t * 0.5))) * duck, t, 0.4);
-    set(this.wind, windV * 0.35);
-    this.wind.f.frequency.setTargetAtTime(380 + glide * 420 + Math.sin(t * 0.13) * 160 + Math.sin(t * 0.47) * 60, t, 0.5);
-    set(this.rainN, rainV * 0.22);
+    // the place: wind, water, rain, birds and the rest (see ambience.js)
+    this.ambience.update(dt, g, duck);
 
     if (!inMenu) {
-      // birds by day, calls by night
-      this.nextBird -= dt;
-      const night = g.env.night;
-      if (this.nextBird <= 0) {
-        this.nextBird = 2 + Math.random() * 6;
-        if (night < 0.5 && Math.random() < 0.8) this.birdChirp();
-      }
-      this.nextCall -= dt;
-      if (this.nextCall <= 0) {
-        this.nextCall = 18 + Math.random() * 30;
-        if (night > 0.6 && Math.random() < 0.5) this.wolf();
-        else if (Math.random() < 0.3) this.goose();
+      // wolves, now and then, on a night away from the towns
+      this.wolfT -= dt;
+      if (this.wolfT <= 0) {
+        this.wolfT = 70 + Math.random() * 120;
+        if (g.env.night > 0.6 && Math.random() < 0.5) this.wolf();
       }
       // reel ratchet clicks
       if (this.reelOn) {

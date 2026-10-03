@@ -1,4 +1,4 @@
-{"width":960,"height":540,"steps":[{"wait":1500},
+{"pointerLock":true,"width":960,"height":540,"steps":[{"wait":1500},
 {"eval":"__rhf.start(false)"},{"wait":2500},
 {"eval":"(()=>{const g=__rhf.game; g.state.money=4321; g.state.cooler.push({species:'coho',weight:3.1,length:66,value:31,legend:null,name:'Coho Salmon'}); return 'money set'})()"},
 {"eval":"(()=>{const locked=!!document.pointerLockElement; document.exitPointerLock(); return 'mouse was locked '+locked+', freeing it like a press of Esc'})()"},{"wait":1500},

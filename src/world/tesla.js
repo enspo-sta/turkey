@@ -362,7 +362,7 @@ function* patina(g, rubbed) {
 
 // Polished granite for the base: dark pinkish grey with black mica, white
 // feldspar and grey quartz grains.
-function graniteTex() {
+export function graniteTex() {
   return canvasTexture(
     256,
     256,

@@ -196,6 +196,31 @@ export class Announcer {
     } catch (e) {
       /* no speech */
     }
+    this.hintBetterVoice(key);
+  }
+
+  // An iPhone or iPad ships only its compact voices, which sound flat; the
+  // natural ones (Enhanced, Premium) are a free download. Say so once, the
+  // first time the announcer speaks with a compact voice on one.
+  hintBetterVoice(key) {
+    const g = this.game;
+    const flags = g.state?.flags;
+    if (!flags || flags.voiceHint || key === 'sample' || !this.voiceOn) return;
+    // an iPhone or iPad (an iPad's Safari can say it is a Mac: it has touch)
+    const ua = navigator.userAgent || '';
+    const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    const v = this.voice;
+    if (!ios || (v && /premium|enhanced/i.test(`${v.name} ${v.voiceURI}`))) return;
+    flags.voiceHint = true;
+    setTimeout(
+      () =>
+        g.hud?.toast(
+          'For a more natural announcer, download a better voice: iPhone Settings, Accessibility, Spoken Content, Voices, English, and pick one marked Enhanced or Premium. Then choose it in the game under Settings, Voice',
+          'good',
+          10
+        ),
+      3500
+    );
   }
 
   stop() {

@@ -179,6 +179,8 @@ export class PostFX {
     this.quadScene.add(this.quad);
     this.quadCam = new THREE.Camera();
     this.size = new THREE.Vector2(0, 0);
+    // every pass drawn, needed or not (see Session.warmDraw)
+    this.warm = false;
     this._enabled = false;
     this._v = new THREE.Vector3();
     this._f = new THREE.Vector3();
@@ -269,19 +271,24 @@ export class PostFX {
     camera.getWorldDirection(this._f);
     const facing = this._f.dot(sunDir);
     let rays = 0;
+    let sx = 0.5;
+    let sy = 0.5;
     if (sunK > 0.001 && facing > 0.05) {
       this._v.copy(camera.position).addScaledVector(sunDir, 1000).project(camera);
-      const sx = this._v.x * 0.5 + 0.5;
-      const sy = this._v.y * 0.5 + 0.5;
+      sx = this._v.x * 0.5 + 0.5;
+      sy = this._v.y * 0.5 + 0.5;
       // fade as the sun leaves the view
       const edge = Math.max(Math.abs(sx - 0.5), Math.abs(sy - 0.5));
       rays = sunK * THREE.MathUtils.smoothstep(facing, 0.05, 0.5) * (1 - THREE.MathUtils.smoothstep(edge, 0.55, 1.1));
-      if (rays > 0.001) {
-        this.raysMat.uniforms.tSrc.value = this.down[1].texture;
-        this.raysMat.uniforms.uSun.value.set(sx, sy);
-        this.raysMat.uniforms.uAspect.value = this.size.x / this.size.y;
-        this.pass(this.raysMat, this.rays);
-      }
+    }
+    // (the warm-up draws the pass whichever way the camera looks, so its
+    // shader is built behind the loading bar and not at the first look
+    // toward the sun; with no rays the picture does not use it)
+    if (rays > 0.001 || this.warm) {
+      this.raysMat.uniforms.tSrc.value = this.down[1].texture;
+      this.raysMat.uniforms.uSun.value.set(sx, sy);
+      this.raysMat.uniforms.uAspect.value = this.size.x / this.size.y;
+      this.pass(this.raysMat, this.rays);
     }
     const cu = this.composite.uniforms;
     cu.tBloom.value = this.up[0].texture;

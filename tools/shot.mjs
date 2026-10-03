@@ -33,12 +33,17 @@ const context = await browser.newContext({
   reducedMotion: scenario.reducedMotion ? 'reduce' : 'no-preference',
 });
 const page = await context.newPage();
+// A locked pointer gets a steady stream of mouse events from the headless
+// browser, and while a slow software draw holds the page they pile up in
+// both processes (gigabytes in a minute) and slow everything down: no
+// pointer lock unless the scenario is about it.
+if (!scenario.pointerLock) await page.addInitScript(() => (Element.prototype.requestPointerLock = () => Promise.resolve()));
 const logs = [];
 page.on('console', (m) => logs.push(`[${m.type()}] ${m.text()}`));
 page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}\n${e.stack || ''}`));
 const url = 'file://' + resolve(scenario.file || 'dist/index.html') + (scenario.hash ? '#' + scenario.hash : '');
 const t0 = Date.now();
-await page.goto(url);
+await page.goto(url, { timeout: scenario.timeout || 120000 });
 try {
   await page.waitForFunction(() => window.__rhf && window.__rhf.ready, null, { timeout: scenario.timeout || 120000 });
 } catch (e) {
@@ -75,7 +80,8 @@ for (const s of steps) {
   if (s.wait) await page.waitForTimeout(s.wait);
   // reload the page (to continue from a save) and wait for the game again
   if (s.reload) {
-    await page.reload();
+    // (loading the game can take longer than the default 30 s in software)
+    await page.reload({ timeout: scenario.timeout || 120000 });
     try {
       await page.waitForFunction(() => window.__rhf && window.__rhf.ready, null, { timeout: scenario.timeout || 120000 });
       console.log('reloaded');

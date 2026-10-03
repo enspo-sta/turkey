@@ -68,6 +68,10 @@ const _v = new THREE.Vector3();
 const _s = new THREE.Vector3();
 const _n = { x: 0, y: 1, z: 0 };
 const UP = new THREE.Vector3(0, 1, 0);
+const FWD_Z = new THREE.Vector3(0, 0, 1);
+// tail wag and wing beat by species
+const WAG = { wolf: 0.5, fox: 0.5, lynx: 0.25, squirrel: 0.6, porcupine: 0.2 };
+const FLAP_RATE = { puffin: 22, duck: 16, ptarmigan: 16, eagle: 5, kingfisher: 24, magpie: 14, swan: 5 };
 const _nv = new THREE.Vector3();
 const _q3 = new THREE.Quaternion();
 
@@ -114,7 +118,8 @@ export class Wildlife {
       magpie: new AnimatedHerd(magpieModel(), 4, { shadow: false }),
       kingfisher: new AnimatedHerd(kingfisherModel(), 2, { shadow: false }),
     };
-    for (const h of Object.values(this.herds)) this.group.add(h.mesh);
+    this.herdList = Object.values(this.herds);
+    for (const h of this.herdList) this.group.add(h.mesh);
     this.birds = [];
     this.whales = [];
     this.otters = [];
@@ -184,7 +189,7 @@ export class Wildlife {
         const per = Math.ceil(cfg.count / groups);
         const centers = this.findSpots(habitats[sp], groups, 250);
         for (const c of centers) {
-          const herd = { x: c.x, z: c.z, tx: c.x, tz: c.z, t: 0, colony: !!cfg.colony, x0: c.x, z0: c.z };
+          const herd = { x: c.x, z: c.z, tx: c.x, tz: c.z, t: 0, colony: !!cfg.colony, x0: c.x, z0: c.z, stamp: 0 };
           for (let i = 0; i < per; i++) {
             const a = this.rand() * Math.PI * 2;
             const r = cfg.colony ? 2 + this.rand() * 9 : 4 + this.rand() * 18;
@@ -413,12 +418,24 @@ export class Wildlife {
   }
 
   // ------------------------------------------------------------ interaction
+  // (one object, filled in again each call: read it, do not keep it)
   threatPos() {
     const g = this.game;
-    if (g.player.mode === 'drive') return { x: g.car.pos.x, z: g.car.pos.z, loud: (g.car === g.racer ? 2.2 : 1.3) + Math.abs(g.car.speed) / 20 };
-    if (g.player.mode === 'boat') return { x: g.boat.pos.x, z: g.boat.pos.z, loud: 1 + Math.abs(g.boat.speed) / 8 };
-    const run = g.player.speed > 5 ? 1.35 : g.player.speed > 1 ? 1.0 : 0.75;
-    return { x: g.player.pos.x, z: g.player.pos.z, loud: run };
+    const t = this._threat || (this._threat = { x: 0, z: 0, loud: 1 });
+    if (g.player.mode === 'drive') {
+      t.x = g.car.pos.x;
+      t.z = g.car.pos.z;
+      t.loud = (g.car === g.racer ? 2.2 : 1.3) + Math.abs(g.car.speed) / 20;
+    } else if (g.player.mode === 'boat') {
+      t.x = g.boat.pos.x;
+      t.z = g.boat.pos.z;
+      t.loud = 1 + Math.abs(g.boat.speed) / 8;
+    } else {
+      t.x = g.player.pos.x;
+      t.z = g.player.pos.z;
+      t.loud = g.player.speed > 5 ? 1.35 : g.player.speed > 1 ? 1.0 : 0.75;
+    }
+    return t;
   }
 
   // Scare everything within radius (a loosed arrow, the horn).
@@ -596,13 +613,13 @@ export class Wildlife {
     const W = this.world;
     const cam = g.camera.position;
     const threat = this.threatPos();
-    for (const h of Object.values(this.herds)) h.begin();
+    for (const h of this.herdList) h.begin();
 
-    // herd leaders drift
-    const herdsSeen = new Set();
+    // herd leaders drift (each herd once a frame)
+    const stamp = (this.frameStamp = (this.frameStamp || 0) + 1);
     for (const a of this.animals) {
-      if (a.herd && !herdsSeen.has(a.herd)) {
-        herdsSeen.add(a.herd);
+      if (a.herd && a.herd.stamp !== stamp) {
+        a.herd.stamp = stamp;
         const hd = a.herd;
         hd.t -= dt;
         if (hd.t <= 0) {
@@ -645,7 +662,7 @@ export class Wildlife {
     this.updateMarine(dt, cam);
     this.updateMoreMarine(dt, cam);
     this.updateJumpers(dt);
-    for (const h of Object.values(this.herds)) h.end();
+    for (const h of this.herdList) h.end();
   }
 
   think(a, dt, threat) {
@@ -792,7 +809,7 @@ export class Wildlife {
       a.deadT = (a.deadT || 0) + dt;
       const fall = Math.min(1, a.deadT * 2.2);
       _e.set(0, 0, fall * 1.45, 'XYZ');
-      _q.multiply(new THREE.Quaternion().setFromEuler(_e));
+      _q.multiply(_q3.setFromEuler(_e));
     } else if (a.species === 'squirrel') {
       a.stand = damp(a.stand || 0, a.state === 'idle' ? 1 : 0, 6, dt);
       if (a.stand > 0.01) {
@@ -806,7 +823,7 @@ export class Wildlife {
     _v.set(a.x, a.y + bob + deadDrop, a.z);
     _s.setScalar(a.scale);
     _m.compose(_v, q, _s);
-    const wag = { wolf: 0.5, fox: 0.5, lynx: 0.25, squirrel: 0.6, porcupine: 0.2 }[a.species] || 0;
+    const wag = WAG[a.species] || 0;
     herd.push(_m, a.phase, a.dead ? 0 : a.amp, a.head, wag);
   }
 
@@ -1254,12 +1271,12 @@ export class Wildlife {
           break;
       }
       if (d > 700 || b.under > 0) continue;
-      const flapRate = { puffin: 22, duck: 16, ptarmigan: 16, eagle: 5, kingfisher: 24, magpie: 14, swan: 5, crane: b.mode === 'walk' ? 2.2 : 5 }[b.sp] || 8;
+      const flapRate = b.sp === 'crane' ? (b.mode === 'walk' ? 2.2 : 5) : FLAP_RATE[b.sp] || 8;
       b.phase = (b.phase || Math.random() * 10) + dt * flapRate;
       const herd = this.herds[b.sp];
       _e.set(0, b.yaw, 0, 'YXZ');
       _q.setFromEuler(_e);
-      if (b.bank) _q.multiply(_q2.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -b.bank * 0.8));
+      if (b.bank) _q.multiply(_q2.setFromAxisAngle(FWD_Z, -b.bank * 0.8));
       _v.set(b.x, b.y, b.z);
       _s.setScalar(b.sp === 'eagle' ? 1.2 : 1);
       _m.compose(_v, _q, _s);

@@ -1,0 +1,130 @@
+{
+"width": 960,
+"height": 540,
+"timeout": 300000,
+"steps": [
+{
+"wait": 1000
+},
+{
+"eval": "__rhf.start(false)"
+},
+{
+"wait": 2000
+},
+{
+"eval": "(()=>{const g=__rhf.game; g.env.setTime(15); g.env.weather.cloud=0.25; g.env.weather.cloudTarget=0.25; g.env.weather.rain=0; g.env.weather.rainTarget=0; g.env.weather.timer=9999; g.bears.directorT=9999; g.hud.hint('',0); const t0=performance.now(); g.scientists.finishAll(); window.__lookBust=(id,dist=1.25,side=0,pitch=null)=>{const s=g.scientists.byId[id]; const a=s.yaw+side; const x=s.x+Math.sin(a)*dist, z=s.z+Math.cos(a)*dist; g.player.place(x,z,0); g.player.yaw=Math.atan2(-(s.x-x),-(s.z-z)); const eye=g.world.heightAt(x,z)+1.62; g.player.pitch=pitch===null?Math.atan2(s.top+0.3-eye, dist):pitch; __rhf.settle(); g.scientists.lodT=0; g.hud.show(false); g.player.tool='none'; g.viewmodel.setTool('none'); return id+' at '+s.x.toFixed(0)+','+s.z.toFixed(0)+' '+s.s.at;}; return 'all busts in '+(performance.now()-t0).toFixed(0)+' ms; placed '+g.scientists.sites.length})()"
+},
+{
+"eval": "__lookBust('einstein')"
+},
+{
+"wait": 3500
+},
+{
+"shot": "sc1-einstein.jpg"
+},
+{
+"eval": "(()=>{__rhf.session.updateInteraction(); const ia=__rhf.game.interaction; return 'interaction: '+(ia?ia.label:'none')})()"
+},
+{
+"eval": "__lookBust('curie',1.6,0.5)"
+},
+{
+"wait": 3500
+},
+{
+"shot": "sc2-curie.jpg"
+},
+{
+"eval": "__lookBust('darwin',1.7,-0.4)"
+},
+{
+"wait": 3500
+},
+{
+"shot": "sc3-darwin.jpg"
+},
+{
+"eval": "__lookBust('newton',1.7,0.3)"
+},
+{
+"wait": 3500
+},
+{
+"shot": "sc4-newton.jpg"
+},
+{
+"eval": "__lookBust('maathai',1.8,0.2)"
+},
+{
+"wait": 3500
+},
+{
+"shot": "sc5-maathai.jpg"
+},
+{
+"eval": "__lookBust('alhaytham',1.7,0.3)"
+},
+{
+"wait": 3500
+},
+{
+"shot": "sc6-alhaytham.jpg"
+},
+{
+"eval": "__lookBust('anning',1.7,-0.3)"
+},
+{
+"wait": 3500
+},
+{
+"shot": "sc7-anning.jpg"
+},
+{
+"eval": "__lookBust('lovelace',1.6,0.25)"
+},
+{
+"wait": 3500
+},
+{
+"shot": "sc8-lovelace.jpg"
+},
+{
+"eval": "__lookBust('faraday',0.95,0,-0.72)"
+},
+{
+"wait": 3500
+},
+{
+"shot": "sc9-plaque.jpg"
+},
+{
+"eval": "(()=>{const r=__lookBust('galileo',14,0.6,-0.02); __rhf.game.hud.show(true); return r})()"
+},
+{
+"wait": 3500
+},
+{
+"shot": "sc10-observatory.jpg"
+},
+{
+"eval": "(()=>{const g=__rhf.game; __rhf.session.readBust('galileo'); __rhf.session.readBust('kepler'); __rhf.session.readBust('einstein'); __rhf.session.readBust('curie'); return 'read: '+Object.keys(g.state.busts).join(',')})()"
+},
+{
+"wait": 800
+},
+{
+"shot": "sc11-note.jpg"
+},
+{
+"eval": "(()=>{const g=__rhf.game; g.screens.close(); g.screens.open('journal',{tab:'people'}); return 'journal: '+g.screens.current+' tab '+g.screens.tab})()"
+},
+{
+"wait": 800
+},
+{
+"shot": "sc12-journal.jpg"
+}
+]
+}

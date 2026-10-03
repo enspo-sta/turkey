@@ -54,6 +54,16 @@ const destFile = path.resolve(process.argv[3] || path.join(root, 'docs/graphics-
       for (const f of sec.figs) body += await fig(f);
       body += '</div>';
     }
+    // recordings to listen to: MP3 or WAV files from tools/out, embedded
+    if (sec.audio) {
+      body += '<div class="sounds">';
+      for (const a of sec.audio) {
+        const b64 = fs.readFileSync(path.join(out, a.file)).toString('base64');
+        const mime = a.file.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav';
+        body += `<figure class="sound"><figcaption><b>${esc(a.title)}</b> ${esc(a.caption || '')}</figcaption><audio controls preload="none" src="data:${mime};base64,${b64}"></audio></figure>`;
+      }
+      body += '</div>';
+    }
     if (sec.after) body += sec.after;
     sections += `<section class="card ${sec.cls || ""}" id="${sec.id}"><div class="kicker">${esc(sec.kicker)}</div><h2>${esc(sec.title)}</h2>${body}</section>\n`;
   }
@@ -66,7 +76,7 @@ const destFile = path.resolve(process.argv[3] || path.join(root, 'docs/graphics-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(data.title)}</title>
 <style>
-:root{--bg:#101216;--surface:#181b21;--surface2:#1f232b;--border:#2a2f39;--text:#e7eaf0;--muted:#9aa3b1;--accent:#d9a441;--accent2:#56b6c2;--danger:#e06c75;--ok:#98c379}
+:root{color-scheme:dark;--bg:#101216;--surface:#181b21;--surface2:#1f232b;--border:#2a2f39;--text:#e7eaf0;--muted:#9aa3b1;--accent:#d9a441;--accent2:#56b6c2;--danger:#e06c75;--ok:#98c379}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text)}
 body{font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -88,6 +98,10 @@ a{color:var(--accent2)}
 figure{margin:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
 figure img{display:block;width:100%;height:auto}
 figcaption{padding:8px 10px;font-size:14px;color:var(--muted)}
+.sounds{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:12px}
+figure.sound{padding:0 0 10px}
+figure.sound figcaption b{color:var(--text)}
+figure.sound audio{display:block;width:calc(100% - 20px);margin:0 10px}
 .tag{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:0 0 6px;padding:2px 8px;border-radius:6px}
 .tag.before{background:#2a2f39;color:var(--muted)}
 .tag.after{background:#1d3a2a;color:var(--ok)}
@@ -96,6 +110,11 @@ table{border-collapse:collapse;width:100%;min-width:560px;font-size:15px}
 th,td{border-bottom:1px solid var(--border);padding:8px 10px;text-align:left}
 th{color:var(--muted);font-weight:600}
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+table.text{min-width:0}
+td code{overflow-wrap:anywhere}
+@media (max-width:640px){table.text,table.text tbody,table.text tr,table.text td{display:block;width:auto}table.text thead{display:none}table.text tr{border-bottom:1px solid var(--border);padding:10px 0}table.text td{border:0;padding:2px 0;text-align:left}table.text td:first-child{font-weight:700}table.text td[data-label]::before{content:attr(data-label);display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}}
+.muted{color:var(--muted)}
+.note{color:var(--muted);font-size:14px;margin:6px 0 0}
 code{font-family:ui-monospace,Menlo,monospace;background:var(--surface2);padding:1px 5px;border-radius:5px;font-size:14px}
 ul{padding-left:20px}
 .conclusion{border-color:#3a3322}

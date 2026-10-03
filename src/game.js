@@ -61,6 +61,9 @@ export class Game {
       stencil: false,
       preserveDrawingBuffer: false,
     });
+    // three.js asks the driver for each new shader's error log on its first
+    // use, a wait for the compile every time; the release build skips it
+    renderer.debug.checkShaderErrors = process.env.NODE_ENV !== 'production';
     renderer.toneMapping = THREE.NeutralToneMapping;
     renderer.toneMappingExposure = 1.0;
     renderer.shadowMap.enabled = true;
@@ -329,6 +332,7 @@ export class Game {
     else this.lighting.update(ld, 1);
     this.lastLight.copy(ld);
     this.terrain.update(cam.position.x, cam.position.z);
+    this.detailCull?.update();
     this.scatter.update(cam);
     this.props.update(dt, this.time, this.env);
     this.effects?.update(dt);
@@ -361,7 +365,7 @@ export class Game {
     wind.z = 1 + w.rain * 0.45;
     // the sun disc and its rays hide while a cloud's shadow covers the player
     const veil = 1 - this.cloudShadowAt(this.camera.position);
-    env.uniforms.uSunVeil.value += (veil - env.uniforms.uSunVeil.value) * Math.min(1, this.dt * 3);
+    env.uniforms.uSunVeil.value += (veil - env.uniforms.uSunVeil.value) * Math.min(1, (this.dt || 0) * 3);
     // valley mist: thick at dawn, gone by late morning, back in the evening
     // and after rain; always a trace of haze in the low ground
     const h = env.time;

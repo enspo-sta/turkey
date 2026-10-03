@@ -8,6 +8,7 @@ import { jobGoal } from '../gameplay/jobs.js';
 import { FISH, SPECIES_IDS, LEGENDS, LURES, RODS, COOLERS, ENGINES, TIRES, PAINTS, GEAR, GAME, CHALLENGES, ARROWS, ARROW_ORDER, LOOKS, lookColors, RARITY, RARITY_ORDER, timingGradient, placeSpecies } from '../gameplay/data.js';
 import { ODDITIES } from '../world/oddities.js';
 import { SCIENCE, FIELDS, scienceDone } from '../gameplay/science.js';
+import { SCIENTISTS, GROUPS } from '../world/scientistdata.js';
 import { GUS_NOTES } from '../world/secret.js';
 import { formatMoney, formatTime, clamp } from '../util/math.js';
 import { privacyHTML, PRIVACY_UPDATED } from './privacy.js';
@@ -1128,6 +1129,7 @@ export class Screens {
         ['photos', `Photos ${g.photo.count()}/${Object.keys(PHOTO_SUBJECTS).length}`],
         ['goals', 'Challenges'],
         ['science', `Science ${scienceDone(s)}/${SCIENCE.length}`],
+        ['people', `Scientists ${SCIENTISTS.filter((p) => s.busts[p.id]).length}/${SCIENTISTS.length}`],
         ['sky', 'Sky'],
         ['stats', 'Stats'],
       ],
@@ -1184,6 +1186,18 @@ export class Screens {
               .join('')}</div>`;
           })
           .join('');
+    } else if (tab === 'people') {
+      // the busts: who you have met, and where the others stand
+      const read = s.busts || {};
+      this.body.innerHTML =
+        `<p class="catch-info" style="margin:0 0 10px">Busts of ${SCIENTISTS.length} scientists stand round Kenai Country, each by a place their work belongs to. Read a plaque to keep what it says here.</p><div class="list">` +
+        SCIENTISTS.map((p) => {
+          const where = GROUPS[p.at].where;
+          return read[p.id]
+            ? `<div class="li note"><b>${esc(p.name)}</b><span>${esc(p.years)}: ${esc(p.line)}. ${esc(p.note[0])}</span></div>`
+            : `<div class="li note"><b>???</b><span>A bust ${esc(where)}</span></div>`;
+        }).join('') +
+        '</div>';
     } else if (tab === 'goals') {
       const cur = s.currentChallenge();
       // Gus's notes, once you have found them (see world/secret.js)

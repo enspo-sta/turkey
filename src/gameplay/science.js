@@ -10,6 +10,7 @@ export const FIELDS = {
   earth: 'Earth science',
   biology: 'Biology',
   life: 'Life beyond Earth',
+  history: 'The people of science',
 };
 
 const PLANETS = ['mercury', 'venus', 'mars', 'jupiter', 'saturn'];
@@ -227,6 +228,25 @@ export const SCIENCE = [
     learn: 'Microbes live in boiling springs, in Antarctic ice and in rock kilometres down. If life manages here, it might on Mars under the ground, or in the ocean under the ice of Jupiter’s moon Europa.',
     reward: 250,
     test: (e) => e.type === 'soak' && e.companion,
+  },
+  // ------------------------------------------------------------ the people
+  {
+    id: 'busts10',
+    field: 'history',
+    title: 'Faces of science',
+    text: "Read the plaques on 10 of the scientists' busts that stand round Kenai Country",
+    learn: 'Science is people asking questions and testing the answers: a scholar in Cairo a thousand years ago, a fossil hunter on an English beach, a biologist planting trees in Kenya. Each found something we still use.',
+    reward: 250,
+    test: (e) => e.type === 'bust' && e.count >= 10,
+  },
+  {
+    id: 'busts34',
+    field: 'history',
+    title: 'The whole gallery',
+    text: 'Read all 34 plaques (the Journal says where the ones still to find stand)',
+    learn: "Discoveries build on each other: Leavitt's law let Hubble measure the universe, Faraday's induction runs the generators Tesla designed, and Wegener's drifting continents waited forty years for Tharp's maps of the sea floor.",
+    reward: 600,
+    test: (e) => e.type === 'bust' && e.count >= 34,
   },
 ];
 

@@ -8,6 +8,18 @@ import { privacyPage } from './src/ui/privacy.js';
 const dev = process.argv.includes('--dev');
 mkdirSync('dist', { recursive: true });
 
+// the sculptor's worker, bundled on its own and carried in the game's script
+// as text (a worker is started from it with a blob URL: one file still)
+const worker = await esbuild.build({
+  entryPoints: ['src/workers/sculpt.js'],
+  bundle: true,
+  format: 'iife',
+  minify: !dev,
+  target: ['es2020', 'safari15'],
+  write: false,
+  legalComments: 'none',
+});
+
 const result = await esbuild.build({
   entryPoints: ['src/main.js'],
   bundle: true,
@@ -17,7 +29,7 @@ const result = await esbuild.build({
   target: ['es2020', 'safari15'],
   write: false,
   legalComments: 'none',
-  define: { 'process.env.NODE_ENV': dev ? '"development"' : '"production"' },
+  define: { 'process.env.NODE_ENV': dev ? '"development"' : '"production"', __SCULPT_WORKER__: JSON.stringify(worker.outputFiles[0].text) },
 });
 let js = result.outputFiles[0].text;
 // never let the script close its own tag when inlined

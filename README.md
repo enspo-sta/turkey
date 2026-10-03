@@ -42,11 +42,13 @@ a single 1.9 MB HTML file (about 690 KB compressed).
 | ![Bear Falls Hydro: the penstock and the powerhouse at the foot of the falls](docs/screenshots/hydro.jpg) | ![The Journal's Science page](docs/screenshots/science.jpg) |
 | ![The meteor outburst through the telescope, and something slower](docs/screenshots/outburst.jpg) | ![The craft coming down, seen from the observatory](docs/screenshots/craft.jpg) |
 | ![Starfall Clearing: the pod and the trees laid flat round it](docs/screenshots/crash.jpg) | ![Zib comes out from behind the pod](docs/screenshots/zib.jpg) |
+| ![Isaac Newton's bust in marble at the Tundra Observatory](docs/screenshots/newton.jpg) | ![The Journal's Scientists page](docs/screenshots/scientists.jpg) |
 
-What changed in the latest round (the iPhone fixes, climbing, the Tesla
-Memorial, the science objectives and the visitor from the sky), with pictures
-and the tests: [docs/science-update.html](docs/science-update.html). Earlier
-rounds: [docs/cars-sky-update.html](docs/cars-sky-update.html),
+What changed in the latest round (steadier frames, the sound of each place
+and the busts of 34 scientists), with pictures, recordings and the tests:
+[docs/sound-scientists-update.html](docs/sound-scientists-update.html).
+Earlier rounds: [docs/science-update.html](docs/science-update.html),
+[docs/cars-sky-update.html](docs/cars-sky-update.html),
 [docs/hotrod-buildings.html](docs/hotrod-buildings.html),
 [docs/hotrod-update.html](docs/hotrod-update.html) and
 [docs/graphics-update.html](docs/graphics-update.html).
@@ -444,7 +446,7 @@ rounds: [docs/cars-sky-update.html](docs/cars-sky-update.html),
 
 **Science**
 
-- Twenty-three objectives in five fields, done in any order, each paying and
+- Twenty-five objectives in six fields, done in any order, each paying and
   keeping what you learned in the Journal's Science page. Astronomy: the
   Moon's craters, a planet's disc, the Andromeda Galaxy, a pulsar, the Big
   Bang's afterglow, the space station, the northern lights, a meteor shower, a
@@ -453,7 +455,25 @@ rounds: [docs/cars-sky-update.html](docs/cars-sky-update.html),
   in the race car and a paraglider's lift. Earth science: the granite of the
   tors, the glacier calving and the hot springs. Biology: the salmon's journey,
   a fat bear and the bald eagles. Life beyond Earth: the visitor, and life at
-  the edges.
+  the edges. The people of science: read 10 of the scientists' plaques, and
+  all 34.
+- Busts of 34 scientists on granite plinths all over Kenai Country, each by a
+  place their work belongs to: Galileo, Kepler, Newton, Henrietta Leavitt,
+  Hubble and Ada Lovelace at the observatory; Ångström, Birkeland and Alfvén,
+  who worked out the aurora, on the tundra below it; Einstein at the Sun of the
+  solar system walk and Carl Sagan past Neptune; Faraday, Maxwell and Emmy
+  Noether by the Tesla Memorial's hydro plant; Hutton and Inge Lehmann at the
+  granite tors; Wegener, Arrhenius and Eunice Foote by the glacier; Celsius and
+  Mendeleev at the springs; Darwin and Rosalind Franklin by the salmon; Archimedes
+  at Moose Lake; Fresnel and Ibn al-Haytham at the lighthouse; Rachel Carson and
+  Marie Tharp above the pier; Marie Curie, Linnaeus and Alfred Nobel round the
+  Trading Post; Ronald Ross on Mosquito Flats; Mary Anning on the cove's beach;
+  Wangari Maathai in the forest behind the cabin. In bronze, dark bronze or
+  marble, each sculpted in their own likeness (the hair, beard, glasses and
+  clothes of their time). **READ THE PLAQUE** for what they found and how it
+  ties to the place; the Journal's Scientists page keeps what you have read and
+  says where the others stand. The busts are sculpted by background workers
+  while the title is up, so no frame waits for them.
 - The Tesla Memorial at Bear Falls: a bronze Nikola Tesla seated reading his
   notes on a granite base, in the pose of Frano Kršinić's 1976 statue at
   Niagara Falls, on a terrace at the rim of the gorge. **READ THE PLAQUE** for
@@ -495,6 +515,33 @@ rounds: [docs/cars-sky-update.html](docs/cars-sky-update.html),
   and blinks back to you when you get far away. **WAIT HERE** and it waits.
   It has a story at the old saucer in the woods, likes the hot pool, and is
   worth a picture.
+
+**Sound**
+
+- The place sounds like itself, all of it synthesised: wind in two bands
+  whose gusts are the same gusts that roll across the grass and bend the trees
+  round you, leaves rustling in them under the trees and a whistle round the
+  high ground; a river's low roar, its rush and its babble of bubbles, heard
+  from the river's side of you; the falls; the sea's wash, waves breaking and
+  the pebbles' hiss as they draw back; water lapping at a lake's shore; rain's
+  hiss and patter, drips from the trees during and after it, and thunder far
+  off in a downpour; mosquitoes whining round your head on the flats (bug dope
+  helps).
+- Birds sing as birds do: a few at a time, each from its own perch, singing its
+  species' song over and over and then moving on. Varied, hermit and
+  Swainson's thrushes, robins, chickadees, woodpeckers drumming and red
+  squirrels scolding in the forest; white-crowned sparrows in the meadows;
+  willow ptarmigan on the tundra; gulls and eagles on the shore; a dawn chorus,
+  a quieter midday, an evening chorus, owls in the woods and loons on the
+  lakes at night; few in the rain or a gale.
+- Every sound from the world is placed: to its side, quieter and duller with
+  distance (the air soaks up the highs), a little duller behind you, with a
+  reverb that is thick under the trees and thin on the open tundra. Inside the
+  car the outside goes dull; under water, duller still.
+- Footsteps for every kind of ground: grass, the forest floor's needles and
+  twigs, rock, crunching snow, sand, gravel, the gravel road, spongy tundra,
+  ice, sucking mud, hollow boards and splashing shallows, never the same step
+  twice running.
 
 **World and graphics**
 
@@ -565,6 +612,14 @@ rounds: [docs/cars-sky-update.html](docs/cars-sky-update.html),
   forests. Medium and Low run cooler on older devices. The game lowers its
   resolution when frames run long and, unless you turn it off, steps the preset
   down if that is not enough. Settings can also show the frame rate.
+- Steady frames: every shader is compiled, and every kind of thing drawn once
+  into a single pixel, behind the loading bar (the sun rays too, which
+  otherwise draw only with the sun in view), so the first bear, the boat, a
+  building or the sun coming into view does not stall a frame (the graphics
+  driver builds its programs on the first real draw); parts of models too far away to cover
+  a pixel are left out of the frame and its shadows until they would; and the
+  observatory's all-sky camera has plain glass, where its "transmission" glass
+  made the whole scene draw twice whenever the observatory was in view.
 
 ## Controls
 
@@ -710,9 +765,15 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/world/solarwalk.js` | The scale model of the solar system along the Lighthouse Road |
 | `src/world/tors.js`, `src/gameplay/climbing.js` | The Granite Tors: the granite blocks, the routes and their holds, the ropes, the tops, the register and the route board; and the climbing: reaching, grip, chalk, rests, falls, the top and lowering off |
 | `src/world/tesla.js` | The Tesla Memorial at Bear Falls: the sculpted statue, the terrace, the coil house and its sparks, and Bear Falls Hydro |
+| `src/world/scientistdata.js` | The 34 scientists: who they were, what they found, how they look and where they stand |
+| `src/world/scientists.js` | The busts on their plinths: finding each a spot, the plinths, the plaques, the sculpting worker |
+| `src/world/bustcore.js` | The bust sculptor: faces, hair, beards, glasses and clothes of their time, and the finish (no three.js) |
+| `src/workers/sculpt.js` | The worker that sculpts the busts off the main thread (built separately and carried in the page as text) |
+| `src/world/detailcull.js` | Leaves out of the frame the parts too far away to cover a pixel |
 | `src/gameplay/science.js` | The science objectives and what each one teaches |
 | `src/gameplay/visitor.js` | (spoilers) The meteor outburst, the craft's fall, Starfall Clearing and Zib |
-| `src/util/sdfmesh.js` | Sculpting with distance fields, and meshing them with surface nets a little at a time |
+| `src/util/sdfcore.js` | Sculpting with distance fields, and meshing them with surface nets a little at a time (no three.js, so a worker can run it) |
+| `src/util/sdfmesh.js` | The sculpting's meshes as three.js geometry |
 | `src/world/pitstop.js` | (spoilers) The race car's clearing at the end of the logging track, its props, and the tarp draped over the car |
 | `src/world/water.js`, `effects.js`, `calving.js` | River, lake and sea surfaces with animated waves and reflections, the waterfall, splashes, ripples, rain, mist and dust, and the calving glacier |
 | `src/world/scatter.js`, `grass.js`, `props.js`, `roads.js`, `colliders.js` | Forests, ground plants and rocks, wind-blown grass, where the buildings stand, bridges, trailhead signs and campfires, gravel roads and collision |
@@ -740,6 +801,8 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/gameplay/skytargets.js`, `skywatch.js`, `tonight.js` | The telescope's and radio dish's targets and their notes, whether each can be reached right now and the sky log, and the night's almanac |
 | `src/gameplay/data.js`, `state.js` | Fish, lures, rods, gear, places and challenges, and the save game |
 | `src/audio/audio.js` | All sound and music, synthesised with the Web Audio interface |
+| `src/audio/ambience.js` | The sound of the place: wind, water, rain, birds and other singers, footsteps, placed in space with a reverb |
+| `src/audio/bake.js` | The ambience's textures, footsteps and reverb made ahead of time, a little a frame |
 | `src/audio/announcer.js` | The announcer's lines, spoken with the device's speech synthesis, and their banners |
 | `src/ui/` | HUD, the small map, menus, the Trading Post, garage, map and journal, the observatory's screens, touch and keyboard input, and styles |
 | `src/ui/eyepiece.js`, `skyguide.js` | The telescope's eyepiece views, and the constellation figures and names drawn over the sky |
@@ -763,7 +826,10 @@ page also draws frames only while a screenshot is taken, so gameplay checks
 step the game themselves (`__rhf.session.update(dt)`). Besides `eval`,
 `wait` and `shot`, a step can `reload` the page (to continue from a save) or
 `waitFor` a condition in the page (a fade over, a show ended), polled on a
-timer. For example:
+timer. Scenarios run without pointer lock unless they set `"pointerLock": true`:
+the headless browser sends a locked pointer a steady stream of mouse events,
+which pile up (gigabytes within a minute) while a slow software frame holds
+the page. For example:
 
 ```sh
 node tools/shot.mjs tools/scenarios/catch.json   # cast, hook, fight and land a fish, then open the journal, map and shop
@@ -834,6 +900,12 @@ node tools/shot.mjs tools/scenarios/visitor-checks.json  # (spoilers) Zib's bear
 node tools/shot.mjs tools/scenarios/round-smoke.json     # save and continue with the visitor's story, every screen opened, and the memorial's plaque, coil and board
 node tools/shot.mjs tools/scenarios/sites-draws.json     # draw calls and triangles at the landing, the memorial, Starfall Clearing and the tors
 node tools/shot.mjs tools/scenarios/review-fixes.json    # (spoilers) the code review's cases: Zib after a fast travel, no travel on the rope, driving to Starfall Clearing, a new game clearing the site, the shower view on another tab, continuing with Zib, and old saves' science
+node tools/shot.mjs tools/scenarios/scientists.json      # the scientists' busts close up (bronze, dark bronze and marble), a plaque, the astronomers at the observatory, the plaque's note and the Journal's Scientists page
+node tools/perf-tour.mjs [out.json] [--frames N] [--tally] # frame times along a scripted tour (standing, walking, driving, the memorial, the observatory at night), with the shaders compiled on the way, the draw calls by group (--tally), and a CPU and allocation profile
+node tools/audio-tour.mjs [outdir] [--secs N]            # the sound at nine places, hours and weathers and a walk over four grounds: loudness, balance of lows, mids and highs, the beds sounding and the birds singing, and a WAV of each
+node tools/shot.mjs tools/scenarios/busts-save.json     # plaques read, saved, reloaded and continued, the Journal's Scientists page, and the ten-plaque objective
+node tools/cull-compare.mjs [index.html]                 # the same view with and without leaving out the parts smaller than a pixel, compared pixel by pixel, on the Coast Road and at Hotrod Landing
+node tools/first-frame.mjs [index.html]                  # loading time, the first frames after New game and the shaders built after loading, for this build or an older one
 node tools/shot.mjs tools/scenarios/sky-night.json    # the real night sky to the north, south, east and overhead, and the Moon
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot
 node tools/shot.mjs tools/scenarios/fish-views.json   # fish schools, a fish approaching the float and the fight

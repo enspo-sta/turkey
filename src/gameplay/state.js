@@ -101,6 +101,9 @@ export class GameState {
     this.climb = { sent: {}, signed: false, sample: false };
     // the science log: objectives done ({ id: { day } }, see science.js)
     this.science = {};
+    // the scientists' busts whose plaques you have read ({ id: day }, see
+    // world/scientists.js)
+    this.busts = {};
     // the visitor from the sky (see gameplay/visitor.js): where the story
     // is, where the craft came down, where the companion is
     this.visitor = null;
@@ -354,6 +357,7 @@ export class GameState {
       meteorite: this.meteorite,
       climb: this.climb,
       science: this.science,
+      busts: this.busts,
       visitor: this.visitor,
       health: this.health,
       started: this.started,
@@ -422,6 +426,7 @@ export class GameState {
         meteorite: d.meteorite && typeof d.meteorite === 'object' ? d.meteorite : null,
         climb: { sent: {}, signed: false, sample: false, ...(d.climb && typeof d.climb === 'object' ? d.climb : {}) },
         science: d.science && typeof d.science === 'object' ? d.science : {},
+        busts: d.busts && typeof d.busts === 'object' ? d.busts : {},
         visitor: d.visitor && typeof d.visitor === 'object' ? d.visitor : null,
         health: d.health ?? 100,
         started: !!d.started,
