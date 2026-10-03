@@ -125,11 +125,12 @@ export class Announcer {
 
   // Speech needs a first touch on iOS: an empty line spoken inside the tap
   // that starts the game opens the way for the rest. The game's voice needs
-  // the sound started, and its most heard lines decoded ahead.
+  // the sound started, and its most heard lines decoded ahead: a moment
+  // after the tap, not in it, as the first line is a cast and a bite away.
   unlock() {
     if (this.game.audio?.ready && !this.warmed) {
       this.warmed = true;
-      this.clips.warm(['FISH ON!', 'FISH ON! FISH ON!', 'HOOKED UP!', 'GOT ONE!', 'NICE FISH!', 'LANDED!', "IT'S A BIG ONE!", "IT'S JUMPING!", 'TOO SLOW!', 'TOO EARLY!', 'PERFECT CAST!']);
+      setTimeout(() => this.clips.warm(['FISH ON!', 'FISH ON! FISH ON!', 'HOOKED UP!', 'GOT ONE!', 'NICE FISH!', 'LANDED!', "IT'S A BIG ONE!", "IT'S JUMPING!", 'TOO SLOW!', 'TOO EARLY!', 'PERFECT CAST!']), 1500);
     }
     if (!this.synth || this.unlocked) return;
     this.unlocked = true;
