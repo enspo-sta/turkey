@@ -81,7 +81,8 @@ export class Voice {
   }
 
   // Say a line, then the name after it if there is a clip for it; a new line
-  // cuts off the last one. Resolves false if it could not play.
+  // cuts off the last one. Resolves false if it could not play and nothing
+  // has replaced it since (the caller then uses the device's voice).
   async say(line, sub, gain = 1) {
     const A = this.audio;
     if (!A.ready || !A.ctx) return false;
@@ -93,7 +94,8 @@ export class Voice {
     try {
       bufs = await Promise.all(keys.map((k) => this.decode(k)));
     } catch (e) {
-      return false;
+      // (a line that was cut off or replaced meanwhile needs no other voice)
+      return serial !== this.serial;
     }
     // a newer line came in while these decoded
     if (serial !== this.serial) return true;
@@ -126,6 +128,9 @@ export class Voice {
   }
 
   stop() {
+    // a line still decoding is cut off too: it would otherwise start late,
+    // over the pause menu or after the voice was turned off
+    this.serial++;
     for (const s of this.sources) {
       try {
         s.stop();

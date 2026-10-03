@@ -895,12 +895,12 @@ node tools/shot.mjs tools/scenarios/areas.json        # Steaming Springs with th
 node tools/shot.mjs tools/scenarios/jobs-bigfoot.json # the odd jobs board, a picture of Bigfoot for the radio show, the cannery's three sockeye and the album
 node tools/shot.mjs tools/scenarios/layout-ipad.json  # the top bar, compass and bite readout on an iPad-sized screen
 node tools/shot.mjs tools/scenarios/layout-phone-small.json # the same on a small phone
-node tools/shot.mjs tools/scenarios/layout-sizes.json # the top bar with the longest goal at ten screen sizes, phones upright and sideways (with the notch), iPads and desktops: no overlaps, and RUN in the upper half
-node tools/shot.mjs tools/scenarios/fullscreen.json   # the full-screen button on the title screen and in the game: in and out, its icon and label, and Esc still pausing afterwards
-node tools/shot.mjs tools/scenarios/fullscreen-iphone.json # an iPhone without the Fullscreen API: the note on the title screen and in the game
-node tools/shot.mjs tools/scenarios/fullscreen-home.json   # started from the Home Screen: no full-screen button on the title screen or in the game
+node tools/shot.mjs tools/scenarios/layout-sizes.json # the top bar with the longest goal at fourteen screen sizes, from the first iPhone SE upright to a 1920-wide desktop, phones sideways with the notch and as started from the Home Screen: no overlaps, and RUN in the upper half
+node tools/shot.mjs tools/scenarios/fullscreen.json   # the full-screen button on the title screen and in the game: in and out, its icon and label, the mouse left free, and Esc still pausing afterwards
+node tools/shot.mjs tools/scenarios/fullscreen-iphone.json # an iPhone without the Fullscreen API: the note on the title screen and in the game, once however often you tap; then a browser that ignores the request, and one that refuses it
+node tools/shot.mjs tools/scenarios/fullscreen-home.json   # started from the Home Screen: no full-screen button on the title screen or in the game, and its room given to the compass
 node tools/shot.mjs tools/scenarios/top-buttons-touch.json # real taps on an imitated iPhone: each button at the top right opens its screen, the full-screen note, the bite readout, and RUN on and off
-node tools/shot.mjs tools/scenarios/voice-pick.json   # the game's own voice: a line and a name, a personal best's fish, the music dipping while it talks, every recording decoded, Settings, Voice through an imitated iPhone's voices, and old settings moving to the game's voice
+node tools/shot.mjs tools/scenarios/voice-pick.json   # the game's own voice: a line and a name, a personal best's fish, the music dipping while it talks, every recording decoded, a line stopped while it decodes staying silent, Settings, Voice through an imitated iPhone's voices, and old settings moving to the game's voice
 node tools/shot.mjs tools/scenarios/bigfoot-forest.json # Bigfoot from deep in the forest at dusk: he only steps out where no tree or bush hides him
 node tools/shot.mjs tools/scenarios/fish-species.json # lands each of the twelve newer fish, then shows the journal by rarity and the tackle box
 node tools/shot.mjs tools/scenarios/secret.json       # (spoilers) the hidden chest from the bank and locked from the shelf, Gus's launch, TAKE PARAGLIDER and the edge with GLIDE

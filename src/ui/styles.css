@@ -69,8 +69,10 @@ svg { width: 1em; height: 1em; display: block; }
 .tagline { margin: 6px 0 4px; font-size: 17px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 600; color: var(--ink); text-shadow: 0 2px 8px rgba(0,0,0,.6); text-align: center; }
 .title-buttons { display: grid; grid-template-columns: repeat(2, minmax(150px, 1fr)); gap: 10px; width: min(420px, 92vw); }
 .title-foot { margin: 6px 0 0; font-size: 13px; color: var(--ink-dim); letter-spacing: 0.06em; text-align: center; }
-.title-foot.note { color: var(--ink); max-width: 560px; line-height: 1.45; }
 .title-full { position: absolute; top: calc(var(--sat) + 12px); right: calc(var(--sar) + 12px); z-index: 1; }
+/* what the full-screen button says on the title screen, right under it, so
+   it fits however short the screen (Safari's bars take a phone's height) */
+.title-note { position: absolute; top: calc(var(--sat) + 62px); right: calc(var(--sar) + 12px); z-index: 1; margin: 0; max-width: min(340px, calc(100vw - 24px - var(--sal) - var(--sar))); padding: 10px 14px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); font-size: 14px; line-height: 1.45; color: var(--ink); text-align: left; }
 
 /* ---------- buttons ---------- */
 .btn {
@@ -132,7 +134,12 @@ svg { width: 1em; height: 1em; display: block; }
 .saved-note.show { opacity: 1; }
 #hud-day { color: var(--ink-dim); font-weight: 600; font-size: 13px; }
 
-#compass { position: absolute; top: calc(var(--sat) + 10px); left: 50%; width: min(420px, 38vw, 100vw - 560px - 2 * max(var(--sal), var(--sar))); height: 30px; transform: translateX(-50%); overflow: hidden;
+/* the room the top-right row takes on each side of the centred compass and
+   goal: five buttons, or four where the full-screen one is hidden (started
+   from the Home Screen or in the iOS app) */
+#hud { --topright: 560px; --topright-wide: 1048px; }
+#hud.no-full { --topright: 452px; --topright-wide: 940px; }
+#compass { position: absolute; top: calc(var(--sat) + 10px); left: 50%; width: min(420px, 38vw, 100vw - var(--topright) - 2 * max(var(--sal), var(--sar))); height: 30px; transform: translateX(-50%); overflow: hidden;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); }
 #compass-strip { position: absolute; inset: 0; }
 #compass-strip span { position: absolute; top: 5px; transform: translateX(-50%); font-weight: 800; font-size: 14px; letter-spacing: 0.06em; text-shadow: 0 1px 3px rgba(0,0,0,.8); white-space: nowrap; }
@@ -142,7 +149,7 @@ svg { width: 1em; height: 1em; display: block; }
 #compass-strip span.marker.goal { color: var(--glacier); }
 #compass-strip span.marker.bear { color: #ff5a4a; }
 .compass-needle { position: absolute; left: 50%; bottom: 0; width: 2px; height: 7px; background: var(--flame); transform: translateX(-50%); }
-#objective { position: absolute; top: calc(var(--sat) + 44px); left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: 600; letter-spacing: 0.04em; color: var(--ink); text-shadow: 0 1px 4px rgba(0,0,0,.85); white-space: nowrap; max-width: min(60vw, 100vw - 560px - 2 * max(var(--sal), var(--sar))); overflow: hidden; text-overflow: ellipsis; }
+#objective { position: absolute; top: calc(var(--sat) + 44px); left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: 600; letter-spacing: 0.04em; color: var(--ink); text-shadow: 0 1px 4px rgba(0,0,0,.85); white-space: nowrap; max-width: min(60vw, 100vw - var(--topright) - 2 * max(var(--sal), var(--sar))); overflow: hidden; text-overflow: ellipsis; }
 #objective b { color: var(--flame-2); font-weight: 800; letter-spacing: 0.1em; margin-right: 6px; }
 
 #toasts { position: absolute; top: calc(var(--sat) + 70px); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(560px, 80vw); }
@@ -535,19 +542,22 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
    top buttons: 12 px margin, the buttons and 6 px clear on each side, with
    the safe area of a notch. The buttons are smaller on short screens. */
 @media (max-height: 430px) {
-  #compass { width: min(420px, 38vw, 100vw - 504px - 2 * max(var(--sal), var(--sar))); }
-  #objective { top: calc(var(--sat) + 41px); max-width: min(60vw, 100vw - 504px - 2 * max(var(--sal), var(--sar))); }
+  #hud { --topright: 504px; }
+  #hud.no-full { --topright: 408px; }
+  #objective { top: calc(var(--sat) + 41px); }
 }
 /* very wide screens have the clock and the bite beside the buttons too */
 @media (min-width: 1500px) and (min-height: 600px) {
-  #objective { max-width: min(60vw, 100vw - 1048px - 2 * max(var(--sal), var(--sar))); }
+  #objective { max-width: min(60vw, 100vw - var(--topright-wide) - 2 * max(var(--sal), var(--sar))); }
 }
 /* too narrow for a gap (a phone held upright, a narrow split view on an
    iPad): smaller top buttons clear of the health bar, the bite readout over
    the clock clear of the chips, and the compass and the goal under them
    (and under the SAVED note and the driving buttons), right of the small
-   map */
-@media (max-width: 599px) {
+   map. Also on tall screens up to 709 wide (a 7-inch tablet upright, a
+   foldable), where the gap beside five buttons would leave the compass a few
+   letters wide. */
+@media (max-width: 599px), (max-width: 709px) and (min-height: 431px) {
   .top-icons { gap: 5px; }
   .top-icons .btn.icon { width: 38px; height: 38px; }
   .top-icons .btn.icon svg { width: 21px; height: 21px; }
@@ -555,6 +565,15 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
   .top-status { flex-direction: column; align-items: flex-end; }
   #compass { top: calc(var(--sat) + 146px); left: calc(var(--sal) + 148px); right: calc(var(--sar) + 12px); width: auto; transform: none; }
   #objective { top: calc(var(--sat) + 182px); left: calc(var(--sal) + 148px); right: calc(var(--sar) + 12px); max-width: none; transform: none; text-align: center; }
+}
+/* under 360 wide (the first iPhone SE upright, Slide Over on an iPad):
+   smaller buttons, health bar and money, so the five buttons clear both */
+@media (max-width: 359px) {
+  .top-icons { gap: 4px; }
+  .top-icons .btn.icon { width: 34px; height: 34px; }
+  .top-icons .btn.icon svg { width: 19px; height: 19px; }
+  .stat.health .bar { width: 80px; }
+  .stat.money { font-size: 22px; }
 }
 @media (orientation: portrait) {
   #catch { left: 50%; right: auto; top: auto; bottom: calc(var(--sab) + 16px); transform: translateX(-50%); width: min(420px, 92vw); animation: none; }

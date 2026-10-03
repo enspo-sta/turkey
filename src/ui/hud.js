@@ -166,6 +166,8 @@ export class HUD {
   bindFullscreen() {
     const buttons = [$('btn-full'), $('btn-full-title')].filter(Boolean);
     const show = !startedFullscreen();
+    // without the button the compass and the goal get its room back
+    this.root.classList.toggle('no-full', !show);
     const update = () => {
       const on = isFullscreen();
       for (const b of buttons) {
@@ -177,20 +179,20 @@ export class HUD {
       }
     };
     const say = (text, kind, secs) => {
-      // on the title screen the HUD is hidden: the note goes under its buttons
-      const foot = $('title-foot');
-      if (this.root.hidden && foot) {
-        if (this.footWas == null) this.footWas = foot.textContent;
-        foot.textContent = text;
-        foot.classList.add('note');
-        clearTimeout(this.footTimer);
-        this.footTimer = setTimeout(() => {
-          foot.textContent = this.footWas;
-          this.footWas = null;
-          foot.classList.remove('note');
-        }, secs * 1000);
-      } else this.toast(text, kind, secs);
+      // on the title screen the HUD is hidden: the note shows under the button
+      const note = $('title-note');
+      if (this.root.hidden && note) {
+        note.textContent = text;
+        note.hidden = false;
+        clearTimeout(this.noteTimer);
+        this.noteTimer = setTimeout(() => (note.hidden = true), secs * 1000);
+      } else if (!(this.fullNote && this.fullNote.isConnected && this.fullNote.textContent === text)) {
+        // (a second tap while the same note is up adds nothing)
+        this.fullNote = this.toast(text, kind, secs);
+      }
     };
+    // each request, refusal and change of state: a check still waiting on an
+    // older request is no longer needed
     let tries = 0;
     const act = () => {
       if (!canFullscreen()) {
@@ -200,6 +202,7 @@ export class HUD {
       const entering = !isFullscreen();
       const n = ++tries;
       toggleFullscreen().then(update, () => {
+        tries++;
         update();
         say('The browser did not let the game fill the screen here.', 'bad', 5);
       });
@@ -210,10 +213,18 @@ export class HUD {
           if (n === tries && !isFullscreen()) say(fullscreenHelp(), '', 9);
         }, 1500);
     };
-    for (const b of buttons) this.game.input.bindTap(b, act);
+    for (const b of buttons) {
+      this.game.input.bindTap(b, act);
+      // a click here is for the button alone: it does not also capture the
+      // mouse for looking round, as a click on the view does
+      b.addEventListener('click', (e) => e.stopPropagation());
+    }
     // the change event, and the resize that comes with it (some browsers send
     // the event late), and Esc or a swipe that leaves full screen without us
-    onFullscreenChange(update);
+    onFullscreenChange(() => {
+      tries++;
+      update();
+    });
     window.addEventListener('resize', update);
     update();
   }
@@ -305,6 +316,7 @@ export class HUD {
       const i = this.toastList.indexOf(el);
       if (i >= 0) this.toastList.splice(i, 1);
     }, secs * 1000 + 500);
+    return el;
   }
 
   // A big arcade banner; sub is a second line under it (a species name) and
