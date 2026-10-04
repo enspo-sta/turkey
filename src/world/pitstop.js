@@ -342,7 +342,7 @@ export class Pitstop {
     {
       const [x, y, z] = put(-2.2, -1.6);
       const rot = [0, P.yaw + 0.3, 0];
-      b.box(0.72, 0.9, 0.46, { pos: [x, y + 0.54, z], rot, color: 0xb81c18, jitter: 0 });
+      b.box(0.72, 0.9, 0.46, { pos: [x, y + 0.54, z], rot, color: 0x9a2a22, jitter: 0 });
       for (let k = 0; k < 6; k++) b.box(0.74, 0.012, 0.47, { pos: [x, y + 0.2 + k * 0.13, z], rot, color: 0x3a0806, jitter: 0 });
       b.box(0.76, 0.03, 0.5, { pos: [x, y + 1.0, z], rot, color: 0x1a1a1a, jitter: 0 });
       for (const [dx, dz] of [

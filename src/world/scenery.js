@@ -33,7 +33,7 @@ function puffTexture() {
 
 const puffVert = /* glsl */ `
 attribute vec4 iPos; // xyz and size
-attribute vec4 iCol; // lit share, spare, spare, opacity
+attribute vec4 iCol; // lit share, light behind it, spare, opacity
 varying vec2 vUv;
 varying vec4 vCol;
 #include <fog_pars_vertex>
@@ -50,6 +50,7 @@ const puffFrag = /* glsl */ `
 uniform sampler2D uPuff;
 uniform vec3 uLit;
 uniform vec3 uShade;
+uniform vec3 uSun;
 varying vec2 vUv;
 varying vec4 vCol;
 #include <fog_pars_fragment>
@@ -57,6 +58,8 @@ void main() {
   float a = texture2D( uPuff, vUv ).a;
   // sunlit toward the top of each puff, in shade underneath
   vec3 c = mix( uShade, uLit, clamp( vUv.y * 0.8 + 0.25, 0.0, 1.0 ) * vCol.x );
+  // with the light behind it, the thin edges glow (a silver lining)
+  c += uSun * vCol.y * ( 1.0 - a );
   gl_FragColor = vec4( c, a * vCol.w );
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
@@ -90,6 +93,7 @@ export class Scenery {
       uPuff: { value: puffTexture() },
       uLit: { value: new THREE.Color(1, 1, 1) },
       uShade: { value: new THREE.Color(0.6, 0.65, 0.72) },
+      uSun: { value: new THREE.Color(0, 0, 0) },
       ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
     };
     const mat = new THREE.ShaderMaterial({
@@ -169,7 +173,12 @@ export class Scenery {
           float n2 = texture2D( uNoise, vec2( vUv.x * 3.1 + 0.4, vUv.y * 0.8 - uTime * 1.1 ) ).b;
           float streak = smoothstep( 0.3, 0.8, n1 * 0.6 + n2 * 0.5 );
           vec3 col = mix( vec3( 0.55, 0.68, 0.7 ), vec3( 0.95, 0.97, 0.98 ), 0.4 + streak * 0.6 );
-          col *= mix( 1.0, 0.25, uNight ) * ( 0.75 + 0.35 * clamp( length( uSunColor ), 0.0, 1.5 ) );
+          #ifdef USE_FOG
+            // lit like the water below: dim at night, warm at sunrise
+            col *= uFxWaterLight;
+          #else
+            col *= mix( 1.0, 0.25, uNight ) * ( 0.75 + 0.35 * clamp( length( uSunColor ), 0.0, 1.5 ) );
+          #endif
           float edge = smoothstep( 0.0, 0.2, vUv.x ) * smoothstep( 1.0, 0.8, vUv.x );
           float alpha = ( 0.62 + streak * 0.38 ) * edge;
           gl_FragColor = vec4( col, alpha );
@@ -201,6 +210,9 @@ export class Scenery {
     const sunI = env.sun.intensity * (env.sun.visible === false ? 0 : 1);
     this.uniforms.uLit.value.copy(env.sun.color).multiplyScalar(0.35 * sunI).add(_c.copy(env.hemi.color).multiplyScalar(0.65 * env.hemi.intensity));
     this.uniforms.uShade.value.copy(env.hemi.color).multiplyScalar(0.5 * env.hemi.intensity);
+    this.uniforms.uSun.value.copy(env.sun.color).multiplyScalar(0.9 * sunI);
+    const cam = g.camera.position;
+    const L = env.lightDir;
     const P = this.iPos.array;
     const C = this.iCol.array;
     let n = 0;
@@ -247,7 +259,12 @@ export class Scenery {
       P[n * 4 + 2] = z;
       P[n * 4 + 3] = size;
       C[n * 4] = lit;
-      C[n * 4 + 1] = 0;
+      // how nearly the light comes from straight behind the puff
+      const dx = x - cam.x;
+      const dy = y - cam.y;
+      const dz = z - cam.z;
+      const fw = Math.max(0, (dx * L.x + dy * L.y + dz * L.z) / (Math.hypot(dx, dy, dz) || 1));
+      C[n * 4 + 1] = fw * fw * fw * fw * fw * lit;
       C[n * 4 + 2] = 0;
       C[n * 4 + 3] = alpha;
       n++;

@@ -5,6 +5,7 @@
 // steel wheels with baby moon caps, and a tuck-and-roll cockpit with live
 // gauges and a steering wheel that turns. Physics and cameras: entities/car.js.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ModelBuilder } from '../util/builder.js';
 import { Car, offroadFactor } from './car.js';
 import { Driver } from './drivers.js';
@@ -656,15 +657,17 @@ export class HotRod extends Car {
   }
 
   buildModel() {
-    const env = 1.0;
     const M = {
-      paint: new THREE.MeshPhysicalMaterial({ roughness: 0.3, metalness: 0.35, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: env }),
+      paint: new THREE.MeshPhysicalMaterial({ roughness: 0.3, metalness: 0.35, clearcoat: 1, clearcoatRoughness: 0.04 }),
       wheelPaint: new THREE.MeshPhysicalMaterial({ roughness: 0.3, metalness: 0.35, clearcoat: 1, clearcoatRoughness: 0.05 }),
       chrome: new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, metalness: 1, roughness: 0.09 }),
       gloss: new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.3, roughness: 0.36 }),
       matte: new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0, roughness: 0.85 }),
       leather: new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0, roughness: 0.48 }),
-      glass: new THREE.MeshStandardMaterial({ color: 0xbcd4e0, transparent: true, opacity: 0.2, roughness: 0.02, metalness: 0.1, depthWrite: false }),
+      // clear glass: the scene behind shows through dimmed a tenth, and the
+      // reflection of the sky is added on top at full strength (blended as
+      // premultiplied light), instead of a milky blue film
+      glass: new THREE.MeshStandardMaterial({ color: 0x000000, transparent: true, opacity: 0.1, roughness: 0.03, metalness: 0, depthWrite: false, blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor }),
       lens: new THREE.MeshStandardMaterial({ map: lensTexture(), emissive: 0xfff2d8, emissiveIntensity: 0, roughness: 0.15, metalness: 0 }),
       tail: new THREE.MeshStandardMaterial({ color: 0x9a0d08, emissive: 0xff2010, emissiveIntensity: 0.15, roughness: 0.2, metalness: 0.1 }),
       dash: new THREE.MeshStandardMaterial({ map: dashTexture(), roughness: 0.32, metalness: 0.55 }),
@@ -1102,16 +1105,21 @@ export class HotRod extends Car {
     const ws = new THREE.Mesh(glass, M.glass);
     ws.renderOrder = 2;
     body.add(ws);
+    // both headlamp lenses in one mesh and both tail lamps in another: two
+    // draws instead of four
+    const lensGeos = [];
+    const tailGeos = [];
+    const lm = new THREE.Matrix4();
     for (const s of [1, -1]) {
-      const lens = new THREE.Mesh(latheX([[0.107, 0.02], [0.09, 0.027], [0.05, 0.033], [0.0, 0.036]], 24), M.lens);
-      lens.position.set(s * 0.44, 0.99, 1.742);
-      lens.rotation.y = -Math.PI / 2;
-      body.add(lens);
-      const tl = new THREE.Mesh(new THREE.SphereGeometry(0.046, 16, 12), M.tail);
-      tl.position.set(s * 0.47, 0.77, -1.885);
-      tl.scale.set(0.82, 1.45, 0.45);
-      body.add(tl);
+      const lg = latheX([[0.107, 0.02], [0.09, 0.027], [0.05, 0.033], [0.0, 0.036]], 24);
+      lg.applyMatrix4(lm.makeRotationY(-Math.PI / 2).setPosition(s * 0.44, 0.99, 1.742));
+      lensGeos.push(lg);
+      const tg = new THREE.SphereGeometry(0.046, 16, 12);
+      tg.applyMatrix4(lm.makeScale(0.82, 1.45, 0.45).setPosition(s * 0.47, 0.77, -1.885));
+      tailGeos.push(tg);
     }
+    body.add(new THREE.Mesh(mergeGeometries(lensGeos), M.lens));
+    body.add(new THREE.Mesh(mergeGeometries(tailGeos), M.tail));
     const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.18), M.plate);
     plate.position.set(0, 0.665, -2.013);
     plate.rotation.y = Math.PI;
@@ -1146,7 +1154,9 @@ export class HotRod extends Car {
     const rearTyre = tyreGeometry(REAR_R, 0.4, 0.215, { n: 4.6 });
     const tyreMat = (white) => {
       const t = tyreTexture({ whitewall: white, tread: 'street', ribs: 4 });
-      return new THREE.MeshStandardMaterial({ map: t, bumpMap: t, bumpScale: 1.2, roughness: 0.9, metalness: 0 });
+      // (the texture is sRGB, so the bump reads its dark tread steps decoded
+      // to linear light, about seven times shallower than drawn: scaled up)
+      return new THREE.MeshStandardMaterial({ map: t, bumpMap: t, bumpScale: 5, roughness: 0.9, metalness: 0 });
     };
     M.tyreFront = tyreMat(0.09);
     M.tyreRear = tyreMat(0.11);

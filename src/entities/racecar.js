@@ -517,8 +517,8 @@ export class RaceCar extends Car {
     const carbonTex = carbonTexture();
     const M = {
       livery: new THREE.MeshPhysicalMaterial({ map: liveryTexture(), roughness: 0.32, metalness: 0.25, clearcoat: 1, clearcoatRoughness: 0.05 }),
-      carbon: new THREE.MeshPhysicalMaterial({ map: carbonTex, roughness: 0.45, metalness: 0.15, clearcoat: 0.5, clearcoatRoughness: 0.2, envMapIntensity: 0.7 }),
-      carbon2: new THREE.MeshPhysicalMaterial({ map: carbonTex, roughness: 0.55, metalness: 0.1, clearcoat: 0.3, clearcoatRoughness: 0.3, envMapIntensity: 0.5, side: THREE.DoubleSide }),
+      carbon: new THREE.MeshPhysicalMaterial({ map: carbonTex, roughness: 0.45, metalness: 0.15, clearcoat: 0.5, clearcoatRoughness: 0.2 }),
+      carbon2: new THREE.MeshPhysicalMaterial({ map: carbonTex, roughness: 0.55, metalness: 0.1, clearcoat: 0.3, clearcoatRoughness: 0.3, side: THREE.DoubleSide }),
       dark: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.45, metalness: 0.3 }),
       chrome: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.12, metalness: 1 }),
       plate: new THREE.MeshStandardMaterial({ map: plateTexture(), roughness: 0.35, metalness: 0.2 }),

@@ -20,6 +20,7 @@ import * as THREE from 'three';
 export const FX = {
   uFxSunDir: { value: new THREE.Vector3(0, 1, 0) },
   uFxHorizon: { value: new THREE.Color(0.7, 0.8, 0.9) },
+  uFxZenith: { value: new THREE.Color(0.3, 0.45, 0.75) },
   uFxGlow: { value: new THREE.Color(0, 0, 0) },
   uFxHazeH: { value: 1 / 150 },
   uFxHazeK: { value: 1 },
@@ -127,6 +128,7 @@ export const FX_FRAG_PARS = /* glsl */ `
 #ifdef USE_FOG
 varying vec3 vFxWorld;
 uniform vec3 uFxHorizon;
+uniform vec3 uFxZenith;
 uniform vec3 uFxGlow;
 uniform float uFxHazeH;
 uniform float uFxHazeK;
@@ -154,11 +156,15 @@ ${SHARED_GLSL}
 float fxPuddle = 0.0;
 float fxWetGloss = 1.0;
 
-// Sky colour close to the horizon in direction dir (matches sky.js).
+// Sky colour in direction dir (matches sky.js): the horizon colour turning
+// to the zenith's as the direction rises, as the sky itself does, so far
+// ridges fade into the colour of the sky right behind them (not a paler
+// one), and wet ground and still water reflect blue overhead.
 vec3 fxSkyColor( vec3 dir ) {
 	float sd = max( dot( dir, uFxSunDir ), 0.0 );
 	float hb = 1.0 + 1.5 * ( 1.0 - smoothstep( 0.0, 0.35, abs( dir.y ) ) );
-	return uFxHorizon + uFxGlow * ( pow( sd, 5.0 ) * 0.45 + pow( sd, 48.0 ) * 0.8 ) * hb;
+	vec3 base = mix( uFxHorizon, uFxZenith, pow( max( dir.y, 0.0 ), 0.42 ) );
+	return base + uFxGlow * ( pow( sd, 5.0 ) * 0.45 + pow( sd, 48.0 ) * 0.8 ) * hb;
 }
 
 // Height haze between the camera and wp, thinning with altitude.
@@ -170,7 +176,10 @@ float fxHaze( vec3 wp ) {
 	float h0 = max( cameraPosition.y, - 20.0 ) * uFxHazeH;
 	#ifdef FOG_EXP2
 		float od = fogDensity * uFxHazeK * dist * exp( - h0 ) * f;
-		return 1.0 - exp( - od * od );
+		// a little haze already in the middle distance (6% at 500 m, 13% at a
+		// kilometre, where it was 2% and 7%: the valley had no depth), the same
+		// two thirds at 4 km
+		return 1.0 - exp( - od * ( 0.35 + 0.65 * od ) );
 	#else
 		return smoothstep( fogNear, fogFar, dist * exp( - h0 ) * f );
 	#endif
@@ -200,8 +209,11 @@ vec3 fxMistColor( vec3 dir ) {
 
 vec3 fxAtmosphere( vec3 col, vec3 wp ) {
 	vec3 dir = normalize( wp - cameraPosition );
-	col = mix( col, fxMistColor( dir ), fxMist( wp ) );
-	return mix( col, fxSkyColor( dir ), fxHaze( wp ) );
+	// the sky's colour once, for the mist (paler, as in fxMistColor) and the haze
+	vec3 sky = fxSkyColor( dir );
+	vec3 mist = mix( sky, vec3( dot( sky, vec3( 0.2126, 0.7152, 0.0722 ) ) ), 0.35 ) * 1.06;
+	col = mix( col, mist, fxMist( wp ) );
+	return mix( col, sky, fxHaze( wp ) );
 }
 
 vec2 fxShade( vec3 wp ) {

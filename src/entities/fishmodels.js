@@ -12,6 +12,8 @@ import * as THREE from 'three';
 import { fxPatch } from '../world/worldfx.js';
 import { FISH } from '../gameplay/data.js';
 import { mulberry32 } from '../util/math.js';
+import { smoothSeams } from '../util/builder.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const SHAPES = {
   salmon: { h: 0.25, w: 0.12, profile: [[0, 0.1], [0.08, 0.55], [0.25, 0.92], [0.42, 1], [0.62, 0.8], [0.8, 0.42], [0.9, 0.3], [1, 0.34]], tail: 0.22, fork: 0.6, dorsal: [0.42, 0.14, 0.16], adipose: true },
@@ -50,8 +52,16 @@ function profileAt(profile, t) {
   return profile[profile.length - 1][1];
 }
 
+const IRIDESCENT = new Set(['salmon', 'trout', 'whitefish', 'grayling']);
+
 function hex(c) {
   return '#' + c.toString(16).padStart(6, '0');
+}
+
+// A colour at no opacity: a gradient fading out to it keeps its hue on the
+// way rather than darkening toward black at its edge.
+function clear(c) {
+  return `rgba(${(c >> 16) & 255},${(c >> 8) & 255},${c & 255},0)`;
 }
 
 // Cross-section of each body shape: a superellipse, flatter flanks the
@@ -99,7 +109,7 @@ function skinTexture(id) {
     const hg = g.createLinearGradient(0, 0, W * 0.3, 0);
     hg.addColorStop(0, hex(col.head));
     hg.addColorStop(0.8, hex(col.head));
-    hg.addColorStop(1, 'rgba(0,0,0,0)');
+    hg.addColorStop(1, clear(col.head));
     g.fillStyle = hg;
     g.fillRect(0, H * 0.12, W * 0.3, H * 0.76);
   }
@@ -121,9 +131,9 @@ function skinTexture(id) {
     // lateral stripe on both flanks
     for (const y of [0.3, 0.7]) {
       const bg = g.createLinearGradient(0, H * (y - 0.07), 0, H * (y + 0.07));
-      bg.addColorStop(0, 'rgba(0,0,0,0)');
+      bg.addColorStop(0, clear(col.band));
       bg.addColorStop(0.5, hex(col.band));
-      bg.addColorStop(1, 'rgba(0,0,0,0)');
+      bg.addColorStop(1, clear(col.band));
       g.fillStyle = bg;
       g.fillRect(W * 0.12, H * (y - 0.07), W * 0.8, H * 0.14);
     }
@@ -442,6 +452,12 @@ function bodyGeometry(sh, shape) {
         if (sa < 0) y *= 1.05;
         if (sh.snout && t < 0.14) y *= 0.7;
       }
+      // the first and last rings close to a point: no hole at the snout or
+      // at the root of the tail
+      if (i === 0 || i === ringsN) {
+        x = 0;
+        y = 0;
+      }
       pos.push(x, y, z);
       uv.push(t, j / around);
     }
@@ -458,6 +474,8 @@ function bodyGeometry(sh, shape) {
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   g.setIndex(idx);
   g.computeVertexNormals();
+  // no crease along the belly, where the rings start and end
+  smoothSeams(g);
   return g;
 }
 
@@ -714,7 +732,8 @@ export function makeFishModel(id) {
     base = {
       body: bodyGeometry(sh, shape),
       fins: finGeometry(sh, f.col.fin || f.col.back, f.col.finBars, id === 'grayling' ? 0x6a4a9a : null),
-      eyes: eyeGeometry(sh, sh.skate ? 'skate' : sh.flat ? 'flat' : shape),
+      // both eyes in one mesh: one draw
+      eyes: mergeGeometries(eyeGeometry(sh, sh.skate ? 'skate' : sh.flat ? 'flat' : shape)),
       // (the wolf eel shares the burbot's long body, not its chin barbel)
       barbel: sh.barbel && id !== 'wolfeel' ? barbelGeometry(sh) : null,
       skin: skinTexture(id),
@@ -731,18 +750,23 @@ export function makeFishModel(id) {
       metalness: 0.18,
       clearcoat: 0.75,
       clearcoatRoughness: 0.2,
-      iridescence: shape === 'salmon' || shape === 'trout' || shape === 'whitefish' ? 0.45 : 0.15,
+      // the rainbow sheen of salmon, trout, whitefish and grayling scales;
+      // none on the cod, rockfish, sharks and the rest (whose shader then
+      // skips the thin-film work altogether)
+      iridescence: IRIDESCENT.has(shape) ? 0.45 : 0,
       iridescenceIOR: 1.3,
       iridescenceThicknessRange: [250, 600],
     }),
     uniforms
   );
-  const finMat = flopMaterial(new THREE.MeshStandardMaterial({ map: finTexture(), vertexColors: true, roughness: 0.45, side: THREE.DoubleSide, transparent: true }), uniforms);
+  // fins: alpha to coverage on the multisampled frame instead of blending,
+  // so they draw in one pass in any order and never over the nearer fin
+  const finMat = flopMaterial(new THREE.MeshStandardMaterial({ map: finTexture(), vertexColors: true, roughness: 0.45, side: THREE.DoubleSide, alphaToCoverage: true }), uniforms);
   const eyeMat = flopMaterial(new THREE.MeshStandardMaterial({ map: base.eye, roughness: 0.06, metalness: 0.1 }), uniforms);
   const body = new THREE.Mesh(base.body, bodyMat);
   const fins = new THREE.Mesh(base.fins, finMat);
   group.add(body, fins);
-  for (const e of base.eyes) group.add(new THREE.Mesh(e, eyeMat));
+  group.add(new THREE.Mesh(base.eyes, eyeMat));
   if (base.barbel) group.add(new THREE.Mesh(base.barbel, bodyMat));
   group.traverse((o) => {
     if (o.isMesh) o.castShadow = true;

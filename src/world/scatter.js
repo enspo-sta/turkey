@@ -3,7 +3,7 @@
 // into near/far LODs around the camera with CPU frustum culling.
 import * as THREE from 'three';
 import { ModelBuilder, jitterGeometry } from '../util/builder.js';
-import { mulberry32, lerp, clamp, smoothstep } from '../util/math.js';
+import { mulberry32, lerp, clamp, smoothstep, hash2 } from '../util/math.js';
 import { HALF, SIZE, ROAD_HALF, SURF } from './worldgen.js';
 import { fxPatch, reflectionMaterial } from './worldfx.js';
 
@@ -12,7 +12,7 @@ const GRID = Math.ceil(SIZE / CELL);
 
 function spruceNear() {
   const b = new ModelBuilder();
-  b.cyl(0.11, 0.22, 2.4, 5, { pos: [0, 1.2, 0], color: 0x4a3322 });
+  b.cyl(0.11, 0.22, 2.4, 5, { pos: [0, 1.2, 0], color: 0x4a3322, gradient: 0.3 });
   const layers = 6;
   for (let i = 0; i < layers; i++) {
     const t = i / (layers - 1);
@@ -20,22 +20,22 @@ function spruceNear() {
     const h = lerp(2.7, 1.7, t);
     const y = 1.5 + i * 1.32;
     const col = i % 2 ? 0x1d3a24 : 0x264a2c;
-    b.cone(r, h, 7, { pos: [0, y + h / 2, 0], rot: [0, i * 0.9, 0], color: col, gradient: 0.45, jitter: 0.1 });
+    b.cone(r, h, 7, { pos: [0, y + h / 2, 0], rot: [0, i * 0.9, 0], color: col, gradient: 0.45, jitter: 0.1, volume: { axis: [0, 0], up: 0.75 } });
   }
-  b.cone(0.28, 1.3, 5, { pos: [0, 1.5 + layers * 1.32 + 0.4, 0], color: 0x2c5232 });
+  b.cone(0.28, 1.3, 5, { pos: [0, 1.5 + layers * 1.32 + 0.4, 0], color: 0x2c5232, volume: { axis: [0, 0], up: 0.75 } });
   return b.build();
 }
 
 function spruceFar() {
   // five-sided open cone: 5 triangles per distant tree
   const b = new ModelBuilder();
-  b.add(new THREE.ConeGeometry(2.1, 11.2, 5, 1, true), { pos: [0, 5.5, 0], color: 0x21422a, gradient: 0.35, jitter: 0.04 });
+  b.add(new THREE.ConeGeometry(2.1, 11.2, 5, 1, true), { pos: [0, 5.5, 0], color: 0x21422a, gradient: 0.35, jitter: 0.04, volume: { axis: [0, 0], up: 0.75 } });
   return b.build();
 }
 
 function birchNear() {
   const b = new ModelBuilder();
-  b.cyl(0.09, 0.16, 5.4, 6, { pos: [0, 2.7, 0], color: 0xdcd8cc, jitter: 0.12 });
+  b.cyl(0.09, 0.16, 5.4, 6, { pos: [0, 2.7, 0], color: 0xdcd8cc, jitter: 0.12, gradient: 0.25 });
   b.cyl(0.165, 0.165, 0.18, 6, { pos: [0, 1.4, 0], color: 0x2a2622 });
   b.cyl(0.14, 0.14, 0.12, 6, { pos: [0, 3.1, 0], color: 0x2a2622 });
   b.beam([0, 3.6, 0], [0.9, 4.8, 0.3], 0.05, 4, { color: 0xcfcabc });
@@ -49,7 +49,7 @@ function birchNear() {
   ];
   for (const [x, y, z, r] of blobs) {
     const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.35, mulberry32((x * 13 + y * 7) | 0));
-    b.add(g, { pos: [x, y, z], color: 0x6a8c36, gradient: 0.35, jitter: 0.12 });
+    b.add(g, { pos: [x, y, z], color: 0x6a8c36, gradient: 0.35, jitter: 0.12, volume: { centre: [0, 6.0, 0], k: 0.3 } });
   }
   return b.build();
 }
@@ -58,7 +58,7 @@ function birchFar() {
   // octahedron canopy on a thin triangular trunk: 11 triangles
   const b = new ModelBuilder();
   b.add(new THREE.CylinderGeometry(0.1, 0.14, 4.4, 3, 1, true), { pos: [0, 2.2, 0], color: 0xd8d4c8 });
-  b.add(new THREE.OctahedronGeometry(2.2, 0), { pos: [0, 6.0, 0], scale: [1, 1.15, 1], color: 0x668834, gradient: 0.25 });
+  b.add(new THREE.OctahedronGeometry(2.2, 0), { pos: [0, 6.0, 0], scale: [1, 1.15, 1], color: 0x668834, gradient: 0.25, volume: { centre: [0, 6.0, 0], k: 0.3 } });
   return b.build();
 }
 
@@ -72,7 +72,7 @@ function bushGeo() {
   ];
   for (const [x, y, z, r] of blobs) {
     const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.4, mulberry32((x * 31 + z * 17 + 5) | 0));
-    b.add(g, { pos: [x, y, z], color: 0xffffff, gradient: 0.4, jitter: 0.12 });
+    b.add(g, { pos: [x, y, z], color: 0xffffff, gradient: 0.4, jitter: 0.12, volume: { centre: [0, 0.4, 0], k: 0.3, squash: 1.4 } });
   }
   return b.build();
 }
@@ -92,7 +92,7 @@ function bushDetailed() {
       const t = 0.35 + k * 0.16;
       const r = 0.16 + rand() * 0.12;
       const p = [top[0] * t + (rand() - 0.5) * 0.25, top[1] * t + 0.12 + rand() * 0.15, top[2] * t + (rand() - 0.5) * 0.25];
-      b.add(jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.35, mulberry32(i * 13 + k)), { pos: p, scale: [1, 0.8, 1], color: 0xffffff, gradient: 0.35, jitter: 0.16 });
+      b.add(jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.35, mulberry32(i * 13 + k)), { pos: p, scale: [1, 0.8, 1], color: 0xffffff, gradient: 0.35, jitter: 0.16, volume: { centre: [0, 0.45, 0], k: 0.35, squash: 1.4 } });
     }
   }
   return b.build();
@@ -101,13 +101,14 @@ function bushDetailed() {
 function rockGeo(seed, detail = 1) {
   const b = new ModelBuilder();
   const g = jitterGeometry(new THREE.DodecahedronGeometry(1, detail), detail ? 0.45 : 0.3, mulberry32(seed));
-  b.add(g, { pos: [0, 0.35, 0], scale: [1, 0.72, 1], color: 0xffffff, jitter: 0.1 });
+  // darker where it sits in the ground
+  b.add(g, { pos: [0, 0.35, 0], scale: [1, 0.72, 1], color: 0xffffff, jitter: 0.1, gradient: 0.38 });
   return b.build();
 }
 
 function snagGeo() {
   const b = new ModelBuilder();
-  b.cyl(0.1, 0.24, 9, 5, { pos: [0, 4.5, 0], color: 0x8a8378, jitter: 0.08 });
+  b.cyl(0.1, 0.24, 9, 5, { pos: [0, 4.5, 0], color: 0x8a8378, jitter: 0.08, gradient: 0.3 });
   b.beam([0, 5.5, 0], [1.4, 6.6, 0.2], 0.06, 4, { color: 0x7d766c });
   b.beam([0, 6.8, 0], [-1.2, 7.6, 0.5], 0.05, 4, { color: 0x7d766c });
   b.beam([0, 7.8, 0], [0.3, 8.8, -1.0], 0.045, 4, { color: 0x7d766c });
@@ -145,6 +146,8 @@ function spruceDetailed() {
     const under = [0, y - droop * 0.3, 0];
     const rot = rand() * Math.PI;
     const base = w % 2 ? dark : mid;
+    // the low whorls live in the shade of the ones above
+    const low = lerp(0.84, 1.06, t);
     const rim = [];
     for (let i = 0; i < n; i++) {
       const a = rot + (i / n) * Math.PI * 2;
@@ -154,13 +157,15 @@ function spruceDetailed() {
     for (let i = 0; i < n; i++) {
       const a = rim[i];
       const b = rim[(i + 1) % n];
-      const lit = 0.85 + rand() * 0.3;
-      const cTop = [base[0] * 1.5 * lit, base[1] * 1.5 * lit, base[2] * 1.4 * lit];
-      const cRim = [base[0] * lit, base[1] * lit, base[2] * lit];
+      const lit = (0.85 + rand() * 0.3) * low;
+      // inside the whorl, under the one above, is shaded; the tips are fresh,
+      // lighter and a little yellower growth
+      const cTop = [base[0] * 0.85 * lit, base[1] * 0.85 * lit, base[2] * 0.85 * lit];
+      const cRim = [base[0] * 1.38 * lit, base[1] * 1.33 * lit, base[2] * 1.15 * lit];
       push(top, cTop);
       push(b, cRim);
       push(a, cRim);
-      const cUnder = [base[0] * 0.8, base[1] * 0.8, base[2] * 0.8];
+      const cUnder = [base[0] * 0.8 * low, base[1] * 0.8 * low, base[2] * 0.8 * low];
       push(under, cUnder);
       push(a, cUnder);
       push(b, cUnder);
@@ -196,7 +201,7 @@ function spruceDetailed() {
   }
   g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
   const b = new ModelBuilder();
-  b.cyl(0.1, 0.24, 3.2, 6, { pos: [0, 1.6, 0], color: 0x4a3322 });
+  b.cyl(0.1, 0.24, 3.2, 6, { pos: [0, 1.6, 0], color: 0x4a3322, gradient: 0.3 });
   // clusters of cones hanging among the top whorls
   const cr = mulberry32(72);
   for (let i = 0; i < 12; i++) {
@@ -216,7 +221,7 @@ function spruceDetailed() {
 function blackSpruceDetailed() {
   const b = new ModelBuilder();
   const rand = mulberry32(407);
-  b.cyl(0.035, 0.1, 8.6, 5, { pos: [0, 4.3, 0], color: 0x3b2c20, jitter: 0.1 });
+  b.cyl(0.035, 0.1, 8.6, 5, { pos: [0, 4.3, 0], color: 0x3b2c20, jitter: 0.1, gradient: 0.3 });
   const tufts = 44;
   for (let i = 0; i < tufts; i++) {
     const t = i / tufts;
@@ -232,13 +237,14 @@ function blackSpruceDetailed() {
       color: dark ? 0x16291e : 0x1f3826,
       gradient: 0.3,
       jitter: 0.12,
+      volume: { axis: [0, 0], up: 0.75, k: 0.12 },
     });
     b.parts[b.parts.length - 1].rotateY(a);
   }
   // the club: a dense knot of short branches and cones at the top
   for (let k = 0; k < 4; k++) {
     const g = jitterGeometry(new THREE.IcosahedronGeometry(0.34 - k * 0.05, 0), 0.08, mulberry32(90 + k));
-    b.add(g, { pos: [(rand() - 0.5) * 0.12, 7.6 + k * 0.28, (rand() - 0.5) * 0.12], scale: [1, 1.3, 1], color: k === 1 ? 0x3a2a1e : 0x1b3122, gradient: 0.2, jitter: 0.12 });
+    b.add(g, { pos: [(rand() - 0.5) * 0.12, 7.6 + k * 0.28, (rand() - 0.5) * 0.12], scale: [1, 1.3, 1], color: k === 1 ? 0x3a2a1e : 0x1b3122, gradient: 0.2, jitter: 0.12, volume: { axis: [0, 0], up: 0.9, k: 0.25 } });
   }
   b.cone(0.08, 0.7, 4, { pos: [0, 8.9, 0], color: 0x22402a });
   return b.build();
@@ -250,15 +256,15 @@ function blackSpruceNear() {
   for (let i = 0; i < 5; i++) {
     const t = i / 4;
     const r = lerp(0.85, 0.3, t);
-    b.cone(r, 1.9, 6, { pos: [0, 1.2 + i * 1.35 + 0.95, 0], rot: [0, i * 1.3, 0], color: i % 2 ? 0x16291e : 0x1d3526, gradient: 0.35, jitter: 0.1 });
+    b.cone(r, 1.9, 6, { pos: [0, 1.2 + i * 1.35 + 0.95, 0], rot: [0, i * 1.3, 0], color: i % 2 ? 0x16291e : 0x1d3526, gradient: 0.35, jitter: 0.1, volume: { axis: [0, 0], up: 0.75 } });
   }
-  b.add(new THREE.OctahedronGeometry(0.4, 0), { pos: [0, 8.0, 0], scale: [1, 1.4, 1], color: 0x1b3122 });
+  b.add(new THREE.OctahedronGeometry(0.4, 0), { pos: [0, 8.0, 0], scale: [1, 1.4, 1], color: 0x1b3122, volume: { axis: [0, 0], up: 0.9, k: 0.25 } });
   return b.build();
 }
 
 function blackSpruceFar() {
   const b = new ModelBuilder();
-  b.add(new THREE.ConeGeometry(0.75, 8.6, 4, 1, true), { pos: [0, 4.5, 0], color: 0x19301f, gradient: 0.3, jitter: 0.04 });
+  b.add(new THREE.ConeGeometry(0.75, 8.6, 4, 1, true), { pos: [0, 4.5, 0], color: 0x19301f, gradient: 0.3, jitter: 0.04, volume: { axis: [0, 0], up: 0.75 } });
   return b.build();
 }
 
@@ -314,14 +320,14 @@ function poplarDetailed() {
   for (const [x, y, z, r] of blobs) {
     const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.38, mulberry32((x * 17 + y * 11 + z * 5) | 0));
     const inner = Math.hypot(x, z) < 1.2 ? 0.8 : 1;
-    b.add(g, { pos: [x, y, z], scale: [1, 0.82, 1], color: [0.13 * inner, 0.21 * inner, 0.07 * inner], gradient: 0.42, jitter: 0.18 });
+    b.add(g, { pos: [x, y, z], scale: [1, 0.82, 1], color: [0.13 * inner, 0.21 * inner, 0.07 * inner], gradient: 0.42, jitter: 0.18, volume: { centre: [0, 11.0, 0], k: 0.3, squash: 1.8 } });
   }
   return mergeGeos([b.build(), trunk]);
 }
 
 function poplarNear() {
   const b = new ModelBuilder();
-  b.cyl(0.26, 0.42, 7.4, 6, { pos: [0, 3.7, 0], color: 0x6d6a62, jitter: 0.15 });
+  b.cyl(0.26, 0.42, 7.4, 6, { pos: [0, 3.7, 0], color: 0x6d6a62, jitter: 0.15, gradient: 0.3 });
   const blobs = [
     [0, 12.6, 0, 2.6],
     [2.2, 10.6, 0.6, 2.2],
@@ -332,7 +338,7 @@ function poplarNear() {
   ];
   for (const [x, y, z, r] of blobs) {
     const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.35, mulberry32((x * 19 + z * 7 + 3) | 0));
-    b.add(g, { pos: [x, y, z], scale: [1, 0.82, 1], color: [0.13, 0.21, 0.07], gradient: 0.35, jitter: 0.14 });
+    b.add(g, { pos: [x, y, z], scale: [1, 0.82, 1], color: [0.13, 0.21, 0.07], gradient: 0.35, jitter: 0.14, volume: { centre: [0, 11.0, 0], k: 0.3, squash: 1.8 } });
   }
   return b.build();
 }
@@ -340,7 +346,7 @@ function poplarNear() {
 function poplarFar() {
   const b = new ModelBuilder();
   b.add(new THREE.CylinderGeometry(0.22, 0.38, 7.4, 3, 1, true), { pos: [0, 3.7, 0], color: 0x6d6a62 });
-  b.add(new THREE.OctahedronGeometry(3.6, 0), { pos: [0, 11.2, 0], scale: [1.1, 0.85, 1.1], color: [0.13, 0.21, 0.07], gradient: 0.3 });
+  b.add(new THREE.OctahedronGeometry(3.6, 0), { pos: [0, 11.2, 0], scale: [1.1, 0.85, 1.1], color: [0.13, 0.21, 0.07], gradient: 0.3, volume: { centre: [0, 11.0, 0], k: 0.3, squash: 1.8 } });
   return b.build();
 }
 
@@ -349,7 +355,7 @@ function poplarFar() {
 function aspenDetailed() {
   const b = new ModelBuilder();
   const rand = mulberry32(233);
-  b.cyl(0.07, 0.15, 9.4, 8, { pos: [0, 4.7, 0], color: 0xc9ccb4, jitter: 0.08 });
+  b.cyl(0.07, 0.15, 9.4, 8, { pos: [0, 4.7, 0], color: 0xc9ccb4, jitter: 0.08, gradient: 0.25 });
   // eye-shaped branch scars and dark patches low on the trunk
   for (let i = 0; i < 9; i++) {
     const y = 0.6 + i * 0.85 + rand() * 0.3;
@@ -375,14 +381,14 @@ function aspenDetailed() {
   ];
   for (const [x, y, z, r] of blobs) {
     const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 1), r * 0.3, mulberry32((x * 23 + y * 13 + z * 3) | 0));
-    b.add(g, { pos: [x, y, z], color: [0.3, 0.42, 0.1], gradient: 0.35, jitter: 0.2 });
+    b.add(g, { pos: [x, y, z], color: [0.3, 0.42, 0.1], gradient: 0.35, jitter: 0.2, volume: { centre: [0, 9.4, 0], k: 0.3, squash: 0.6 } });
   }
   return b.build();
 }
 
 function aspenNear() {
   const b = new ModelBuilder();
-  b.cyl(0.07, 0.15, 9, 5, { pos: [0, 4.5, 0], color: 0xc9ccb4, jitter: 0.1 });
+  b.cyl(0.07, 0.15, 9, 5, { pos: [0, 4.5, 0], color: 0xc9ccb4, jitter: 0.1, gradient: 0.25 });
   const blobs = [
     [0, 10, 0, 1.4],
     [0.7, 8.8, 0.3, 1.15],
@@ -390,7 +396,7 @@ function aspenNear() {
   ];
   for (const [x, y, z, r] of blobs) {
     const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.3, mulberry32((x * 29 + y * 3) | 0));
-    b.add(g, { pos: [x, y, z], color: [0.3, 0.42, 0.1], gradient: 0.3, jitter: 0.15 });
+    b.add(g, { pos: [x, y, z], color: [0.3, 0.42, 0.1], gradient: 0.3, jitter: 0.15, volume: { centre: [0, 9.3, 0], k: 0.3, squash: 0.6 } });
   }
   return b.build();
 }
@@ -398,7 +404,7 @@ function aspenNear() {
 function aspenFar() {
   const b = new ModelBuilder();
   b.add(new THREE.CylinderGeometry(0.06, 0.13, 7.6, 3, 1, true), { pos: [0, 3.8, 0], color: 0xc9ccb4 });
-  b.add(new THREE.OctahedronGeometry(1.5, 0), { pos: [0, 9.2, 0], scale: [1, 1.5, 1], color: [0.3, 0.42, 0.1], gradient: 0.25 });
+  b.add(new THREE.OctahedronGeometry(1.5, 0), { pos: [0, 9.2, 0], scale: [1, 1.5, 1], color: [0.3, 0.42, 0.1], gradient: 0.25, volume: { centre: [0, 9.3, 0], k: 0.3, squash: 0.6 } });
   return b.build();
 }
 
@@ -406,7 +412,7 @@ function aspenFar() {
 // leaf clusters.
 function birchDetailed() {
   const b = new ModelBuilder();
-  b.cyl(0.085, 0.17, 6.2, 8, { pos: [0, 3.1, 0], color: 0xe2ded2, jitter: 0.1 });
+  b.cyl(0.085, 0.17, 6.2, 8, { pos: [0, 3.1, 0], color: 0xe2ded2, jitter: 0.1, gradient: 0.25 });
   const rand = mulberry32(19);
   for (let i = 0; i < 7; i++) {
     const y = 0.8 + i * 0.75 + rand() * 0.3;
@@ -434,7 +440,7 @@ function birchDetailed() {
   ];
   for (const [x, y, z, r] of blobs) {
     const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.42, mulberry32((x * 13 + y * 7 + z * 5) | 0));
-    b.add(g, { pos: [x, y, z], color: 0x6a8c36, gradient: 0.38, jitter: 0.16 });
+    b.add(g, { pos: [x, y, z], color: 0x6a8c36, gradient: 0.38, jitter: 0.16, volume: { centre: [0, 6.2, 0], k: 0.3 } });
   }
   return b.build();
 }
@@ -778,7 +784,7 @@ function willowGeo() {
       const p = [top[0] * t, top[1] * t + 0.2, top[2] * t];
       const r = 0.55 - k * 0.08;
       const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.35, mulberry32(i * 7 + k));
-      b.add(g, { pos: p, scale: [0.8, 1.35, 0.8], color: 0x5c7a3c, gradient: 0.35, jitter: 0.14 });
+      b.add(g, { pos: p, scale: [0.8, 1.35, 0.8], color: 0x5c7a3c, gradient: 0.35, jitter: 0.14, volume: { centre: [0, 1.7, 0], k: 0.35, squash: 0.8 } });
     }
   }
   return b.build();
@@ -802,7 +808,7 @@ function logGeo() {
 
 function stumpGeo() {
   const b = new ModelBuilder();
-  b.cyl(0.28, 0.36, 0.55, 8, { pos: [0, 0.27, 0], color: 0x5a4632, jitter: 0.12 });
+  b.cyl(0.28, 0.36, 0.55, 8, { pos: [0, 0.27, 0], color: 0x5a4632, jitter: 0.12, gradient: 0.35 });
   b.cyl(0.27, 0.27, 0.02, 8, { pos: [0, 0.55, 0], color: 0xb89a6c });
   return b.build();
 }
@@ -879,14 +885,36 @@ function rockMaterial(matTex) {
   return mat;
 }
 
+// A tree's per-instance tint colours its leaves; grey and white parts (birch
+// and aspen bark, poplar's grey trunk) take only its brightness, so an
+// autumn or gold crown does not turn the trunk yellow. Vertex colours are
+// linear: bark is below about 0.3 in saturation, leaves above 0.5.
+const BARK_COLOR = /* glsl */ `
+#if defined( USE_COLOR ) || defined( USE_INSTANCING_COLOR )
+	vColor = vec4( 1.0 );
+#endif
+#ifdef USE_COLOR
+	vColor.rgb *= color;
+#endif
+#if defined( USE_INSTANCING_COLOR ) && defined( USE_COLOR )
+	float bkMax = max( color.r, max( color.g, color.b ) );
+	float bkSat = ( bkMax - min( color.r, min( color.g, color.b ) ) ) / max( bkMax, 1e-4 );
+	float bkLum = dot( instanceColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
+	vColor.rgb *= mix( vec3( bkLum ), instanceColor.rgb, smoothstep( 0.25, 0.45, bkSat ) );
+#elif defined( USE_INSTANCING_COLOR )
+	vColor.rgb *= instanceColor.rgb;
+#endif
+`;
+
 // Material with gentle wind sway for tall vegetation.
-function swayMaterial(uniforms, amount, { base = 1.0, doubleSide = false } = {}) {
+function swayMaterial(uniforms, amount, { base = 1.0, doubleSide = false, bark = false } = {}) {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true, side: doubleSide ? THREE.DoubleSide : THREE.FrontSide });
   mat.userData.fx = 'foliage';
   // the sway amount is baked into the shader text, so key programs by it
-  mat.customProgramCacheKey = () => 'sway' + amount + '/' + base + '|fx:foliage';
+  mat.customProgramCacheKey = () => 'sway' + amount + '/' + base + (bark ? '/bark' : '') + '|fx:foliage';
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = uniforms.uTime;
+    if (bark) shader.vertexShader = shader.vertexShader.replace('#include <color_vertex>', BARK_COLOR);
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nuniform float uTime;')
       .replace(
@@ -1013,19 +1041,24 @@ export class Scatter {
     this.uniforms = sharedUniforms;
     this.distScale = 1;
     const sway = swayMaterial(sharedUniforms, 0.0016);
-    const swayBirch = swayMaterial(sharedUniforms, 0.0022);
+    const swayBirch = swayMaterial(sharedUniforms, 0.0022, { bark: true });
     const swayShrub = swayMaterial(sharedUniforms, 0.012, { base: 0.4 });
     const swayPlant = swayMaterial(sharedUniforms, 0.09, { base: 0.1, doubleSide: true });
     const swayClub = swayMaterial(sharedUniforms, 0.06, { base: 0.5, doubleSide: true });
     const swayGrass = swayMaterial(sharedUniforms, 0.3, { base: 0.05, doubleSide: true });
-    const swayPoplar = swayMaterial(sharedUniforms, 0.0012);
-    const swayAspen = swayMaterial(sharedUniforms, 0.0028);
+    const swayPoplar = swayMaterial(sharedUniforms, 0.0012, { bark: true });
+    const swayAspen = swayMaterial(sharedUniforms, 0.0028, { bark: true });
     const plain = new THREE.MeshLambertMaterial({ vertexColors: true });
-    // snags have no per-instance tint, so they need their own material: one
-    // material on meshes with and without instance colours switches shaders
-    const plainSnag = new THREE.MeshLambertMaterial({ vertexColors: true });
     const leafy = new THREE.MeshLambertMaterial({ vertexColors: true });
     leafy.userData.fx = 'foliage';
+    // the distant broadleaf trees: their pale trunks keep their colour too
+    const leafyTree = new THREE.MeshLambertMaterial({ vertexColors: true });
+    leafyTree.userData.fx = 'foliage';
+    leafyTree.onBeforeCompile = function (shader) {
+      shader.vertexShader = shader.vertexShader.replace('#include <color_vertex>', BARK_COLOR);
+      fxPatch(shader, this);
+    };
+    leafyTree.customProgramCacheKey = () => 'leafy/bark|fx:foliage';
     const rocky = rockMaterial(matTex);
 
     this.types = {
@@ -1043,7 +1076,7 @@ export class Scatter {
         [
           { geo: birchDetailed(), material: swayBirch, maxDist: 50, capacity: 500, shadow: true },
           { geo: birchNear(), material: swayBirch, maxDist: 95, capacity: 1000, shadow: true },
-          { geo: birchFar(), material: leafy, maxDist: 560, capacity: 5000 },
+          { geo: birchFar(), material: leafyTree, maxDist: 560, capacity: 5000 },
         ],
         { tint: true }
       ),
@@ -1061,7 +1094,7 @@ export class Scatter {
         [
           { geo: poplarDetailed(), material: swayPoplar, maxDist: 75, capacity: 400, shadow: true },
           { geo: poplarNear(), material: swayPoplar, maxDist: 180, capacity: 900, shadow: true },
-          { geo: poplarFar(), material: leafy, maxDist: 720, capacity: 3000 },
+          { geo: poplarFar(), material: leafyTree, maxDist: 720, capacity: 3000 },
         ],
         { tint: true }
       ),
@@ -1070,7 +1103,7 @@ export class Scatter {
         [
           { geo: aspenDetailed(), material: swayAspen, maxDist: 55, capacity: 700, shadow: true },
           { geo: aspenNear(), material: swayAspen, maxDist: 115, capacity: 1400, shadow: true },
-          { geo: aspenFar(), material: leafy, maxDist: 560, capacity: 5000 },
+          { geo: aspenFar(), material: leafyTree, maxDist: 560, capacity: 5000 },
         ],
         { tint: true }
       ),
@@ -1111,8 +1144,8 @@ export class Scatter {
       horsetail: new ScatterType('horsetail', [{ geo: horsetailGeo(), material: swayPlant, maxDist: 45, capacity: 2500 }], { tint: true }),
       skunkCabbage: new ScatterType('skunkCabbage', [{ geo: skunkCabbageGeo(), material: swayPlant, maxDist: 55, capacity: 1000 }], { tint: true }),
       mushroom: new ScatterType('mushroom', [{ geo: mushroomGeo(), material: plain, maxDist: 30, capacity: 1500 }], { tint: true }),
-      snag: new ScatterType('snag', [{ geo: snagGeo(), material: plainSnag, maxDist: 500, capacity: 400, shadow: true }], {
-        tint: false,
+      snag: new ScatterType('snag', [{ geo: snagGeo(), material: plain, maxDist: 500, capacity: 400, shadow: true }], {
+        tint: true,
       }),
     };
     for (const t of Object.values(this.types)) for (const m of t.meshes) this.group.add(m);
@@ -1261,8 +1294,8 @@ export class Scatter {
         if (water(x, z) || blocked(x, z, 2)) continue;
         const y = W.heightAt(x, z);
         let tint;
-        if (st === SURF.TUNDRA) tint = rand() < 0.5 ? [0.62, 0.26, 0.12] : [0.45, 0.36, 0.17];
-        else if (rand() < 0.12) tint = [0.55, 0.45, 0.16];
+        if (st === SURF.TUNDRA) tint = rand() < 0.5 ? [0.36, 0.09, 0.035] : [0.24, 0.16, 0.05];
+        else if (rand() < 0.12) tint = [0.36, 0.28, 0.07];
         else tint = [0.2 + rand() * 0.06, 0.3 + rand() * 0.08, 0.11 + rand() * 0.04];
         const s = st === SURF.TUNDRA ? 0.45 + rand() * 0.35 : 0.7 + rand() * 0.7;
         T.bush.add(x, y - 0.1, z, rand() * 6.28, s, tint, 1 + rand() * 0.4, 1 + rand() * 0.4);
@@ -1290,8 +1323,19 @@ export class Scatter {
         const big = rand() < 0.12;
         const s = big ? 1.6 + rand() * 1.8 : 0.35 + rand() * 0.9;
         const g = 0.75 + rand() * 0.3;
-        const tint = [g * 0.4, g * 0.4, g * 0.41];
-        T.rock.add(x, y - 0.25 * s, z, rand() * 6.28, s, tint, 0.8 + rand() * 0.6, 0.8 + rand() * 0.6, 0.25);
+        // the stone changes from area to area: cool grey greywacke, warm
+        // granite and rust-stained rock (linear tints); some lie as flat
+        // slabs (from a hash, so nothing else's place changes)
+        const fam = W.n3.noise(x * 0.004 + 11, z * 0.004 - 7);
+        const gw = smoothstep(-0.45, -0.05, fam);
+        const fe = smoothstep(0.3, 0.6, fam) * 0.8;
+        const tint = [
+          g * lerp(lerp(0.32, 0.44, gw), 0.46, fe),
+          g * lerp(lerp(0.34, 0.41, gw), 0.37, fe),
+          g * lerp(lerp(0.33, 0.38, gw), 0.3, fe),
+        ];
+        const flat = big ? 0.75 + hash2(x * 10, z * 10) * 0.4 : 0.55 + hash2(x * 10, z * 10) * 0.6;
+        T.rock.add(x, y - 0.25 * s * flat, z, rand() * 6.28, s * flat, tint, (0.8 + rand() * 0.6) / flat, (0.8 + rand() * 0.6) / flat, 0.25);
         if (s > 0.6) {
           const c = this.colliders.addCircle(x, z, s * 0.85, 'rock');
           // one under water has a top, so a boat floats over it when it lies
@@ -1433,7 +1477,7 @@ export class Scatter {
         if (forest > 0.45 && r < 0.16) {
           if (water(x, z) || blocked(x, z, 3) || W.slopeAt(x, z) > 0.45) continue;
           const v = 0.75 + rand() * 0.35;
-          T.log.add(x, W.heightAt(x, z) - 0.06, z, rand() * 6.28, 0.7 + rand() * 0.5, [0.46 * v, 0.36 * v, 0.26 * v]);
+          T.log.add(x, W.heightAt(x, z) - 0.06, z, rand() * 6.28, 0.7 + rand() * 0.5, [0.2 * v, 0.15 * v, 0.1 * v]);
         } else if (forest > 0.25 && r < 0.26) {
           if (water(x, z) || blocked(x, z, 2)) continue;
           const v = 0.85 + rand() * 0.3;
@@ -1460,7 +1504,8 @@ export class Scatter {
       if (W.roadD[k] < ROAD_HALF + 4) continue;
       const y = W.heightAt(x, z);
       const sc = 0.8 + rand() * 0.5;
-      T.snag.add(x, y - 0.2, z, rand() * 6.28, sc, null);
+      const sv = 0.7 + hash2(x * 10, z * 10) * 0.4;
+      T.snag.add(x, y - 0.2, z, rand() * 6.28, sc, [sv, sv * 0.97, sv * 0.93]);
       tree(x, z, 0.25 * sc, 0, 9 * sc, 0, false);
       this.snags.push({ x, y: y + 8.6 * sc, z });
     }

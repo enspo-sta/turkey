@@ -693,10 +693,10 @@ export class TeslaMemorial {
     plaque.rotation.x = -slope;
     pm.add(plaque);
     this.group.add(pm);
-    // the bronze on the capstone
     // the bronze on the capstone: sculpted a little at a time when you come
-    // near (see update)
-    const bronze = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5, metalness: 0.6 });
+    // near (see update). Weathered bronze: the green verdigris is not a
+    // metal, so less metal and a little rougher than bare bronze
+    const bronze = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0.35 });
     const statue = new THREE.Mesh(new THREE.BufferGeometry(), bronze);
     statue.rotation.y = YAW;
     const [sx, sz] = f.to(0, -0.06);
@@ -741,9 +741,17 @@ export class TeslaMemorial {
       b.box(4.3, 0.2, 0.16, { pos: [0, H + 0.1, s * 2.05], color: WOOD_DARK, surf: 'plank' });
       b.box(0.16, 0.2, 4.3, { pos: [s * 2.05, H + 0.1, 0], color: WOOD_DARK, surf: 'plank' });
     }
-    const roof = new THREE.ConeGeometry(3.6, 1.5, 4, 1, true);
-    roof.rotateY(Math.PI / 4);
-    b.add(roof, { pos: [0, H + 0.2 + 0.75, 0], color: 0x5e4a3c, surf: 'shingle' });
+    // four faces, each drawn upright in its own frame (so its shingle rows
+    // run along the eave, the right way up) and leaned back into place
+    const ra = 3.6 * Math.SQRT1_2;
+    const rl = Math.hypot(ra, 1.5);
+    const lean = Math.atan2(ra, 1.5);
+    for (let k = 0; k < 4; k++) {
+      const face = new THREE.BufferGeometry();
+      face.setAttribute('position', new THREE.Float32BufferAttribute([-ra, 0, 0, ra, 0, 0, 0, rl, 0], 3));
+      const yaw = (k * Math.PI) / 2;
+      b.add(face, { pos: [Math.sin(yaw) * ra, H + 0.2, Math.cos(yaw) * ra], rot: [-lean, yaw, 0], order: 'YXZ', color: 0x5e4a3c, surf: 'shingle' });
+    }
     b.add(new THREE.ConeGeometry(3.6, 0.02, 4, 1).rotateY(Math.PI / 4), { pos: [0, H + 0.21, 0], color: 0x6b5848, surf: 'plank' });
     // the back wall, so the coil has a dark ground to show against
     b.box(4.2, H - 0.2, 0.1, { pos: [0, (H - 0.2) / 2 + 0.06, -2.02], color: 0x6a5240, surf: 'batten' });
@@ -781,7 +789,10 @@ export class TeslaMemorial {
     cageTex.repeat.set(36, 9);
     const cage = new THREE.Mesh(
       new THREE.CylinderGeometry(1.15, 1.15, 2.25, 36, 1, true),
-      new THREE.MeshStandardMaterial({ map: cageTex, transparent: false, alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.5, metalness: 0.6 })
+      // alpha to coverage on the multisampled frame: the fine mesh fades to a
+      // see-through grey with distance, where a hard alpha test made it
+      // vanish a few metres off
+      new THREE.MeshStandardMaterial({ map: cageTex, transparent: false, alphaTest: 0.15, alphaToCoverage: true, side: THREE.DoubleSide, roughness: 0.5, metalness: 0.6 })
     );
     cage.position.set(0, 1.18, -0.5);
     coilGroup.add(cage);

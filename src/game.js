@@ -43,6 +43,32 @@ const CLOUD_SCALE = 1800;
 const MIST_DENSITY = 0.0032;
 const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
 
+// The tone curve: Khronos PBR Neutral with half its black offset. Neutral
+// takes 0.04 off every colour to cancel the 4% reflection that glossy
+// materials have; the matte ground and plants have none, and the full offset
+// crushed their shade to muddy, over-coloured black (linear 0.05 came out as
+// 0.016). With 0.02 the shade keeps its detail and the night stays as dark.
+// The same instructions as Neutral; only two constants differ.
+THREE.ShaderChunk.tonemapping_pars_fragment = THREE.ShaderChunk.tonemapping_pars_fragment.replace(
+  'vec3 CustomToneMapping( vec3 color ) { return color; }',
+  `vec3 CustomToneMapping( vec3 color ) {
+	const float K = 0.02;
+	const float StartCompression = 0.8 - K;
+	const float Desaturation = 0.15;
+	color *= toneMappingExposure;
+	float x = min( color.r, min( color.g, color.b ) );
+	float offset = x < 2.0 * K ? x - x * x / ( 4.0 * K ) : K;
+	color -= offset;
+	float peak = max( color.r, max( color.g, color.b ) );
+	if ( peak < StartCompression ) return color;
+	float d = 1. - StartCompression;
+	float newPeak = 1. - d * d / ( peak + d - StartCompression );
+	color *= newPeak / peak;
+	float g = 1. - 1. / ( Desaturation * ( peak - newPeak ) + 1. );
+	return mix( color, vec3( newPeak ), g );
+}`
+);
+
 export class Game {
   constructor(container) {
     this.container = container;
@@ -64,7 +90,7 @@ export class Game {
     // three.js asks the driver for each new shader's error log on its first
     // use, a wait for the compile every time; the release build skips it
     renderer.debug.checkShaderErrors = process.env.NODE_ENV !== 'production';
-    renderer.toneMapping = THREE.NeutralToneMapping;
+    renderer.toneMapping = THREE.CustomToneMapping;
     renderer.toneMappingExposure = 1.0;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -113,6 +139,7 @@ export class Game {
     FX.uFxCaustics.value = makeCausticTexture();
     FX.uFxSunDir.value = this.env.sunDir;
     FX.uFxHorizon.value = this.env.uniforms.uHorizon.value;
+    FX.uFxZenith.value = this.env.uniforms.uZenith.value;
     FX.uFxGlow.value = this.env.uniforms.uGlow.value;
     FX.uFxCloudTex.value = this.textures.cloud;
     this.fx = FX; // for tests and tuning

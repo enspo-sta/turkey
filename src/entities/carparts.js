@@ -2,6 +2,7 @@
 // their own texture coordinates, tubes along curves, coil springs, tyres
 // with tread and sidewall coordinates, and small canvas textures.
 import * as THREE from 'three';
+import { smoothSeams } from '../util/builder.js';
 
 // A smooth skin through a row of sections. Each section is a list of
 // [x, y, z] points, all with the same count. uv(i, j) gives the texture
@@ -154,6 +155,10 @@ export function latheX(profile, seg = 32, { u0 = 0, u1 = 1 } = {}) {
   g.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
   g.setIndex(idx);
   g.computeVertexNormals();
+  // the first column of vertices is repeated at the end, and points on the
+  // axis are repeated all round: without this the light creases along one
+  // radius of every wheel and hubcap, and stars at its middle
+  smoothSeams(g);
   return g;
 }
 

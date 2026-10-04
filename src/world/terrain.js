@@ -100,7 +100,10 @@ export function makeTerrainMaterial(detailTex, matTex, surfaceTex) {
           tone *= mix( 1.0, 0.58 + ff * 0.8, wA );
           diffuseColor.rgb *= tone;
           // stones vary a little in colour, warm to cool
-          diffuseColor.rgb *= mix( vec3( 1.0 ), mix( vec3( 1.06, 1.0, 0.92 ), vec3( 0.92, 0.98, 1.06 ), fract( pb * 7.3 ) ), wG * step( 0.2, pb ) );
+          // warm low and between the stones, cool on the tops of the big ones
+          // (a smooth step: the ringed fract() of the height shimmered as the
+          // mip level changed)
+          diffuseColor.rgb *= mix( vec3( 1.0 ), mix( vec3( 1.06, 1.0, 0.92 ), vec3( 0.92, 0.98, 1.06 ), smoothstep( 0.3, 0.95, pb ) ), wG * step( 0.2, pb ) );
           // bands of paler and darker rock across the big mountain faces
           float band = sin( vTWorld.y * 0.075 + texture2D( uMat, vTWorld.xz * 0.0031 ).r * 5.0 );
           diffuseColor.rgb *= mix( 1.0, 0.84 + 0.22 * smoothstep( -0.4, 0.6, band ), wR * smoothstep( 90.0, 180.0, vTWorld.y ) );

@@ -63,8 +63,9 @@ function hullGeometry(inner) {
 
 function buildBoat(motor) {
   const b = new ModelBuilder();
-  b.add(hullGeometry(false), { color: 0xb9c0c6 });
-  b.add(hullGeometry(true), { color: 0x7d858c });
+  // (no tone variation: a stamped aluminium hull is even)
+  b.add(hullGeometry(false), { color: 0xb9c0c6, jitter: 0 });
+  b.add(hullGeometry(true), { color: 0x7d858c, jitter: 0 });
   // painted stripe along the outside and the bow number
   for (let i = 0; i < SECTIONS.length - 1; i++) {
     const [z0, g0, , , , h0] = SECTIONS[i];
@@ -146,7 +147,9 @@ const _e = new THREE.Euler();
 export class Boat {
   constructor(game) {
     this.game = game;
-    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.42, metalness: 0.45 });
+    // one material for the hull, its wooden seats and floor, the cooler and
+    // the tank: only a little metal, or the wood and plastic look like bronze
+    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.42, metalness: 0.15 });
     this.mat = mat;
     this.group = new THREE.Group();
     this.boatMesh = new THREE.Mesh(buildBoat(0), mat);

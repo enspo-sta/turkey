@@ -3,7 +3,11 @@
 import * as THREE from 'three';
 import { mulberry32 } from './math.js';
 
-// Tileable value-noise fbm sampler over a size x size image.
+// Tileable value-noise fbm sampler over a size x size image. Each octave's
+// lattice is shifted by its own fraction of a cell (so the octaves' lattice
+// points do not all fall on one square grid, which showed as a faint grid
+// in clouds and rock), and blends with the quintic curve, whose slope is
+// smooth across cell edges too (no creases in bump lighting).
 function tileableFbm(size, basePeriod, octaves, seed, gain = 0.5) {
   const rand = mulberry32(seed);
   const layers = [];
@@ -14,23 +18,29 @@ function tileableFbm(size, basePeriod, octaves, seed, gain = 0.5) {
     layers.push({ period, lat });
     period *= 2;
   }
+  // (drawn after the lattices, which keep their values)
+  for (const L of layers) {
+    L.ox = rand();
+    L.oy = rand();
+  }
+  const fade = (t) => t * t * t * (t * (t * 6 - 15) + 10);
   return (x, y) => {
     let sum = 0;
     let amp = 1;
     let norm = 0;
     for (const L of layers) {
-      const fx = (x / size) * L.period;
-      const fy = (y / size) * L.period;
-      const i0 = Math.floor(fx);
-      const j0 = Math.floor(fy);
-      let tx = fx - i0;
-      let ty = fy - j0;
-      tx = tx * tx * (3 - 2 * tx);
-      ty = ty * ty * (3 - 2 * ty);
       const P = L.period;
-      const a = L.lat[(j0 % P) * P + (i0 % P)];
-      const b = L.lat[(j0 % P) * P + ((i0 + 1) % P)];
-      const c = L.lat[((j0 + 1) % P) * P + (i0 % P)];
+      const fx = (x / size) * P + L.ox;
+      const fy = (y / size) * P + L.oy;
+      const fi = Math.floor(fx);
+      const fj = Math.floor(fy);
+      const tx = fade(fx - fi);
+      const ty = fade(fy - fj);
+      const i0 = ((fi % P) + P) % P;
+      const j0 = ((fj % P) + P) % P;
+      const a = L.lat[j0 * P + i0];
+      const b = L.lat[j0 * P + ((i0 + 1) % P)];
+      const c = L.lat[((j0 + 1) % P) * P + i0];
       const d = L.lat[((j0 + 1) % P) * P + ((i0 + 1) % P)];
       sum += amp * (a + (b - a) * tx + (c - a) * ty + (a - b - c + d) * tx * ty);
       norm += amp;
@@ -51,7 +61,7 @@ function dataTexture(data, size, { repeat = true, mipmaps = true, anisotropy = 4
   return tex;
 }
 
-// Ground detail: R = fine grain, G = blotches, B = streaks (for rock), mean ~0.5
+// Ground detail: R = fine grain, G = blotches, mean ~0.5 (B unused)
 export function makeDetailTexture(anisotropy) {
   const S = 512;
   const fine = tileableFbm(S, 32, 4, 7, 0.6);
@@ -66,7 +76,8 @@ export function makeDetailTexture(anisotropy) {
       const b = blot(x, y);
       data[i] = Math.max(0, Math.min(255, (0.25 + f * 0.5 + (f - 0.5) * 0.6) * 255));
       data[i + 1] = Math.max(0, Math.min(255, b * 255));
-      data[i + 2] = Math.max(0, Math.min(255, fine(x * 3, y * 0.3) * 255));
+      // (B is not read by the terrain: left flat rather than worked out)
+      data[i + 2] = 128;
       data[i + 3] = 255;
     }
   }
@@ -76,15 +87,21 @@ export function makeDetailTexture(anisotropy) {
 export function makeCloudTexture() {
   const S = 256;
   const n = tileableFbm(S, 4, 6, 3, 0.52);
+  // the clouds' noise read through a slowly varying offset (domain warp):
+  // round blobs are drawn out into wisps and streaks, as wind does
+  const w1 = tileableFbm(S, 2, 3, 41, 0.5);
+  const w2 = tileableFbm(S, 2, 3, 43, 0.5);
   const data = new Uint8Array(S * S * 4);
   for (let y = 0; y < S; y++) {
     for (let x = 0; x < S; x++) {
       const i = (y * S + x) * 4;
-      const v = n(x, y);
-      const v2 = n(x + 97, y + 41);
+      const wx = x + (w1(x, y) - 0.5) * 40;
+      const wy = y + (w2(x, y) - 0.5) * 40;
+      const v = n(wx, wy);
+      const v2 = n(wx + 97, wy + 41);
       data[i] = v * 255;
       data[i + 1] = v2 * 255;
-      data[i + 2] = n(x * 2, y * 2) * 255;
+      data[i + 2] = n(wx * 2, wy * 2) * 255;
       data[i + 3] = 255;
     }
   }
@@ -476,16 +493,24 @@ export function makeAlaskaFlagTexture() {
   return canvasTexture(c);
 }
 
-// Soft round sprite for particles.
+// Soft round sprite for particles: opacity (1 - r^2)^2, round in the middle
+// and fading out softly at the rim (the straight 1 - r it replaces has the
+// same total, but a point in the middle and a hard rim on big puffs)
 export function makeSoftDotTexture() {
   const S = 64;
   const c = canvas(S, S);
   const g = c.getContext('2d');
-  const grad = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
-  grad.addColorStop(0, 'rgba(255,255,255,1)');
-  grad.addColorStop(0.4, 'rgba(255,255,255,0.6)');
-  grad.addColorStop(1, 'rgba(255,255,255,0)');
-  g.fillStyle = grad;
-  g.fillRect(0, 0, S, S);
+  const img = g.createImageData(S, S);
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const dx = (x + 0.5 - S / 2) / (S / 2);
+      const dy = (y + 0.5 - S / 2) / (S / 2);
+      const q = Math.max(0, 1 - dx * dx - dy * dy);
+      const i = (y * S + x) * 4;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = 255;
+      img.data[i + 3] = Math.round(q * q * 255);
+    }
+  }
+  g.putImageData(img, 0, 0);
   return canvasTexture(c, { srgb: false });
 }

@@ -114,8 +114,9 @@ const BUILD = {
   // its top, its cord running off into the moss to no socket at all.
   fridge({ P, b, to, yaw, o, rand }) {
     const WHITE = 0xdcd8c6;
-    b.box(0.82, 1.42, 0.7, { pos: [0, 0.75, 0], rot: [0, 0, 0.03], color: WHITE, jitter: 0.02 });
-    b.add(new THREE.CylinderGeometry(0.35, 0.35, 0.82, 16, 1, false, 0, Math.PI), { pos: [0, 1.46, 0], rot: [0, 0, Math.PI / 2 + 0.03], color: WHITE, jitter: 0.02 });
+    // (upright, so the rust strips on its sides lie on them)
+    b.box(0.82, 1.42, 0.7, { pos: [0, 0.75, 0], color: WHITE, jitter: 0.02 });
+    b.add(new THREE.CylinderGeometry(0.35, 0.35, 0.82, 16, 1, false, 0, Math.PI), { pos: [0, 1.46, 0], rot: [0, 0, Math.PI / 2], color: WHITE, jitter: 0.02 });
     // the door's seam, the chrome handle and the badge
     b.box(0.84, 0.015, 0.02, { pos: [0, 1.12, 0.351], color: 0x9a9a92, jitter: 0 });
     b.box(0.05, 0.36, 0.05, { pos: [0.33, 1.2, 0.39], color: 0xc8cccc, jitter: 0 });

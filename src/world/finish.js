@@ -71,6 +71,12 @@ export function drawFinishes(size) {
     const f = frac(v / p);
     return Math.min(f, 1 - f) * p;
   };
+  // a joint line of half-width w (m), its edge eased over about a texel
+  // either side (a hard edge here drew jagged, crawling lines)
+  const line = (d, w) => {
+    const t = Math.min(1, Math.max(0, (d - w + 0.002) / 0.004));
+    return 1 - t * t * (3 - 2 * t);
+  };
 
   // ------------------------------------------------------------- patterns
   // Each takes the position in the tile in metres (u across, v up; both
@@ -89,7 +95,7 @@ export function drawFinishes(size) {
     if (fv < 0.1) s += 0.05;
     for (let k = 0; k < 2; k++) {
       const ju = frac(hash(b, k, 13) * 0.5 + k * 0.5) * TILE;
-      if (seam(u - ju, TILE) < 0.007) s -= 0.28;
+      s -= 0.28 * line(seam(u - ju, TILE), 0.007);
     }
     return s;
   }
@@ -157,7 +163,7 @@ export function drawFinishes(size) {
     if (fv < 0.06) s += 0.06;
     let gap = 1;
     for (const c of cuts) gap = Math.min(gap, seam(u - c, TILE));
-    if (gap < 0.008) s -= 0.3;
+    s -= 0.3 * line(gap, 0.008);
     return s;
   }
 
@@ -228,7 +234,7 @@ export function drawFinishes(size) {
     if (fv < 0.07) s -= 0.4;
     const ju = hash(b, 9, 75) * TILE;
     const dj = seam(u - ju, TILE);
-    if (dj < 0.005) s -= 0.3;
+    if (dj < 0.007) s -= 0.3 * line(dj, 0.005);
     else if (dj < 0.04 && Math.abs(fv - 0.32) < 0.07) s -= 0.25;
     else if (dj < 0.04 && Math.abs(fv - 0.72) < 0.07) s -= 0.25;
     return s;
@@ -239,7 +245,7 @@ export function drawFinishes(size) {
     let s = 0.5 + (fbm((u / TILE) * 6, (v / TILE) * 6, 6, 6, 81, 4) - 0.5) * 0.3;
     s += (vnoise((u / TILE) * 180, (v / TILE) * 180, 180, 180, 83) - 0.5) * 0.18;
     const crack = Math.abs(fbm((u / TILE) * 3, (v / TILE) * 3, 3, 3, 85, 4) - 0.5);
-    if (crack < 0.006) s -= 0.3;
+    s -= 0.3 * line(crack, 0.006);
     return s;
   }
 

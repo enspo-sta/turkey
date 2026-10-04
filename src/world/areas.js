@@ -10,14 +10,14 @@
 import * as THREE from 'three';
 import { ModelBuilder } from '../util/builder.js';
 import { makeSignTexture } from '../util/textures.js';
-import { clamp, lerp, mulberry32 } from '../util/math.js';
+import { clamp, lerp, mulberry32, smoothstep } from '../util/math.js';
 import { GEYSER } from './layout.js';
 import { signPosts, crabPot } from './buildings.js';
-import { finishMaterial } from './finish.js';
 
 const WOOD_DARK = 0x4a3220;
 const WOOD_LIGHT = 0x8a6a45;
 const SINTER = 0xd8d2c0;
+const GUANO = new THREE.Color(0xd8d4c8);
 
 function frame(x, z, yaw) {
   const c = Math.cos(yaw);
@@ -65,7 +65,9 @@ function buildSprings(P) {
   // the geyser cone: layered sinter with orange runoff down its flanks
   const gy = W.heightAt(GEYSER.x, GEYSER.z);
   const b = new ModelBuilder();
-  b.lathe(
+  // smooth, coloured ring by ring: an orange-brown foot where the runoff
+  // pools, grey-white sinter up the cone and a dark, wet lip at the vent
+  const cone = new THREE.LatheGeometry(
     [
       [0.01, -0.4],
       [4.2, -0.4],
@@ -77,10 +79,28 @@ function buildSprings(P) {
       [0.55, 1.62],
       [0.42, 1.2],
       [0.01, 1.1],
-    ],
-    16,
-    { color: SINTER }
+    ].map(([r, y]) => new THREE.Vector2(r, y)),
+    16
   );
+  {
+    const cp = cone.attributes.position;
+    const cc = new Float32Array(cp.count * 3);
+    const sinter = new THREE.Color(SINTER);
+    const foot = new THREE.Color(0xb08a5a);
+    const lip = new THREE.Color(0x6e665a);
+    const c = new THREE.Color();
+    for (let i = 0; i < cp.count; i++) {
+      const y = cp.getY(i);
+      const r = Math.hypot(cp.getX(i), cp.getZ(i));
+      c.copy(sinter).lerp(foot, 1 - smoothstep(-0.2, 0.45, y));
+      c.lerp(lip, smoothstep(0.95, 0.6, r) * smoothstep(1.3, 1.6, y));
+      cc[i * 3] = c.r;
+      cc[i * 3 + 1] = c.g;
+      cc[i * 3 + 2] = c.b;
+    }
+    cone.setAttribute('color', new THREE.BufferAttribute(cc, 3));
+  }
+  b.add(cone, { keepColors: true, smooth: true, jitter: 0.04 });
   for (let i = 0; i < 9; i++) {
     const a = (i / 9) * Math.PI * 2 + 0.3;
     const r0 = 0.75;
@@ -435,12 +455,12 @@ function buildWreck(P) {
   const pitch = w.pitch;
   const roll = 0;
   const b = new ModelBuilder();
-  // rust below the old waterline, black topsides, a white band, rust streaks
+  // rust below the old waterline, black topsides with rust streaks, and the
+  // white band along her rails
   b.add(
     hull(WRECK, false, (q) => {
       const y = q[1];
       if (y < 1.6) return 0x5a2418;
-      if (y > 3.75 && y < 3.95) return 0xd8d2c4;
       return Math.sin(q[2] * 1.7 + y * 0.6) > 0.82 ? 0x7a3a1c : 0x1e1e20;
     }),
     { keepColors: true, jitter: 0.1 }
@@ -451,7 +471,7 @@ function buildWreck(P) {
   for (let i = 0; i < WRECK.length - 1; i++) {
     const [z0, g0, , , , h0] = WRECK[i];
     const [z1, g1, , , , h1] = WRECK[i + 1];
-    for (const sd of [-1, 1]) b.beam([sd * g0, h0 + 0.7, z0], [sd * g1, h1 + 0.7, z1], 0.07, 5, { color: 0x6a2a1a });
+    for (const sd of [-1, 1]) b.beam([sd * g0, h0 + 0.7, z0], [sd * g1, h1 + 0.7, z1], 0.07, 5, { color: 0xc8c2b4 });
   }
   b.box(2.6, 0.5, 2.6, { pos: [0, 4.3, 3.2], color: 0x3a3a36 });
   b.box(2.0, 0.1, 2.0, { pos: [0, 4.56, 3.2], color: 0x101010 });
@@ -495,10 +515,9 @@ function buildWreck(P) {
   for (let i = 0; i < 4; i++) crabPot(b, -2.2 + (i % 2) * 1.0, 4.11 + Math.floor(i / 2) * 0.5, 6.6 + rand() * 0.4, rand() * 0.6);
   b.torus(0.38, 0.09, 6, 14, { pos: [2.36, 5.4, -5.0], rot: [0, Math.PI / 2, 0], color: 0xe86a1a });
   const f = frame(w.x, w.z, w.yaw);
-  // rusty steel: a little metal, mostly rough (with the finishes: deck
-  // planks, the wheelhouse's boards)
-  if (!P.rustMat) P.rustMat = finishMaterial(P.finishTex, { roughness: 0.78, metalness: 0.25 });
-  const m = P.addMesh(b.build(), w.x, baseY, w.z, w.yaw, P.rustMat);
+  // rust, paint and planks are not metals: the props' own rough finish
+  // material (the deck planks and the wheelhouse's boards carry finishes)
+  const m = P.addMesh(b.build(), w.x, baseY, w.z, w.yaw);
   m.rotation.set(-pitch, w.yaw, roll, 'YXZ');
   m.updateMatrix();
   // the name on both bows
@@ -559,11 +578,23 @@ function buildWreck(P) {
     const h = 9 + rand() * 9;
     let r = 3.6 + rand() * 2;
     for (let y = -4; y < h; y += 2.2) {
-      st.dodeca(r, { pos: [(rand() - 0.5) * 0.8, y, (rand() - 0.5) * 0.8], scale: [1, 0.8, 1], color: y > h - 3 ? 0xd8d4c8 : 0x55524c, jitter: 0.18 });
+      st.dodeca(r, { pos: [(rand() - 0.5) * 0.8, y, (rand() - 0.5) * 0.8], scale: [1, 0.8, 1], color: 0x55524c, jitter: 0.18 });
       r *= 0.93;
     }
     st.cone(r * 1.3, 1.6, 8, { pos: [0, h + 0.4, 0], color: 0x5f7a3a });
-    P.addMesh(st.build(), x, W.heightAt(x, z), z, rand() * 6);
+    // dark where the sea wets the foot, and the seabirds' white fading
+    // down from the grassy top
+    const sg = st.build();
+    const sp = sg.attributes.position;
+    const sc = sg.attributes.color;
+    for (let i = 0; i < sp.count; i++) {
+      const y = sp.getY(i);
+      if (y > h - 0.45) continue;
+      const wet = 1 - 0.38 * (1 - smoothstep(0.6, 1.8, y));
+      const gu = smoothstep(h - 4.5, h - 1.0, y) * 0.85;
+      sc.setXYZ(i, lerp(sc.getX(i) * wet, GUANO.r, gu), lerp(sc.getY(i) * wet, GUANO.g, gu), lerp(sc.getZ(i) * wet, GUANO.b, gu));
+    }
+    P.addMesh(sg, x, W.heightAt(x, z), z, rand() * 6);
   }
   signBoard(P, 'Shipwreck Cove', 'The Unsinkable II, 1987 · She sank in four feet of water', sx + g.x * 6 + g.z * 3, sz + g.z * 6 - g.x * 3, Math.atan2(-g.x, -g.z) + Math.PI);
 }

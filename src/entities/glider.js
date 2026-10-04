@@ -69,7 +69,11 @@ export class Glider {
       const top = [Math.sin(a) * (R - 0.2), Math.cos(a) * (R - 0.2) + 0.6, -0.5];
       b.beam(top, [Math.sign(a) * 0.25, 1.35, 0], 0.01, 3, { color: 0x222222, jitter: 0 });
     }
-    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, side: THREE.DoubleSide });
+    // the cells are closed boxes: one side is enough (fewer pixels drawn);
+    // the sun shines through the fabric like through leaves, and the canopy
+    // is never under water
+    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7 });
+    mat.userData.fx = 'foliage dry';
     const m = new THREE.Mesh(b.build(), mat);
     m.frustumCulled = false;
     m.castShadow = true;

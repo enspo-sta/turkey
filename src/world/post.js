@@ -118,16 +118,19 @@ void main() {
   // a touch more colour, cool shadows and warm highlights
   vec3 graded = mix(vec3(l), g, 1.1);
   graded *= mix(vec3(0.965, 0.99, 1.045), vec3(1.035, 1.0, 0.955), smoothstep(0.04, 0.55, l));
-  // gentle S-curve for depth
-  graded = mix(graded, graded * graded * (3.0 - 2.0 * graded), 0.18);
   g = mix(g, clamp(graded, 0.0, 1.0), uGrade);
   // soft vignette
   vec2 v = (vUv - 0.5) * vec2(1.0, 0.82);
   g *= 1.0 - uVignette * smoothstep(0.25, 0.75, length(v));
   gl_FragColor.rgb = g;
   #include <colorspace_fragment>
-  // fine noise against banding in the sky
-  gl_FragColor.rgb += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;
+  // gentle S-curve for depth, in display values: its pivot is a mid grey to
+  // the eye (in linear light it sat at sRGB 0.74 and darkened the middle)
+  gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb * gl_FragColor.rgb * (3.0 - 2.0 * gl_FragColor.rgb), 0.18 * uGrade);
+  // fine noise against banding in the sky (interleaved gradient noise:
+  // cheaper than a sine hash, and steady on phones, where the sine of large
+  // numbers is imprecise)
+  gl_FragColor.rgb += (fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) - 0.5) / 255.0;
 }`;
 
 const LEVELS = 5; // 1/2 .. 1/32
@@ -156,7 +159,9 @@ export class PostFX {
     tri.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 2, 0, 0, 2], 2));
     const mat = (fragmentShader, uniforms, extra = {}) =>
       new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader, uniforms, depthTest: false, depthWrite: false, toneMapped: false, ...extra });
-    this.bright = mat(BRIGHT, { tSrc: { value: null }, uTexel: { value: new THREE.Vector2() }, uThreshold: { value: this.hdr ? 1.0 : 0.82 }, uKnee: { value: 0.5 } });
+    // (bloom from the lights: the sun, glints, lamps and windows, not from
+    // sunlit snow and white clouds, which only softened the mountains)
+    this.bright = mat(BRIGHT, { tSrc: { value: null }, uTexel: { value: new THREE.Vector2() }, uThreshold: { value: this.hdr ? 1.5 : 0.82 }, uKnee: { value: 0.5 } });
     this.downMat = mat(DOWN, { tSrc: { value: null }, uTexel: { value: new THREE.Vector2() } });
     this.upMat = mat(UP, { tSrc: { value: null }, tAdd: { value: null }, uTexel: { value: new THREE.Vector2() }, uSpread: { value: 1 } });
     this.raysMat = mat(RAYS, { tSrc: { value: null }, uSun: { value: new THREE.Vector2(0.5, 0.5) }, uAspect: { value: 1 } });

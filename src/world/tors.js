@@ -743,7 +743,8 @@ export class Tors {
             break;
           }
         }
-        const fb = new ModelBuilder();
+        // (with texture coordinates: the rock material is textured)
+        const fb = new ModelBuilder({ uvs: true });
         fb.dodeca(0.16, { pos: [0, 0.06, 0], scale: [1.6, 0.45, 1.1], color: 0xa0948c });
         fb.dodeca(0.09, { pos: [0.25, 0.04, 0.12], scale: [1.4, 0.5, 1], color: 0x968a82 });
         const flake = new THREE.Mesh(fb.build(), this.rockMat);

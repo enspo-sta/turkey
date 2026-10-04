@@ -235,10 +235,12 @@ class Session {
     const g = this.game;
     // a fish in the world (under water, fog) and in the hands (no fog), so the
     // first bite and the first catch do not stall on shader compiles
-    if (!this.fishProbes) this.fishProbes = [makeFishModel('pink'), makeFishModel('pink')];
-    const [fishWorld, fishHand] = this.fishProbes;
-    g.scene.add(fishWorld);
-    g.viewmodel.scene.add(fishHand);
+    // (a pink salmon for the fish with the rainbow sheen on their scales, a
+    // pike for the rest, whose shader leaves it out)
+    if (!this.fishProbes) this.fishProbes = [makeFishModel('pink'), makeFishModel('pink'), makeFishModel('pike'), makeFishModel('pike')];
+    const [fishWorld, fishHand, plainWorld, plainHand] = this.fishProbes;
+    g.scene.add(fishWorld, plainWorld);
+    g.viewmodel.scene.add(fishHand, plainHand);
     // the hands reflect the same sky as the world once the game is on (see
     // Viewmodel.update): compiled without it, all their shaders would be
     // built again on the first frame of the game
@@ -263,8 +265,7 @@ class Session {
     undo();
     // keep the probes (not their place in the scenes): disposing them would
     // release the compiled programs again
-    fishWorld.removeFromParent();
-    fishHand.removeFromParent();
+    for (const f of this.fishProbes) f.removeFromParent();
     return ready;
   }
 
@@ -289,9 +290,9 @@ class Session {
     } catch (e) {
       /* only an optimisation */
     }
-    const [fishWorld, fishHand] = this.fishProbes;
-    g.scene.add(fishWorld);
-    g.viewmodel.scene.add(fishHand);
+    const [fishWorld, fishHand, plainWorld, plainHand] = this.fishProbes;
+    g.scene.add(fishWorld, plainWorld);
+    g.viewmodel.scene.add(fishHand, plainHand);
     g.viewmodel.scene.environment = g.scene.environment;
     const undo = this.revealAll([g.scene, g.viewmodel.scene]);
     const overlayWas = g.overlay.enabled;
@@ -321,8 +322,7 @@ class Session {
       r.setScissorTest(false);
       undo();
       g.overlay.enabled = overlayWas;
-      fishWorld.removeFromParent();
-      fishHand.removeFromParent();
+      for (const f of this.fishProbes) f.removeFromParent();
     }
   }
 
@@ -357,8 +357,28 @@ class Session {
       this.envCubeCam.update(g.renderer, this.envScene);
       this.envRT = this.pmrem.fromCubemap(this.envCube.texture, this.envRT || null);
       if (g.scene.environment !== this.envRT.texture) g.scene.environment = this.envRT.texture;
-      g.scene.environmentIntensity = 0.6 + (1 - g.env.night) * 0.4;
+      // (a little less than the full sky's light in the shade: with the hemisphere
+      // light as well it left shade too flat; the contrast comes from the sun)
+      g.scene.environmentIntensity = 0.5 + (1 - g.env.night) * 0.35;
+      // the race car's carbon reflects less than paint: a material only keeps
+      // its own strength with a map of its own (three uses the scene's
+      // otherwise), so it gets the same map at its share of the strength
+      const M = g.racer?.materials;
+      if (M) {
+        for (const [k, share] of [
+          ['carbon', 0.6],
+          ['carbon2', 0.45],
+        ]) {
+          if (!M[k]) continue;
+          if (M[k].envMap !== this.envRT.texture) {
+            M[k].envMap = this.envRT.texture;
+            M[k].needsUpdate = true;
+          }
+          M[k].envMapIntensity = g.scene.environmentIntensity * share;
+        }
+      }
       this.lastEnvElevation = g.env.sunElevation;
+      this.lastEnvOvercast = g.env.overcast || 0;
     } catch (e) {
       /* environment reflections are optional */
     }
@@ -1457,7 +1477,9 @@ class Session {
     this.envT -= dt;
     const el = g.env.sunElevation;
     const last = this.lastEnvElevation ?? -999;
-    if (this.envT <= 0 && Math.abs(el - last) > 4 && !(el < -12 && last < -12)) {
+    // (and when the cloud cover has changed: shade turns grey under a grey sky)
+    const greyer = Math.abs((g.env.overcast || 0) - (this.lastEnvOvercast ?? 0)) > 0.1;
+    if (this.envT <= 0 && (Math.abs(el - last) > 4 || greyer) && !(el < -12 && last < -12)) {
       this.envT = 5;
       this.updateEnvMap();
     }

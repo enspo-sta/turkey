@@ -52,10 +52,13 @@ export function handPalette(c) {
   return {
     skin,
     back: leather || wool ? c.glove : skin,
-    palm: leather || wool ? c.glove : mixHex(skin, 0xffe0d0, 0.15),
+    palm: leather || wool ? c.glove : mixHex(skin, 0xffd8c8, 0.22),
     // fingerless wool leaves the last two bones bare
     bone: (k) => (leather ? c.glove : wool && k === 0 ? c.glove : skin),
-    knuckle: leather ? mixHex(c.glove, 0x000000, 0.2) : wool ? mixHex(c.glove, 0xffffff, 0.08) : mixHex(skin, 0xc0504a, 0.18),
+    // bare fingertips are a little warmer and pinker, where the blood shows
+    tip: (k) => (leather || (wool && k === 0) ? c.glove : mixHex(skin, 0xd87868, 0.12)),
+    // worn leather goes lighter over the knuckles
+    knuckle: leather ? mixHex(c.glove, 0xffffff, 0.1) : wool ? mixHex(c.glove, 0xffffff, 0.08) : mixHex(skin, 0xc0504a, 0.18),
     nail: leather ? null : mixHex(skin, 0xfff0ea, 0.55),
     crease: leather ? mixHex(c.glove, 0x000000, 0.35) : c.crease,
   };
@@ -118,7 +121,7 @@ export function addHand(b, c, pose, M, right = true) {
       const e = [p[0] + dir.x * F.L[k], p[1] + dir.y * F.L[k], p[2] + dir.z * F.L[k]];
       const r0 = F.r * (1 - 0.1 * k);
       const r1 = F.r * (1 - 0.1 * (k + 1));
-      capsule(local, p, e, r0, r1, P.bone(k));
+      capsule(local, p, e, r0, r1, k === 2 ? P.tip(k) : P.bone(k));
       if (k === 2 && P.nail) {
         // the nail on the back of the last bone, near its tip
         const up = new THREE.Vector3(0, 1, 0).applyAxisAngle(axis, mcp + pip + dip);

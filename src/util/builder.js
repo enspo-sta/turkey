@@ -1,5 +1,10 @@
 // ModelBuilder: composes three.js primitives with transforms and vertex colours
-// into one merged, flat-shaded BufferGeometry (one draw call per model).
+// into one merged BufferGeometry (one draw call per model). Flat parts are
+// shaded face by face; round parts (cylinders, spheres, tori and beams of six
+// sides or more, cones of eight or more) keep their smooth normals unless a
+// part says `smooth: false`. Colour varies a little: on a flat part one tone
+// per face (a quad's two triangles share it), on a smooth part tone by tone
+// across its surface, so neither splits along a diagonal.
 // Optional per-part "limb" ids and pivots drive vertex-shader animation.
 // A part with `surf` (a finish name from world/finish.js: 'plank', 'log',
 // 'shingle' and so on) also carries that finish and its own surface
@@ -22,6 +27,64 @@ function rnd() {
   return (seed - 1) / 2147483646;
 }
 
+const smooth01 = (x) => {
+  const t = Math.min(1, Math.max(0, x));
+  return t * t * (3 - 2 * t);
+};
+
+// 0..1 from a position to the millimetre: the same for every triangle that
+// meets at a vertex, so a smooth part's tone changes smoothly
+function hashTone(x, y, z) {
+  let h = Math.imul(Math.round(x * 1000) | 0, 73856093) ^ Math.imul(Math.round(y * 1000) | 0, 19349663) ^ Math.imul(Math.round(z * 1000) | 0, 83492791);
+  h = Math.imul(h ^ (h >>> 13), 0x5bd1e995);
+  h ^= h >>> 15;
+  return (h >>> 0) / 4294967295;
+}
+
+// Cylinders, spheres and tori of six sides or more and cones of eight or
+// more are meant to look round: they keep their smooth normals. Fewer sides
+// are meant as prisms (a square post, a five-sided far trunk).
+function roundEnough(geo) {
+  const q = geo.parameters;
+  if (!q) return false;
+  switch (geo.type) {
+    case 'CylinderGeometry':
+      return q.radialSegments >= 6;
+    case 'ConeGeometry':
+      return q.radialSegments >= 8;
+    case 'SphereGeometry':
+      return q.widthSegments >= 6;
+    case 'TorusGeometry':
+      return q.radialSegments >= 6;
+    default:
+      return false;
+  }
+}
+
+// Two triangles in a row that share an edge and face the same way: the two
+// halves of one quad
+function sameQuad(p, a, b) {
+  let shared = 0;
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      const u = a + i * 3;
+      const v = b + j * 3;
+      if (Math.abs(p[u] - p[v]) < 1e-6 && Math.abs(p[u + 1] - p[v + 1]) < 1e-6 && Math.abs(p[u + 2] - p[v + 2]) < 1e-6) shared++;
+    }
+  }
+  if (shared !== 2) return false;
+  const n = (o) => {
+    const e1x = p[o + 3] - p[o], e1y = p[o + 4] - p[o + 1], e1z = p[o + 5] - p[o + 2];
+    const e2x = p[o + 6] - p[o], e2y = p[o + 7] - p[o + 1], e2z = p[o + 8] - p[o + 2];
+    const x = e1y * e2z - e1z * e2y, y = e1z * e2x - e1x * e2z, z = e1x * e2y - e1y * e2x;
+    const l = Math.hypot(x, y, z) || 1;
+    return [x / l, y / l, z / l];
+  };
+  const na = n(a);
+  const nb = n(b);
+  return na[0] * nb[0] + na[1] * nb[1] + na[2] * nb[2] > 0.9995;
+}
+
 export class ModelBuilder {
   constructor({ limbs = false, uvs = false } = {}) {
     this.parts = [];
@@ -30,6 +93,9 @@ export class ModelBuilder {
   }
 
   add(geo, o = {}) {
+    // round parts and a whole model from another builder keep their normals
+    // unless told not to
+    if (o.smooth === undefined && (geo.userData.built || roundEnough(geo))) o = { ...o, smooth: true };
     let g = geo.index ? geo.toNonIndexed() : geo;
     if (g === geo) g = geo.clone();
     geo.dispose();
@@ -55,13 +121,27 @@ export class ModelBuilder {
     // texture: a tone per triangle would split a wall corner to corner)
     const own = o.keepColors && g.attributes.color ? g.attributes.color.array : null;
     const whole = o.surf ? 1 + (rnd() - 0.5) * 2 * jitter : 0;
+    const smooth = !!o.smooth;
+    const pa = g.attributes.position.array;
+    let quad = 0;
     for (let t = 0; t < count; t += 3) {
-      const f = whole || 1 + (rnd() - 0.5) * 2 * jitter;
+      // a flat part: one tone per face, shared by a quad's two halves
+      let f = whole;
+      if (!f && !smooth) {
+        if (quad && t >= 3 && sameQuad(pa, (t - 3) * 3, t * 3)) {
+          f = quad;
+          quad = 0;
+        } else {
+          f = quad = 1 + (rnd() - 0.5) * 2 * jitter;
+        }
+      }
       for (let v = 0; v < 3 && t + v < count; v++) {
         const i = (t + v) * 3;
-        col[i] = (own ? own[i] : _c.r) * f;
-        col[i + 1] = (own ? own[i + 1] : _c.g) * f;
-        col[i + 2] = (own ? own[i + 2] : _c.b) * f;
+        // a smooth part: a tone per vertex position
+        const k = f || 1 + (hashTone(pa[i], pa[i + 1], pa[i + 2]) - 0.5) * 2 * jitter;
+        col[i] = (own ? own[i] : _c.r) * k;
+        col[i + 1] = (own ? own[i + 1] : _c.g) * k;
+        col[i + 2] = (own ? own[i + 2] : _c.b) * k;
       }
     }
     // optional vertical gradient (darker at the bottom), useful for foliage
@@ -76,6 +156,61 @@ export class ModelBuilder {
         col[i * 3] *= f;
         col[i * 3 + 1] *= f;
         col[i * 3 + 2] *= f;
+      }
+    }
+    // countershading, as on most animals: a lighter belly blending in below a
+    // part's `belly` height ([colour, height 0..1, softness]), a darker (or,
+    // above 1, a lighter grizzled) back toward its top (`back`), and an
+    // `under` colour for faces looking down (a bird's pale wing undersides)
+    if (o.belly || o.back) {
+      g.computeBoundingBox();
+      const bb = g.boundingBox;
+      const pos = g.attributes.position.array;
+      const h = Math.max(1e-4, bb.max.y - bb.min.y);
+      const bc = o.belly ? new THREE.Color(o.belly[0]) : null;
+      for (let i = 0; i < count; i++) {
+        const t = (pos[i * 3 + 1] - bb.min.y) / h;
+        let r = col[i * 3];
+        let gg = col[i * 3 + 1];
+        let bl = col[i * 3 + 2];
+        if (bc) {
+          const below = o.belly[1] ?? 0.35;
+          const soft = o.belly[2] ?? 0.12;
+          const f = 1 - smooth01((t - below + soft) / (2 * soft));
+          // the belly keeps the part's own small tone variation
+          const tone = (r + gg + bl) / Math.max(1e-4, _c.r + _c.g + _c.b);
+          r += (bc.r * tone - r) * f;
+          gg += (bc.g * tone - gg) * f;
+          bl += (bc.b * tone - bl) * f;
+        }
+        if (o.back) {
+          const f = 1 + (o.back - 1) * smooth01((t - 0.55) / 0.45);
+          r *= f;
+          gg *= f;
+          bl *= f;
+        }
+        col[i * 3] = r;
+        col[i * 3 + 1] = gg;
+        col[i * 3 + 2] = bl;
+      }
+    }
+    if (o.under) {
+      const uc = new THREE.Color(o.under);
+      const pos = g.attributes.position.array;
+      for (let t = 0; t + 2 < count; t += 3) {
+        const a = t * 3;
+        const e1x = pos[a + 3] - pos[a], e1y = pos[a + 4] - pos[a + 1], e1z = pos[a + 5] - pos[a + 2];
+        const e2x = pos[a + 6] - pos[a], e2y = pos[a + 7] - pos[a + 1], e2z = pos[a + 8] - pos[a + 2];
+        const ny = e1z * e2x - e1x * e2z;
+        const l = Math.hypot(e1y * e2z - e1z * e2y, ny, e1x * e2y - e1y * e2x) || 1;
+        if (ny / l > -0.5) continue;
+        for (let v = 0; v < 3; v++) {
+          const i = (t + v) * 3;
+          const tone = (col[i] + col[i + 1] + col[i + 2]) / Math.max(1e-4, _c.r + _c.g + _c.b);
+          col[i] = uc.r * tone;
+          col[i + 1] = uc.g * tone;
+          col[i + 2] = uc.b * tone;
+        }
       }
     }
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
@@ -104,8 +239,11 @@ export class ModelBuilder {
       g.userData.surfArr = g.attributes.surf.array;
       g.userData.surfUv = g.attributes.surfUv.array;
     }
-    // mark whether this part keeps smooth normals
-    g.userData.smooth = !!o.smooth;
+    // mark whether this part keeps its normals (round parts, and a whole
+    // model from another builder, whose flat parts are flat already)
+    g.userData.smooth = smooth;
+    // foliage lit as one soft volume rather than facet by facet (see build)
+    g.userData.volume = o.volume || null;
     this.parts.push(g);
     return this;
   }
@@ -213,8 +351,9 @@ export class ModelBuilder {
       const n = p.attributes.position.count;
       pos.set(p.attributes.position.array, o * 3);
       col.set(p.attributes.color.array, o * 3);
-      if (p.attributes.normal && (!flat || p.userData.smooth)) nrm.set(p.attributes.normal.array, o * 3);
+      if (p.attributes.normal && (!flat || p.userData.smooth) && !p.userData.volume) nrm.set(p.attributes.normal.array, o * 3);
       else computeFlatNormals(p.attributes.position.array, nrm, o * 3, n);
+      if (p.userData.volume) volumeNormals(p.attributes.position.array, nrm, o * 3, n, p.userData.volume);
       if (limb) {
         limb.set(p.attributes.aLimb.array, o);
         piv.set(p.attributes.aPivot.array, o * 3);
@@ -245,8 +384,45 @@ export class ModelBuilder {
     }
     g.computeBoundingSphere();
     g.computeBoundingBox();
+    g.userData.built = true;
     this.parts = [];
     return g;
+  }
+}
+
+// Foliage normals that make a crown light as one soft volume, as a real
+// crown of many small leaves does, instead of as a few big facets: a conifer
+// faces out from its trunk and a little up (`axis` [x, z], `up`), a leafy
+// crown out from its centre (`centre` [x, y, z]), keeping `k` of each
+// facet's own direction. Every distance version of a tree gets the same, so
+// it does not change its lighting as it is swapped for a nearer one.
+function volumeNormals(src, dst, off, count, v) {
+  const k = v.k ?? 0;
+  for (let i = 0; i < count; i++) {
+    const a = i * 3;
+    let x;
+    let y;
+    let z;
+    if (v.axis) {
+      const dx = src[a] - v.axis[0];
+      const dz = src[a + 2] - v.axis[1];
+      const l = Math.hypot(dx, dz);
+      x = l > 1e-4 ? dx / l : 0;
+      y = v.up ?? 0.75;
+      z = l > 1e-4 ? dz / l : 0;
+    } else {
+      x = src[a] - v.centre[0];
+      y = (src[a + 1] - v.centre[1]) * (v.squash ?? 1);
+      z = src[a + 2] - v.centre[2];
+    }
+    let l = Math.hypot(x, y, z) || 1;
+    x = x / l + dst[off + a] * k;
+    y = y / l + dst[off + a + 1] * k;
+    z = z / l + dst[off + a + 2] * k;
+    l = Math.hypot(x, y, z) || 1;
+    dst[off + a] = x / l;
+    dst[off + a + 1] = y / l;
+    dst[off + a + 2] = z / l;
   }
 }
 
@@ -277,7 +453,47 @@ function computeFlatNormals(src, dst, off, count) {
   }
 }
 
+// Smooth normals across the seams of an indexed geometry: a lathe, loft or
+// cylinder repeats its first column of vertices at the end, and normals
+// computed from the faces then crease along that line. Vertices at one
+// position average their normals when these are within the given angle
+// (cosine), so a real edge, like a cylinder's rim, stays sharp.
+export function smoothSeams(geo, cosLimit = 0.5) {
+  const pos = geo.attributes.position;
+  const nrm = geo.attributes.normal;
+  if (!nrm) return geo;
+  const groups = new Map();
+  for (let i = 0; i < pos.count; i++) {
+    const key = `${pos.getX(i).toFixed(4)},${pos.getY(i).toFixed(4)},${pos.getZ(i).toFixed(4)}`;
+    const g = groups.get(key);
+    if (g) g.push(i);
+    else groups.set(key, [i]);
+  }
+  const v = new THREE.Vector3();
+  const w = new THREE.Vector3();
+  const sum = new THREE.Vector3();
+  const out = [];
+  for (const g of groups.values()) {
+    if (g.length < 2) continue;
+    for (const i of g) {
+      v.fromBufferAttribute(nrm, i);
+      sum.set(0, 0, 0);
+      for (const j of g) {
+        w.fromBufferAttribute(nrm, j);
+        if (v.dot(w) >= cosLimit) sum.add(w);
+      }
+      sum.normalize();
+      out.push(i, sum.x, sum.y, sum.z);
+    }
+  }
+  for (let k = 0; k < out.length; k += 4) nrm.setXYZ(out[k], out[k + 1], out[k + 2], out[k + 3]);
+  nrm.needsUpdate = true;
+  return geo;
+}
+
 // Randomly displaces vertices of an indexed geometry (before toNonIndexed) for organic shapes.
+// Its normals follow the new shape (a smooth part uses them; a flat one is
+// shaded face by face anyway).
 export function jitterGeometry(geo, amount, rand = Math.random) {
   const pos = geo.attributes.position;
   const map = new Map();
@@ -291,5 +507,9 @@ export function jitterGeometry(geo, amount, rand = Math.random) {
     pos.setXYZ(i, pos.getX(i) + d[0], pos.getY(i) + d[1], pos.getZ(i) + d[2]);
   }
   pos.needsUpdate = true;
+  if (geo.index) {
+    geo.computeVertexNormals();
+    smoothSeams(geo);
+  }
   return geo;
 }

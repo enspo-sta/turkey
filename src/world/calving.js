@@ -16,6 +16,11 @@ const _axisX = new THREE.Vector3(1, 0, 0);
 const SNOW = new THREE.Color(0xeef6fa);
 const ICE_A = new THREE.Color(0xbfe3f2);
 const ICE_B = new THREE.Color(0x8ccbe6);
+// old, dense ice low in the block is a deeper blue; a band of grit carried
+// down the glacier shows a third of the way up
+const ICE_DEEP = new THREE.Color(0x5ea8cc);
+const GRIT = new THREE.Color(0x8a9298);
+const _ic = new THREE.Color();
 
 // A rough, faceted block of ice with snow on top and blue sides.
 function iceGeometry(w, h, d, rand) {
@@ -39,7 +44,15 @@ function iceGeometry(w, h, d, rand) {
   const nrm = geo.attributes.normal;
   const col = new Float32Array(pos.count * 3);
   for (let f = 0; f < pos.count; f += 3) {
-    const c = nrm.getY(f) > 0.55 ? SNOW : rand() < 0.55 ? ICE_A : ICE_B;
+    let c = SNOW;
+    if (nrm.getY(f) <= 0.55) {
+      // by the height of the face's middle: deep blue low down, paler up,
+      // with a little variation face to face
+      const t = clamp(((pos.getY(f) + pos.getY(f + 1) + pos.getY(f + 2)) / 3 + h / 2) / h, 0, 1);
+      c = _ic.copy(ICE_DEEP).lerp(ICE_B, Math.min(1, t * 1.8)).lerp(ICE_A, Math.max(0, t * 1.6 - 0.6));
+      const grit = Math.max(0, 1 - Math.abs(t - 0.33) / 0.05);
+      c.lerp(GRIT, grit * 0.55).multiplyScalar(0.94 + rand() * 0.12);
+    }
     for (let k = 0; k < 3; k++) {
       col[(f + k) * 3] = c.r;
       col[(f + k) * 3 + 1] = c.g;

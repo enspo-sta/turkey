@@ -13,7 +13,8 @@ import { clamp, damp, lerp } from '../util/math.js';
 const ROD_LEN = 2.3;
 
 function rodMaterial(uniforms) {
-  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.35, metalness: 0.3 });
+  // a glossy painted blank, cork and wraps: barely metallic
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.35, metalness: 0.12 });
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uBend = uniforms.uBend;
     shader.vertexShader = shader.vertexShader
@@ -55,7 +56,7 @@ function buildRod(look = {}) {
       pos: [0, 0, (za + zb) / 2],
       rot: [-Math.PI / 2, 0, 0],
       color: i === segs - 1 ? L.tip : L.stripe && i % 2 ? L.stripe : L.blank,
-      jitter: 0.02,
+      jitter: 0,
       hseg: 3,
     });
     // guide with gold wrap
@@ -71,13 +72,14 @@ function buildRod(look = {}) {
 function buildReel() {
   const g = new THREE.Group();
   const b = new ModelBuilder();
-  b.box(0.012, 0.07, 0.03, { pos: [0, -0.04, 0], color: 0x2a2a2a });
-  b.cyl(0.028, 0.028, 0.05, 12, { pos: [0, -0.09, -0.012], rot: [Math.PI / 2, 0, 0], color: 0x3a3a3a });
-  b.cyl(0.024, 0.02, 0.035, 12, { pos: [0, -0.09, -0.05], rot: [Math.PI / 2, 0, 0], color: 0xc8c8c8 });
+  // machined parts: no tone variation
+  b.box(0.012, 0.07, 0.03, { pos: [0, -0.04, 0], color: 0x2a2a2a, jitter: 0 });
+  b.cyl(0.028, 0.028, 0.05, 12, { pos: [0, -0.09, -0.012], rot: [Math.PI / 2, 0, 0], color: 0x3a3a3a, jitter: 0 });
+  b.cyl(0.024, 0.02, 0.035, 12, { pos: [0, -0.09, -0.05], rot: [Math.PI / 2, 0, 0], color: 0xc8c8c8, jitter: 0 });
   const body = new THREE.Mesh(b.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.6 }));
   g.add(body);
   const hb = new ModelBuilder();
-  hb.box(0.06, 0.006, 0.008, { pos: [0.03, 0, 0], color: 0x9a9a9a });
+  hb.box(0.06, 0.006, 0.008, { pos: [0.03, 0, 0], color: 0x9a9a9a, jitter: 0 });
   hb.cyl(0.006, 0.006, 0.025, 6, { pos: [0.06, 0, 0.012], rot: [Math.PI / 2, 0, 0], color: 0x1a1a1a });
   const handle = new THREE.Mesh(hb.build(), body.material);
   handle.position.set(-0.03, -0.09, -0.012);

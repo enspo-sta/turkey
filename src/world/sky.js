@@ -174,13 +174,18 @@ void main() {
     cov = max(cov, uSunVeil * smoothstep(0.985 + 0.012 * (1.0 - n), 0.9985, sd));
     cov *= smoothstep(0.0, 0.1, h);
     float lit = 0.5 + 0.5 * pow(sdc, 3.0);
-    vec3 cc = mix(uCloudShade, uCloudLit, lit * (0.6 + 0.4 * n));
+    // thin edges let the light through, thick cores go grey underneath
+    vec3 cc = mix(uCloudShade, uCloudLit, lit * (1.0 - 0.45 * smoothstep(thr + 0.05, thr + 0.4, n)));
     cc += uGlow * pow(sdc, 8.0) * 0.6 * (1.0 - cov * 0.5);
     col = mix(col, cc, cov * 0.92);
   }
   gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
+  #ifdef TONE_MAPPING
+    // fine noise against banding where the colour goes straight to the 8-bit screen (Medium and Low; High's finish does its own)
+    gl_FragColor.rgb += (fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) - 0.5) / 255.0;
+  #endif
 }`;
 
 // Keyframes by sun elevation in degrees. Colours are sRGB hex.
@@ -221,7 +226,7 @@ const KEYS = [
     e: 1,
     zenith: 0x355a92,
     horizon: 0xe8a070,
-    ground: 0x3a3440,
+    ground: 0x3a3532,
     glow: 0xff7a3a,
     sun: 0xff9a50,
     light: 0xff9a60,
@@ -237,7 +242,7 @@ const KEYS = [
     e: 8,
     zenith: 0x3d6db0,
     horizon: 0xd8c8b8,
-    ground: 0x5a5a58,
+    ground: 0x56573f,
     glow: 0xffb070,
     sun: 0xffd8a0,
     light: 0xffd2a0,
@@ -253,7 +258,7 @@ const KEYS = [
     e: 25,
     zenith: 0x3a74c4,
     horizon: 0xc4d8ea,
-    ground: 0x6a7278,
+    ground: 0x5e6448,
     glow: 0xfff0d0,
     sun: 0xfff4e0,
     light: 0xfff2e2,
@@ -269,7 +274,7 @@ const KEYS = [
     e: 60,
     zenith: 0x326ec4,
     horizon: 0xbcd4ec,
-    ground: 0x6a7278,
+    ground: 0x60664a,
     glow: 0xfff4e0,
     sun: 0xffffff,
     light: 0xffffff,
@@ -287,6 +292,7 @@ const _ca = new THREE.Color();
 const _cb = new THREE.Color();
 const _grey = new THREE.Color();
 const _fogGrey = new THREE.Color();
+const _hemiGrey = new THREE.Color();
 const GREY = new THREE.Color(0x8a939c);
 const FOG_GREY = new THREE.Color(0x7d868f);
 
@@ -354,7 +360,10 @@ export class Environment {
     });
     this.skyMaterial = mat;
     this.sky = new THREE.Mesh(new THREE.SphereGeometry(4000, 48, 24), mat);
-    this.sky.renderOrder = -10;
+    // drawn after everything solid, at the far plane: its shader then runs
+    // only on the pixels where sky is seen, not under the whole view (the
+    // stars, meteors and other see-through things still come after it)
+    this.sky.renderOrder = 1000;
     this.sky.frustumCulled = false;
     scene.add(this.sky);
     // the real night sky: stars and planets, turning with the sidereal clock
@@ -400,6 +409,11 @@ export class Environment {
     }
     this.sun.castShadow = true;
     this.sun.shadow.camera.far = distance;
+    // the offset along the normal that keeps surfaces from shadowing
+    // themselves, as small as each map's texel allows: it also shortens every
+    // shadow (by 0.45 / tan of the sun's height before), and took the shadows
+    // of stones and logs away altogether
+    this.sun.shadow.normalBias = size >= 2048 ? 0.28 : 0.42;
     if (this.sun.shadow.mapSize.x !== size) {
       this.sun.shadow.mapSize.set(size, size);
       if (this.sun.shadow.map) {
@@ -508,22 +522,37 @@ export class Environment {
     u.uAuroraReach.value = aw.reach;
     u.uAuroraRed.value = aw.red;
 
-    // light: sun by day, moon by night
+    // light: sun by day, moon by night: the Moon where the sky draws it when
+    // it is up (its shadows and its path on the lakes line up with it)
     const lightI = lerpKey(e, 'lightI');
     lerpKey(e, 'light', this.sun.color);
     if (e > -2) this.lightDir.copy(this.sunDir);
+    else if (this.moonUp > 0.02) this.lightDir.copy(u.uMoonPos.value);
     else this.lightDir.copy(this.moonDir);
     if (this.lightDir.y < 0.08) {
       this.lightDir.y = 0.08;
       this.lightDir.normalize();
     }
     // moonlit nights are brighter than moonless ones
-    const moonK = e > -2 ? 1 : 0.8 + 0.45 * this.moonUp;
-    this.sun.intensity = lightI * (1 - overcast * 0.55) * moonK;
+    const moonK = e > -2 ? 1 : 0.35 + 0.9 * this.moonUp;
+    // under a grey sky the light is soft and shadowless: little sun, weak
+    // shadows, more and greyer light from the whole sky
+    this.sun.intensity = lightI * (1 - overcast * 0.85) * moonK;
+    // the switch from the Sun to the Moon happens in near darkness, just
+    // after sunset (those minutes really are shadowless), not in one jump
+    this.sun.intensity *= 0.1 + 0.9 * smoothstep(0.5, 2.5, Math.abs(e + 2));
+    this.sun.shadow.intensity = 1 - 0.7 * overcast;
     lerpKey(e, 'hemiSky', this.hemi.color);
     lerpKey(e, 'hemiGround', this.hemi.groundColor);
+    if (overcast > 0) {
+      for (const c of [this.hemi.color, this.hemi.groundColor]) {
+        const l = c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722;
+        c.lerp(_hemiGrey.setRGB(l, l, l), overcast * 0.7);
+      }
+    }
+    this.overcast = overcast;
     // (and a fireball lights up the land for a moment: world/meteors.js)
-    this.hemi.intensity = lerpKey(e, 'hemiI') * (1 + overcast * 0.1) + (this.fireFlash || 0) * 1.4 * this.night;
+    this.hemi.intensity = lerpKey(e, 'hemiI') * (1 + overcast * 0.35) + (this.fireFlash || 0) * 1.4 * this.night;
 
     lerpKey(e, 'fog', this.fog.color);
     if (overcast > 0) this.fog.color.lerp(_fogGrey.copy(FOG_GREY).multiplyScalar(0.3 + 0.7 * smoothstep(-6, 20, e)), overcast * 0.6);

@@ -78,7 +78,9 @@ void main() {
   // across the meadow; wet grass is darker
   shadeTip *= (1.0 + 0.35 * gust * tip) * (1.0 - 0.2 * uFxWet);
   vColor = col * uSkyCol * 0.9 * mix(0.42, 1.0, shade.g) * shadeTip;
-  vSun = col * uSunCol * diff * 0.65 * shade.r * fxCloudShadow(vec3(wp.x, h, wp.y)) * shadeTip;
+  // with the sun low behind them the tips glow yellow-green, lit through
+  float through = pow(max(dot(normalize(world - cameraPosition), uSunDir), 0.0), 4.0) * smoothstep(-0.02, 0.06, uSunDir.y) * tip;
+  vSun = col * uSunCol * (diff * 0.65 + through * vec3(0.34, 0.38, 0.18)) * shade.r * fxCloudShadow(vec3(wp.x, h, wp.y)) * shadeTip;
   vec4 worldPosition = vec4(world, 1.0);
   vec4 mvPosition = viewMatrix * worldPosition;
   gl_Position = projectionMatrix * mvPosition;

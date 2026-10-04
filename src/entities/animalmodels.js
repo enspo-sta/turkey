@@ -23,7 +23,7 @@ export function mooseModel(bull = true) {
   const b = new ModelBuilder({ limbs: true });
   const brown = 0x3a2a1e;
   const dark = 0x2a1d14;
-  b.sphere(1, 8, 6, { pos: [0, 1.52, -0.1], scale: [0.52, 0.6, 1.2], color: brown });
+  b.sphere(1, 8, 6, { pos: [0, 1.52, -0.1], scale: [0.52, 0.6, 1.2], color: brown, back: 0.82 });
   b.sphere(1, 7, 5, { pos: [0, 1.78, 0.5], scale: [0.46, 0.5, 0.62], color: dark });
   b.sphere(1, 8, 6, { pos: [0, 1.5, -0.95], scale: [0.45, 0.5, 0.45], color: brown });
   legs(b, { h: 1.34, fx: 0.25, bx: 0.26, zf: 0.72, zb: -0.95, r0: 0.12, r1: 0.06, color: 0x6a5a4a });
@@ -50,9 +50,9 @@ export function mooseModel(bull = true) {
 export function caribouModel(bull = true) {
   const b = new ModelBuilder({ limbs: true });
   const coat = 0x6d5a45;
-  b.sphere(1, 8, 6, { pos: [0, 1.02, -0.05], scale: [0.36, 0.4, 0.88], color: coat });
+  b.sphere(1, 8, 6, { pos: [0, 1.02, -0.05], scale: [0.36, 0.4, 0.88], color: coat, belly: [0xe8e0d0, 0.3, 0.1], back: 0.88 });
   b.sphere(1, 8, 6, { pos: [0, 0.98, -0.72], scale: [0.3, 0.3, 0.3], color: 0xe8e0d0 });
-  b.sphere(1, 8, 6, { pos: [0, 0.82, 0.05], scale: [0.3, 0.2, 0.7], color: 0x4a3a2a });
+  b.sphere(1, 8, 6, { pos: [0, 0.82, 0.05], scale: [0.3, 0.2, 0.7], color: 0xe0d8c8 });
   legs(b, { h: 0.9, fx: 0.17, bx: 0.17, zf: 0.58, zb: -0.62, r0: 0.07, r1: 0.04, color: 0x3a3028, hoof: 0x1a1a1a, hoofH: 0.09 });
   const hp = [0, 1.2, 0.7];
   b.sphere(1, 8, 6, { pos: [0, 1.25, 0.82], scale: [0.26, 0.34, 0.3], color: 0xe8e0d0, limb: 5, pivot: hp });
@@ -81,7 +81,7 @@ export function caribouModel(bull = true) {
 export function deerModel(buck = true) {
   const b = new ModelBuilder({ limbs: true });
   const coat = 0x7a5536;
-  b.sphere(1, 8, 6, { pos: [0, 0.82, 0], scale: [0.26, 0.3, 0.62], color: coat });
+  b.sphere(1, 8, 6, { pos: [0, 0.82, 0], scale: [0.26, 0.3, 0.62], color: coat, back: 0.85 });
   b.sphere(1, 8, 6, { pos: [0, 0.72, 0.05], scale: [0.22, 0.18, 0.5], color: 0xd8ccb8 });
   legs(b, { h: 0.72, fx: 0.12, bx: 0.12, zf: 0.42, zb: -0.44, r0: 0.05, r1: 0.028, color: 0x6a4a30, hoof: 0x1a1a1a, hoofH: 0.06 });
   const hp = [0, 0.98, 0.48];
@@ -119,8 +119,8 @@ export function bearModel() {
   const b = new ModelBuilder({ limbs: true });
   const fur = 0x5c412c;
   const tip = 0x7a5a3e;
-  b.sphere(1, 8, 6, { pos: [0, 0.98, -0.1], scale: [0.6, 0.6, 1.0], color: fur, jitter: 0.12 });
-  b.sphere(1, 8, 6, { pos: [0, 1.2, 0.45], scale: [0.55, 0.5, 0.55], color: tip, jitter: 0.12 }); // shoulder hump
+  b.sphere(1, 8, 6, { pos: [0, 0.98, -0.1], scale: [0.6, 0.6, 1.0], color: fur, jitter: 0.12, back: 1.15 });
+  b.sphere(1, 8, 6, { pos: [0, 1.2, 0.45], scale: [0.55, 0.5, 0.55], color: tip, jitter: 0.12, back: 1.15 }); // shoulder hump
   b.sphere(1, 8, 6, { pos: [0, 0.95, -0.85], scale: [0.5, 0.52, 0.45], color: fur });
   legs(b, { h: 0.78, fx: 0.32, bx: 0.33, zf: 0.52, zb: -0.82, r0: 0.17, r1: 0.14, color: 0x3e2a1c, hoof: 0x2a1c12, hoofH: 0.1 });
   const hp = [0, 1.1, 0.8];
@@ -138,7 +138,7 @@ export function bearModel() {
 export function wolfModel() {
   const b = new ModelBuilder({ limbs: true });
   const grey = 0x7d7a72;
-  b.sphere(1, 7, 5, { pos: [0, 0.72, 0], scale: [0.22, 0.26, 0.6], color: grey });
+  b.sphere(1, 7, 5, { pos: [0, 0.72, 0], scale: [0.22, 0.26, 0.6], color: grey, belly: [0xc8c2b4, 0.35, 0.12], back: 0.85 });
   b.sphere(1, 8, 6, { pos: [0, 0.76, 0.35], scale: [0.24, 0.28, 0.3], color: 0x9a968c });
   legs(b, { h: 0.6, fx: 0.1, bx: 0.1, zf: 0.38, zb: -0.4, r0: 0.045, r1: 0.03, color: 0x6a665e, hoof: 0x3a3a38, hoofH: 0.05 });
   const hp = [0, 0.85, 0.5];
@@ -152,7 +152,7 @@ export function wolfModel() {
 export function foxModel() {
   const b = new ModelBuilder({ limbs: true });
   const orange = 0xc8641e;
-  b.sphere(1, 7, 5, { pos: [0, 0.34, 0], scale: [0.12, 0.13, 0.3], color: orange });
+  b.sphere(1, 7, 5, { pos: [0, 0.34, 0], scale: [0.12, 0.13, 0.3], color: orange, belly: [0xf0e8dc, 0.3, 0.1] });
   b.sphere(1, 7, 5, { pos: [0, 0.32, 0.2], scale: [0.1, 0.11, 0.1], color: 0xf0e8dc });
   legs(b, { h: 0.28, fx: 0.06, bx: 0.06, zf: 0.2, zb: -0.2, r0: 0.025, r1: 0.018, color: 0x2a1a10, hoof: 0x1a1a1a, hoofH: 0.03 });
   const hp = [0, 0.4, 0.26];
@@ -167,7 +167,7 @@ export function foxModel() {
 export function hareModel() {
   const b = new ModelBuilder({ limbs: true });
   const fur = 0x8a6a4a;
-  b.sphere(1, 8, 6, { pos: [0, 0.2, 0], scale: [0.1, 0.12, 0.17], color: fur });
+  b.sphere(1, 8, 6, { pos: [0, 0.2, 0], scale: [0.1, 0.12, 0.17], color: fur, belly: [0xf0ece4, 0.3, 0.12] });
   legs(b, { h: 0.12, fx: 0.05, bx: 0.07, zf: 0.1, zb: -0.1, r0: 0.03, r1: 0.025, color: 0xe8e0d0, hoof: 0xe8e0d0, hoofH: 0.02 });
   const hp = [0, 0.26, 0.12];
   b.sphere(1, 7, 5, { pos: [0, 0.3, 0.18], scale: [0.07, 0.07, 0.09], color: fur, limb: 5, pivot: hp });
@@ -177,13 +177,13 @@ export function hareModel() {
 }
 
 // ---- birds: wings along +/-x, pivot at the shoulder
-function wings(b, span, chord, color, tipColor, y = 0) {
+function wings(b, span, chord, color, tipColor, y = 0, under = null) {
   for (const s of [-1, 1]) {
     const limb = s > 0 ? 7 : 8;
     const pivot = [s * 0.05, y, 0.05];
     const half = span / 2;
-    b.box(half * 0.55, 0.02, chord, { pos: [s * (0.05 + half * 0.275), y, 0.02], color, limb, pivot });
-    b.box(half * 0.45, 0.018, chord * 0.75, { pos: [s * (0.05 + half * 0.55 + half * 0.225), y, -0.02], rot: [0, s * 0.12, 0], color: tipColor ?? color, limb, pivot });
+    b.box(half * 0.55, 0.02, chord, { pos: [s * (0.05 + half * 0.275), y, 0.02], color, limb, pivot, under });
+    b.box(half * 0.45, 0.018, chord * 0.75, { pos: [s * (0.05 + half * 0.55 + half * 0.225), y, -0.02], rot: [0, s * 0.12, 0], color: tipColor ?? color, limb, pivot, under: tipColor ? null : under });
   }
 }
 
@@ -213,7 +213,7 @@ export function gullModel() {
   b.sphere(0.07, 6, 5, { pos: [0, 0.03, 0.24], color: 0xf4f4f0 });
   b.cone(0.022, 0.08, 4, { pos: [0, 0.02, 0.33], rot: [Math.PI / 2, 0, 0], color: 0xe8c030 });
   b.box(0.1, 0.015, 0.12, { pos: [0, 0, -0.28], color: 0xf4f4f0, limb: 6, pivot: [0, 0, -0.22] });
-  wings(b, 1.25, 0.2, 0xa8b0b8, 0x1a1a1a);
+  wings(b, 1.25, 0.2, 0xa8b0b8, 0x1a1a1a, 0, 0xf4f4f0);
   return b.build();
 }
 
@@ -224,7 +224,7 @@ export function gooseModel() {
   b.sphere(0.06, 6, 5, { pos: [0, 0.09, 0.62], color: 0x151515 });
   b.box(0.1, 0.03, 0.05, { pos: [0, 0.07, 0.6], color: 0xf4f4f0 });
   b.box(0.12, 0.015, 0.14, { pos: [0, 0, -0.4], color: 0x151515, limb: 6, pivot: [0, 0, -0.33] });
-  wings(b, 1.6, 0.28, 0x7a6a56, 0x4a4036);
+  wings(b, 1.6, 0.28, 0x7a6a56, 0x4a4036, 0, 0xb8ae9c);
   return b.build();
 }
 
@@ -234,7 +234,7 @@ export function duckModel() {
   b.sphere(0.075, 6, 5, { pos: [0, 0.1, 0.2], color: 0x1f5a2a });
   b.box(0.05, 0.025, 0.08, { pos: [0, 0.08, 0.3], color: 0xe8c030 });
   b.box(0.12, 0.012, 0.1, { pos: [0, 0.02, -0.26], color: 0x2a2a2a, limb: 6, pivot: [0, 0.02, -0.2] });
-  wings(b, 0.85, 0.16, 0x7a746a, 0x3a5a8a, 0.03);
+  wings(b, 0.85, 0.16, 0x7a746a, 0x3a5a8a, 0.03, 0xd8d4cc);
   return b.build();
 }
 
@@ -463,7 +463,7 @@ export function porcupineModel() {
 export function lynxModel() {
   const b = new ModelBuilder({ limbs: true });
   const coat = 0x9a8a72;
-  b.sphere(1, 8, 6, { pos: [0, 0.52, 0], scale: [0.17, 0.19, 0.42], color: coat });
+  b.sphere(1, 8, 6, { pos: [0, 0.52, 0], scale: [0.17, 0.19, 0.42], color: coat, belly: [0xe0d6c4, 0.32, 0.12] });
   legs(b, { h: 0.46, fx: 0.08, bx: 0.08, zf: 0.28, zb: -0.3, r0: 0.05, r1: 0.04, color: 0x8a7a64, hoof: 0x9a8a72, hoofH: 0.06 });
   const hp = [0, 0.62, 0.36];
   b.sphere(1, 8, 6, { pos: [0, 0.66, 0.48], scale: [0.13, 0.12, 0.12], color: coat, limb: 5, pivot: hp });

@@ -117,15 +117,22 @@ function fishGeometry() {
     }
   }
   const v0 = pos.length / 3;
-  // tail fin (vertical fan)
-  pos.push(0, 0, -0.4, 0, 0.36, -0.62, 0, -0.34, -0.62, 0, 0, -0.52);
-  reg.push(0.7, 0, 0.85, 0.9, 0, 1, 0.4, 0, 1, 0.6, 0, 0.95);
-  idx.push(v0, v0 + 1, v0 + 3, v0, v0 + 3, v0 + 2, v0, v0 + 3, v0 + 1, v0, v0 + 2, v0 + 3);
+  // tail fin (vertical fan), its two sides on vertices of their own: with
+  // shared vertices the two sides' normals cancel out and the fin lights
+  // at random
+  const tail = [0, 0, -0.4, 0, 0.36, -0.62, 0, -0.34, -0.62, 0, 0, -0.52];
+  const tailReg = [0.7, 0, 0.85, 0.9, 0, 1, 0.4, 0, 1, 0.6, 0, 0.95];
+  pos.push(...tail, ...tail);
+  reg.push(...tailReg, ...tailReg);
+  const w0 = v0 + 4;
+  idx.push(v0, v0 + 1, v0 + 3, v0, v0 + 3, v0 + 2, w0, w0 + 3, w0 + 1, w0, w0 + 2, w0 + 3);
   // dorsal fin
   const v1 = pos.length / 3;
-  pos.push(0, 0.46, 0.14, 0, 0.62, -0.02, 0, 0.44, -0.12);
-  reg.push(1, 0, 0.3, 1, 0, 0.45, 1, 0, 0.55);
-  idx.push(v1, v1 + 1, v1 + 2, v1, v1 + 2, v1 + 1);
+  const dorsal = [0, 0.46, 0.14, 0, 0.62, -0.02, 0, 0.44, -0.12];
+  const dorsalReg = [1, 0, 0.3, 1, 0, 0.45, 1, 0, 0.55];
+  pos.push(...dorsal, ...dorsal);
+  reg.push(...dorsalReg, ...dorsalReg);
+  idx.push(v1, v1 + 1, v1 + 2, v1 + 3, v1 + 5, v1 + 4);
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute('aRegion', new THREE.Float32BufferAttribute(reg, 3));
@@ -151,7 +158,9 @@ function fishMaterial() {
       .replace(
         '#include <color_vertex>',
         `vColor = vec4( 1.0 );
-        vColor.rgb = mix( mix( iSide, iBack, smoothstep( 0.35, 0.8, aRegion.x ) ), iHead, aRegion.y );`
+        vColor.rgb = mix( mix( iSide, iBack, smoothstep( 0.35, 0.8, aRegion.x ) ), iHead, aRegion.y );
+        // a paler belly
+        vColor.rgb *= 1.0 + 0.4 * ( 1.0 - smoothstep( 0.08, 0.3, aRegion.x ) );`
       )
       .replace(
         '#include <begin_vertex>',

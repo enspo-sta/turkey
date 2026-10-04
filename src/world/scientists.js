@@ -341,7 +341,8 @@ export class Scientists {
 
   // A mesh for each bust, waiting for its sculpture.
   buildBusts() {
-    this.bronze = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5, metalness: 0.6 });
+    // weathered bronze (its green verdigris is not a metal)
+    this.bronze = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0.35 });
     this.marble = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.38, metalness: 0 });
     const stand = placeholder();
     for (const site of this.sites) {

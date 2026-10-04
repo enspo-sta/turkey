@@ -15,6 +15,10 @@ import { makeFinishTextures, finishMaterial, ensureFinishAttributes } from './fi
 import { buildCabin, buildMailbox, buildTradingPost, buildLighthouse, lighthouseSpot, buildPier, buildDock, buildFallsPlatform, buildLookout, signPosts } from './buildings.js';
 import { cabinSite, postSite } from './sites.js';
 import { buildOddities, oddityAvoid } from './oddities.js';
+import { smoothstep } from '../util/math.js';
+
+// how high above the ground the darkening at the foot of a model reaches (m)
+const GROUND_SHADE_H = 1.6;
 
 const LOG = 0x7a5534;
 const STEEL = 0x3e6b5a;
@@ -159,6 +163,7 @@ export class Props {
   // cell: far fewer draw calls in the view and in both shadow cascades.
   mergeStatic() {
     const keep = new Set([this.lantern, this.flag, this.beam, ...(this.bobbers || [])]);
+    this.groundShade(keep);
     const groups = new Map();
     for (const m of [...this.group.children]) {
       // signs carry one material per face: merging them would draw nothing
@@ -196,6 +201,50 @@ export class Props {
       }
       for (const g of geos) g.dispose();
       this.group.add(mesh);
+    }
+  }
+
+  // Darker where things meet the ground: the soil, the shade and the light
+  // the ground cannot bounce back under them, baked into the vertex colours
+  // of every static model with vertex colours (glass and lamps have none).
+  // Worked out in world space on a copy of each geometry, since one geometry
+  // can stand in several places.
+  groundShade(keep) {
+    const W = this.world;
+    const v = new THREE.Vector3();
+    const box = new THREE.Box3();
+    for (const m of this.group.children) {
+      if (!m.isMesh || keep.has(m) || m.matrixAutoUpdate || !m.material || Array.isArray(m.material)) continue;
+      if (!m.material.vertexColors || m.material.transparent) continue;
+      const src = m.geometry;
+      if (!src.attributes.color || !src.attributes.position) continue;
+      m.updateMatrix();
+      // the highest ground under the model: vertices well above it need no work
+      if (!src.boundingBox) src.computeBoundingBox();
+      box.copy(src.boundingBox).applyMatrix4(m.matrix);
+      if (box.max.x - box.min.x > 400 || box.max.z - box.min.z > 400) continue;
+      let top = -Infinity;
+      for (const [x, z] of [
+        [box.min.x, box.min.z],
+        [box.max.x, box.min.z],
+        [box.min.x, box.max.z],
+        [box.max.x, box.max.z],
+        [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2],
+      ]) {
+        top = Math.max(top, W.heightAt(x, z));
+      }
+      if (box.min.y > top + GROUND_SHADE_H) continue;
+      const geo = src.clone();
+      const pos = geo.attributes.position;
+      const col = geo.attributes.color;
+      for (let i = 0; i < pos.count; i++) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(m.matrix);
+        if (v.y > top + GROUND_SHADE_H) continue;
+        const k = 0.68 + 0.32 * smoothstep(-0.1, GROUND_SHADE_H, v.y - W.heightAt(v.x, v.z));
+        if (k >= 0.999) continue;
+        col.setXYZ(i, col.getX(i) * k, col.getY(i) * k, col.getZ(i) * k);
+      }
+      m.geometry = geo;
     }
   }
 

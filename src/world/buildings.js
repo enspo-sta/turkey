@@ -784,7 +784,7 @@ export function buildOuthouse(P, oh, rand = mulberry32(9)) {
   b.torus(0.13, 0.04, 4, 10, { pos: [0, H - 0.6, BW / 2 + 0.066], arc: Math.PI, rot: [0, 0, -Math.PI / 2], color: 0x0c0806, jitter: 0 });
   // a vent pipe, a roll of paper on a nail, a sign
   b.cyl(0.05, 0.05, 0.9, 6, { pos: [0.35, H + 0.3, -0.3], color: 0x2a2a2a });
-  b.cyl(0.06, 0.06, 0.1, 8, { pos: [BW / 2 + 0.07, 1.25, 0.3], rot: [0, 0, Math.PI / 2], color: 0xf2f0ea });
+  b.cyl(0.06, 0.06, 0.1, 8, { pos: [BW / 2 + 0.07, 1.25, 0.3], rot: [0, 0, Math.PI / 2], color: 0xdedad0 });
   // a flat stone to step up on, where the ground in front is low
   const sg = Wd.heightAt(...f.to(0, BW / 2 + 0.45)) - base;
   if (sg < -0.22) b.box(0.7, -sg + 0.02, 0.42, { pos: [0, sg / 2 - 0.12, BW / 2 + 0.38], color: STONE, surf: 'stone', jitter: 0.06 });
@@ -817,10 +817,11 @@ export function buildMailbox(P, c) {
   b.box(0.14, 0.05, 0.56, { pos: [0, 1.075, 0], color: WOOD_DARK, surf: 'plank', surfSwap: true });
   for (const s of [-1, 1]) b.strut([0, 0.8, 0], [0, 1.06, s * 0.22], 0.05, 0.04, { color: WOOD_DARK });
   // the box: flat sides under a round top, its door toward the road
-  b.box(0.25, 0.13, 0.5, { pos: [0, 1.165, 0], color: BLUE, surf: 'metal', surfScale: 0.5 });
+  // (a hair shorter than the round top, so their ends do not fight)
+  b.box(0.25, 0.13, 0.49, { pos: [0, 1.165, 0], color: BLUE, surf: 'metal', surfScale: 0.5 });
   b.cyl(0.125, 0.125, 0.5, 14, { pos: [0, 1.23, 0], rot: [Math.PI / 2, 0, 0], color: BLUE });
   b.cyl(0.128, 0.128, 0.02, 14, { pos: [0, 1.23, 0.255], rot: [Math.PI / 2, 0, 0], color: 0x34569a });
-  b.box(0.256, 0.13, 0.02, { pos: [0, 1.165, 0.255], color: 0x34569a });
+  b.box(0.256, 0.13, 0.018, { pos: [0, 1.165, 0.255], color: 0x34569a });
   b.box(0.05, 0.03, 0.04, { pos: [0, 1.31, 0.275], color: IRON, jitter: 0 });
   // the flag, up: there is mail going out
   b.box(0.016, 0.26, 0.025, { pos: [0.135, 1.27, -0.1], color: 0xc4261c, jitter: 0 });
@@ -836,7 +837,7 @@ export function buildMailbox(P, c) {
 // onto a covered porch, a stone basement where the ground drops away at
 // the back, and the yard of a busy store: fuel pumps, the flag, a weigh
 // station with the day's halibut, ice, propane, tires and the bins.
-const BARN_RED = 0x8a2f22;
+const BARN_RED = 0x7e3326;
 const STORE_GREEN = 0x2e4a32;
 const GREY_METAL = 0x8c9092;
 
@@ -1287,7 +1288,7 @@ export function buildTradingPost(P, c) {
         b.box(0.1, 0.06, 0.02, { pos: [x - 0.12, top + 1.08, iz + sd * 0.245], color: 0xd8a830 });
       }
       b.cyl(0.08, 0.1, 0.12, 10, { pos: [x, top + 1.77, iz], color: 0x3a3a3a });
-      b.sphere(0.26, 12, 8, { pos: [x, top + 2.06, iz], color: 0xf2f0ea, smooth: true });
+      b.sphere(0.26, 12, 8, { pos: [x, top + 2.06, iz], color: 0xdedad0, smooth: true });
       b.torus(0.25, 0.035, 4, 16, { pos: [x, top + 2.06, iz], rot: [Math.PI / 2, 0, 0], color: col, jitter: 0 });
       // the hose down the side to the nozzle in its holster
       const hx = x + 0.33;
@@ -1454,8 +1455,8 @@ export function buildTradingPost(P, c) {
 // beside it along the slope: white clapboard under a red roof, the front
 // door at the ground on the uphill side and a walk-out basement toward the
 // sea, a picket fence, a clothesline.
-const KEEPER_WHITE = 0xeae6dc;
-const KEEPER_RED = 0xa8321e;
+const KEEPER_WHITE = 0xdcd8ce;
+const KEEPER_RED = 0x963a26;
 const KEEPER_GREEN = 0x2e4a32;
 
 // The highest dry point near the lighthouse's place on the headland, and
@@ -1493,7 +1494,7 @@ export function buildLighthouse(P, c) {
   b.cyl(3.2, 3.4, 0.8 - footY, 16, { pos: [0, (0.8 + footY) / 2, 0], color: 0x9a968c, surf: 'concrete' });
   b.cyl(3.25, 3.25, 0.08, 16, { pos: [0, 0.82, 0], color: 0x7a766e });
   // the tower, the red band, a door toward the house and windows up it
-  b.cyl(1.7, 2.4, 14, 16, { pos: [0, 7.8, 0], color: 0xf2f0ea, surf: 'concrete', jitter: 0.02 });
+  b.cyl(1.7, 2.4, 14, 16, { pos: [0, 7.8, 0], color: 0xdedad0, surf: 'concrete', jitter: 0.02 });
   // (radius of the tower at height y above its base)
   const rAt = (y) => 2.4 - ((y - 0.8) / 14) * 0.7;
   b.cyl(rAt(11.3) + 0.02, rAt(9.1) + 0.02, 2.2, 16, { pos: [0, 10.2, 0], color: KEEPER_RED, surf: 'concrete', jitter: 0.02 });
@@ -1536,7 +1537,7 @@ export function buildLighthouse(P, c) {
   b.torus(2.22, 0.03, 4, 28, { pos: [0, 15.45, 0], rot: [Math.PI / 2, 0, 0], color: 0x2a2a2a, jitter: 0 });
   // the lantern room: its wall, astragals round the glass, the roof, a
   // ventilator ball and the lightning rod
-  b.cyl(1.55, 1.55, 0.7, 16, { pos: [0, 15.4, 0], color: 0xf2f0ea, surf: 'concrete' });
+  b.cyl(1.55, 1.55, 0.7, 16, { pos: [0, 15.4, 0], color: 0xdedad0, surf: 'concrete' });
   for (let i = 0; i < 10; i++) {
     const a = (i / 10) * Math.PI * 2;
     b.box(0.06, 1.85, 0.06, { pos: [Math.cos(a) * 1.43, 16.75, Math.sin(a) * 1.43], color: 0x1e1e1e, jitter: 0 });
@@ -1627,7 +1628,7 @@ function buildKeeperHouse(P, lf, g) {
     });
   }
   // corner boards and the door
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(0.16, WALLH, 0.16, { pos: [sx * (W / 2 - 0.06), WALLH / 2, sz * (D / 2 - 0.06)], color: 0xf6f4ee, surf: 'plank', surfSwap: true });
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(0.16, WALLH, 0.16, { pos: [sx * (W / 2 - 0.06), WALLH / 2, sz * (D / 2 - 0.06)], color: 0xdedad0, surf: 'plank', surfSwap: true });
   opening(b, { cx: 0, y0: 0, w: 1.0, h: 2.05, z: D / 2 - T / 2 + 0.03, thick: T + 0.06, color: KEEPER_WHITE, sill: false });
   plankDoor(b, { cx: 0, w: 1.0, h: 2.05, z: D / 2 - T / 2 + 0.02, color: KEEPER_GREEN, hingeLeft: true });
   // a hood over the door on two brackets, and a concrete step
@@ -1648,12 +1649,12 @@ function buildKeeperHouse(P, lf, g) {
     b.box(rl - 0.05, 0.05, slope - 0.05, { pos: [0, cy + Math.cos(ang) * 0.01, cz + sd * Math.sin(ang) * 0.01], rot: [sd * ang, 0, 0], color: 0xd8d4ca, surf: 'plank' });
     const ez = sd * Math.cos(ang) * slope;
     const ey = ridgeY - Math.sin(ang) * slope;
-    b.box(rl + 0.06, 0.2, 0.06, { pos: [0, ey + 0.04, ez + sd * 0.03], color: 0xf6f4ee, surf: 'plank' });
-    for (const xx of [-rl / 2 - 0.03, rl / 2 + 0.03]) b.strut([xx, ey - 0.03, ez], [xx, ridgeY + 0.06, 0], 0.06, 0.2, { color: 0xf6f4ee });
+    b.box(rl + 0.06, 0.2, 0.06, { pos: [0, ey + 0.04, ez + sd * 0.03], color: 0xdedad0, surf: 'plank' });
+    for (const xx of [-rl / 2 - 0.03, rl / 2 + 0.03]) b.strut([xx, ey - 0.03, ez], [xx, ridgeY + 0.06, 0], 0.06, 0.2, { color: 0xdedad0 });
   }
   b.box(rl + 0.04, 0.1, 0.36, { pos: [0, ridgeY + 0.1, 0], color: 0x7a2418, surf: 'metal' });
   for (const sd of [1, -1]) gable(b, D, rise, T, { pos: [sd * (W / 2 - T / 2), WALLH - 0.02, 0], rot: [0, Math.PI / 2, 0], color: KEEPER_WHITE, surf: 'plank' });
-  for (const sd of [1, -1]) gableRafters(b, { run: D / 2, rise, ridgeY, z: 0, color: 0xf6f4ee, matrix: new THREE.Matrix4().makeRotationY(Math.PI / 2).setPosition(sd * (W / 2 - T / 2), 0, 0) });
+  for (const sd of [1, -1]) gableRafters(b, { run: D / 2, rise, ridgeY, z: 0, color: 0xdedad0, matrix: new THREE.Matrix4().makeRotationY(Math.PI / 2).setPosition(sd * (W / 2 - T / 2), 0, 0) });
   // a round vent in each gable
   for (const sd of [1, -1]) b.cyl(0.22, 0.22, 0.06, 12, { pos: [sd * (W / 2 + 0.01), WALLH + 0.85, 0], rot: [0, 0, Math.PI / 2], color: KEEPER_GREEN });
   // the brick chimney at the ridge
@@ -1683,20 +1684,20 @@ function buildKeeperHouse(P, lf, g) {
   const fz = D / 2 + 3.2;
   const picket = (x, z) => {
     const y = gy(x, z);
-    b.box(0.08, 1.0, 0.03, { pos: [x, y + 0.42, z], color: 0xf6f4ee, jitter: 0.03 });
-    b.cone(0.057, 0.08, 4, { pos: [x, y + 0.96, z], scale: [1, 1, 0.38], color: 0xf6f4ee, jitter: 0.03 });
+    b.box(0.08, 1.0, 0.03, { pos: [x, y + 0.42, z], color: 0xdedad0, jitter: 0.03 });
+    b.cone(0.057, 0.08, 4, { pos: [x, y + 0.96, z], scale: [1, 1, 0.38], color: 0xdedad0, jitter: 0.03 });
   };
   const fenceRun = (x0, z0, x1, z1) => {
     const len = Math.hypot(x1 - x0, z1 - z0);
     const n = Math.max(1, Math.round(len / 0.17));
     for (let i = 0; i <= n; i++) picket(x0 + ((x1 - x0) * i) / n, z0 + ((z1 - z0) * i) / n);
-    for (const ry of [0.25, 0.75]) b.strut([x0, gy(x0, z0) + ry, z0 - 0.03], [x1, gy(x1, z1) + ry, z1 - 0.03], 0.06, 0.04, { color: 0xf6f4ee });
+    for (const ry of [0.25, 0.75]) b.strut([x0, gy(x0, z0) + ry, z0 - 0.03], [x1, gy(x1, z1) + ry, z1 - 0.03], 0.06, 0.04, { color: 0xdedad0 });
     for (const [px, pz] of [
       [x0, z0],
       [x1, z1],
     ]) {
       const y = gy(px, pz);
-      b.box(0.1, 1.3, 0.1, { pos: [px, y + 0.5, pz], color: 0xf6f4ee, surf: 'plank', surfSwap: true });
+      b.box(0.1, 1.3, 0.1, { pos: [px, y + 0.5, pz], color: 0xdedad0, surf: 'plank', surfSwap: true });
     }
   };
   fenceRun(-W / 2 - 0.6, fz, -0.75, fz);
@@ -1719,7 +1720,7 @@ function buildKeeperHouse(P, lf, g) {
     const wash = [
       [0.4, 0.55, 0xd8322a],
       [0.6, 0.7, 0x3a5a8a],
-      [0.45, 0.42, 0xf2f0ea],
+      [0.45, 0.42, 0xdedad0],
       [0.35, 0.8, 0x4a6a3a],
     ];
     let zz = z0 + 0.4;
@@ -1953,7 +1954,7 @@ export function buildPier(P, p) {
     sb.cone(0.12, 0.1, 8, { pos: [0.68, 2.22, SD / 2 + 0.18], color: 0x1e3a28 });
     sg.sphere(0.05, 6, 4, { pos: [0.68, 2.14, SD / 2 + 0.18], color: 0xffffff, jitter: 0 });
     sb.torus(0.26, 0.07, 6, 14, { pos: [-0.7, 1.35, SD / 2 + 0.06], color: 0xe8541e, jitter: 0 });
-    for (let k = 0; k < 4; k++) sb.box(0.06, 0.15, 0.15, { pos: [-0.7 + Math.cos((k * Math.PI) / 2) * 0.26, 1.35 + Math.sin((k * Math.PI) / 2) * 0.26, SD / 2 + 0.07], rot: [0, 0, (k * Math.PI) / 2], color: 0xf2f0ea, jitter: 0 });
+    for (let k = 0; k < 4; k++) sb.box(0.06, 0.15, 0.15, { pos: [-0.7 + Math.cos((k * Math.PI) / 2) * 0.26, 1.35 + Math.sin((k * Math.PI) / 2) * 0.26, SD / 2 + 0.07], rot: [0, 0, (k * Math.PI) / 2], color: 0xdedad0, jitter: 0 });
     for (let k = 0; k < 3; k++) sb.sphere(0.13, 8, 6, { pos: [-SW / 2 - 0.08, 1.7 - k * 0.32, -0.6 + k * 0.1], color: [0xe85a1e, 0xf2c230, 0xe8e4da][k] });
     sb.box(0.8, 0.5, 0.5, { pos: [-0.95, 0.25, SD / 2 + 0.4], color: 0xe8e4da });
     sb.box(0.84, 0.08, 0.54, { pos: [-0.95, 0.54, SD / 2 + 0.4], color: 0x2a6aa8 });
@@ -1971,7 +1972,7 @@ export function buildPier(P, p) {
   {
     const tx = hw - 0.8;
     const tz = ez - 8;
-    b.box(1.8, 0.06, 0.8, { pos: [tx, 0.95, tz], color: 0xf2f0ea });
+    b.box(1.8, 0.06, 0.8, { pos: [tx, 0.95, tz], color: 0xdedad0 });
     b.box(1.84, 0.12, 0.84, { pos: [tx, 0.86, tz], color: 0x9aa0a4 });
     for (const lx of [-0.8, 0.8]) for (const lz of [-0.34, 0.34]) b.box(0.05, 0.86, 0.05, { pos: [tx + lx, 0.43, tz + lz], color: 0x9aa0a4, jitter: 0 });
     b.box(1.7, 0.04, 0.7, { pos: [tx, 0.25, tz], color: 0x9aa0a4 });
@@ -2051,10 +2052,10 @@ export function buildPier(P, p) {
   // holders
   const [bx, bz] = f.to(hw + 3.2, -len / 2 + 30);
   const boat = new ModelBuilder();
-  boat.sphere(1, 14, 7, { pos: [0, 0.45, 0], scale: [1.5, 0.75, 4.2], color: 0xf2f0ea });
+  boat.sphere(1, 14, 7, { pos: [0, 0.45, 0], scale: [1.5, 0.75, 4.2], color: 0xdedad0 });
   boat.box(2.6, 0.18, 6.4, { pos: [0, 0.9, -0.2], color: 0x2a4a6a });
   boat.box(2.3, 0.08, 5.6, { pos: [0, 1.0, -0.3], color: 0x9a8a70, surf: 'deck' });
-  boat.box(1.6, 1.4, 1.8, { pos: [0, 1.7, 0.6], color: 0xf2f0ea });
+  boat.box(1.6, 1.4, 1.8, { pos: [0, 1.7, 0.6], color: 0xdedad0 });
   boat.box(1.7, 0.1, 1.95, { pos: [0, 2.45, 0.55], color: 0x2a4a6a });
   boat.box(1.5, 0.55, 0.05, { pos: [0, 1.95, 1.52], color: 0x223344 });
   for (const sd of [-1, 1]) boat.box(0.05, 0.5, 1.4, { pos: [sd * 0.81, 1.95, 0.6], color: 0x223344 });

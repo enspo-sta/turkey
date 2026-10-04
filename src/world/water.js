@@ -147,7 +147,8 @@ void main() {
   float sparkle = smoothstep(0.62, 0.9, crest);
   float glitter = pow(rs, 160.0) * sparkle * 14.0 + pow(rs, 26.0) * 0.12;
   float lit = mix(sh.r * fxCloudShadow(vWorld), 1.0, uNight) * smoothstep(0.0, 0.08, uLightDir.y);
-  vec3 spec = uSunLight * (sharp + glitter) * lit * (1.0 - uRain * 0.8);
+  // weighted like the reflection: faint looking down, strong across the water toward a low sun
+  vec3 spec = uSunLight * (sharp + glitter) * lit * (1.0 - uRain * 0.8) * (0.35 + 2.0 * fres);
 
   // --- foam: rapids, the plunge pool and lapping at the shore --------------
   float fn = texture2D(uFoamTex, (uRiver > 0.5 ? vFlow * vec2(0.23, 0.11) - vec2(0.0, uTime * uFlowSpeed * 0.11) : vWorld.xz * 0.19 + uTime * 0.01)).b;
@@ -176,10 +177,12 @@ void main() {
   c = mix(c, foamCol, foamAmt);
   a = max(a, foamAmt * 0.92 * edge);
   // mist lying on the water, then haze toward the horizon
+  // the sky's colour once, for the mist (paler, as fxMistColor) and the haze
+  vec3 skyV = fxSkyColor(-V);
   float mist = fxMist(vWorld);
-  c = mix(c, fxMistColor(-V), mist);
+  c = mix(c, mix(skyV, vec3(dot(skyV, vec3(0.2126, 0.7152, 0.0722))), 0.35) * 1.06, mist);
   float haze = fxHaze(vWorld);
-  c = mix(c, fxSkyColor(-V), haze);
+  c = mix(c, skyV, haze);
   spec *= (1.0 - haze) * (1.0 - mist);
   #ifdef TONE_MAPPING
     c = toneMapping(c);
@@ -187,6 +190,10 @@ void main() {
   #endif
   c = linearToOutputTexel(vec4(c, 1.0)).rgb;
   spec = linearToOutputTexel(vec4(spec, 1.0)).rgb;
+  #ifdef TONE_MAPPING
+    // fine noise against banding where the colour goes straight to the 8-bit screen (Medium and Low; High's finish does its own)
+    c += (fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) - 0.5) / 255.0;
+  #endif
   gl_FragColor = vec4(c * a + spec, a);
 }`;
 
@@ -657,7 +664,14 @@ export class WaterSystem {
               sunVis = fxShade(vFxWorld).r * fxCloudShadow(vFxWorld);
             #endif
             float rim = pow(1.0 - abs(dot(normalize(vN), normalize(vView))), 2.0);
-            col *= (0.7 + 0.4 * clamp(length(uSunColor), 0.0, 1.5) * mix(0.3, 1.0, sunVis)) * mix(1.0, 0.25, uNight);
+            #ifdef USE_FOG
+              // lit by the light the water itself is lit by (the sky's and the
+              // sun's), so the falls are dim at night and in a dark gorge,
+              // instead of glowing white
+              col *= uFxWaterLight * mix(0.55, 1.0, sunVis);
+            #else
+              col *= (0.7 + 0.4 * clamp(length(uSunColor), 0.0, 1.5) * mix(0.3, 1.0, sunVis)) * mix(1.0, 0.25, uNight);
+            #endif
             col += rim * 0.12 * (1.0 - uNight) * sunVis;
             col *= mix(1.0, 0.62, uBack);
             float alpha = mix(0.38, 0.95, clamp(white, 0.0, 1.0)) * edge * (1.0 - gap);
@@ -717,7 +731,11 @@ export class WaterSystem {
           float fade = smoothstep(1.0, 0.75, d) * 0.4 + smoothstep(0.85, 0.1, d) * 0.6;
           float side = smoothstep(0.0, 0.18, vUv.x) * smoothstep(1.0, 0.82, vUv.x);
           float a = boil * fade * side * 0.9;
-          vec3 col = vec3(0.92, 0.95, 0.96) * (0.72 + 0.35 * clamp(length(uSunColor), 0.0, 1.5)) * mix(1.0, 0.25, uNight);
+          #ifdef USE_FOG
+            vec3 col = vec3(0.92, 0.95, 0.96) * uFxWaterLight * 0.85;
+          #else
+            vec3 col = vec3(0.92, 0.95, 0.96) * (0.72 + 0.35 * clamp(length(uSunColor), 0.0, 1.5)) * mix(1.0, 0.25, uNight);
+          #endif
           gl_FragColor = vec4(col, a);
           #include <tonemapping_fragment>
           #include <colorspace_fragment>
