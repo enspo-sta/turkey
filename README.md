@@ -49,6 +49,9 @@ the same work: rounder animals with paler bellies, tree crowns lit as one
 volume, bark that keeps its colour, clear car glass, a truer tone curve and
 softer light under cloud), with before and after pictures, what it costs and
 the audit: [docs/asset-quality-update.html](docs/asset-quality-update.html).
+Since then the hand on the rod holds it as an angler holds a spinning rod,
+and every first-person sleeve is the right way out:
+[docs/rod-hand-fix.html](docs/rod-hand-fix.html).
 The step before it, a fair check of the voice's frame cost and a map check
 that really taps Bear Falls:
 [docs/voice-cost-check.html](docs/voice-cost-check.html).

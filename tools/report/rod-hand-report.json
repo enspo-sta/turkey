@@ -1,0 +1,213 @@
+{
+ "kicker": "Hotrod Outdoor Alaska Fishing \u00b7 fix report",
+ "title": "Rod Hand Fix",
+ "lede": "The hand on the rod held it like a hammer from above, turned round, with the wrist bent about 78 degrees into a sleeve coming from the side. It now holds the rod as anglers hold a spinning rod: the reel&#x27;s stem between the middle and ring fingers, the thumb on top, the wrist bent 25 degrees toward the little finger and 20 back. Two older faults in every arm went with it (sleeves built inside out, a fin at the wrist); 10 of 10 scenarios ran clean and an independent review&#x27;s six findings were all fixed.",
+ "links": [
+  {
+   "label": "Play the game",
+   "href": "https://claude.ai/artifact/3urJEG61Boov67ViABm26A"
+  },
+  {
+   "label": "Code on GitHub",
+   "href": "https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing"
+  }
+ ],
+ "sections": [
+  {
+   "id": "request",
+   "kicker": "This fix",
+   "title": "What was asked",
+   "html": "<p>The request: <i>\"Hand on the rod has a weird angle. Fix\"</i>.</p><div class=\"tablewrap\"><table class=\"text\"><thead><tr><th>Asked</th><th>What was done</th><th>Status</th></tr></thead><tbody><tr><td data-label=\"Asked\">Hand on the rod has a weird angle. Fix</td><td data-label=\"What was done\">The hand held the rod like a hammer from above, turned round with the index finger toward the butt, and the sleeve came in from the side, so the wrist bent about 78 degrees. It now holds the rod as an angler holds a spinning rod, with the wrist bent 25 degrees toward the little finger and 20 degrees back, well inside a wrist's reach.</td><td data-label=\"Status\">Fixed</td></tr><tr><td data-label=\"Asked\">Found while fixing it</td><td data-label=\"What was done\">Every first-person sleeve was built inside out, and the hand's wrist tube stuck out of the forearm as a thin fin once the wrist bent. Both fixed for every arm.</td><td data-label=\"Status\">Fixed</td></tr><tr><td data-label=\"Asked\">Checked</td><td data-label=\"What was done\">Pictures of every arm before and after, at a wide screen's shape and an iPhone's, 10 regression scenarios on the final build (10 clean), and an independent code review whose six findings were all fixed and checked again.</td><td data-label=\"Status\">Done</td></tr></tbody></table></div>"
+  },
+  {
+   "id": "cause",
+   "kicker": "The problem",
+   "title": "Why the hand looked wrong",
+   "html": "<p>The hand was a closed fist round a bar, the same one that holds the paraglider's brake toggle, put on the rod from above. Three things made it look wrong:</p><ul><li><b>It was turned round.</b> The index finger pointed back toward the butt and the thumb toward the player, the way you would grab a stick lying across a table, not a rod pointing out over the water.</li><li><b>The wrist was bent about 78 degrees.</b> The hand's own line ran across the rod, while the sleeve came back toward the camera, so the wrist turned a corner. A wrist bends about 30 to 40 degrees toward the little finger and 15 to 25 toward the thumb (see the sources).</li><li><b>The bare wrist showed as a stub</b> between the glove and the cuff, pointing sideways.</li></ul><p>The pairs show the hand at rest as the game opens, and the hand alone, without the rod or the sleeve, from the player's eye and from the side.</p>",
+   "pairs": [
+    {
+     "before": {
+      "file": "rod-hand/before/rest.jpg",
+      "caption": "Before: the rod at rest, a fist on top of the rod and the sleeve coming in from the side"
+     },
+     "after": {
+      "file": "rod-hand/after/rest.jpg",
+      "caption": "After: the hand round the reel seat from the right, the thumb on top, the forearm in line with the hand"
+     }
+    },
+    {
+     "before": {
+      "file": "rod-hand/before/alone-a.jpg",
+      "caption": "Before: the hand alone from the player's eye: the back of the hand up, the fingers over the far side"
+     },
+     "after": {
+      "file": "rod-hand/after/alone-a.jpg",
+      "caption": "After: the hand alone: the fingers wrapped round where the grip runs, the thumb curled on top"
+     }
+    },
+    {
+     "before": {
+      "file": "rod-hand/before/alone-b.jpg",
+      "caption": "Before: the hand alone from the side, the fist square to the forearm"
+     },
+     "after": {
+      "file": "rod-hand/after/alone-b.jpg",
+      "caption": "After: from the side: the wrist bends a little and runs smoothly into the forearm"
+     }
+    }
+   ]
+  },
+  {
+   "id": "grip",
+   "kicker": "The fix",
+   "title": "Holding the rod as an angler does",
+   "html": "<p>Anglers hold a spinning rod by the reel seat with the reel hanging below: the reel's stem between the second and third fingers, the thumb along the top of the handle toward the tip, and the index finger free to feel the line (Texas Parks and Wildlife, and the other guides in the sources). The new hand does that. The finger bends were not set by eye: a small search tried each finger's three joints until every bone lay on the grip, then the index finger was eased away from the middle one so the two only touch.</p><div class=\"tablewrap\"><table class=\"text\"><thead><tr><th></th><th>Before</th><th>After</th></tr></thead><tbody><tr><td data-label=\"\">Which way the hand faces</td><td data-label=\"Before\">Index finger toward the butt</td><td data-label=\"After\">Index finger and thumb toward the tip</td></tr><tr><td data-label=\"\">The reel's stem</td><td data-label=\"Before\">Behind the hand</td><td data-label=\"After\">Between the middle and ring fingers, as anglers hold it</td></tr><tr><td data-label=\"\">The thumb</td><td data-label=\"Before\">Round the front of the fist, toward the player</td><td data-label=\"After\">Curled along the top of the grip</td></tr><tr><td data-label=\"\">How the grip lies in the hand</td><td data-label=\"Before\">Square across the fingers, like a hammer</td><td data-label=\"After\">Across the palm at 40 degrees, from the heel of the hand to the root of the index finger</td></tr><tr><td data-label=\"\">How the fingers wrap</td><td data-label=\"Before\">The brake toggle's fist, made for a thicker bar</td><td data-label=\"After\">Each finger's three bends solved so every bone lies on the 1.3 cm reel seat without going into it</td></tr><tr><td data-label=\"\">The wrist</td><td data-label=\"Before\">About 78 degrees, square to the sleeve</td><td data-label=\"After\">25 degrees toward the little finger and 20 degrees back; a wrist reaches about 30 to 40 and 60 to 75</td></tr><tr><td data-label=\"\">The sleeve</td><td data-label=\"Before\">From the side, at a right angle to the hand</td><td data-label=\"After\">Straight along the forearm for 13 cm, then curving down to the lower right like an arm bent at the elbow</td></tr></tbody></table></div><p>The rod itself, where it sits, how it moves in a cast and a fight, and the line from its tip are all unchanged: only the hand and the sleeve that hold it are new. The reel's stem is thinner along the rod, 8 mm instead of 3 cm, so it fits between two fingers.</p>",
+   "pairs": [
+    {
+     "before": {
+      "file": "rod-hand/before/bare.jpg",
+      "caption": "Before: bare-handed at rest"
+     },
+     "after": {
+      "file": "rod-hand/after/bare.jpg",
+      "caption": "After: bare-handed: the fingertips round the front of the grip, the thumb on top"
+     }
+    },
+    {
+     "before": {
+      "file": "rod-hand/before/fight-left.jpg",
+      "caption": "Before: a fish pulling left, the rod raised"
+     },
+     "after": {
+      "file": "rod-hand/after/fight-left.jpg",
+      "caption": "After: the same pull: the fist round the reel seat, the wrist straight into the sleeve"
+     }
+    },
+    {
+     "before": {
+      "file": "rod-hand/before/fight-right.jpg",
+      "caption": "Before: a fish pulling right"
+     },
+     "after": {
+      "file": "rod-hand/after/fight-right.jpg",
+      "caption": "After: the same pull, the forearm running back to the lower right"
+     }
+    },
+    {
+     "before": {
+      "file": "rod-hand/before/phone-rest.jpg",
+      "caption": "Before: at an iPhone's shape (844 by 390), at rest"
+     },
+     "after": {
+      "file": "rod-hand/after/phone-rest.jpg",
+      "caption": "After: the same shape: the hand on the rod and the arm curving down out of the view"
+     }
+    },
+    {
+     "before": {
+      "file": "rod-hand/before/phone-fight.jpg",
+      "caption": "Before: at an iPhone's shape, a fish pulling right"
+     },
+     "after": {
+      "file": "rod-hand/after/phone-fight.jpg",
+      "caption": "After: the same pull at the same shape"
+     }
+    }
+   ]
+  },
+  {
+   "id": "found",
+   "kicker": "Found on the way",
+   "title": "Two older faults, fixed for every arm",
+   "html": "<p>Two older faults in the arms every first-person view shares came to light while the rod hand was being fixed:</p><ul><li><b>Every sleeve was inside out.</b> Its faces pointed inward, so what the eye saw was the inside of the sleeve's far wall, standing in for the outside of the near one. It looked almost right, until anything inside the sleeve showed through. The faces now point outward, and a short lining faces in at the cuff, so a look into the cuff (the cast's wind-up, a hard pull on the paraglider's brakes) finds cloth.</li><li><b>The hand's wrist tube ran 3.7 cm back along the hand.</b> With a straight wrist it hid inside the forearm; with any bend its open end stuck out as a thin fin. It now stops at the wrist, with a rounded joint there.</li></ul><p>Every arm was photographed before and after on the same scenario. The bow, the drawing hand, the paraglider's brakes, the climbing hands and the hands holding a halibut look the same as before, apart from the cuffs. The pictures of a catch held up depend on how long the software renderer takes to build the fish's shaders, so they compare timing rather than arms; the king salmon and the halibut, which had settled in both builds, match.</p>",
+   "pairs": [
+    {
+     "before": {
+      "file": "rod-hand/before/windup.jpg",
+      "caption": "Before: the top of the cast's wind-up, looking into the cuff"
+     },
+     "after": {
+      "file": "rod-hand/after/windup.jpg",
+      "caption": "After: the same moment: the lining in the cuff"
+     }
+    },
+    {
+     "before": {
+      "file": "rod-hand/before/glide-brake.jpg",
+      "caption": "Before: both paraglider brakes pulled hard"
+     },
+     "after": {
+      "file": "rod-hand/after/glide-brake.jpg",
+      "caption": "After: the same pull: the sleeves the right way out"
+     }
+    },
+    {
+     "before": {
+      "file": "rod-hand/before/cast.jpg",
+      "caption": "Before: mid-cast"
+     },
+     "after": {
+      "file": "rod-hand/after/cast.jpg",
+      "caption": "After: mid-cast with the new grip"
+     }
+    },
+    {
+     "before": {
+      "file": "rod-hand/before/bow.jpg",
+      "caption": "Before: the longbow at rest"
+     },
+     "after": {
+      "file": "rod-hand/after/bow.jpg",
+      "caption": "After: the longbow at rest: unchanged"
+     }
+    },
+    {
+     "before": {
+      "file": "rod-hand/before/bow-draw.jpg",
+      "caption": "Before: the bow drawn"
+     },
+     "after": {
+      "file": "rod-hand/after/bow-draw.jpg",
+      "caption": "After: the bow drawn: unchanged"
+     }
+    },
+    {
+     "before": {
+      "file": "rod-hand/before/glide.jpg",
+      "caption": "Before: the paraglider's brakes, turning"
+     },
+     "after": {
+      "file": "rod-hand/after/glide.jpg",
+      "caption": "After: the brakes, turning: unchanged"
+     }
+    }
+   ]
+  },
+  {
+   "id": "load",
+   "kicker": "Load",
+   "title": "What it costs",
+   "html": "<p>Each arm is one hand mesh and one sleeve mesh, as before: no new draw calls, materials, textures or shader programs. The triangles, counted in each build:</p><div class=\"tablewrap\"><table><thead><tr><th>Arm</th><th class=\"n\">Before</th><th class=\"n\">After</th><th class=\"n\">Change</th></tr></thead><tbody><tr><td data-label=\"Arm\">The rod hand</td><td class=\"n\" data-label=\"Before\">5 896</td><td class=\"n\" data-label=\"After\">6 388</td><td class=\"n\" data-label=\"Change\">+492</td></tr><tr><td data-label=\"Arm\">The bow hand</td><td class=\"n\" data-label=\"Before\">5 936</td><td class=\"n\" data-label=\"After\">6 428</td><td class=\"n\" data-label=\"Change\">+492</td></tr><tr><td data-label=\"Arm\">The drawing hand</td><td class=\"n\" data-label=\"Before\">5 816</td><td class=\"n\" data-label=\"After\">6 308</td><td class=\"n\" data-label=\"Change\">+492</td></tr><tr><td data-label=\"Arm\">A catch, the tail hand</td><td class=\"n\" data-label=\"Before\">5 816</td><td class=\"n\" data-label=\"After\">6 308</td><td class=\"n\" data-label=\"Change\">+492</td></tr><tr><td data-label=\"Arm\">A catch, the belly hand</td><td class=\"n\" data-label=\"Before\">5 816</td><td class=\"n\" data-label=\"After\">6 308</td><td class=\"n\" data-label=\"Change\">+492</td></tr><tr><td data-label=\"Arm\">The paraglider's left hand</td><td class=\"n\" data-label=\"Before\">5 868</td><td class=\"n\" data-label=\"After\">6 360</td><td class=\"n\" data-label=\"Change\">+492</td></tr><tr><td data-label=\"Arm\">A climbing hand</td><td class=\"n\" data-label=\"Before\">5 936</td><td class=\"n\" data-label=\"After\">6 428</td><td class=\"n\" data-label=\"Change\">+492</td></tr><tr><td data-label=\"Arm\">The reel</td><td class=\"n\" data-label=\"Before\">108</td><td class=\"n\" data-label=\"After\">108</td><td class=\"n\" data-label=\"Change\">0</td></tr></tbody></table></div><p class=\"note\">The extra triangles are the wrist's rounded joint (252) and the lining and rim at the cuff (240); at most two arms are drawn at a time, against more than a million triangles in the world around them.</p>"
+  },
+  {
+   "id": "tests",
+   "kicker": "Tests",
+   "title": "Every check run",
+   "html": "<h3>Regression scenarios on the final build</h3><div class=\"tablewrap\"><table class=\"text\"><thead><tr><th>Scenario</th><th>What it covers</th><th class=\"n\">Pictures</th><th>Result</th></tr></thead><tbody><tr><td data-label=\"Scenario\"><code>climbing</code></td><td data-label=\"What it covers\">climbing a route hand over hand, chalking, a fall and the top</td><td class=\"n\" data-label=\"Pictures\">5</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>arms</code></td><td data-label=\"What it covers\">the rod, the bow at rest and drawn, the paraglider&#x27;s brakes, a king salmon and a grayling held up, the rod bare-handed</td><td class=\"n\" data-label=\"Pictures\">7</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>fish-views</code></td><td data-label=\"What it covers\">fish schools, a fish coming to the float, and the fight</td><td class=\"n\" data-label=\"Pictures\">4</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>arms-rod</code></td><td data-label=\"What it covers\">the rod hand in gloves and bare-handed</td><td class=\"n\" data-label=\"Pictures\">2</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>round-smoke</code></td><td data-label=\"What it covers\">save and continue, every screen opened</td><td class=\"n\" data-label=\"Pictures\">1</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>hands</code></td><td data-label=\"What it covers\">the hands holding a king salmon, a grayling and a halibut</td><td class=\"n\" data-label=\"Pictures\">3</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>catch</code></td><td data-label=\"What it covers\">cast, hook, fight and land a fish, then the journal, map and shop</td><td class=\"n\" data-label=\"Pictures\">5</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>boat</code></td><td data-label=\"What it covers\">buying, launching, driving and loading the boat, fishing from it</td><td class=\"n\" data-label=\"Pictures\">8</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>bow</code></td><td data-label=\"What it covers\">the longbow: nock, draw, loose, arrows in flight</td><td class=\"n\" data-label=\"Pictures\">4</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>catch-touch</code></td><td data-label=\"What it covers\">the whole catch on a touch screen</td><td class=\"n\" data-label=\"Pictures\">2</td><td data-label=\"Result\">clean</td></tr></tbody></table></div><p class=\"note\">Clean: the scenario ran to its end with no page error, failed step or error printed by the page.</p><h3>The independent code review</h3><p>A separate review checked the change with numbers rather than by eye: the hand's frame and the forearm's direction against their comments, every finger bone against the rod, the reel seat and the stem, every sleeve against its cuff and the skin inside it, ray casts from the camera through each cuff, and the cost. It found the maths of the grip right and the sleeve's new winding correct (920 of 920 faces now point out, against none before), and these six things, all fixed and checked again by the same review:</p><div class=\"tablewrap\"><table class=\"text\"><thead><tr><th>Severity</th><th>Found</th><th>What was done</th></tr></thead><tbody><tr><td data-label=\"Severity\">Medium</td><td data-label=\"Found\">With the sleeve now the right way out, its folds poked 1 to 4.5 mm through the cuff on every arm (11 to 38 crossings an arm).</td><td data-label=\"What was done\">The folds start 4 cm past the cuff and reach full depth by 7 cm: no crossings on any of the nine arms.</td></tr><tr><td data-label=\"Severity\">Low</td><td data-label=\"Found\">Looking into a cuff (the cast&#x27;s wind-up, a hard pull on the paraglider&#x27;s brakes) showed the background, since the sleeve&#x27;s inside is no longer drawn: about half the rays into the cuff found nothing.</td><td data-label=\"What was done\">A lining facing in for the sleeve&#x27;s first 6.5 cm, another inside the cuff, and a ring closing the cuff&#x27;s rim with its corners on the cuff&#x27;s: rays from the camera into the cuff that find nothing fell from about half to none, in the wind-up and at full brake. 240 triangles an arm, no new material. Drawing the whole sleeve from both sides was the other way, but it shades the far wall&#x27;s inside under the near one on every frame.</td></tr><tr><td data-label=\"Severity\">Low</td><td data-label=\"Found\">The &quot;straight&quot; part of the rod sleeve bowed 4 mm away from the bend and then turned 26 degrees within 6 cm, which looked faceted.</td><td data-label=\"What was done\">The sleeve is now a true straight line for 13 cm, then one smooth curve into the bend, turning one way only: at most 6.7 degrees from one ring to the next (was 11.1).</td></tr><tr><td data-label=\"Severity\">Low</td><td data-label=\"Found\">A hairline lip where the new wrist joint met the wrist&#x27;s open end.</td><td data-label=\"What was done\">The joint is now exactly as wide as the wrist.</td></tr><tr><td data-label=\"Severity\">Low</td><td data-label=\"Found\">The index finger went 3.9 mm into the middle finger, under the grip.</td><td data-label=\"What was done\">The index finger spreads less and its bends were solved again; neighbouring fingers now just touch, within about a millimetre, and every finger still lies on the reel seat.</td></tr><tr><td data-label=\"Severity\">Nit</td><td data-label=\"Found\">Comments: the frame of ROD_STEM, a radius called a size; a vector changed in place; the reel&#x27;s stem stopping 4 mm short of the reel seat.</td><td data-label=\"What was done\">All fixed; the stem now reaches into the seat.</td></tr></tbody></table></div>"
+  },
+  {
+   "id": "limits",
+   "kicker": "Limits",
+   "title": "What this report cannot show",
+   "html": "<ul><li><b>No real iPhone was used.</b> The pictures come from Chromium drawing in software at an iPhone's shape. The hand, the sleeve and the lighting are the same on a phone, but the change has not been seen on one.</li><li><b>The grip was solved for the reel seat.</b> Every rod in the shop shares the same handle, so it fits them all; a rod with a thicker handle would need the bends solved again.</li><li><b>The arm moves with the rod as one piece.</b> At the very top of the cast's wind-up the forearm swings with the rod rather than bending at the elbow, as before.</li><li><b>\"Natural\" was judged against measured wrist ranges and by eye</b>, from the pictures at two screen shapes and four rod positions.</li><li><b>Sources were read through web search.</b> curl is blocked for every host in this environment, so the pages below were found and summarised by search, not downloaded in full. To allow hosts: the cloud environment menu in the session's title bar, then Edit, then Network access (a broader level, or Custom with the hosts added under Allowed domains); the steps are at <a href=\"https://code.claude.com/docs/en/cloud-environments#network-access\">https://code.claude.com/docs/en/cloud-environments#network-access</a>.</li></ul>"
+  },
+  {
+   "id": "conclusion",
+   "cls": "conclusion",
+   "kicker": "What would change this conclusion",
+   "title": "What would change this conclusion",
+   "html": "<p><b>The conclusion:</b> the hand now holds the rod the way anglers hold a spinning rod, with its wrist bent well inside a real wrist's reach, and the sleeves of every arm are the right way out. Nothing else in the game moved, and the cost is a few hundred triangles an arm. This conclusion would change if:</p><ul><li><b>On your iPhone the hand still looks off.</b> The likeliest place is the forearm, which now runs back to the lower right of the screen; the curve of the sleeve past the wrist is one number to adjust. A screenshot of the moment would show which part reads wrong.</li><li><b>A right-handed angler would hold it another way.</b> Some put the stem between the ring and little fingers, or hold the index finger out on the line. Either is a new set of finger bends from the same search, not a rebuild.</li><li><b>A cuff shows a gap from an angle not pictured here.</b> The lining covers the first 6.5 cm, which the ray casts showed is enough for the cast's wind-up and the paraglider's full brake; a much steeper view would need it longer.</li></ul>"
+  }
+ ],
+ "footer": "<p>Built on the <code>claude/ruben-hotrod-fishing</code> branch: <a href=\"https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing\">the code on GitHub</a>, the <a href=\"https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/README.md\">README</a> and <a href=\"https://claude.ai/artifact/3urJEG61Boov67ViABm26A\">the playable build</a>. The hand is in <code>src/entities/hands.js</code> (the pose and the sleeve) and <code>src/entities/viewmodel.js</code> (how it sits on the rod).</p><p><b>Sources.</b> How to hold a spinning rod: the reel&#x27;s stem between the second and third fingers, the thumb on top: Texas Parks and Wildlife, Casting, <a href=\"https://tpwd.texas.gov/publications/pwdpubs/media/pwd_bk_k0700_0639_casting.pdf\">https://tpwd.texas.gov/publications/pwdpubs/media/pwd_bk_k0700_0639_casting.pdf</a> \u00b7 The stem between the middle and ring fingers, the index finger free for the line: Anglers.com, How to Cast a Spinning Reel Like a Pro, <a href=\"https://anglers.com/?p=7078\">https://anglers.com/?p=7078</a> \u00b7 Spin casting for trout: Bish Fish (New Zealand), Spinning, <a href=\"https://bishfish.co.nz/webbooks/smttrout/castspin.html\">https://bishfish.co.nz/webbooks/smttrout/castspin.html</a> \u00b7 The wrist&#x27;s reach in daily tasks: 60 degrees back, 40 toward the little finger: Ryu and others, Functional ranges of motion of the wrist joint (Mayo Clinic), <a href=\"https://mayoclinic.elsevierpure.com/en/publications/functional-ranges-of-motion-of-the-wrist-joint/\">https://mayoclinic.elsevierpure.com/en/publications/functional-ranges-of-motion-of-the-wrist-joint/</a> \u00b7 Measured wrist ranges in healthy adults: about 66 degrees back, 28 toward the little finger: Korean Journal study via KoreaMed Synapse, <a href=\"https://synapse.koreamed.org/articles/1122791\">https://synapse.koreamed.org/articles/1122791</a> \u00b7 Normal ranges of joint motion: Stretching and Flexibility FAQ, <a href=\"https://homepages.physik.uni-muenchen.de/~Klaus.Steinberger/budo/sfaq/stretching_8.html\">https://homepages.physik.uni-muenchen.de/~Klaus.Steinberger/budo/sfaq/stretching_8.html</a> \u00b7 Which faces are drawn: front, back or both: three.js, Material.side, <a href=\"https://threejs.org/docs/#api/en/materials/Material.side\">https://threejs.org/docs/#api/en/materials/Material.side</a> \u00b7 A path made of a straight piece and a curve: three.js, CurvePath, <a href=\"https://threejs.org/docs/#api/en/extras/core/CurvePath\">https://threejs.org/docs/#api/en/extras/core/CurvePath</a>.</p>"
+}

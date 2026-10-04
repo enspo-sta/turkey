@@ -25,8 +25,13 @@ const FINGERS = [
 export const POSES = {
   // a fist closed round a bar (rod grip, brake toggle, fish tail)
   grip: { fingers: [[1.25, 1.45, 0.75, 0.05], [1.3, 1.5, 0.75, 0], [1.3, 1.5, 0.75, -0.05], [1.35, 1.45, 0.7, -0.12]], thumb: [-0.004, -0.052, 0.112] },
-  // the rod hand: index finger out along the blank, feeling the line
-  rod: { fingers: [[0.55, 0.5, 0.25, 0.08], [1.3, 1.5, 0.75, 0], [1.3, 1.5, 0.75, -0.05], [1.35, 1.45, 0.7, -0.12]], thumb: [-0.012, -0.04, 0.12] },
+  // the rod hand: a grip 1.3 cm in radius crosses the palm at 40 degrees to
+  // the knuckles, from the heel of the hand to the root of the index finger, as
+  // an angler holds a spinning rod. Each finger wraps it (the bends solved so
+  // every bone lies on the grip without going into it), the middle and ring
+  // fingers a little apart for the reel's stem, the thumb along the top
+  // toward the tip.
+  rod: { fingers: [[0.43, 1.32, 0.84, -0.17], [0.9, 1.65, 0.72, -0.2], [1.3, 1.4, 0.81, -0.5], [1.47, 0.83, 0.57, -0.42]], thumb: [-0.0514, -0.0351, 0.0869] },
   // an open hand cupped under a belly
   cradle: { fingers: [[0.35, 0.4, 0.2, 0.06], [0.35, 0.42, 0.2, 0], [0.38, 0.42, 0.2, -0.06], [0.42, 0.45, 0.22, -0.13]], thumb: [-0.07, -0.022, 0.085] },
   // fingers curled over a hold on the rock, the thumb along the index
@@ -105,8 +110,12 @@ export function addHand(b, c, pose, M, right = true) {
   local.add(roundBox(0.043, 0.0155, 0.05), { pos: [0.001, 0, 0.042], color: P.back, jitter: 0, smooth: true });
   local.add(new THREE.SphereGeometry(0.02, 14, 10), { pos: [-0.021, -0.009, 0.03], scale: [1, 0.75, 1.35], color: P.palm, jitter: 0, smooth: true });
   local.add(new THREE.SphereGeometry(0.018, 12, 8), { pos: [0.018, -0.008, 0.02], scale: [1.2, 0.7, 1.2], color: P.palm, jitter: 0, smooth: true });
-  // wrist
-  local.add(new THREE.CylinderGeometry(0.027, 0.03, 0.05, 16, 1, true), { pos: [0, 0, -0.012], rot: [Math.PI / 2, 0, 0], scale: [1, 1, 0.66], color: P.back === P.skin ? P.skin : P.back, jitter: 0, smooth: true });
+  // wrist: from the heel of the hand back to the wrist's point (where the
+  // forearm starts, at z -0.012), with a rounded joint there, so a wrist
+  // that bends leaves no edge sticking out of the forearm
+  const wc = P.back === P.skin ? P.skin : P.back;
+  local.add(new THREE.CylinderGeometry(0.027, 0.03, 0.028, 16, 1, true), { pos: [0, 0, 0.002], rot: [Math.PI / 2, 0, 0], scale: [1, 1, 0.66], color: wc, jitter: 0, smooth: true });
+  local.add(new THREE.SphereGeometry(1, 14, 10), { pos: [0, 0, -0.012], scale: [0.0302, 0.02, 0.022], color: wc, jitter: 0, smooth: true });
   // fingers: bones from the knuckle, each bending further round
   FINGERS.forEach((F, i) => {
     const [mcp, pip, dip, spread] = pose.fingers[i];
@@ -191,8 +200,7 @@ export function addHand(b, c, pose, M, right = true) {
 // tiles of the shirt's cloth. Adds the cuff (with a button) and the bare
 // wrist between the cuff and the hand.
 export function addSleeve(cloth, skin, c, path, r0, r1, { cuff = true, bare = 0.04, wrist = null } = {}) {
-  const pts = path.map((p) => new THREE.Vector3(...p));
-  const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.4);
+  const curve = path.getPointAt ? path : new THREE.CatmullRomCurve3(path.map((p) => new THREE.Vector3(...p)), false, 'catmullrom', 0.4);
   const len = curve.getLength();
   const segs = Math.max(8, Math.round(len / 0.02));
   const radial = 20;
@@ -202,16 +210,20 @@ export function addSleeve(cloth, skin, c, path, r0, r1, { cuff = true, bare = 0.
   const col = [];
   const idx = [];
   const circ = Math.PI * (r0 + r1);
+  const centres = [];
   for (let i = 0; i <= segs; i++) {
     const t = i / segs;
     const P = curve.getPointAt(t);
+    centres.push(P);
+    // the folds start past the cuff, so they cannot show through it
+    const under = Math.min(1, Math.max(0, (t * len - 0.04) / 0.03));
     const N = frames.normals[i];
     const B = frames.binormals[i];
     const r = r0 + (r1 - r0) * Math.pow(t, 0.8);
     for (let j = 0; j <= radial; j++) {
       const a = (j / radial) * Math.PI * 2;
       // folds: shallow ripples round the arm, bunching near the cuff
-      const fold = 1 + 0.06 * Math.sin(a * 3 + t * 9) * Math.exp(-t * 1.5) + 0.035 * Math.sin(a * 5 - t * 14) + 0.02 * Math.sin(t * 40 + a);
+      const fold = 1 + under * (0.06 * Math.sin(a * 3 + t * 9) * Math.exp(-t * 1.5) + 0.035 * Math.sin(a * 5 - t * 14) + 0.02 * Math.sin(t * 40 + a));
       const ca = Math.cos(a) * r * fold;
       const sa = Math.sin(a) * r * fold;
       pos.push(P.x + N.x * ca + B.x * sa, P.y + N.y * ca + B.y * sa, P.z + N.z * ca + B.z * sa);
@@ -222,6 +234,28 @@ export function addSleeve(cloth, skin, c, path, r0, r1, { cuff = true, bare = 0.
   for (let i = 0; i < segs; i++) {
     for (let j = 0; j < radial; j++) {
       const a = i * (radial + 1) + j;
+      const b = a + radial + 1;
+      // wound so the faces look outward (the tube was inside out, its far
+      // inner wall standing in for the near outer one)
+      idx.push(a, a + 1, b, a + 1, b + 1, b);
+    }
+  }
+  // a lining for the first few centimetres, facing in, so a look into the
+  // cuff (the cast's wind-up, a hard pull on the brakes) finds cloth
+  const lined = Math.min(segs, Math.ceil((0.065 / len) * segs));
+  const first = pos.length / 3;
+  for (let i = 0; i <= lined; i++) {
+    const P = centres[i];
+    for (let j = 0; j <= radial; j++) {
+      const k = (i * (radial + 1) + j) * 3;
+      pos.push(P.x + (pos[k] - P.x) * 0.95, P.y + (pos[k + 1] - P.y) * 0.95, P.z + (pos[k + 2] - P.z) * 0.95);
+      uv.push(uv[(k / 3) * 2], uv[(k / 3) * 2 + 1]);
+      col.push(0.8, 0.8, 0.8);
+    }
+  }
+  for (let i = 0; i < lined; i++) {
+    for (let j = 0; j < radial; j++) {
+      const a = first + i * (radial + 1) + j;
       const b = a + radial + 1;
       idx.push(a, b, a + 1, a + 1, b, b + 1);
     }
@@ -247,6 +281,30 @@ export function addSleeve(cloth, skin, c, path, r0, r1, { cuff = true, bare = 0.
     _q.setFromUnitVectors(UP, d0);
     _m.compose(p0.clone().addScaledVector(d0, -0.006), _q, new THREE.Vector3(1, 1, 1));
     cloth.add(cg, { matrix: _m.clone(), color: 0xf0f0f0, jitter: 0, smooth: true });
+    // and its inside, a little narrower and facing in
+    const cl = new THREE.CylinderGeometry(r0 * 1.1, r0 * 1.1, 0.045, 20, 1, true);
+    const luv = cl.attributes.uv.array;
+    for (let i = 0; i < luv.length; i += 2) {
+      luv[i] *= (2 * Math.PI * r0) / 0.12;
+      luv[i + 1] *= 0.045 / 0.12;
+    }
+    cl.translate(0, 0.0225, 0);
+    const ix = cl.index.array;
+    for (let i = 0; i < ix.length; i += 3) {
+      const t = ix[i + 1];
+      ix[i + 1] = ix[i + 2];
+      ix[i + 2] = t;
+    }
+    const ln = cl.attributes.normal.array;
+    for (let i = 0; i < ln.length; i++) ln[i] = -ln[i];
+    cloth.add(cl, { matrix: _m.clone(), color: 0xcccccc, jitter: 0, smooth: true });
+    // the cuff's rim, closing the thin gap between it and its inside; turned
+    // into the cuff's own frame, so its corners meet theirs
+    const rim = new THREE.RingGeometry(r0 * 1.1, r0 * 1.12, 20);
+    rim.rotateX(Math.PI / 2);
+    _q.setFromUnitVectors(UP, d0);
+    _m.compose(p0.clone().addScaledVector(d0, -0.006), _q, new THREE.Vector3(1, 1, 1));
+    cloth.add(rim, { matrix: _m.clone(), color: 0xf0f0f0, jitter: 0, smooth: true });
     const side = frames.binormals[0].clone();
     const btn = new THREE.CylinderGeometry(0.0055, 0.0055, 0.003, 10);
     btn.rotateX(Math.PI / 2);
@@ -254,10 +312,12 @@ export function addSleeve(cloth, skin, c, path, r0, r1, { cuff = true, bare = 0.
     _m.compose(p0.clone().addScaledVector(d0, 0.02).addScaledVector(side, r0 * 1.13), _q, new THREE.Vector3(1, 1, 1));
     cloth.add(btn, { matrix: _m.clone(), color: 0x2a1a10, jitter: 0, smooth: true });
   }
-  // the bare wrist reaching out of the cuff toward the hand
+  // the bare wrist reaching out of the cuff toward the hand, widening into
+  // the forearm a little way inside the sleeve, so a look into the cuff
+  // finds an arm rather than the end of a thin wrist
   if (bare > 0 && skin) {
     const a = wrist || p0.clone().addScaledVector(d0, -bare).toArray();
-    skin.beam(a, p0.clone().addScaledVector(d0, 0.01).toArray(), 0.026, 14, { r2: 0.03, color: c.skin, jitter: 0, smooth: true });
+    skin.beam(a, p0.clone().addScaledVector(d0, 0.025).toArray(), 0.026, 14, { r2: 0.036, color: c.skin, jitter: 0, smooth: true });
   }
   return { start: p0, dir: d0 };
 }

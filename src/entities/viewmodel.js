@@ -73,7 +73,9 @@ function buildReel() {
   const g = new THREE.Group();
   const b = new ModelBuilder();
   // machined parts: no tone variation
-  b.box(0.012, 0.07, 0.03, { pos: [0, -0.04, 0], color: 0x2a2a2a, jitter: 0 });
+  // the stem, thin along the rod so it passes between two fingers, up into
+  // the reel seat
+  b.box(0.011, 0.078, 0.008, { pos: [0, -0.036, 0], color: 0x2a2a2a, jitter: 0 });
   b.cyl(0.028, 0.028, 0.05, 12, { pos: [0, -0.09, -0.012], rot: [Math.PI / 2, 0, 0], color: 0x3a3a3a, jitter: 0 });
   b.cyl(0.024, 0.02, 0.035, 12, { pos: [0, -0.09, -0.05], rot: [Math.PI / 2, 0, 0], color: 0xc8c8c8, jitter: 0 });
   const body = new THREE.Mesh(b.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.6 }));
@@ -113,24 +115,54 @@ function armParts(build) {
 }
 
 // A sleeve leaving the wrist W along direction d, bending by bend on its
-// way out of view.
-function sleeveFrom(hand, cloth, c, W, d, bend = [0, 0, 0], { r0 = 0.046, r1 = 0.062, len = 0.48 } = {}) {
+// way out of view; with straight, it keeps to the forearm's line that far
+// from the wrist, then turns smoothly into the bend.
+const vec = (a) => new THREE.Vector3(a[0], a[1], a[2]);
+function sleeveFrom(hand, cloth, c, W, d, bend = [0, 0, 0], { r0 = 0.046, r1 = 0.062, len = 0.48, straight = 0 } = {}) {
   const u = unit(d);
   const p0 = v3(W, u, 0.045);
-  const p1 = v3(v3(W, u, len * 0.45), bend, 0.4);
   const p2 = v3(v3(W, u, len), bend);
-  addSleeve(cloth, hand, c, [p0, p1, p2], r0, r1, { wrist: W });
+  if (straight) {
+    const q = v3(W, u, straight);
+    const rest = len - straight;
+    const path = new THREE.CurvePath();
+    path.add(new THREE.LineCurve3(vec(p0), vec(q)));
+    path.add(new THREE.CubicBezierCurve3(vec(q), vec(v3(q, u, rest * 0.35)), vec(v3(v3(q, u, rest * 0.7), bend, 0.5)), vec(p2)));
+    addSleeve(cloth, hand, c, path, r0, r1, { wrist: W });
+    return;
+  }
+  addSleeve(cloth, hand, c, [p0, v3(v3(W, u, len * 0.45), bend, 0.4), p2], r0, r1, { wrist: W });
 }
 
-// The right hand on the rod at the reel seat, the reel's stem between the
-// second and third fingers and the index finger along the blank; the forearm
-// runs back toward the camera. Rod pivot frame: the rod along -z.
+// The right hand on the rod at the reel seat, held as an angler holds a
+// spinning rod: the grip lies across the palm (see POSES.rod), the fingers
+// wrap under it with the reel's stem between the second and third, the thumb
+// lies along the top toward the tip, the back of the hand faces out to the
+// right, and the wrist is cocked back a little and bent a little toward the
+// little finger, well inside its reach. The forearm then runs back to the
+// lower right, out of the view. Rod pivot frame: the rod along -z.
+const GRIP_DIAG = 0.7; // the grip's angle to the knuckles, as in POSES.rod (40 degrees)
+const GRIP_ROLL = -0.17; // the back of the hand, turned down from facing right
+const GRIP_ULNAR = 0.44; // the wrist's bend toward the little finger (25 degrees)
+const GRIP_BACK = 0.35; // and back, toward the back of the hand (20 degrees)
+// where the reel's stem passes between the fingers, in the right hand's own
+// frame as handFrame takes it (the index toward +x; POSES and X() use the
+// left hand's frame, the mirror image)
+const ROD_STEM = [0.0054, -0.031, 0.0785];
 function buildHand(c) {
   return armParts((hand, cloth) => {
-    // the knuckles run along the rod, the back of the hand up and to the
-    // left where the eye sees it, the wrist off to the right
-    const X = addHand(hand, c, POSES.grip, handFrame([0, 0, 1], [-0.55, 0.8, 0], FIST, [0, 0, -0.2]), true);
-    sleeveFrom(hand, cloth, c, X([0, 0, -0.012]), [0.5, -0.35, 0.8], [0.05, -0.08, 0]);
+    const sd = Math.sin(GRIP_DIAG);
+    const cd = Math.cos(GRIP_DIAG);
+    // the index's side forward and up, the back of the hand to the right
+    const xh = new THREE.Vector3(-sd * Math.sin(GRIP_ROLL), sd * Math.cos(GRIP_ROLL), -cd);
+    const yh = new THREE.Vector3(Math.cos(GRIP_ROLL), Math.sin(GRIP_ROLL), 0);
+    const zh = new THREE.Vector3().crossVectors(xh, yh);
+    // from the wrist toward the elbow: back along the hand's line, turned
+    // toward the little finger's side and the back of the hand by the
+    // wrist's two bends
+    const fore = zh.clone().addScaledVector(xh, Math.tan(GRIP_ULNAR)).addScaledVector(yh, -Math.tan(GRIP_BACK)).normalize().negate();
+    const X = addHand(hand, c, POSES.rod, handFrame(xh.toArray(), yh.toArray(), ROD_STEM, [0, 0, -0.2]), true);
+    sleeveFrom(hand, cloth, c, X([0, 0, -0.012]), fore.toArray(), [0.04, -0.27, 0.02], { straight: 0.13 });
   });
 }
 
