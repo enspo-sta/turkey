@@ -849,6 +849,7 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/ui/eyepiece.js`, `skyguide.js` | The telescope's eyepiece views, and the constellation figures and names drawn over the sky |
 | `ios/` | The Xcode project for the native iOS app |
 | `tools/shot.mjs`, `tools/scenarios/` | Headless screenshot and gameplay test harness with scripted scenarios |
+| `tools/perf-tour.mjs`, `tools/perf-compare.mjs`, `tools/perf-stats.mjs`, `tools/first-frame.mjs` | Frame times along a scripted tour; two or more builds timed in turns in a balanced order, with the statistics that compare them; and loading and the first frames of play |
 | `tools/make-icons.mjs`, `tools/serve.mjs`, `tools/preview-map.mjs` | Icon drawing, the local network server, and a top-down map preview of the world |
 | `tools/mkstars.mjs` | Packs the stars, constellation figures, star names and Milky Way outline from the d3-celestial package into `src/world/skydata.js` |
 | `tools/voice/` | Makes the announcer's voice: `lines.mjs` lists every line and name, `make-voice.py` speaks them with Kokoro and packs `src/audio/voice-clips.js` |
@@ -866,12 +867,14 @@ around the camera: the software renderer draws about one frame a second, far
 too slow for the game's two ground squares a frame after a jump. A headless
 page also draws frames only while a screenshot is taken, so gameplay checks
 step the game themselves (`__rhf.session.update(dt)`). Besides `eval`,
-`wait` and `shot`, a step can `reload` the page (to continue from a save) or
+`wait` and `shot`, a step can `reload` the page (to continue from a save),
 `waitFor` a condition in the page (a fade over, a show ended), polled on a
-timer. Scenarios run without pointer lock unless they set `"pointerLock": true`:
-the headless browser sends a locked pointer a steady stream of mouse events,
-which pile up (gigabytes within a minute) while a slow software frame holds
-the page. For example:
+timer, or `drag` a finger across the screen, from coordinates or from an
+expression in the page that works them out (the map check drags the full map
+to bring a place into view before tapping it). Scenarios run without pointer
+lock unless they set `"pointerLock": true`: the headless browser sends a
+locked pointer a steady stream of mouse events, which pile up (gigabytes
+within a minute) while a slow software frame holds the page. For example:
 
 ```sh
 node tools/shot.mjs tools/scenarios/catch.json   # cast, hook, fight and land a fish, then open the journal, map and shop
@@ -886,7 +889,7 @@ node tools/shot.mjs tools/scenarios/reel-stuck.json   # a held REEL button alway
 node tools/shot.mjs tools/scenarios/line-stays.json   # a lure on the bank and a float in the current stay out until you hold REEL
 node tools/shot.mjs tools/scenarios/fight-stays.json  # hooked fish at every fishing place: none comes closer unless you reel, and careful reeling lands them
 node tools/shot.mjs tools/scenarios/timing-bar.json   # the timing bar and the throw line on a phone-sized screen, and where a tap in each zone sends the lure
-node tools/shot.mjs tools/scenarios/ui-check.json     # phone layout: the small map clear of the buttons, RUN on and off, the full map and a tap on a lake and the river
+node tools/shot.mjs tools/scenarios/ui-check.json     # phone layout: the small map clear of the buttons, RUN on and off, the full map, a tap on a lake, Bear Falls dragged into view and tapped, then the river
 node tools/shot.mjs tools/scenarios/bears-arrows.json # bears leave you alone with an empty cooler, black bears, the arrow shop, the arrows chip, a whistler past a charging grizzly and an old save
 node tools/shot.mjs tools/scenarios/announcer-bite.json # the bite readout at midday and at dawn with a front coming, its tap, the announcer's banners and the bite on the map
 node tools/shot.mjs tools/scenarios/wardrobe.json     # the T-shirt button, buying and wearing clothes, the sleeves in first person, Ruben at the wheel, the save
@@ -948,7 +951,8 @@ node tools/shot.mjs tools/scenarios/round-smoke.json     # save and continue wit
 node tools/shot.mjs tools/scenarios/sites-draws.json     # draw calls and triangles at the landing, the memorial, Starfall Clearing and the tors
 node tools/shot.mjs tools/scenarios/review-fixes.json    # (spoilers) the code review's cases: Zib after a fast travel, no travel on the rope, driving to Starfall Clearing, a new game clearing the site, the shower view on another tab, continuing with Zib, and old saves' science
 node tools/shot.mjs tools/scenarios/scientists.json      # the scientists' busts close up (bronze, dark bronze and marble), a plaque, the astronomers at the observatory, the plaque's note and the Journal's Scientists page
-node tools/perf-tour.mjs [out.json] [--frames N] [--tally] # frame times along a scripted tour (standing, walking, driving, the memorial, the observatory at night), with the shaders compiled on the way, the draw calls by group (--tally), and a CPU and allocation profile
+node tools/perf-tour.mjs [out.json] [--frames N] [--tally] [--noprofile] [--size WxH] [--dpr N] [--file index.html] # frame times along a scripted tour (standing, walking, driving, the memorial, the observatory at night), with the shaders compiled on the way, the draw calls by group (--tally), and a CPU and allocation profile; --file times another build
+node tools/perf-compare.mjs old/index.html dist/index.html [--rounds N] [--frames N] [--size WxH] [--dpr N] # two or more builds' tours taking turns over several rounds in a balanced order, and each build's difference from the first with a 95% interval
 node tools/audio-tour.mjs [outdir] [--secs N]            # the sound at nine places, hours and weathers and a walk over four grounds: loudness, balance of lows, mids and highs, the beds sounding and the birds singing, and a WAV of each
 node tools/shot.mjs tools/scenarios/busts-save.json     # plaques read, saved, reloaded and continued, the Journal's Scientists page, and the ten-plaque objective
 node tools/cull-compare.mjs [index.html]                 # the same view with and without leaving out the parts smaller than a pixel, compared pixel by pixel, on the Coast Road and at Hotrod Landing
@@ -981,6 +985,13 @@ node tools/shot.mjs tools/scenarios/refl-debug.json   # saves the six faces of t
 
 Playwright is not a project dependency; install it with `npm install --no-save playwright`
 and `npx playwright install chromium` when you want to run these.
+
+To compare two builds' frame times, use `tools/perf-compare.mjs` rather than one
+tour of each: on the test machine a run's place in a sequence can move its
+average frame by as much as the differences worth finding. The tool runs
+every build once in every place of a round, reads the differences within
+rounds with the place taken out, and gives a 95% interval; a difference
+counts only when its interval leaves out zero.
 
 Three checks need only Node:
 

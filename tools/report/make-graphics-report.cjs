@@ -117,6 +117,9 @@ td code{overflow-wrap:anywhere}
 .note{color:var(--muted);font-size:14px;margin:6px 0 0}
 code{font-family:ui-monospace,Menlo,monospace;background:var(--surface2);padding:1px 5px;border-radius:5px;font-size:14px;overflow-wrap:anywhere}
 ul{padding-left:20px}
+pre{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;overflow-x:auto;margin:10px 0}
+pre code{background:none;padding:0;overflow-wrap:normal;white-space:pre}
+.chart{margin:14px 0 8px;max-width:760px}
 .conclusion{border-color:#3a3322}
 .conclusion .kicker{color:var(--accent)}
 footer{color:var(--muted);font-size:14px;border-top:1px solid var(--border);padding-top:14px;margin-top:24px}

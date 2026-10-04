@@ -121,6 +121,33 @@ for (const s of steps) {
       console.log(`${s.tapSel ? 'tapped' : 'clicked'} ${sel} at ${Math.round(box.x)},${Math.round(box.y)}`);
     }
   }
+  // a finger drag (a mouse drag on a scenario without touch) from x0,y0 to
+  // x1,y1: an array, or an expression in the page that gives one (or null
+  // when there is nothing to drag, or a sentence saying why it cannot)
+  if (s.drag) {
+    const d = typeof s.drag === 'string' ? await page.evaluate(s.drag) : s.drag;
+    if (d === null) console.log('drag: not needed');
+    else if (typeof d === 'string') console.log('drag:', d);
+    else if (!Array.isArray(d) || d.length < 4) console.log('drag: no coordinates from', s.drag);
+    else {
+      const [x0, y0, x1, y1] = d;
+      const n = s.dragSteps || 12;
+      const at = (i) => ({ x: x0 + ((x1 - x0) * i) / n, y: y0 + ((y1 - y0) * i) / n });
+      if (scenario.touch) {
+        const cdp = await page.context().newCDPSession(page);
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [at(0)] });
+        for (let i = 1; i <= n; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [at(i)] });
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await cdp.detach();
+      } else {
+        await page.mouse.move(x0, y0);
+        await page.mouse.down();
+        for (let i = 1; i <= n; i++) await page.mouse.move(at(i).x, at(i).y);
+        await page.mouse.up();
+      }
+      console.log(`dragged from ${Math.round(x0)},${Math.round(y0)} to ${Math.round(x1)},${Math.round(y1)}`);
+    }
+  }
   if (s.key) await page.keyboard.press(s.key);
   if (s.keydown) await page.keyboard.down(s.keydown);
   if (s.keyup) await page.keyboard.up(s.keyup);
