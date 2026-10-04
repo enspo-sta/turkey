@@ -51,7 +51,10 @@ softer light under cloud), with before and after pictures, what it costs and
 the audit: [docs/asset-quality-update.html](docs/asset-quality-update.html).
 Since then the hand on the rod holds it as an angler holds a spinning rod,
 and every first-person sleeve is the right way out:
-[docs/rod-hand-fix.html](docs/rod-hand-fix.html).
+[docs/rod-hand-fix.html](docs/rod-hand-fix.html). And the card that shows a
+catch no longer covers the fish you hold up: on a phone on its side or
+upright, the fish is held up whole in the part of the screen the card leaves
+free: [docs/catch-card-fix.html](docs/catch-card-fix.html).
 The step before it, a fair check of the voice's frame cost and a map check
 that really taps Bear Falls:
 [docs/voice-cost-check.html](docs/voice-cost-check.html).
@@ -893,6 +896,7 @@ node tools/shot.mjs tools/scenarios/eagle.json   # a bald eagle steals a small f
 node tools/shot.mjs tools/scenarios/mobile.json  # phone-sized touch layout
 node tools/shot.mjs tools/scenarios/catch-touch.json  # real taps on KEEP and RELEASE on a phone-sized touch screen
 node tools/shot.mjs tools/scenarios/catch-mouse.json  # real clicks and keys on the catch card with the mouse locked to the view
+node tools/shot.mjs tools/scenarios/catch-room.json   # every fish at its smallest and largest, and each legendary fish, held up beside the catch card on nine phone, tablet and desktop shapes: none under the card, off the screen or under the top bars, no sleeve end in sight (each line says PASS or FAIL)
 node tools/shot.mjs tools/scenarios/reel-stuck.json   # a held REEL button always lets go, and nothing reels unless you press
 node tools/shot.mjs tools/scenarios/line-stays.json   # a lure on the bank and a float in the current stay out until you hold REEL
 node tools/shot.mjs tools/scenarios/fight-stays.json  # hooked fish at every fishing place: none comes closer unless you reel, and careful reeling lands them

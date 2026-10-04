@@ -116,12 +116,20 @@ function armParts(build) {
 
 // A sleeve leaving the wrist W along direction d, bending by bend on its
 // way out of view; with straight, it keeps to the forearm's line that far
-// from the wrist, then turns smoothly into the bend.
+// from the wrist, then turns smoothly into the bend; with reach, it runs on
+// that much further at its full width (an arm held out further from the eye
+// than usual, whose sleeve must still leave the view).
 const vec = (a) => new THREE.Vector3(a[0], a[1], a[2]);
-function sleeveFrom(hand, cloth, c, W, d, bend = [0, 0, 0], { r0 = 0.046, r1 = 0.062, len = 0.48, straight = 0 } = {}) {
+function sleeveFrom(hand, cloth, c, W, d, bend = [0, 0, 0], { r0 = 0.046, r1 = 0.062, len = 0.48, straight = 0, reach = 0 } = {}) {
   const u = unit(d);
   const p0 = v3(W, u, 0.045);
   const p2 = v3(v3(W, u, len), bend);
+  if (reach) {
+    const pts = [p0, v3(v3(W, u, len * 0.45), bend, 0.4), p2];
+    const shape = new THREE.CatmullRomCurve3(pts.map(vec), false, 'catmullrom', 0.4).getLength();
+    addSleeve(cloth, hand, c, [...pts, v3(p2, u, reach)], r0, r1, { wrist: W, shape });
+    return;
+  }
   if (straight) {
     const q = v3(W, u, straight);
     const rest = len - straight;
@@ -189,6 +197,16 @@ function buildClimbArm(side, c) {
   });
 }
 
+// The catch held up: its usual place in front of the eye (x and y; the
+// distance out grows with its length), the hold's tilt toward you, how much
+// further out a big fish may be held so that all of it shows beside the
+// catch card (see Viewmodel.fishFit), and how far the sleeves run on past
+// their usual 48 cm so that they still leave the view when it is.
+const FISH_AT = [0.02, -0.1];
+const FISH_TILT = 0.1;
+const FISH_FAR = 2.2;
+const FISH_REACH = 1.5;
+
 // Holding up a catch, in the fish rig's frame (x right, y up, z toward the
 // camera) with the grip point at the origin: side 1 grips the tail wrist,
 // side -1 cradles the belly.
@@ -196,10 +214,10 @@ function buildFishArm(side, c) {
   return armParts((hand, cloth) => {
     if (side > 0) {
       const X = addHand(hand, c, POSES.grip, handFrame([-1, 0, 0], [0, 0.5, 0.87], FIST, [0, 0, 0]), true);
-      sleeveFrom(hand, cloth, c, X([0, 0, -0.012]), [0.3, -0.62, 0.72], [0.03, 0, 0.03]);
+      sleeveFrom(hand, cloth, c, X([0, 0, -0.012]), [0.3, -0.62, 0.72], [0.03, 0, 0.03], { reach: FISH_REACH });
     } else {
       const X = addHand(hand, c, POSES.cradle, handFrame([1, 0, 0], [0, -1, 0.05], [0, -0.0155, 0.045], [0, 0, 0]), false);
-      sleeveFrom(hand, cloth, c, X([0, 0, -0.012]), [-0.36, -0.58, 0.72], [-0.03, 0, 0.03]);
+      sleeveFrom(hand, cloth, c, X([0, 0, -0.012]), [-0.36, -0.58, 0.72], [-0.03, 0, 0.03], { reach: FISH_REACH });
     }
   });
 }
@@ -474,12 +492,134 @@ export class Viewmodel {
     const L = lengthCm / 100;
     const vis = clamp(L, 0.32, 1.25);
     m.scale.setScalar(vis);
+    m.rotation.set(0, -Math.PI / 2, m.userData.flat ? -1.2 : 0);
+    // one hand grips the tail wrist, the other cradles the belly; a small
+    // fish only needs the one hand
+    const small = vis < 0.45;
+    this.fishHands[0].position.set(vis * (small ? 0.28 : 0.36), -0.004, 0);
+    this.fishHands[1].visible = !small;
+    this.fishHands[1].position.set(-vis * 0.1, -0.02 - vis * 0.1, 0.01);
+    // a box round the fish and the hands on it, tilted as it is held: its
+    // corners keep all of it in view (see fishFit)
+    m.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(m);
+    for (const h of this.fishHands) {
+      if (!h.visible) continue;
+      box.expandByPoint(_cv.copy(h.position).add(_ta.set(0.05, 0.04, 0.04)));
+      box.expandByPoint(_cv.copy(h.position).sub(_ta.set(0.05, 0.08, 0.04)));
+    }
+    const tilt = new THREE.Euler(FISH_TILT, 0, 0);
+    this.fishCorners = [];
+    for (let i = 0; i < 8; i++) {
+      this.fishCorners.push(new THREE.Vector3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).applyEuler(tilt));
+    }
     this.fishModel = m;
     this.fishRig.add(m);
     this.fishRig.visible = true;
     this.fishT = 0;
     this.fishLen = vis;
+    this.fishD0 = 0.72 + vis * 0.25;
+    this.fishPose = null;
+  }
 
+  // Where to hold the catch up: the rig's x and y, and d, its distance out
+  // in front of the eye, so that all of it shows inside one of the rooms
+  // (rectangles in the view's -1..1 coordinates, y up; see HUD.measureCatch).
+  // In the middle of the room that shows it biggest (of two as big, the one
+  // it spills out of least, when it is too big even at FISH_FAR, then the
+  // one nearer its usual place), at the usual distance or, when it is too
+  // big for the room there, further out, at most FISH_FAR times as far.
+  // Without rooms, its usual place.
+  fishFit(rooms) {
+    const d0 = this.fishD0;
+    const best = this._fit || (this._fit = { x: 0, y: 0, d: 0 });
+    best.x = FISH_AT[0];
+    best.y = FISH_AT[1];
+    best.d = d0;
+    if (!rooms) return best;
+    const ty = Math.tan((this.camera.fov * Math.PI) / 360);
+    const tx = ty * this.camera.aspect;
+    const u0 = FISH_AT[0] / (d0 * tx);
+    const v0 = FISH_AT[1] / (d0 * ty);
+    const f = this._fitTry || (this._fitTry = { x: 0, y: 0, d: 0, over: 0 });
+    let bestD = Infinity;
+    let bestOver = Infinity;
+    let bestOff = Infinity;
+    for (const room of rooms) {
+      this.fishIn(room, d0, tx, ty, f);
+      const over = Math.max(1, f.over);
+      const off = Math.hypot((room.x0 + room.x1) / 2 - u0, (room.y0 + room.y1) / 2 - v0);
+      if (f.d < bestD * 0.99 || (f.d < bestD * 1.01 && (over < bestOver - 0.01 || (over < bestOver + 0.01 && off < bestOff)))) {
+        bestD = f.d;
+        bestOver = over;
+        bestOff = off;
+        best.x = f.x;
+        best.y = f.y;
+        best.d = f.d;
+      }
+    }
+    return best;
+  }
+
+  // The catch centred in one room (see fishFit).
+  fishIn(room, d0, tx, ty, out) {
+    const cu = (room.x0 + room.x1) / 2;
+    const cv = (room.y0 + room.y1) / 2;
+    let d = d0;
+    let x = cu * d * tx;
+    let y = cv * d * ty;
+    for (let i = 0; i < 6; i++) {
+      // further out if it is too big, nearer again if that overshot
+      let b = this.fishSpan(x, y, d, tx, ty);
+      const s = Math.max((b.u1 - b.u0) / (room.x1 - room.x0), (b.v1 - b.v0) / (room.y1 - room.y0));
+      const nd = clamp(d * s, d0, d0 * FISH_FAR);
+      x *= nd / d;
+      y *= nd / d;
+      d = nd;
+      // then over to the middle
+      b = this.fishSpan(x, y, d, tx, ty);
+      x += (cu - (b.u0 + b.u1) / 2) * d * tx;
+      y += (cv - (b.v0 + b.v1) / 2) * d * ty;
+    }
+    out.x = x;
+    out.y = y;
+    out.d = d;
+    // how much bigger than the room it still is (1 or less: it fits)
+    const b = this.fishSpan(x, y, d, tx, ty);
+    out.over = Math.max((b.u1 - b.u0) / (room.x1 - room.x0), (b.v1 - b.v0) / (room.y1 - room.y0));
+    return out;
+  }
+
+  // The catch's extent on the screen (-1..1) with the rig at x, y, -d.
+  fishSpan(x, y, d, tx, ty) {
+    const b = this._span || (this._span = { u0: 0, u1: 0, v0: 0, v1: 0 });
+    b.u0 = b.v0 = Infinity;
+    b.u1 = b.v1 = -Infinity;
+    for (const p of this.fishCorners) {
+      const z = d - p.z;
+      const u = (x + p.x) / (z * tx);
+      const v = (y + p.y) / (z * ty);
+      if (u < b.u0) b.u0 = u;
+      if (u > b.u1) b.u1 = u;
+      if (v < b.v0) b.v0 = v;
+      if (v > b.v1) b.v1 = v;
+    }
+    return b;
+  }
+
+  // The middle of the screen a photo keeps (see Photo.crop), a little inside
+  // its edges.
+  photoRoom() {
+    const c = this.game.photo?.crop();
+    if (!c) return null;
+    const r = this._photoRoom || (this._photoRoom = [{ x0: 0, x1: 0, y0: 0, y1: 0 }]);
+    const ax = c.fx * 0.9;
+    const ay = c.fy * 0.88;
+    r[0].x0 = -ax;
+    r[0].x1 = ax;
+    r[0].y0 = -ay;
+    r[0].y1 = ay;
+    return r;
   }
 
   hideFish() {
@@ -685,18 +825,22 @@ export class Viewmodel {
       const u = this.fishModel.userData.uniforms;
       u.uFlopT.value += dt;
       u.uFlop.value = 0.25 + Math.max(0, Math.sin(this.fishT * 1.7)) * 0.8;
+      // held up clear of the catch card; for a trophy photo, which grabs the
+      // next frame drawn, in the middle of the picture for that one frame
+      // (under the flash)
+      const photo = !!game.onRendered;
+      const to = this.fishFit(photo ? this.photoRoom() : game.hud.catchRoom);
+      const P = this.fishPose || (this.fishPose = { x: to.x, y: to.y, d: to.d });
+      if (!photo) {
+        P.x = damp(P.x, to.x, 6, dt);
+        P.y = damp(P.y, to.y, 6, dt);
+        P.d = damp(P.d, to.d, 6, dt);
+      }
+      const at = photo ? to : P;
+      // raised from below the view
       const rise = Math.min(1, this.fishT * 2.5);
-      this.fishRig.position.set(0.02 + this.swayX, -0.62 + rise * 0.52 + bob, -0.72 - this.fishLen * 0.25);
-      this.fishRig.rotation.set(0.1, 0, 0);
-      this.fishModel.rotation.set(0, -Math.PI / 2, this.fishModel.userData.flat ? -1.2 : 0);
-      this.fishModel.position.set(0, 0, 0);
-      // one hand grips the tail wrist, the other cradles the belly; a small
-      // fish only needs the one hand
-      const L = this.fishLen;
-      const small = L < 0.45;
-      this.fishHands[0].position.set(L * (small ? 0.28 : 0.36), -0.004, 0);
-      this.fishHands[1].visible = !small;
-      this.fishHands[1].position.set(-L * 0.1, -0.02 - L * 0.1, 0.01);
+      this.fishRig.position.set(at.x + this.swayX, at.y - (1 - rise) * 0.52 * (at.d / this.fishD0) + bob, -at.d);
+      this.fishRig.rotation.set(FISH_TILT, 0, 0);
     }
   }
 }

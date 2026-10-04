@@ -1,0 +1,291 @@
+{
+ "kicker": "Hotrod Outdoor Alaska Fishing \u00b7 fix report",
+ "title": "Catch Card Fix",
+ "lede": "On an iPhone the card that shows a catch covered part of the fish you hold up: the back half on its side, the lower half upright. The fish is now held up in the middle of the part of the screen the card leaves free, further out when it is big, and the small map, compass and goal step aside while the card is up. Of 639 cases (71 fish on 9 screen shapes), 484 had part of the fish under the card before and 0 after; 11 of 11 regression scenarios ran clean and an independent review&#x27;s three findings were fixed.",
+ "links": [
+  {
+   "label": "Play the game",
+   "href": "https://claude.ai/artifact/3urJEG61Boov67ViABm26A"
+  },
+  {
+   "label": "Code on GitHub",
+   "href": "https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing"
+  }
+ ],
+ "sections": [
+  {
+   "id": "request",
+   "kicker": "This fix",
+   "title": "What was asked",
+   "html": "<style>.pair:has(img[alt*=\"upright\"]){max-width:640px}</style><p>The request: <i>\"On iPhone the info screen of the fish I covering the screen so can only see the upper part of the fish\"</i>.</p><div class=\"tablewrap\"><table class=\"text\"><thead><tr><th>Asked</th><th>What was done</th><th>Status</th></tr></thead><tbody><tr><td data-label=\"Asked\">On iPhone the info screen of the fish is covering the screen so can only see the upper part of the fish</td><td data-label=\"What was done\">The card that shows a catch sat over the fish you hold up: on its side the card covered the back half of the fish, held upright it covered the lower half, and upright the bigger fish were also wider than the screen. The fish is now held up in the part of the screen the card leaves free, all of it in view, on every iPhone, iPad and desktop shape tested.</td><td data-label=\"Status\">Fixed</td></tr><tr><td data-label=\"Asked\">Found while fixing it</td><td data-label=\"What was done\">With the fish moved, the small map, the compass and the goal took the room above the card when upright; they now step aside while the card is up and come back with it. The trophy photo framed the fish from the middle of the screen; it still does, as the fish is put in the middle of the picture for the one frame the photo keeps.</td><td data-label=\"Status\">Done</td></tr><tr><td data-label=\"Asked\">Checked</td><td data-label=\"What was done\">639 cases (71 fish on 9 screen shapes): 484 had part of the fish under the card before, 0 after. Pictures before and after on all 9 shapes, 11 regression scenarios on the final build (11 clean), and an independent code review whose three findings were all fixed.</td><td data-label=\"Status\">Done</td></tr></tbody></table></div>"
+  },
+  {
+   "id": "cause",
+   "kicker": "The problem",
+   "title": "Why the card covered the fish",
+   "html": "<p>When a fish is landed, the game shows the fish held up in both hands and a card with its name, weight, length and value, and the KEEP and RELEASE buttons. The two were placed without regard for each other:</p><ul><li><b>The fish was always held in the middle of the view</b>, at a distance that grows with its length, whatever the screen's shape.</li><li><b>The card is a fixed panel</b>: on a screen on its side it sits on the right, about 300 points wide on a phone plus its margin: more than a third of an iPhone's width, close to half with the island's inset; upright it sits along the bottom, across the whole width.</li><li><b>Upright, the view is narrow.</b> The game keeps the view 88 degrees tall, which leaves it 48 degrees wide on an iPhone, so a king salmon held at its usual distance (about a metre) is wider than the screen.</li></ul><p>So on its side the card covered the back half of a big fish, and upright it covered the lower half: the upper part was all that showed. The pictures are from the game drawn at an iPhone's shape, before and after.</p>",
+   "pairs": [
+    {
+     "before": {
+      "file": "catch-card/before/portrait-halibut.png",
+      "caption": "Before: upright: the halibut's lower half under the card and its sides off the screen",
+      "w": 400
+     },
+     "after": {
+      "file": "catch-card/after/portrait-halibut.png",
+      "caption": "After: upright: the whole halibut above the card",
+      "w": 400
+     }
+    },
+    {
+     "before": {
+      "file": "catch-card/before/iphone-king.png",
+      "caption": "Before: the king salmon's back half and tail under the card",
+      "w": 720
+     },
+     "after": {
+      "file": "catch-card/after/iphone-king.png",
+      "caption": "After: the whole king salmon left of the card",
+      "w": 720
+     }
+    },
+    {
+     "before": {
+      "file": "catch-card/before/portrait-king.png",
+      "caption": "Before: upright: the king salmon's head and tail off the screen, its belly under the card",
+      "w": 400
+     },
+     "after": {
+      "file": "catch-card/after/portrait-king.png",
+      "caption": "After: upright: the whole king salmon above the card",
+      "w": 400
+     }
+    }
+   ]
+  },
+  {
+   "id": "fix",
+   "kicker": "The fix",
+   "title": "Holding the fish where the card leaves room",
+   "html": "<p>Five parts, each small:</p><ol><li><b>The card says where it leaves room.</b> When it shows, and whenever the screen changes shape, the game measures where the card ends up once it has slid in, the screen's safe area (clear of the island, the rounded corners and the home bar) and the bottom of the money, health and buttons along the top. What is left of the card and what is above it are the rooms for the fish.</li><li><b>The fish is held up in the middle of a room.</b> A box round the fish and the hands on it is projected onto the screen and moved until it sits in the middle of the room. If it is too big for the room at its usual distance, it is held further out until it fits, at most 2.2 times as far. Of the rooms, the one that shows the fish biggest is used: left of the card on a screen on its side, above it upright. It glides to a new place if the phone is turned with the card up.</li><li><b>The small map, the compass and the goal step aside</b> while the card is up (they hold their place, so nothing else moves) and come back when you keep or release the fish. Upright they took most of the room above the card.</li><li><b>The arms reach.</b> The sleeves of the two arms that hold a catch ran 48 cm from the wrist, just past the bottom of the view; held further out, their open ends would have shown. They now run on another 1.5 metres at the same width, out of the view in every case tested. The other arms (the rod, the bow, the paraglider, climbing) are built exactly as before.</li><li><b>The trophy photo still frames the fish.</b> A photo keeps a 16 by 9 frame from the middle of the screen. For the one frame the photo keeps, under the white flash, the fish is placed in the middle of that frame, held further out if it is too big for it, then goes back beside the card.</li></ol>",
+   "pairs": [
+    {
+     "before": {
+      "file": "catch-card/before/iphone-halibut.png",
+      "caption": "Before: the halibut's tail and right side under the card",
+      "w": 720
+     },
+     "after": {
+      "file": "catch-card/after/iphone-halibut.png",
+      "caption": "After: the whole halibut, held a little further out",
+      "w": 720
+     }
+    },
+    {
+     "before": {
+      "file": "catch-card/before/notch-king.png",
+      "caption": "Before: with the island's insets the card moves in by 59 points and covers half the salmon",
+      "w": 720
+     },
+     "after": {
+      "file": "catch-card/after/notch-king.png",
+      "caption": "After: the salmon between the island's inset and the card",
+      "w": 720
+     }
+    },
+    {
+     "before": {
+      "file": "catch-card/before/iphone-grayling.png",
+      "caption": "Before: a small grayling: it fitted before too",
+      "w": 720
+     },
+     "after": {
+      "file": "catch-card/after/iphone-grayling.png",
+      "caption": "After: the grayling in the middle of the free part",
+      "w": 720
+     }
+    }
+   ]
+  },
+  {
+   "id": "numbers",
+   "kicker": "The numbers",
+   "title": "71 fish on 9 screens",
+   "html": "<p>A check in the game (now the regression scenario <code>catch-room</code>) holds up every fish in turn, each species at its smallest and its largest weight and each legendary fish, 71 in all, on nine screen shapes, and measures the box round the fish and the hands against the card, the safe area, the bars along the top and the photo's frame, and where the sleeves end. \"Under the card\" counts the fish whose box overlaps the card at all; \"worst\" is how much of that box the card covered.</p><div class=\"tablewrap\"><table><thead><tr><th>Screen</th><th>Shape (points)</th><th class=\"n\">Under the card before</th><th class=\"n\">After</th><th class=\"n\">Photo cuts the fish before</th><th class=\"n\">After</th><th class=\"n\">Held out at most (times)</th><th class=\"n\">Sleeve ends in sight</th></tr></thead><tbody><tr><td data-label=\"Screen\">iPhone 15 or 16 on its side</td><td data-label=\"Shape (points)\">852 by 393</td><td class=\"n\" data-label=\"Under the card before\">55 (worst 39.4%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Photo cuts the fish before\">16 (worst 52.8%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Held out at most (times)\">1.46</td><td class=\"n\" data-label=\"Sleeve ends in sight\">0</td></tr><tr><td data-label=\"Screen\">The same, with the side insets for the Dynamic Island (59 each side, 21 at the bottom)</td><td data-label=\"Shape (points)\">852 by 393</td><td class=\"n\" data-label=\"Under the card before\">71 (worst 50.2%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Photo cuts the fish before\">16 (worst 52.8%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Held out at most (times)\">1.56</td><td class=\"n\" data-label=\"Sleeve ends in sight\">0</td></tr><tr><td data-label=\"Screen\">On its side in Safari with the bars showing</td><td data-label=\"Shape (points)\">852 by 340</td><td class=\"n\" data-label=\"Under the card before\">52 (worst 36.6%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Photo cuts the fish before\">16 (worst 52.8%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Held out at most (times)\">1.54</td><td class=\"n\" data-label=\"Sleeve ends in sight\">0</td></tr><tr><td data-label=\"Screen\">A smaller iPhone (SE) on its side</td><td data-label=\"Shape (points)\">667 by 375</td><td class=\"n\" data-label=\"Under the card before\">71 (worst 53.1%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Photo cuts the fish before\">16 (worst 52.8%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Held out at most (times)\">1.48</td><td class=\"n\" data-label=\"Sleeve ends in sight\">0</td></tr><tr><td data-label=\"Screen\">iPhone 15 or 16 upright, with its insets (59 top, 34 bottom)</td><td data-label=\"Shape (points)\">393 by 852</td><td class=\"n\" data-label=\"Under the card before\">71 (worst 34.2%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Photo cuts the fish before\">71 (worst 86.3%)</td><td class=\"n\" data-label=\"After\">4 (worst 24.4%)</td><td class=\"n\" data-label=\"Held out at most (times)\">1.84</td><td class=\"n\" data-label=\"Sleeve ends in sight\">0</td></tr><tr><td data-label=\"Screen\">Upright in Safari with the bars showing</td><td data-label=\"Shape (points)\">393 by 659</td><td class=\"n\" data-label=\"Under the card before\">71 (worst 76.9%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Photo cuts the fish before\">56 (worst 77.1%)</td><td class=\"n\" data-label=\"After\">2 (worst 2.2%)</td><td class=\"n\" data-label=\"Held out at most (times)\">1.93</td><td class=\"n\" data-label=\"Sleeve ends in sight\">0</td></tr><tr><td data-label=\"Screen\">A desktop browser window</td><td data-label=\"Shape (points)\">1280 by 720</td><td class=\"n\" data-label=\"Under the card before\">36 (worst 21.6%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Photo cuts the fish before\">16 (worst 52.8%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Held out at most (times)\">1.30</td><td class=\"n\" data-label=\"Sleeve ends in sight\">0</td></tr><tr><td data-label=\"Screen\">An iPad Air on its side</td><td data-label=\"Shape (points)\">1180 by 820</td><td class=\"n\" data-label=\"Under the card before\">53 (worst 22.5%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Photo cuts the fish before\">16 (worst 52.8%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Held out at most (times)\">1.33</td><td class=\"n\" data-label=\"Sleeve ends in sight\">0</td></tr><tr><td data-label=\"Screen\">An iPad Air upright</td><td data-label=\"Shape (points)\">820 by 1180</td><td class=\"n\" data-label=\"Under the card before\">4 (worst 9.6%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Photo cuts the fish before\">40 (worst 68.9%)</td><td class=\"n\" data-label=\"After\">0</td><td class=\"n\" data-label=\"Held out at most (times)\">1.26</td><td class=\"n\" data-label=\"Sleeve ends in sight\">0</td></tr></tbody></table></div><p class=\"note\">After the fix no fish is under the card, outside the safe area or under the bars along the top in any of the 639 cases, and no sleeve end is in sight. The photo still cuts the largest flatfish and skates when held upright, where the photo's 16 by 9 frame is a thin band across a tall screen; much less than before. \"Held out\" is the distance the fish is held at against its usual one.</p>"
+  },
+  {
+   "id": "screens",
+   "kicker": "Other screens",
+   "title": "Smaller phones, Safari's bars, iPads and a desktop",
+   "html": "<p>The same catches on the other shapes. Each before picture is the game as it was, each after picture the final build.</p>",
+   "pairs": [
+    {
+     "before": {
+      "file": "catch-card/before/notch-halibut.png",
+      "caption": "Before: the halibut, half under the card",
+      "w": 720
+     },
+     "after": {
+      "file": "catch-card/after/notch-halibut.png",
+      "caption": "After: the whole halibut",
+      "w": 720
+     }
+    },
+    {
+     "before": {
+      "file": "catch-card/before/safari-halibut.png",
+      "caption": "Before: with Safari's bars the view is shorter: the halibut under the card",
+      "w": 720
+     },
+     "after": {
+      "file": "catch-card/after/safari-halibut.png",
+      "caption": "After: the whole halibut in the shorter view",
+      "w": 720
+     }
+    },
+    {
+     "before": {
+      "file": "catch-card/before/se-king.png",
+      "caption": "Before: a smaller iPhone: the card takes 44 percent of the width",
+      "w": 720
+     },
+     "after": {
+      "file": "catch-card/after/se-king.png",
+      "caption": "After: the whole salmon in the rest",
+      "w": 720
+     }
+    },
+    {
+     "before": {
+      "file": "catch-card/before/portrait-safari-halibut.png",
+      "caption": "Before: upright with Safari's bars: most of the halibut under the card",
+      "w": 400
+     },
+     "after": {
+      "file": "catch-card/after/portrait-safari-halibut.png",
+      "caption": "After: the whole halibut between the money and the card",
+      "w": 400
+     }
+    },
+    {
+     "before": {
+      "file": "catch-card/before/desktop-king.png",
+      "caption": "Before: a desktop window: the salmon's tail under the card",
+      "w": 720
+     },
+     "after": {
+      "file": "catch-card/after/desktop-king.png",
+      "caption": "After: the salmon in the middle of the free part",
+      "w": 720
+     }
+    },
+    {
+     "before": {
+      "file": "catch-card/before/ipad-halibut.png",
+      "caption": "Before: an iPad on its side: the halibut's tail under the card",
+      "w": 720
+     },
+     "after": {
+      "file": "catch-card/after/ipad-halibut.png",
+      "caption": "After: the whole halibut",
+      "w": 720
+     }
+    },
+    {
+     "before": {
+      "file": "catch-card/before/ipad-portrait-halibut.png",
+      "caption": "Before: an iPad upright: the halibut wider than the screen",
+      "w": 400
+     },
+     "after": {
+      "file": "catch-card/after/ipad-portrait-halibut.png",
+      "caption": "After: the whole halibut above the card",
+      "w": 400
+     }
+    }
+   ]
+  },
+  {
+   "id": "photo",
+   "kicker": "The trophy photo",
+   "title": "The photo still frames the fish",
+   "html": "<p>The trophy photo from the catch card (the camera button on the card, once you own the camera) keeps a 16 by 9 frame from the middle of the screen. These are the pictures the album kept, before and after, from the same catches.</p>",
+   "pairs": [
+    {
+     "before": {
+      "file": "catch-card/before/photo-iphone-king.jpg",
+      "caption": "Before: the king salmon's photo, phone on its side: whole, a little low",
+      "w": 480
+     },
+     "after": {
+      "file": "catch-card/after/photo-iphone-king.jpg",
+      "caption": "After: the whole salmon, in the middle of the picture",
+      "w": 480
+     }
+    },
+    {
+     "before": {
+      "file": "catch-card/before/photo-iphone-halibut.jpg",
+      "caption": "Before: the halibut's photo on its side: its top, bottom and tail cut off",
+      "w": 480
+     },
+     "after": {
+      "file": "catch-card/after/photo-iphone-halibut.jpg",
+      "caption": "After: the whole halibut, held a little further out for the picture",
+      "w": 480
+     }
+    },
+    {
+     "before": {
+      "file": "catch-card/before/photo-portrait-king.jpg",
+      "caption": "Before: the salmon's photo held upright: wider than the picture, head and tail cut off",
+      "w": 480
+     },
+     "after": {
+      "file": "catch-card/after/photo-portrait-king.jpg",
+      "caption": "After: the whole salmon, held further out for the picture",
+      "w": 480
+     }
+    },
+    {
+     "before": {
+      "file": "catch-card/before/photo-portrait-halibut.jpg",
+      "caption": "Before: the halibut's photo held upright: only the middle of its body",
+      "w": 480
+     },
+     "after": {
+      "file": "catch-card/after/photo-portrait-halibut.jpg",
+      "caption": "After: the whole halibut",
+      "w": 480
+     }
+    }
+   ]
+  },
+  {
+   "id": "load",
+   "kicker": "Load",
+   "title": "What it costs",
+   "html": "<p>No new draw calls, materials, textures or shader programs. Per frame, while a fish is held up, the fit projects eight corners a few dozen times: 10.3 microseconds a frame here (1 room), in a software-drawn page that is several times slower than a phone. The card and the top bars are measured once when the card shows and once on each change of the screen's shape, not every frame.</p><div class=\"tablewrap\"><table><thead><tr><th>Arm holding a catch</th><th class=\"n\">Triangles before</th><th class=\"n\">After</th><th class=\"n\">Change</th></tr></thead><tbody><tr><td data-label=\"Arm holding a catch\">The hand holding the tail</td><td class=\"n\" data-label=\"Triangles before\">6 308</td><td class=\"n\" data-label=\"After\">9 308</td><td class=\"n\" data-label=\"Change\">+3 000</td></tr><tr><td data-label=\"Arm holding a catch\">The hand under the belly</td><td class=\"n\" data-label=\"Triangles before\">6 308</td><td class=\"n\" data-label=\"After\">9 308</td><td class=\"n\" data-label=\"Change\">+3 000</td></tr></tbody></table></div><p class=\"note\">The longer sleeves are drawn only while a fish is held up, and most of their length is outside the view. The other arms (the rod hand, the bow hand, the drawing hand, both hands on the paraglider and both climbing hands) are built exactly as before: the same triangles, and a fingerprint of every vertex position is the same in both builds for all 7.</p>"
+  },
+  {
+   "id": "tests",
+   "kicker": "Tests",
+   "title": "Every check run",
+   "html": "<h3>Regression scenarios on the final build</h3><div class=\"tablewrap\"><table class=\"text\"><thead><tr><th>Scenario</th><th>What it covers</th><th class=\"n\">Pictures</th><th>Result</th></tr></thead><tbody><tr><td data-label=\"Scenario\"><code>catch-room</code></td><td data-label=\"What it covers\">new: every fish at its smallest and largest, and each legendary fish, beside the card on nine screens (below)</td><td class=\"n\" data-label=\"Pictures\">2</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>camera</code></td><td data-label=\"What it covers\">buying the camera, a three-star shot, the catch photo and the album</td><td class=\"n\" data-label=\"Pictures\">4</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>catch-touch</code></td><td data-label=\"What it covers\">real taps on KEEP and RELEASE on a phone-sized touch screen</td><td class=\"n\" data-label=\"Pictures\">2</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>catch-mouse</code></td><td data-label=\"What it covers\">real clicks and keys on the catch card with the mouse locked to the view</td><td class=\"n\" data-label=\"Pictures\">2</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>rotate-touch</code></td><td data-label=\"What it covers\">a phone held upright: the turn-sideways screen and playing upright</td><td class=\"n\" data-label=\"Pictures\">0</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>eagle</code></td><td data-label=\"What it covers\">a bald eagle steals a small fish</td><td class=\"n\" data-label=\"Pictures\">3</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>hands</code></td><td data-label=\"What it covers\">the hands holding a king salmon, a grayling and a halibut</td><td class=\"n\" data-label=\"Pictures\">3</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>minimap</code></td><td data-label=\"What it covers\">the small map in its corner, turning and driving</td><td class=\"n\" data-label=\"Pictures\">5</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>round-smoke</code></td><td data-label=\"What it covers\">save and continue, every screen opened</td><td class=\"n\" data-label=\"Pictures\">1</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>catch</code></td><td data-label=\"What it covers\">cast, hook, fight and land a fish, then the journal, map and shop</td><td class=\"n\" data-label=\"Pictures\">5</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>fish-species</code></td><td data-label=\"What it covers\">lands each of the twelve newer fish, then the journal and the tackle box</td><td class=\"n\" data-label=\"Pictures\">15</td><td data-label=\"Result\">clean</td></tr></tbody></table></div><p class=\"note\">Clean: the scenario ran to its end with no page error, failed step or error printed by the page.</p><p>One picture needed a closer look: in <code>camera</code>, the compass and the goal still show in the first frame after the card appears. That scenario runs with reduced motion, and the game's reduced-motion rule gives every change of style a transition of a hundredth of a millisecond, which ends with the next frame drawn; the software renderer draws about one frame a second, so the picture caught that frame. The next frame has them hidden, and on a phone that one frame lasts a sixtieth of a second. Setting the hiding on each element instead was tried and behaves the same, so the simpler rule stayed.</p><h3>The new scenario's lines</h3><p><code>tools/scenarios/catch-room.json</code> lands a king salmon on an iPhone's shape, then turns and resizes the screen with the card up and checks every fish on each shape. Its lines on the final build:</p><ul class=\"lines\"><li><code>PASS phone landscape 852x393, 71 fish: under the card 0 (at the old place 55, worst 39.4%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 0 (worst 0%), held out at most 1.46x (photo 1.83x)</code></li><li><code>PASS measuring again leaves the card still: animations running 0 before, 0 after</code></li><li><code>PASS phone landscape, notch side insets 852x393, 71 fish: under the card 0 (at the old place 71, worst 50.2%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 0 (worst 0%), held out at most 1.56x (photo 1.83x)</code></li><li><code>PASS phone landscape, Safari bars 852x340, 71 fish: under the card 0 (at the old place 52, worst 36.6%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 0 (worst 0%), held out at most 1.54x (photo 1.83x)</code></li><li><code>PASS small phone landscape 667x375, 71 fish: under the card 0 (at the old place 71, worst 53.1%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 0 (worst 0%), held out at most 1.48x (photo 1.83x)</code></li><li><code>PASS phone upright 393x852, 71 fish: under the card 0 (at the old place 71, worst 34.2%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 4 (worst 24.4%), held out at most 1.84x (photo 2.20x)</code></li><li><code>PASS phone upright, Safari bars 393x659, 71 fish: under the card 0 (at the old place 71, worst 76.9%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 2 (worst 2.2%), held out at most 1.93x (photo 2.20x)</code></li><li><code>PASS tablet landscape 1180x820, 71 fish: under the card 0 (at the old place 53, worst 22.5%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 0 (worst 0%), held out at most 1.33x (photo 1.83x)</code></li><li><code>PASS tablet upright 820x1180, 71 fish: under the card 0 (at the old place 4, worst 9.6%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 0 (worst 0%), held out at most 1.26x (photo 2.20x)</code></li><li><code>PASS desktop 1280x720, 71 fish: under the card 0 (at the old place 36, worst 21.6%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 0 (worst 0%), held out at most 1.30x (photo 1.83x)</code></li></ul><p class=\"note\">Its first run printed FAIL for three shapes, with the numbers of the shape before: the check had run before the game took the new shape, as a slow software frame holds the browser's resize event back for seconds. The scenario now waits until the game has resized (which also measures the card again) before it checks. The check also measures the card where it rests, as the game does: read live, the card can be caught partway through its 20-point slide-in in the software renderer, which had made a few of the \"before\" counts too low. The game was not changed for either. The lines above are from the final run, and they agree with the nine separate checks in the numbers section.</p><h3>The independent code review</h3><p>A separate review read the change against the game: the conversions between the screen's points and the view, the card's slide-in, the safe-area probe, every way the card or the fish can go away (keeping, releasing, a bear, fast travel, going back to the title, the eagle), the photo's frame, the first frame, the cost per frame and the other arms. It found these three things, all fixed:</p><div class=\"tablewrap\"><table class=\"text\"><thead><tr><th>Severity</th><th>Found</th><th>What was done</th></tr></thead><tbody><tr><td data-label=\"Severity\">Medium</td><td data-label=\"Found\">Measuring the card set its slide-in animation aside and back, which starts it again. The game measures again on every resize, and resizes itself on each automatic resolution step and quality drop, so on a phone with slow frames the card would fade out and slide in again while you read it, and turning the phone replayed it twice.</td><td data-label=\"What was done\">Only a slide still running is set aside for the measure; one already over is left alone. Checked in the catch-room scenario, which turns the screen through seven shapes with the card up.</td></tr><tr><td data-label=\"Severity\">Low</td><td data-label=\"Found\">When a fish was too big for every room even at the furthest hold, the rooms tied and the one nearer the usual place won, which could be the one the fish spilled out of more.</td><td data-label=\"What was done\">The fit now also reports how much the fish still spills over, and of two rooms that tie on distance the one it spills out of least wins. No screen tested needs it: every fish fits.</td></tr><tr><td data-label=\"Severity\">Nit</td><td data-label=\"Found\">The sleeve&#x27;s new shaped length divided and multiplied back, which can differ from the old value in the last binary place for the existing arms.</td><td data-label=\"What was done\">The existing arms now take the old value exactly, so they are built bit for bit as before.</td></tr></tbody></table></div>"
+  },
+  {
+   "id": "limits",
+   "kicker": "Limits",
+   "title": "What this report cannot show",
+   "html": "<ul><li><b>No real iPhone was used.</b> The pictures come from Chromium drawing in software at an iPhone's shape, with an iPhone's browser name. The island's insets were set by hand to the iPhone 15's values, and Safari's bars by a shorter view; a real phone may differ by a few points.</li><li><b>A big fish now looks smaller.</b> To fit, the biggest fish are held up to 1.6 times as far out on a phone on its side and up to 1.9 times upright; the hands shrink with them, as they would. They show whole instead of large.</li><li><b>The small map, the compass and the goal are hidden while the card is up.</b> The view is held still on the catch until you keep or release it, so they have nothing new to show in that time.</li><li><b>The photo upright still cuts the biggest skates and halibut a little</b> (see the numbers): a 16 by 9 picture is a thin band across an upright phone.</li><li><b>Sources were read through web search.</b> curl is blocked for every host in this environment, so the pages below were found and summarised by search, not downloaded in full. To allow hosts: the cloud environment menu in the session's title bar, then Edit, then Network access (a broader level, or Custom with the hosts added under Allowed domains); the steps are at <a href=\"https://code.claude.com/docs/en/cloud-environments#network-access\">https://code.claude.com/docs/en/cloud-environments#network-access</a>.</li></ul>"
+  },
+  {
+   "id": "conclusion",
+   "cls": "conclusion",
+   "kicker": "What would change this conclusion",
+   "title": "What would change this conclusion",
+   "html": "<p><b>The conclusion:</b> the card no longer covers the fish. On every screen shape tested, on its side or upright, every fish in the game is held up whole in the part of the screen the card leaves free, with nothing else of the game in the way, and the trophy photo still frames it. This conclusion would change if:</p><ul><li><b>On your iPhone a fish still runs under the card.</b> The room is measured from the card itself, so a different card size is allowed for; a screenshot would show whether the safe area or a bar along the top is measured differently on the phone.</li><li><b>Your view is shorter than the shortest one tested.</b> The shortest here was 340 points tall on its side (Safari with its bars showing), where every fish fitted at no more than 1.6 times its usual distance. On a shorter view the biggest fish are held further out, up to 2.2 times, and past that would spill over the edges of the room, the card's side included.</li><li><b>You would rather see the fish big than whole.</b> The other way is a smaller card on a phone (the description line hidden, say), which leaves more room; it is a change to the card, not to the fit.</li></ul>"
+  }
+ ],
+ "footer": "<p>Built on the <code>claude/ruben-hotrod-fishing</code> branch: <a href=\"https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing\">the code on GitHub</a>, the <a href=\"https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/README.md\">README</a> and <a href=\"https://claude.ai/artifact/3urJEG61Boov67ViABm26A\">the playable build</a>. The room is measured in <code>src/ui/hud.js</code> (<code>measureCatch</code>), the fish is placed in <code>src/entities/viewmodel.js</code> (<code>fishFit</code>), the sleeves are built in <code>src/entities/hands.js</code>, and the check is <code>tools/scenarios/catch-room.json</code>.</p><p><b>Sources.</b> The iPhone 15&#x27;s screen in points (393 by 852) and its safe-area insets on its side (59 left and right, 21 at the bottom) and upright (59 at the top, 34 at the bottom): Use Your Loaf, iPhone 15 Screen Sizes, <a href=\"https://useyourloaf.com/blog/iphone-15-screen-sizes/\">https://useyourloaf.com/blog/iphone-15-screen-sizes/</a> \u00b7 Safari&#x27;s bars change the height a page gets: Apple Developer Forums, window.innerHeight is incorrect in Safari iPhone/iPad, <a href=\"https://developer.apple.com/forums/thread/735055\">https://developer.apple.com/forums/thread/735055</a> \u00b7 The safe-area insets a page reads with env(): MDN, env(), <a href=\"https://developer.mozilla.org/en-US/docs/Web/CSS/env\">https://developer.mozilla.org/en-US/docs/Web/CSS/env</a> \u00b7 Using the safe-area environment variables: MDN, Using environment variables, <a href=\"https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_environment_variables/Using_environment_variables\">https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_environment_variables/Using_environment_variables</a> \u00b7 Where an element is on the screen, transforms included: MDN, Element.getBoundingClientRect(), <a href=\"https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect\">https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect</a> \u00b7 The animations running on an element: MDN, Element.getAnimations(), <a href=\"https://developer.mozilla.org/en-US/docs/Web/API/Element/getAnimations\">https://developer.mozilla.org/en-US/docs/Web/API/Element/getAnimations</a> \u00b7 Hiding an element and its taps while keeping its place: MDN, visibility, <a href=\"https://developer.mozilla.org/en-US/docs/Web/CSS/visibility\">https://developer.mozilla.org/en-US/docs/Web/CSS/visibility</a> \u00b7 The box round the fish: three.js, Box3, <a href=\"https://threejs.org/docs/pages/Box3.html\">https://threejs.org/docs/pages/Box3.html</a> \u00b7 The view&#x27;s field of view is the vertical one: three.js, PerspectiveCamera, <a href=\"https://threejs.org/docs/pages/PerspectiveCamera.html\">https://threejs.org/docs/pages/PerspectiveCamera.html</a>.</p>"
+}

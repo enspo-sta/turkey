@@ -198,8 +198,10 @@ export function addHand(b, c, pose, M, right = true) {
 // A sleeve along a path of points from the cuff back up the arm, radius
 // r0 at the cuff growing to r1, with soft folds; texture coordinates in
 // tiles of the shirt's cloth. Adds the cuff (with a button) and the bare
-// wrist between the cuff and the hand.
-export function addSleeve(cloth, skin, c, path, r0, r1, { cuff = true, bare = 0.04, wrist = null } = {}) {
+// wrist between the cuff and the hand. Given a shaped length shorter than
+// the path, the sleeve widens and folds over that length as it would over
+// a path of that length, and runs on beyond it at its full width.
+export function addSleeve(cloth, skin, c, path, r0, r1, { cuff = true, bare = 0.04, wrist = null, shape = 0 } = {}) {
   const curve = path.getPointAt ? path : new THREE.CatmullRomCurve3(path.map((p) => new THREE.Vector3(...p)), false, 'catmullrom', 0.4);
   const len = curve.getLength();
   const segs = Math.max(8, Math.round(len / 0.02));
@@ -213,17 +215,19 @@ export function addSleeve(cloth, skin, c, path, r0, r1, { cuff = true, bare = 0.
   const centres = [];
   for (let i = 0; i <= segs; i++) {
     const t = i / segs;
+    // (and along the shaped length, past 1 where the sleeve runs on)
+    const ts = shape ? (t * len) / shape : t;
     const P = curve.getPointAt(t);
     centres.push(P);
     // the folds start past the cuff, so they cannot show through it
     const under = Math.min(1, Math.max(0, (t * len - 0.04) / 0.03));
     const N = frames.normals[i];
     const B = frames.binormals[i];
-    const r = r0 + (r1 - r0) * Math.pow(t, 0.8);
+    const r = r0 + (r1 - r0) * Math.pow(Math.min(1, ts), 0.8);
     for (let j = 0; j <= radial; j++) {
       const a = (j / radial) * Math.PI * 2;
       // folds: shallow ripples round the arm, bunching near the cuff
-      const fold = 1 + under * (0.06 * Math.sin(a * 3 + t * 9) * Math.exp(-t * 1.5) + 0.035 * Math.sin(a * 5 - t * 14) + 0.02 * Math.sin(t * 40 + a));
+      const fold = 1 + under * (0.06 * Math.sin(a * 3 + ts * 9) * Math.exp(-ts * 1.5) + 0.035 * Math.sin(a * 5 - ts * 14) + 0.02 * Math.sin(ts * 40 + a));
       const ca = Math.cos(a) * r * fold;
       const sa = Math.sin(a) * r * fold;
       pos.push(P.x + N.x * ca + B.x * sa, P.y + N.y * ca + B.y * sa, P.z + N.z * ca + B.z * sa);

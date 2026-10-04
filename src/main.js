@@ -180,6 +180,7 @@ class Session {
       g.fishing.resize(w * g.dpr, h * g.dpr);
       g.viewmodel.resize(w, h);
       g.hud.minimap?.resize();
+      g.hud.measureCatch();
       g.skyguide.resize();
       this.checkOrientation();
     };

@@ -112,6 +112,14 @@ export class HUD {
       leftHint: $('left-hint'),
       catchCard: $('catch'),
     };
+    // what the fish held up beside the catch card keeps clear of: the
+    // money, health and chips, the buttons top right, and the safe area (a
+    // notch, the island, the home bar)
+    this.topBars = [document.querySelector('#hud .top-left'), document.querySelector('#hud .top-right')].filter(Boolean);
+    this.safeArea = document.createElement('div');
+    this.safeArea.style.cssText = 'position:absolute;inset:var(--sat) var(--sar) var(--sab) var(--sal);visibility:hidden;pointer-events:none';
+    $('app').appendChild(this.safeArea);
+    this.catchRoom = null;
     this.toastList = [];
     this.bannerTimer = 0;
     this.promptTimer = 0;
@@ -496,6 +504,7 @@ export class HUD {
   showCatch(info, coolerFull, cb) {
     const card = this.el.catchCard;
     card.hidden = false;
+    this.root.classList.add('catching');
     this.blocking = true;
     const badges = [];
     if (info.legend) badges.push('<span class="legend">LEGENDARY</span>');
@@ -534,14 +543,59 @@ export class HUD {
       photo.disabled = true;
       this.game.photo.catchPhoto(info);
     };
+    this.measureCatch();
   }
 
   // Hide the catch card without choosing (the caller settles the fish).
   closeCatch() {
     this.el.catchCard.hidden = true;
+    this.root.classList.remove('catching');
     this.blocking = false;
     this.catchChoice = null;
+    this.catchRoom = null;
     $('catch-keep').onclick = $('catch-release').onclick = $('catch-photo').onclick = null;
+  }
+
+  // The room the catch card leaves for the fish held up beside it (see
+  // Viewmodel.fishFit): left of the card and above it, inside the safe area
+  // and under the money and the buttons along the top, as rectangles in the
+  // view's -1..1 coordinates (y up). Null while the card is hidden. Measured
+  // when the card shows and when the screen turns.
+  measureCatch() {
+    const card = this.el.catchCard;
+    const view = this.game.container.getBoundingClientRect();
+    this.catchRoom = null;
+    if (card.hidden || !view.width || !view.height) return;
+    // where the card ends up once it has slid in: a slide still running is
+    // set aside for the measure (one long over is not played again, as the
+    // resolution steps and turns of the screen measure again)
+    const sliding = card.getAnimations?.().length > 0;
+    if (sliding) card.style.animation = 'none';
+    const c = card.getBoundingClientRect();
+    if (sliding) card.style.animation = '';
+    const safe = this.safeArea.getBoundingClientRect();
+    const pad = 10;
+    let top = safe.top;
+    for (const el of this.topBars) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) top = Math.max(top, r.bottom);
+    }
+    const rooms = [];
+    // left of the card (a wide screen), above it (a phone held upright)
+    for (const [x1, y1] of [
+      [c.left, safe.bottom],
+      [safe.right, c.top],
+    ]) {
+      const r = { l: safe.left + pad, r: x1 - pad, t: top + pad, b: y1 - pad };
+      if (r.r - r.l < 60 || r.b - r.t < 60) continue;
+      rooms.push({
+        x0: ((r.l - view.left) / view.width) * 2 - 1,
+        x1: ((r.r - view.left) / view.width) * 2 - 1,
+        y0: 1 - ((r.b - view.top) / view.height) * 2,
+        y1: 1 - ((r.t - view.top) / view.height) * 2,
+      });
+    }
+    this.catchRoom = rooms.length ? rooms : null;
   }
 
   // ---- per-frame update

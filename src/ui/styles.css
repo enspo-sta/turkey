@@ -318,6 +318,9 @@ svg { width: 1em; height: 1em; display: block; }
 .panel { background: var(--panel-solid); border: 2px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); color: var(--ink); }
 #catch { position: absolute; z-index: 20; right: calc(var(--sar) + 16px); top: 50%; transform: translateY(-50%); width: min(340px, 42vw); padding: 16px 18px; animation: cardIn .35s ease; }
 @keyframes cardIn { from { opacity: 0; transform: translate(20px, -50%); } to { opacity: 1; transform: translate(0, -50%); } }
+/* while the card is up, the small map, the compass and the goal step aside
+   so the fish held up beside the card has the room */
+#hud.catching #minimap, #hud.catching #compass, #hud.catching #objective { visibility: hidden; }
 #catch h2 { margin: 2px 0 0; font-family: var(--display); font-weight: 400; font-size: 30px; line-height: 1.05; color: var(--flame-2); text-wrap: balance; }
 .catch-species { font-size: 14px; color: var(--ink-dim); letter-spacing: .08em; text-transform: uppercase; font-weight: 700; margin-top: 2px; }
 .catch-badges { display: flex; gap: 6px; flex-wrap: wrap; }
