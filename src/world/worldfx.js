@@ -156,15 +156,26 @@ ${SHARED_GLSL}
 float fxPuddle = 0.0;
 float fxWetGloss = 1.0;
 
+// The sun's glow in the sky in direction dir, strongest near the horizon.
+vec3 fxSkyGlow( vec3 dir ) {
+	float sd = max( dot( dir, uFxSunDir ), 0.0 );
+	float hb = 1.0 + 1.5 * ( 1.0 - smoothstep( 0.0, 0.35, abs( dir.y ) ) );
+	return uFxGlow * ( pow( sd, 5.0 ) * 0.45 + pow( sd, 48.0 ) * 0.8 ) * hb;
+}
+
 // Sky colour in direction dir (matches sky.js): the horizon colour turning
 // to the zenith's as the direction rises, as the sky itself does, so far
 // ridges fade into the colour of the sky right behind them (not a paler
 // one), and wet ground and still water reflect blue overhead.
 vec3 fxSkyColor( vec3 dir ) {
-	float sd = max( dot( dir, uFxSunDir ), 0.0 );
-	float hb = 1.0 + 1.5 * ( 1.0 - smoothstep( 0.0, 0.35, abs( dir.y ) ) );
-	vec3 base = mix( uFxHorizon, uFxZenith, pow( max( dir.y, 0.0 ), 0.42 ) );
-	return base + uFxGlow * ( pow( sd, 5.0 ) * 0.45 + pow( sd, 48.0 ) * 0.8 ) * hb;
+	return mix( uFxHorizon, uFxZenith, pow( max( dir.y, 0.0 ), 0.42 ) ) + fxSkyGlow( dir );
+}
+
+// The sky at the horizon in direction dir, however high dir points: what a
+// lake far off shows at a glance (for the reflection probe's stand-in for the
+// water round it, which keeps the colour it had before the sky gradient)
+vec3 fxHorizonColor( vec3 dir ) {
+	return uFxHorizon + fxSkyGlow( dir );
 }
 
 // Height haze between the camera and wp, thinning with altitude.

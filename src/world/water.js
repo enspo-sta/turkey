@@ -332,7 +332,7 @@ class ReflectionProbe {
           vec3 V = normalize(vPos - cameraPosition);
           // like the real surface: dark straight down, sky at a glance
           float f = min(0.02 + 0.98 * pow(1.0 - clamp(-V.y, 0.0, 1.0), 5.0), 0.4);
-          vec3 col = mix(uDeep * uFxWaterLight, fxSkyColor(reflect(V, vec3(0.0, 1.0, 0.0))), f);
+          vec3 col = mix(uDeep * uFxWaterLight, fxHorizonColor(reflect(V, vec3(0.0, 1.0, 0.0))), f);
           gl_FragColor = vec4(col, 1.0);
         }`,
       fog: true,

@@ -5209,15 +5209,26 @@ ${DA}
 float fxPuddle = 0.0;
 float fxWetGloss = 1.0;
 
+// The sun's glow in the sky in direction dir, strongest near the horizon.
+vec3 fxSkyGlow( vec3 dir ) {
+	float sd = max( dot( dir, uFxSunDir ), 0.0 );
+	float hb = 1.0 + 1.5 * ( 1.0 - smoothstep( 0.0, 0.35, abs( dir.y ) ) );
+	return uFxGlow * ( pow( sd, 5.0 ) * 0.45 + pow( sd, 48.0 ) * 0.8 ) * hb;
+}
+
 // Sky colour in direction dir (matches sky.js): the horizon colour turning
 // to the zenith's as the direction rises, as the sky itself does, so far
 // ridges fade into the colour of the sky right behind them (not a paler
 // one), and wet ground and still water reflect blue overhead.
 vec3 fxSkyColor( vec3 dir ) {
-	float sd = max( dot( dir, uFxSunDir ), 0.0 );
-	float hb = 1.0 + 1.5 * ( 1.0 - smoothstep( 0.0, 0.35, abs( dir.y ) ) );
-	vec3 base = mix( uFxHorizon, uFxZenith, pow( max( dir.y, 0.0 ), 0.42 ) );
-	return base + uFxGlow * ( pow( sd, 5.0 ) * 0.45 + pow( sd, 48.0 ) * 0.8 ) * hb;
+	return mix( uFxHorizon, uFxZenith, pow( max( dir.y, 0.0 ), 0.42 ) ) + fxSkyGlow( dir );
+}
+
+// The sky at the horizon in direction dir, however high dir points: what a
+// lake far off shows at a glance (for the reflection probe's stand-in for the
+// water round it, which keeps the colour it had before the sky gradient)
+vec3 fxHorizonColor( vec3 dir ) {
+	return uFxHorizon + fxSkyGlow( dir );
 }
 
 // Height haze between the camera and wp, thinning with altitude.
@@ -5963,7 +5974,7 @@ void main() {
           vec3 V = normalize(vPos - cameraPosition);
           // like the real surface: dark straight down, sky at a glance
           float f = min(0.02 + 0.98 * pow(1.0 - clamp(-V.y, 0.0, 1.0), 5.0), 0.4);
-          vec3 col = mix(uDeep * uFxWaterLight, fxSkyColor(reflect(V, vec3(0.0, 1.0, 0.0))), f);
+          vec3 col = mix(uDeep * uFxWaterLight, fxHorizonColor(reflect(V, vec3(0.0, 1.0, 0.0))), f);
           gl_FragColor = vec4(col, 1.0);
         }`,fog:!0});n.userData.fx="manual",this.floor=new $(o,n),this.floor.layers.set(pr),this.floor.frustumCulled=!1,this.floor.name="reflectionFloor",this.faces=[0,1,2,4,5],this.next=0,this.ready=!1}dispose(){this.rt.dispose(),this.floor.removeFromParent(),this.floor.geometry.dispose(),this.floor.material.dispose()}update(t,e,s,o=1){let n=this.camera;n.coordinateSystem!==t.coordinateSystem&&(n.coordinateSystem=t.coordinateSystem,n.updateCoordinateSystem()),n.position.copy(s),n.updateMatrixWorld(!0),this.floor.parent!==e&&e.add(this.floor),this.floor.position.set(s.x,s.y-.3,s.z);let a=t.getRenderTarget(),r=t.getActiveCubeFace(),l=t.getActiveMipmapLevel(),c=t.shadowMap.enabled;t.shadowMap.enabled=!1;for(let h=0;h<o;h++){let u=this.faces[this.next];this.next=(this.next+1)%this.faces.length,t.setRenderTarget(this.rt,u,0),t.clear(),t.render(e,n.children[u]),this.next===0&&(this.ready=!0)}t.shadowMap.enabled=c,t.setRenderTarget(a,r,l)}},Kf=class{constructor(t,e,s,o,n){this.world=t,this.env=o,this.renderer=n,this.group=new Lt,this.group.name="water",this.materials=[],this.waves=new wV(256),this.probe=null,this.levelT=0,this.viewLevel=null,this.shared={uTime:{value:0},uSunLight:{value:new ct},uLightDir:{value:new R(0,1,0)},uNight:o.uniforms.uNight,uSunColor:o.uniforms.uSunColor,uRain:{value:0},uHeight:{value:e.height},uMask:{value:e.mask},uWaves:{value:this.waves.texture},uFoamTex:{value:s},uRefl:{value:null},uReflOn:{value:0},uWorldMin:{value:e.worldMin},uUvScale:{value:e.uvScale},uUvOffset:{value:e.uvOffset},uFarEdge:{value:6300}},this.ocean=new $(this.oceanGeometry(),this.material({ocean:!0})),this.ocean.name="ocean",this.ocean.frustumCulled=!1,this.group.add(this.ocean),this.river=new $(this.riverGeometry(),this.material({river:!0,flow:1})),this.river.name="river",this.group.add(this.river),t.fallsS>0&&(this.falls=this.buildWaterfall(),this.group.add(this.falls));for(let a of t.lakes){let r=new $(this.lakeGeometry(a),this.material());r.name="lake-"+a.id,this.group.add(r)}for(let a of this.group.children)a!==this.falls&&(a.renderOrder=1,a.receiveShadow=!1)}setReflectionSize(t){this.probe&&this.probe.rt.width===t||(this.probe&&this.probe.dispose(),this.probe=t>0?new vV(this.renderer,t):null,this.shared.uRefl.value=this.probe?this.probe.rt.texture:null,this.shared.uReflOn.value=0,this.primed=!1)}material({ocean:t=!1,river:e=!1,flow:s=0}={}){let o=new Te({uniforms:{...this.shared,...ws.clone(Pt.fog),uRiver:{value:e?1:0},uOcean:{value:t?1:0},uFlowSpeed:{value:s}},vertexShader:HT,fragmentShader:OT,transparent:!0,premultipliedAlpha:!0,depthWrite:!0,fog:!0});return o.userData.fx="manual",this.materials.push(o),o}oceanGeometry(){let t=Q5(7500,1,1.35,64),e=t.attributes.position.count;return t.setAttribute("flowUv",new yt(new Float32Array(e*2),2)),t.setAttribute("foam",new yt(new Float32Array(e),1)),t}riverGeometry(){let t=this.world,e=t.river,s=e.length;for(let d=e.length*.6;d<e.length;d+=2){let f=e.sample(d);if(t.coastAt(f.x,f.z)<-12){s=d;break}}let o=[];for(let d=0;d<=s;d+=3)o.push(d);if(t.fallsS>0){let d=t.fallsS;for(let f=o.length-1;f>=0;f--)Math.abs(o[f]-d)<2.5&&o.splice(f,1);o.push(d-.35,d+.35,d-1.6,d+1.6),o.sort((f,p)=>f-p)}let n=[-1,-.6,-.25,0,.25,.6,1],a=n.length,r=[],l=[],c=[],h=[];o.forEach((d,f)=>{let p=e.sample(d),m=t.riverWidth(d)+3.2,q;t.fallsS>0&&Math.abs(d-t.fallsS)<.5?q=d<t.fallsS?t.riverLevel(t.fallsS-.001):t.riverLevel(t.fallsS+.001):q=t.riverLevel(d);let V=t.riverGradient(d),g=qt(.02,.09,V)*.8;if(t.fallsS>0){let y=d-t.fallsS;y>-2&&y<.5?g=1:y>=.5&&y<34&&(g=Math.max(g,1-y/34))}let x=-p.tz,A=p.tx;for(let y=0;y<a;y++){let w=n[y];r.push(p.x+x*w*m,q,p.z+A*w*m),l.push(w*m,d),c.push(ot(g*(.75+.25*Math.abs(w)),0,1))}let M=t.fallsS>0&&f>0&&o[f-1]<t.fallsS&&d>t.fallsS;if(f>0&&!M){let y=(f-1)*a,w=f*a;for(let E=0;E<a-1;E++)h.push(y+E,y+E+1,w+E,y+E+1,w+E+1,w+E)}});let u=new kt;return u.setAttribute("position",new wt(r,3)),u.setAttribute("flowUv",new wt(l,2)),u.setAttribute("foam",new wt(c,1)),u.setIndex(h),u.computeBoundingSphere(),u}buildWaterfall(){let t=this.world,e=t.fallsS,s=t.riverLevel(e-.01),o=t.riverLevel(e+.01),n=t.river.sample(e),a=t.riverWidth(e)+3.2,r=s-o,l=new Lt;l.position.set(n.x,o,n.z),l.rotation.y=Math.atan2(n.tx,n.tz),l.name="waterfall";let c=2.6,h=(M,y)=>M<=0?{y:r+.04,z:M*14-(y?.5:0)}:{y:r*(1-M),z:c*Math.sqrt(2*r*M/9.8)*(y?.62:1)-(y?.5:0)},u=M=>{let E=[],b=[],v=[];for(let S=0;S<=20;S++){let k=S<3?-.12+S/3*.12:(S-3)/17,C=h(k,M);for(let D=0;D<=36;D++){let B=D/36,z=(B-.5)*2*a*(1+Math.max(0,k)*.12),P=Math.max(0,k)*(1-Math.pow(Math.abs(B-.5)*2,2))*.5;E.push(z,C.y,C.z+P),b.push(B,k)}}for(let S=0;S<20;S++)for(let k=0;k<36;k++){let C=S*37+k;v.push(C,C+36+1,C+1,C+1,C+36+1,C+36+2)}let T=new kt;return T.setAttribute("position",new wt(E,3)),T.setAttribute("uv",new wt(b,2)),T.setIndex(v),T.computeVertexNormals(),T},d=M=>new Te({uniforms:{uTime:this.shared.uTime,uNoise:{value:this.shared.uFoamTex.value},uSunColor:this.shared.uSunColor,uNight:this.shared.uNight,uBack:{value:M?1:0},...ws.clone(Pt.fog)},vertexShader:`
           #include <common>
