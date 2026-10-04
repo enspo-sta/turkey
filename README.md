@@ -49,6 +49,9 @@ the same work: rounder animals with paler bellies, tree crowns lit as one
 volume, bark that keeps its colour, clear car glass, a truer tone curve and
 softer light under cloud), with before and after pictures, what it costs and
 the audit: [docs/asset-quality-update.html](docs/asset-quality-update.html).
+The step before it, a fair check of the voice's frame cost and a map check
+that really taps Bear Falls:
+[docs/voice-cost-check.html](docs/voice-cost-check.html).
 Earlier rounds: [docs/fullscreen-voice-update.html](docs/fullscreen-voice-update.html),
 [docs/sound-scientists-update.html](docs/sound-scientists-update.html),
 [docs/science-update.html](docs/science-update.html),
@@ -851,7 +854,7 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/ui/eyepiece.js`, `skyguide.js` | The telescope's eyepiece views, and the constellation figures and names drawn over the sky |
 | `ios/` | The Xcode project for the native iOS app |
 | `tools/shot.mjs`, `tools/scenarios/` | Headless screenshot and gameplay test harness with scripted scenarios |
-| `tools/perf-tour.mjs`, `tools/perf-compare.mjs`, `tools/perf-stats.mjs`, `tools/first-frame.mjs`, `tools/load-compare.mjs`, `tools/shader-check.mjs` | Frame times along a scripted tour; two or more builds timed in turns in a balanced order, with the statistics that compare them; loading and the first frames of play, also for builds in turns; and every shader built without an error on a development build |
+| `tools/perf-tour.mjs`, `tools/perf-compare.mjs`, `tools/perf-stats.mjs`, `tools/first-frame.mjs`, `tools/load-compare.mjs`, `tools/shader-check.mjs`, `tools/cpu-by-thread.py` | Frame times along a scripted tour; two or more builds timed in turns in a balanced order, with the statistics that compare them; loading and the first frames of play, also for builds in turns; every shader built without an error on a development build; and one tour's processor time for every thread of the browser |
 | `tools/make-icons.mjs`, `tools/serve.mjs`, `tools/preview-map.mjs` | Icon drawing, the local network server, and a top-down map preview of the world |
 | `tools/mkstars.mjs` | Packs the stars, constellation figures, star names and Milky Way outline from the d3-celestial package into `src/world/skydata.js` |
 | `tools/voice/` | Makes the announcer's voice: `lines.mjs` lists every line and name, `make-voice.py` speaks them with Kokoro and packs `src/audio/voice-clips.js` |
@@ -961,6 +964,7 @@ node tools/cull-compare.mjs [index.html]                 # the same view with an
 node tools/first-frame.mjs [index.html]                  # loading time, the first frames after New game and the shaders built after loading, for this build or an older one
 node tools/load-compare.mjs old/index.html dist/index.html [--rounds N] [--out dir] # two or more builds opened in turns in a balanced order: the time until the game is ready, New game, and the first three frames, each with a 95% interval
 node tools/shader-check.mjs dev/index.html             # on a development build (node build.mjs --dev): every shader built at High, Medium and Low, at morning, sunset, night and in rain, and any that fail to compile with their error
+python3 tools/cpu-by-thread.py dist/index.html out.json [--size WxH --dpr N] # one tour's processor time for every thread of the browser (the page's main thread, the software renderer's workers, the sound threads): more work, or only more waiting (Linux)
 node tools/shot.mjs tools/scenarios/sky-night.json    # the real night sky to the north, south, east and overhead, and the Moon
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot
 node tools/shot.mjs tools/scenarios/fish-views.json   # fish schools, a fish approaching the float and the fight
@@ -997,7 +1001,10 @@ tour of each: on the test machine a run's place in a sequence can move its
 average frame by as much as the differences worth finding. The tool runs
 every build once in every place of a round, reads the differences within
 rounds with the place taken out, and gives a 95% interval; a difference
-counts only when its interval leaves out zero.
+counts only when its interval leaves out zero. The machine's own speed also
+changes from one session to the next, so a difference found once is worth
+making again before it is believed, and `tools/cpu-by-thread.py` tells
+whether a slower build does more work or only waits longer.
 
 Three checks need only Node:
 
