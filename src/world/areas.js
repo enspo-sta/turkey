@@ -587,14 +587,19 @@ function buildWreck(P) {
     const sg = st.build();
     const sp = sg.attributes.position;
     const sc = sg.attributes.color;
+    // (the stack stands on the sea floor: the splash zone is measured from
+    // the sea's surface, at 0)
+    const by = W.heightAt(x, z);
     for (let i = 0; i < sp.count; i++) {
       const y = sp.getY(i);
-      if (y > h - 0.45) continue;
-      const wet = 1 - 0.38 * (1 - smoothstep(0.6, 1.8, y));
+      // the grass on top keeps its green (told apart by colour: rock that
+      // pokes out above the grass's foot still gets the white)
+      if (sc.getY(i) > sc.getX(i) * 1.15) continue;
+      const wet = 1 - 0.38 * (1 - smoothstep(0.6, 1.8, y + by));
       const gu = smoothstep(h - 4.5, h - 1.0, y) * 0.85;
       sc.setXYZ(i, lerp(sc.getX(i) * wet, GUANO.r, gu), lerp(sc.getY(i) * wet, GUANO.g, gu), lerp(sc.getZ(i) * wet, GUANO.b, gu));
     }
-    P.addMesh(sg, x, W.heightAt(x, z), z, rand() * 6);
+    P.addMesh(sg, x, by, z, rand() * 6);
   }
   signBoard(P, 'Shipwreck Cove', 'The Unsinkable II, 1987 · She sank in four feet of water', sx + g.x * 6 + g.z * 3, sz + g.z * 6 - g.x * 3, Math.atan2(-g.x, -g.z) + Math.PI);
 }

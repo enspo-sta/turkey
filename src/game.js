@@ -43,16 +43,18 @@ const CLOUD_SCALE = 1800;
 const MIST_DENSITY = 0.0032;
 const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
 
-// The tone curve: Khronos PBR Neutral with half its black offset. Neutral
-// takes 0.04 off every colour to cancel the 4% reflection that glossy
-// materials have; the matte ground and plants have none, and the full offset
-// crushed their shade to muddy, over-coloured black (linear 0.05 came out as
-// 0.016). With 0.02 the shade keeps its detail and the night stays as dark.
+// The tone curve: Khronos PBR Neutral with three quarters of its black
+// offset. Neutral takes 0.04 off every colour to cancel the 4% reflection
+// that glossy materials have; the matte ground and plants have none, and the
+// full offset crushed their shade to muddy, over-coloured black (linear 0.05
+// came out as 0.016). With 0.03 it comes out as 0.021: the shade keeps more
+// of its detail, the greens keep most of their colour (with half the offset
+// they lost a tenth of it) and the night stays as dark.
 // The same instructions as Neutral; only two constants differ.
 THREE.ShaderChunk.tonemapping_pars_fragment = THREE.ShaderChunk.tonemapping_pars_fragment.replace(
   'vec3 CustomToneMapping( vec3 color ) { return color; }',
   `vec3 CustomToneMapping( vec3 color ) {
-	const float K = 0.02;
+	const float K = 0.03;
 	const float StartCompression = 0.8 - K;
 	const float Desaturation = 0.15;
 	color *= toneMappingExposure;

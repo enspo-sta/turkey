@@ -890,19 +890,24 @@ function rockMaterial(matTex) {
 // autumn or gold crown does not turn the trunk yellow. Vertex colours are
 // linear: bark is below about 0.3 in saturation, leaves above 0.5.
 const BARK_COLOR = /* glsl */ `
-#if defined( USE_COLOR ) || defined( USE_INSTANCING_COLOR )
+#if defined( USE_COLOR ) || defined( USE_COLOR_ALPHA ) || defined( USE_INSTANCING_COLOR ) || defined( USE_BATCHING_COLOR )
 	vColor = vec4( 1.0 );
 #endif
-#ifdef USE_COLOR
+#ifdef USE_COLOR_ALPHA
+	vColor *= color;
+#elif defined( USE_COLOR )
 	vColor.rgb *= color;
 #endif
-#if defined( USE_INSTANCING_COLOR ) && defined( USE_COLOR )
+#if defined( USE_INSTANCING_COLOR ) && ( defined( USE_COLOR ) || defined( USE_COLOR_ALPHA ) )
 	float bkMax = max( color.r, max( color.g, color.b ) );
 	float bkSat = ( bkMax - min( color.r, min( color.g, color.b ) ) ) / max( bkMax, 1e-4 );
 	float bkLum = dot( instanceColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
 	vColor.rgb *= mix( vec3( bkLum ), instanceColor.rgb, smoothstep( 0.25, 0.45, bkSat ) );
 #elif defined( USE_INSTANCING_COLOR )
 	vColor.rgb *= instanceColor.rgb;
+#endif
+#ifdef USE_BATCHING_COLOR
+	vColor *= getBatchingColor( getIndirectIndex( gl_DrawID ) );
 #endif
 `;
 
@@ -1049,16 +1054,11 @@ export class Scatter {
     const swayPoplar = swayMaterial(sharedUniforms, 0.0012, { bark: true });
     const swayAspen = swayMaterial(sharedUniforms, 0.0028, { bark: true });
     const plain = new THREE.MeshLambertMaterial({ vertexColors: true });
+    // (the far trees, spruce and broadleaf alike, and the bushes: one
+    // material, one shader; far off, a birch's trunk is a three-sided
+    // sliver, and the bark rule there would have cost a shader of its own)
     const leafy = new THREE.MeshLambertMaterial({ vertexColors: true });
     leafy.userData.fx = 'foliage';
-    // the distant broadleaf trees: their pale trunks keep their colour too
-    const leafyTree = new THREE.MeshLambertMaterial({ vertexColors: true });
-    leafyTree.userData.fx = 'foliage';
-    leafyTree.onBeforeCompile = function (shader) {
-      shader.vertexShader = shader.vertexShader.replace('#include <color_vertex>', BARK_COLOR);
-      fxPatch(shader, this);
-    };
-    leafyTree.customProgramCacheKey = () => 'leafy/bark|fx:foliage';
     const rocky = rockMaterial(matTex);
 
     this.types = {
@@ -1076,7 +1076,7 @@ export class Scatter {
         [
           { geo: birchDetailed(), material: swayBirch, maxDist: 50, capacity: 500, shadow: true },
           { geo: birchNear(), material: swayBirch, maxDist: 95, capacity: 1000, shadow: true },
-          { geo: birchFar(), material: leafyTree, maxDist: 560, capacity: 5000 },
+          { geo: birchFar(), material: leafy, maxDist: 560, capacity: 5000 },
         ],
         { tint: true }
       ),
@@ -1094,7 +1094,7 @@ export class Scatter {
         [
           { geo: poplarDetailed(), material: swayPoplar, maxDist: 75, capacity: 400, shadow: true },
           { geo: poplarNear(), material: swayPoplar, maxDist: 180, capacity: 900, shadow: true },
-          { geo: poplarFar(), material: leafyTree, maxDist: 720, capacity: 3000 },
+          { geo: poplarFar(), material: leafy, maxDist: 720, capacity: 3000 },
         ],
         { tint: true }
       ),
@@ -1103,7 +1103,7 @@ export class Scatter {
         [
           { geo: aspenDetailed(), material: swayAspen, maxDist: 55, capacity: 700, shadow: true },
           { geo: aspenNear(), material: swayAspen, maxDist: 115, capacity: 1400, shadow: true },
-          { geo: aspenFar(), material: leafyTree, maxDist: 560, capacity: 5000 },
+          { geo: aspenFar(), material: leafy, maxDist: 560, capacity: 5000 },
         ],
         { tint: true }
       ),
@@ -1340,8 +1340,10 @@ export class Scatter {
           const c = this.colliders.addCircle(x, z, s * 0.85, 'rock');
           // one under water has a top, so a boat floats over it when it lies
           // deep enough on the bottom; on land a rock stops everything
+          // (a slab's top is as low as it is flat)
           const w = W.waterAt(x, z);
-          if (w && y + 0.9 * s < w.level) c.top = y + 0.9 * s;
+          const top = y + 0.9 * s * flat;
+          if (w && top < w.level) c.top = top;
         }
       }
     }

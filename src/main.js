@@ -235,12 +235,10 @@ class Session {
     const g = this.game;
     // a fish in the world (under water, fog) and in the hands (no fog), so the
     // first bite and the first catch do not stall on shader compiles
-    // (a pink salmon for the fish with the rainbow sheen on their scales, a
-    // pike for the rest, whose shader leaves it out)
-    if (!this.fishProbes) this.fishProbes = [makeFishModel('pink'), makeFishModel('pink'), makeFishModel('pike'), makeFishModel('pike')];
-    const [fishWorld, fishHand, plainWorld, plainHand] = this.fishProbes;
-    g.scene.add(fishWorld, plainWorld);
-    g.viewmodel.scene.add(fishHand, plainHand);
+    if (!this.fishProbes) this.fishProbes = [makeFishModel('pink'), makeFishModel('pink')];
+    const [fishWorld, fishHand] = this.fishProbes;
+    g.scene.add(fishWorld);
+    g.viewmodel.scene.add(fishHand);
     // the hands reflect the same sky as the world once the game is on (see
     // Viewmodel.update): compiled without it, all their shaders would be
     // built again on the first frame of the game
@@ -290,9 +288,9 @@ class Session {
     } catch (e) {
       /* only an optimisation */
     }
-    const [fishWorld, fishHand, plainWorld, plainHand] = this.fishProbes;
-    g.scene.add(fishWorld, plainWorld);
-    g.viewmodel.scene.add(fishHand, plainHand);
+    const [fishWorld, fishHand] = this.fishProbes;
+    g.scene.add(fishWorld);
+    g.viewmodel.scene.add(fishHand);
     g.viewmodel.scene.environment = g.scene.environment;
     const undo = this.revealAll([g.scene, g.viewmodel.scene]);
     const overlayWas = g.overlay.enabled;
@@ -1478,7 +1476,7 @@ class Session {
     const el = g.env.sunElevation;
     const last = this.lastEnvElevation ?? -999;
     // (and when the cloud cover has changed: shade turns grey under a grey sky)
-    const greyer = Math.abs((g.env.overcast || 0) - (this.lastEnvOvercast ?? 0)) > 0.1;
+    const greyer = Math.abs((g.env.overcast || 0) - (this.lastEnvOvercast ?? 0)) > 0.25;
     if (this.envT <= 0 && (Math.abs(el - last) > 4 || greyer) && !(el < -12 && last < -12)) {
       this.envT = 5;
       this.updateEnvMap();

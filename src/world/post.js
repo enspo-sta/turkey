@@ -116,7 +116,7 @@ void main() {
   vec3 g = gl_FragColor.rgb;
   float l = dot(g, vec3(0.2126, 0.7152, 0.0722));
   // a touch more colour, cool shadows and warm highlights
-  vec3 graded = mix(vec3(l), g, 1.1);
+  vec3 graded = mix(vec3(l), g, 1.15);
   graded *= mix(vec3(0.965, 0.99, 1.045), vec3(1.035, 1.0, 0.955), smoothstep(0.04, 0.55, l));
   g = mix(g, clamp(graded, 0.0, 1.0), uGrade);
   // soft vignette

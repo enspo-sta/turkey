@@ -791,8 +791,10 @@ export class TeslaMemorial {
       new THREE.CylinderGeometry(1.15, 1.15, 2.25, 36, 1, true),
       // alpha to coverage on the multisampled frame: the fine mesh fades to a
       // see-through grey with distance, where a hard alpha test made it
-      // vanish a few metres off
-      new THREE.MeshStandardMaterial({ map: cageTex, transparent: false, alphaTest: 0.15, alphaToCoverage: true, side: THREE.DoubleSide, roughness: 0.5, metalness: 0.6 })
+      // vanish a few metres off (and no alpha test with it: three sharpens
+      // the alpha about the test value, and the far mip levels' average,
+      // about 0.3, would then draw the cage as a solid drum)
+      new THREE.MeshStandardMaterial({ map: cageTex, transparent: false, alphaToCoverage: true, side: THREE.DoubleSide, roughness: 0.5, metalness: 0.6 })
     );
     cage.position.set(0, 1.18, -0.5);
     coilGroup.add(cage);

@@ -388,6 +388,7 @@ export class Environment {
 
     this.hemi = new THREE.HemisphereLight(0xbcd4f0, 0x56603c, 1.0);
     scene.add(this.hemi);
+    this.hemiColors = [this.hemi.color, this.hemi.groundColor];
 
     this.fog = new THREE.FogExp2(0xbdd0e0, 0.0003);
     scene.fog = this.fog;
@@ -527,8 +528,13 @@ export class Environment {
     const lightI = lerpKey(e, 'lightI');
     lerpKey(e, 'light', this.sun.color);
     if (e > -2) this.lightDir.copy(this.sunDir);
-    else if (this.moonUp > 0.02) this.lightDir.copy(u.uMoonPos.value);
-    else this.lightDir.copy(this.moonDir);
+    else {
+      // turning from the stand-in direction toward the Moon as its light
+      // grows, so the shadows never swing round at once
+      this.lightDir.copy(this.moonDir).lerp(u.uMoonPos.value, smoothstep(0.02, 0.25, this.moonUp));
+      if (this.lightDir.lengthSq() < 0.04) this.lightDir.copy(u.uMoonPos.value);
+      this.lightDir.normalize();
+    }
     if (this.lightDir.y < 0.08) {
       this.lightDir.y = 0.08;
       this.lightDir.normalize();
@@ -545,7 +551,7 @@ export class Environment {
     lerpKey(e, 'hemiSky', this.hemi.color);
     lerpKey(e, 'hemiGround', this.hemi.groundColor);
     if (overcast > 0) {
-      for (const c of [this.hemi.color, this.hemi.groundColor]) {
+      for (const c of this.hemiColors) {
         const l = c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722;
         c.lerp(_hemiGrey.setRGB(l, l, l), overcast * 0.7);
       }

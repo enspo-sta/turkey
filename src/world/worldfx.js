@@ -201,18 +201,15 @@ float fxMist( vec3 wp ) {
 	return 1.0 - exp( - od * ( 0.3 + 1.4 * bank ) );
 }
 
-// Mist is paler than the haze and glows toward the sun.
-vec3 fxMistColor( vec3 dir ) {
-	vec3 s = fxSkyColor( dir );
-	return mix( s, vec3( dot( s, vec3( 0.2126, 0.7152, 0.0722 ) ) ), 0.35 ) * 1.06;
+// Mist is paler than the haze and glows toward the sun: from the sky's
+// colour in the same direction (worked out once for both).
+vec3 fxMistColor( vec3 sky ) {
+	return mix( sky, vec3( dot( sky, vec3( 0.2126, 0.7152, 0.0722 ) ) ), 0.35 ) * 1.06;
 }
 
 vec3 fxAtmosphere( vec3 col, vec3 wp ) {
-	vec3 dir = normalize( wp - cameraPosition );
-	// the sky's colour once, for the mist (paler, as in fxMistColor) and the haze
-	vec3 sky = fxSkyColor( dir );
-	vec3 mist = mix( sky, vec3( dot( sky, vec3( 0.2126, 0.7152, 0.0722 ) ) ), 0.35 ) * 1.06;
-	col = mix( col, mist, fxMist( wp ) );
+	vec3 sky = fxSkyColor( normalize( wp - cameraPosition ) );
+	col = mix( col, fxMistColor( sky ), fxMist( wp ) );
 	return mix( col, sky, fxHaze( wp ) );
 }
 

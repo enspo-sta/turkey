@@ -751,9 +751,9 @@ export function makeFishModel(id) {
       clearcoat: 0.75,
       clearcoatRoughness: 0.2,
       // the rainbow sheen of salmon, trout, whitefish and grayling scales;
-      // none on the cod, rockfish, sharks and the rest (whose shader then
-      // skips the thin-film work altogether)
-      iridescence: IRIDESCENT.has(shape) ? 0.45 : 0,
+      // barely a trace on the cod, rockfish, sharks and the rest (a trace
+      // rather than none: at none three builds them a shader of their own)
+      iridescence: IRIDESCENT.has(shape) ? 0.45 : 0.02,
       iridescenceIOR: 1.3,
       iridescenceThicknessRange: [250, 600],
     }),
@@ -768,8 +768,10 @@ export function makeFishModel(id) {
   group.add(body, fins);
   group.add(new THREE.Mesh(base.eyes, eyeMat));
   if (base.barbel) group.add(new THREE.Mesh(base.barbel, bodyMat));
+  // (not the fins: drawn with alpha to coverage, they would need a shadow
+  // shader of their own, for a shadow too small to see)
   group.traverse((o) => {
-    if (o.isMesh) o.castShadow = true;
+    if (o.isMesh) o.castShadow = o !== fins;
   });
   group.userData.uniforms = uniforms;
   group.userData.flat = !!sh.flat;

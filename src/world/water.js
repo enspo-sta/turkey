@@ -177,10 +177,10 @@ void main() {
   c = mix(c, foamCol, foamAmt);
   a = max(a, foamAmt * 0.92 * edge);
   // mist lying on the water, then haze toward the horizon
-  // the sky's colour once, for the mist (paler, as fxMistColor) and the haze
+  // the sky's colour once, for the mist (paler) and the haze
   vec3 skyV = fxSkyColor(-V);
   float mist = fxMist(vWorld);
-  c = mix(c, mix(skyV, vec3(dot(skyV, vec3(0.2126, 0.7152, 0.0722))), 0.35) * 1.06, mist);
+  c = mix(c, fxMistColor(skyV), mist);
   float haze = fxHaze(vWorld);
   c = mix(c, skyV, haze);
   spec *= (1.0 - haze) * (1.0 - mist);

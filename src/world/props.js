@@ -212,6 +212,8 @@ export class Props {
   groundShade(keep) {
     const W = this.world;
     const v = new THREE.Vector3();
+    const n = new THREE.Vector3();
+    const nm = new THREE.Matrix3();
     const box = new THREE.Box3();
     for (const m of this.group.children) {
       if (!m.isMesh || keep.has(m) || m.matrixAutoUpdate || !m.material || Array.isArray(m.material)) continue;
@@ -237,10 +239,15 @@ export class Props {
       const geo = src.clone();
       const pos = geo.attributes.position;
       const col = geo.attributes.color;
+      const nrm = geo.attributes.normal;
+      nm.getNormalMatrix(m.matrix);
       for (let i = 0; i < pos.count; i++) {
         v.fromBufferAttribute(pos, i).applyMatrix4(m.matrix);
         if (v.y > top + GROUND_SHADE_H) continue;
-        const k = 0.68 + 0.32 * smoothstep(-0.1, GROUND_SHADE_H, v.y - W.heightAt(v.x, v.z));
+        let k = 0.68 + 0.32 * smoothstep(-0.1, GROUND_SHADE_H, v.y - W.heightAt(v.x, v.z));
+        // a face turned up to the open sky (a deck, a table top, a log's
+        // top) is not shaded by the ground: only sides and undersides are
+        if (nrm) k += (1 - k) * Math.max(0, n.fromBufferAttribute(nrm, i).applyMatrix3(nm).normalize().y);
         if (k >= 0.999) continue;
         col.setXYZ(i, col.getX(i) * k, col.getY(i) * k, col.getZ(i) * k);
       }

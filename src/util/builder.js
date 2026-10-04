@@ -110,6 +110,13 @@ export class ModelBuilder {
     if (o.matrix) _m.premultiply(o.matrix);
     const local = o.surf ? g.attributes.position.array.slice() : null;
     g.applyMatrix4(_m);
+    // a mirrored part's triangles turn the other way round while its kept
+    // normals still point out: they are turned to agree with its faces, as
+    // flat normals worked out from the faces do (the rowboat's inside)
+    if (o.smooth && _m.determinant() < 0 && g.attributes.normal) {
+      const n = g.attributes.normal.array;
+      for (let i = 0; i < n.length; i++) n[i] = -n[i];
+    }
 
     const count = g.attributes.position.count;
     const col = new Float32Array(count * 3);
