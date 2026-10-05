@@ -1,0 +1,81 @@
+{
+ "kicker": "Hotrod Outdoor Alaska Fishing \u00b7 plan",
+ "title": "Hotrod Fishing Next Steps",
+ "lede": "After the catch card fix: a river boulder that looked like glass now reads as wet stone, and the catch check finds new fish by itself. The next step is a catch tried on your iPhone; then I would make the card compact and the photo taller when the phone is upright.",
+ "links": [
+  {
+   "label": "Play the game",
+   "href": "https://claude.ai/artifact/3urJEG61Boov67ViABm26A"
+  },
+  {
+   "label": "Code on GitHub",
+   "href": "https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing"
+  }
+ ],
+ "sections": [
+  {
+   "id": "done",
+   "kicker": "Done now",
+   "title": "Two small fixes",
+   "html": "<p>Asked: <i>\"NeXT steps?\"</i>. The answer in three parts: two small fixes made now, three things only you can do, and the options for the next round in the order I would take them.</p><h3>A river boulder that looked like glass</h3><p>Catch pictures at Hotrod Landing showed a pale cyan block in the water beside the fish. It was a boulder: of the 180 that lie in water, three had their tops less than 0.7 m under the surface, and one of them lies 27 m from where you start. Light grey stone, under clear shallow water with bright caustics playing on it, showed as flat pale facets like glass.</p><p>Wet stone is darker than dry: the film of water traps light against the surface until more of it is absorbed (Lekner and Dorf, in the sources). The game already darkened the wet band just above the waterline; stone under the surface now gets the same darkening, so a submerged boulder reads as a rock under the water rather than a pale block. Dry rock, the water, the riverbed and everything else are unchanged; no rock moved.</p><p>Settling the boulder deeper was tried first, 0.8 m and then 2 m down: it stayed a pale block, only smaller, so that change was dropped. All seven water views of the regression set (Hotrod Landing, Salmon Bend, Bear Falls, Moose Lake, Glacier Lake, Halibut Pier and Moose Lake at sunset) were drawn before and after: the one visible change was the boulder at the landing (the mist differs between runs, as it follows the weather), and no shader reported an error.</p><h3>The catch check finds new fish by itself</h3><p>The new <code>catch-room</code> scenario held up a list of 71 fish written out when it was made. It now builds the list from the game's own fish tables, so a species or a legendary fish added later is checked without touching the scenario. On the new build it found the same 71 fish and passed all ten of its lines.</p>",
+   "pairs": [
+    {
+     "before": {
+      "file": "next-steps/before/boulder.png",
+      "caption": "Before: the boulder just under the surface, a pale glassy block (3 times enlarged from the view below)"
+     },
+     "after": {
+      "file": "next-steps/after/boulder.png",
+      "caption": "After: the same boulder, darker, so it reads as a rock under the water (3 times enlarged, as the picture before)"
+     }
+    },
+    {
+     "before": {
+      "file": "next-steps/before/landing.png",
+      "caption": "Before: the view from where you start at Hotrod Landing"
+     },
+     "after": {
+      "file": "next-steps/after/landing.png",
+      "caption": "After: the same view"
+     }
+    },
+    {
+     "before": {
+      "file": "next-steps/before/catch.png",
+      "caption": "Before: a king salmon landed there, the block beside the fish"
+     },
+     "after": {
+      "file": "next-steps/after/catch.png",
+      "caption": "After: the same catch"
+     }
+    }
+   ]
+  },
+  {
+   "id": "you",
+   "kicker": "Needs you",
+   "title": "Three things only you can do",
+   "html": "<div class=\"tablewrap\"><table class=\"text\"><thead><tr><th>What</th><th>Why it needs you</th><th>How</th></tr></thead><tbody><tr><td data-label=\"What\">Try a catch on your iPhone, on its side and upright</td><td data-label=\"Why it needs you\">The catch-card fix and the rod hand were checked in a browser drawn at an iPhone&#x27;s shape, never on a phone.</td><td data-label=\"How\">Land a fish at Hotrod Landing on its side, then upright (turn the phone and tap PLAY IN PORTRAIT). If any fish runs under the card, or the hand on the rod still looks wrong, a screenshot shows which part.</td></tr><tr><td data-label=\"What\">Say go for the App Store</td><td data-label=\"Why it needs you\">You asked me to hold the App Store preparations until you say go.</td><td data-label=\"How\">The publishing guide is ready: <a href=\"https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/docs/publishing.html\">docs/publishing.html</a>.</td></tr><tr><td data-label=\"What\">Let this environment reach the web (if you want sources read in full)</td><td data-label=\"Why it needs you\">curl is blocked for every host here, so I read sources through web search rather than downloading them.</td><td data-label=\"How\">The cloud environment menu in the session's title bar, then Edit, then Network access: a broader level, or Custom with the hosts added under Allowed domains. Steps: <a href=\"https://code.claude.com/docs/en/cloud-environments#network-access\">https://code.claude.com/docs/en/cloud-environments#network-access</a>.</td></tr></tbody></table></div>"
+  },
+  {
+   "id": "options",
+   "kicker": "Options",
+   "title": "The next round, in the order I would take it",
+   "html": "<div class=\"tablewrap\"><table class=\"text\"><thead><tr><th class=\"n\"></th><th>Option</th><th>What changes</th><th>Size</th><th>Why</th></tr></thead><tbody><tr><td class=\"n\" data-label=\"\">1</td><td data-label=\"Option\">A compact catch card when upright</td><td data-label=\"What changes\">Upright, the card takes a third of an iPhone&#x27;s height (279 of 852 points, measured on this build), leaving the fish 333 points above it. Tighter spacing and smaller buttons upright would leave more room, so the biggest fish are held nearer and look bigger (today up to 1.84 times their usual distance).</td><td data-label=\"Size\">Small</td><td data-label=\"Why\">It follows straight on from your report: upright is where the fish has least room.</td></tr><tr><td class=\"n\" data-label=\"\">2</td><td data-label=\"Option\">A taller trophy photo when upright</td><td data-label=\"What changes\">The album keeps a 16 by 9 picture, a thin band across an upright screen. Measured on this build, a photo taken upright cuts about a quarter off every Big Skate (23.4% of the smallest, 123 cm, and 24.4% of the largest, 241 cm) and 5.1% off the biggest halibut (218 cm, and Barn Door, the legendary halibut, at 232 cm); with Safari&#x27;s bars showing, only the skates, by 1 to 2.2%. A 4 by 3 picture when upright, or the fish held further out for the photo alone, would frame them whole.</td><td data-label=\"Size\">Small</td><td data-label=\"Why\">The same moment as the card; held on its side, and on a tablet or a computer, the photo already frames every fish whole.</td></tr><tr><td class=\"n\" data-label=\"\">3</td><td data-label=\"Option\">A frame rate reading from your phone</td><td data-label=\"What changes\">The game starts on the High graphics setting and, with Adjust graphics automatically on, lowers the resolution and then steps down to Medium and Low by itself when frames run slow. In Settings (on the title screen or in the pause menu), Show frame rate puts the frame rate on screen and Graphics shows the setting the game has settled on. Both, read at Bear Falls and at Hotrod Landing, would tell whether your iPhone keeps High or the next round should go to speed.</td><td data-label=\"Size\">Five minutes of your time; what follows depends on the reading</td><td data-label=\"Why\">Every timing so far comes from a software renderer, which is several times slower than a phone and says nothing certain about yours.</td></tr><tr><td class=\"n\" data-label=\"\">4</td><td data-label=\"Option\">Something new to do (your pick)</td><td data-label=\"What changes\">For example: a fishing derby at the Trading Post, a timed contest with prize money for the biggest fish of the week; a mounted fish on the wall of Ruben&#x27;s cabin for each species&#x27; best catch; or seasons, with the salmon runs coming and going on the game&#x27;s calendar as they do on the Kenai River (kings from mid-May, sockeye from July to mid-August, coho from late July into October). The calendar is already there: it starts on 20 August 2026 and moves the night sky.</td><td data-label=\"Size\">Medium to large</td><td data-label=\"Why\">The game has 31 species, 9 legendary fish, 13 lures and 34 challenges, and an odd-jobs board; something to aim for between catches would use them more.</td></tr></tbody></table></div><p class=\"note\">Options 1 and 2 I would do as one small round. Option 4 needs your choice of what to build first.</p>"
+  },
+  {
+   "id": "checks",
+   "kicker": "Checks",
+   "title": "The catch check on this build",
+   "html": "<p>The catch-room scenario on the final build of these fixes, with the fish list now taken from the game:</p><ul class=\"lines\"><li><code>PASS phone landscape 852x393, 71 fish: under the card 0 (at the old place 55, worst 39.4%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 0 (worst 0%), held out at most 1.46x (photo 1.83x)</code></li><li><code>PASS measuring again leaves the card still: animations running 0 before, 0 after</code></li><li><code>PASS phone landscape, notch side insets 852x393, 71 fish: under the card 0 (at the old place 71, worst 50.2%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 0 (worst 0%), held out at most 1.56x (photo 1.83x)</code></li><li><code>PASS phone landscape, Safari bars 852x340, 71 fish: under the card 0 (at the old place 52, worst 36.6%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 0 (worst 0%), held out at most 1.54x (photo 1.83x)</code></li><li><code>PASS small phone landscape 667x375, 71 fish: under the card 0 (at the old place 71, worst 53.1%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 0 (worst 0%), held out at most 1.48x (photo 1.83x)</code></li><li><code>PASS phone upright 393x852, 71 fish: under the card 0 (at the old place 71, worst 34.2%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 4 (worst 24.4%), held out at most 1.84x (photo 2.20x)</code></li><li><code>PASS phone upright, Safari bars 393x659, 71 fish: under the card 0 (at the old place 71, worst 76.9%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 2 (worst 2.2%), held out at most 1.93x (photo 2.20x)</code></li><li><code>PASS tablet landscape 1180x820, 71 fish: under the card 0 (at the old place 53, worst 22.5%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 0 (worst 0%), held out at most 1.33x (photo 1.83x)</code></li><li><code>PASS tablet upright 820x1180, 71 fish: under the card 0 (at the old place 4, worst 9.6%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 0 (worst 0%), held out at most 1.26x (photo 2.20x)</code></li><li><code>PASS desktop 1280x720, 71 fish: under the card 0 (at the old place 36, worst 21.6%), off the safe area 0, under the top bars 0, sleeve ends in sight 0 (photo 0), photo frame cuts 0 (worst 0%), held out at most 1.30x (photo 1.83x)</code></li></ul>"
+  },
+  {
+   "id": "conclusion",
+   "cls": "conclusion",
+   "kicker": "What would change this conclusion",
+   "title": "What would change this conclusion",
+   "html": "<p><b>The conclusion:</b> the next step is yours, a catch tried on your iPhone, on its side and upright. Until then, the compact card and the taller upright photo are the best use of a round, as both finish what your last report started. This would change if:</p><ul><li><b>Your iPhone shows a fish under the card, or the hand still wrong.</b> That comes first, from your screenshot.</li><li><b>You want the game in the App Store now.</b> Then the publishing round comes first; the guide lists every step.</li><li><b>The boulder looks too dark, or still glassy, on your phone.</b> The darkening is one number: stone under water keeps 0.68 of its colour, as the wet band just above the waterline does at its wettest.</li></ul>"
+  }
+ ],
+ "footer": "<p>Built on the <code>claude/ruben-hotrod-fishing</code> branch: <a href=\"https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing\">the code on GitHub</a>, <a href=\"https://claude.ai/artifact/3urJEG61Boov67ViABm26A\">the playable build</a> and <a href=\"https://claude.ai/artifact/GVMNg2ssL4WurjzwGZnsti\">the catch card report</a>. The boulder fix is in <code>src/world/scatter.js</code> (the rock material); the fish tables for tests are <code>window.__rhf.data</code> in <code>src/main.js</code>.</p><p>Sources were found through web search, as curl is blocked here. <b>Sources.</b> Why wet stone is darker than dry: Lekner and Dorf, Why some things are darker when wet, Applied Optics 1988, <a href=\"https://www.wgtn.ac.nz/scps/staff/pdf/darkerwhenwet.pdf\">https://www.wgtn.ac.nz/scps/staff/pdf/darkerwhenwet.pdf</a> \u00b7 The iPhone 15&#x27;s screen in points and its safe-area insets: Use Your Loaf, iPhone 15 Screen Sizes, <a href=\"https://useyourloaf.com/blog/iphone-15-screen-sizes/\">https://useyourloaf.com/blog/iphone-15-screen-sizes/</a> \u00b7 When the Kenai River&#x27;s salmon run: Alaska Department of Fish and Game, Kenai River run timing, <a href=\"https://adfg.alaska.gov/Static-sf/Region2/pdfpubs/kenrun.pdf\">https://adfg.alaska.gov/Static-sf/Region2/pdfpubs/kenrun.pdf</a>.</p>"
+}

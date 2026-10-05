@@ -54,8 +54,11 @@ and every first-person sleeve is the right way out:
 [docs/rod-hand-fix.html](docs/rod-hand-fix.html). And the card that shows a
 catch no longer covers the fish you hold up: on a phone on its side or
 upright, the fish is held up whole in the part of the screen the card leaves
-free: [docs/catch-card-fix.html](docs/catch-card-fix.html).
-The step before it, a fair check of the voice's frame cost and a map check
+free: [docs/catch-card-fix.html](docs/catch-card-fix.html). After it, a
+river boulder that looked like glass under the water now reads as wet stone,
+with what comes next and the options for the next round:
+[docs/next-steps.html](docs/next-steps.html).
+The step before the latest round, a fair check of the voice's frame cost and a map check
 that really taps Bear Falls:
 [docs/voice-cost-check.html](docs/voice-cost-check.html).
 Earlier rounds: [docs/fullscreen-voice-update.html](docs/fullscreen-voice-update.html),
