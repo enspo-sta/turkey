@@ -39,12 +39,12 @@ import { Hunting } from './gameplay/hunting.js';
 import { Wildlife } from './entities/wildlife.js';
 import { AmbientFish } from './entities/ambientfish.js';
 import { Insects } from './entities/insects.js';
-import { makeFishModel } from './entities/fishmodels.js';
+import { makeFishModel, lengthFor } from './entities/fishmodels.js';
 import { Bears } from './gameplay/bears.js';
 import { Effects } from './world/effects.js';
 import { Calving } from './world/calving.js';
 import { AudioEngine } from './audio/audio.js';
-import { LURES, CHALLENGES } from './gameplay/data.js';
+import { LURES, CHALLENGES, FISH, LEGENDS } from './gameplay/data.js';
 import { formatMoney, clamp, damp, wrapAngle } from './util/math.js';
 import { ROAD_HALF } from './world/worldgen.js';
 import { REFLECT_LAYER } from './world/water.js';
@@ -1685,6 +1685,8 @@ async function boot() {
     }
     // debug helpers for automated tests
     Object.assign(window.__rhf, {
+      // the fish tables, for checks that go through every species
+      data: { FISH, LEGENDS, lengthFor },
       start: (cont = false) => session.startGame(cont),
       tp: (id) => {
         const p = game.world.place(id);

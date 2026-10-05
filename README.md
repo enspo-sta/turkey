@@ -872,7 +872,8 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 `tools/shot.mjs` loads the built game in headless Chromium through
 [Playwright](https://playwright.dev/), runs a scripted scenario and saves
 screenshots to `tools/out/`. Scenarios drive the game through the `window.__rhf`
-debug interface (`start`, `press`, `hold`, `tp`, `time`, `god`, `settle`). Before
+debug interface (`start`, `press`, `hold`, `tp`, `time`, `god`, `settle`, and
+`data`, the fish tables, for checks that go through every species). Before
 each screenshot the harness calls `settle`, which finishes the ground detail
 around the camera: the software renderer draws about one frame a second, far
 too slow for the game's two ground squares a frame after a jump. A headless

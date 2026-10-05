@@ -874,6 +874,12 @@ function rockMaterial(matTex) {
           // moss and lichen settle on the upper faces
           float moss = smoothstep( 0.45, 0.85, wn.y ) * smoothstep( 0.35, 0.65, texture2D( uMat, vFxWorld.xz * 0.23 ).a );
           diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.045, 0.075, 0.028 ) * ( 0.8 + rk * 0.5 ), moss * 0.6 );
+          // stone under the surface is wet, so darker than dry, as dark as
+          // the wet band just above the waterline (worldfx.js); else a pale
+          // boulder just under clear water reads as glass
+          #ifdef FX_UNDERWATER
+          if ( vFxWorld.y < uFxWaterMax && vFxWorld.y < fxWaterAt( vFxWorld.xz ).x ) diffuseColor.rgb *= 0.68;
+          #endif
           rHeight = rk * 0.05 * ( 1.0 - smoothstep( 25.0, 70.0, length( vViewPosition ) ) ) * smoothstep( 0.06, 0.3, abs( dot( normalize( vNormal ), normalize( vViewPosition ) ) ) );
         }
         #endif`
