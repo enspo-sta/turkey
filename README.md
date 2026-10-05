@@ -56,10 +56,11 @@ catch no longer covers the fish you hold up: on a phone on its side or
 upright, the fish is held up whole in the part of the screen the card leaves
 free: [docs/catch-card-fix.html](docs/catch-card-fix.html). After it, a
 river boulder that looked like glass under the water now reads as wet stone,
-with what comes next and the options for the next round:
+and a photo taken with the phone upright frames every fish whole; what comes
+next and the options for the next round:
 [docs/next-steps.html](docs/next-steps.html).
-The step before the latest round, a fair check of the voice's frame cost and a map check
-that really taps Bear Falls:
+The step before the latest round, a fair check of the voice's frame cost
+and a map check that really taps Bear Falls:
 [docs/voice-cost-check.html](docs/voice-cost-check.html).
 Earlier rounds: [docs/fullscreen-voice-update.html](docs/fullscreen-voice-update.html),
 [docs/sound-scientists-update.html](docs/sound-scientists-update.html),
@@ -318,7 +319,8 @@ Earlier rounds: [docs/fullscreen-voice-update.html](docs/fullscreen-voice-update
   (close and centred is best). The photo album in the Journal keeps your best
   picture of every animal, bird and sea mammal, the geyser blowing, and the
   fish you photograph from the catch card; the first good picture of each
-  animal sells to Alaska Outdoors magazine.
+  animal sells to Alaska Outdoors magazine. Pictures are 16:9, or 4:3 when
+  the phone is held upright, so the biggest fish fit whole.
 - Put the rod away when you are not fishing: the tool button cycles the rod,
   the longbow, the camera (once you have one) and empty hands.
 - Game to hunt: caribou, moose, Sitka black-tailed deer, Dall sheep, black
@@ -900,7 +902,7 @@ node tools/shot.mjs tools/scenarios/eagle.json   # a bald eagle steals a small f
 node tools/shot.mjs tools/scenarios/mobile.json  # phone-sized touch layout
 node tools/shot.mjs tools/scenarios/catch-touch.json  # real taps on KEEP and RELEASE on a phone-sized touch screen
 node tools/shot.mjs tools/scenarios/catch-mouse.json  # real clicks and keys on the catch card with the mouse locked to the view
-node tools/shot.mjs tools/scenarios/catch-room.json   # every fish at its smallest and largest, and each legendary fish, held up beside the catch card on nine phone, tablet and desktop shapes: none under the card, off the screen or under the top bars, no sleeve end in sight (each line says PASS or FAIL)
+node tools/shot.mjs tools/scenarios/catch-room.json   # every fish at its smallest and largest, and each legendary fish, held up beside the catch card on nine phone, tablet and desktop shapes: none under the card, off the screen or under the top bars, no sleeve end in sight, and none cut by the frame of a catch photo (each line says PASS or FAIL)
 node tools/shot.mjs tools/scenarios/reel-stuck.json   # a held REEL button always lets go, and nothing reels unless you press
 node tools/shot.mjs tools/scenarios/line-stays.json   # a lure on the bank and a float in the current stay out until you hold REEL
 node tools/shot.mjs tools/scenarios/fight-stays.json  # hooked fish at every fishing place: none comes closer unless you reel, and careful reeling lands them

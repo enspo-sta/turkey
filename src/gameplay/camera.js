@@ -10,7 +10,17 @@ export const CAMERA_PRICE = 250;
 export const ZOOMS = [1, 2, 4, 8];
 const THUMB_W = 320;
 const THUMB_H = 180;
+// on a screen held upright a 4:3 picture, about as many pixels as the 16:9
+// one (so the album takes about the same room): a 16:9 band across a tall
+// screen cut the biggest fish held up for a trophy shot
+const TALL_W = 280;
+const TALL_H = 210;
 const ROLL = 8;
+
+// The picture's size in pixels for a screen sw by sh.
+function frameSize(sw, sh) {
+  return sh > sw ? [TALL_W, TALL_H] : [THUMB_W, THUMB_H];
+}
 
 // Everything the album has a page for. size is roughly how tall the
 // animal stands in the picture, in metres; value is what the magazine pays
@@ -294,14 +304,17 @@ export class PhotoCamera {
     return out;
   }
 
-  // The part of the screen a picture keeps: a 16:9 frame in the middle,
-  // as fractions of the screen's width and height.
+  // The part of the screen a picture keeps: a frame in the middle (16:9, or
+  // 4:3 on a screen held upright), as fractions of the screen's width and
+  // height; fs is the height of a 16:9 frame as wide, which the stars are
+  // measured against, so a taller picture is no harder to fill.
   crop() {
     const c = this.game.renderer.domElement;
     const sw = c.width || 1;
     const sh = c.height || 1;
-    const k = Math.min((sw * 0.86) / THUMB_W, (sh * 0.64) / THUMB_H);
-    return { fx: (THUMB_W * k) / sw, fy: (THUMB_H * k) / sh, k };
+    const [tw, th] = frameSize(sw, sh);
+    const k = Math.min((sw * 0.86) / tw, (sh * 0.64) / th);
+    return { fx: (tw * k) / sw, fy: (th * k) / sh, fs: (Math.min(th, (tw * 9) / 16) * k) / sh, k };
   }
 
   // The subject the shot would be of, with its star rating (0 to 3). Only
@@ -311,7 +324,7 @@ export class PhotoCamera {
     const cam = g.camera;
     const eye = cam.position;
     const tanHalf = Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2);
-    const { fx, fy } = this.crop();
+    const { fx, fy, fs } = this.crop();
     let best = null;
     for (const s of this.subjects()) {
       const dx = s.x - eye.x;
@@ -321,8 +334,9 @@ export class PhotoCamera {
       if (d < 1.5 || d > 600) continue;
       _v.set(s.x, s.y, s.z).project(cam);
       if (_v.z > 1 || Math.abs(_v.x) > fx * 0.96 || Math.abs(_v.y) > fy * 0.96) continue;
-      // how much of the picture's height it fills, and how far off centre
-      const frac = s.size / (2 * d * tanHalf) / fy;
+      // how much of the picture's height it fills (as if 16:9), and how far
+      // off centre
+      const frac = s.size / (2 * d * tanHalf) / fs;
       const off = Math.max(Math.abs(_v.x) / fx, Math.abs(_v.y) / fy);
       // how much of it a hill, the grass, a tree or a bush hides
       const seen = pointsInSight(g, eye.x, eye.y, eye.z, s.x, s.y, s.z, s.size);
@@ -381,30 +395,32 @@ export class PhotoCamera {
 
   thumbnail(src, blur = 0) {
     try {
+      // a frame from the middle of the screen, as crop() keeps it, about as
+      // tall as the viewfinder, so the subject fills the picture as it
+      // filled the frame
+      const sw = src.width;
+      const sh = src.height;
+      const [tw, th] = frameSize(sw, sh);
       const c = document.createElement('canvas');
-      c.width = THUMB_W;
-      c.height = THUMB_H;
+      c.width = tw;
+      c.height = th;
       const ctx = c.getContext('2d');
       // ask before setting it: setting it where it is not supported makes
       // a plain property that then looks like support
       const filters = 'filter' in ctx;
       if (blur && filters) ctx.filter = `blur(${blur}px)`;
-      // a 16:9 frame from the middle of the screen, about as tall as the
-      // viewfinder, so the subject fills the picture as it filled the frame
-      const sw = src.width;
-      const sh = src.height;
-      const k = Math.min((sw * 0.86) / THUMB_W, (sh * 0.64) / THUMB_H);
-      const w = THUMB_W * k;
-      const h = THUMB_H * k;
+      const k = Math.min((sw * 0.86) / tw, (sh * 0.64) / th);
+      const w = tw * k;
+      const h = th * k;
       if (blur && !filters) {
         // no canvas filters (older Safari): shrink and stretch back instead
         const t = document.createElement('canvas');
-        t.width = Math.round(THUMB_W / (1 + blur * 1.6));
-        t.height = Math.round(THUMB_H / (1 + blur * 1.6));
+        t.width = Math.round(tw / (1 + blur * 1.6));
+        t.height = Math.round(th / (1 + blur * 1.6));
         t.getContext('2d').drawImage(src, (sw - w) / 2, (sh - h) / 2, w, h, 0, 0, t.width, t.height);
         ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(t, 0, 0, THUMB_W, THUMB_H);
-      } else ctx.drawImage(src, (sw - w) / 2, (sh - h) / 2, w, h, 0, 0, THUMB_W, THUMB_H);
+        ctx.drawImage(t, 0, 0, tw, th);
+      } else ctx.drawImage(src, (sw - w) / 2, (sh - h) / 2, w, h, 0, 0, tw, th);
       return c.toDataURL('image/jpeg', 0.72);
     } catch (e) {
       return null;

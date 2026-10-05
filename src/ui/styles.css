@@ -420,7 +420,8 @@ svg { width: 1em; height: 1em; display: block; }
 .album { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; margin-bottom: 14px; }
 .photo { appearance: none; display: flex; flex-direction: column; gap: 3px; padding: 6px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.04); color: var(--ink); font: inherit; text-align: left; cursor: pointer; min-width: 0; }
 .photo .ph { aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; }
-.photo .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* whole in the 16:9 tile: a picture taken upright is 4:3 */
+.photo .ph img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .photo .ph span { font-family: var(--display); font-size: 26px; color: var(--ink-dim); }
 .photo b { font-size: 13px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .photo small { font-size: 12px; color: var(--flame-2); letter-spacing: .06em; }
@@ -582,6 +583,8 @@ input[type=range] { width: 180px; accent-color: var(--flame); }
 }
 @media (orientation: portrait) {
   #catch { left: 50%; right: auto; top: auto; bottom: calc(var(--sab) + 16px); transform: translateX(-50%); width: min(420px, 92vw); animation: none; }
+  /* the viewfinder's label at the top in the middle, clear of RUN */
+  #viewfinder .vf-rec { left: 50%; transform: translateX(-50%); }
   #meter, #fight { width: 88vw; bottom: calc(var(--sab) + 150px); }
   .title-buttons { grid-template-columns: 1fr; }
 }
