@@ -358,7 +358,7 @@ export class ModelBuilder {
       const n = p.attributes.position.count;
       pos.set(p.attributes.position.array, o * 3);
       col.set(p.attributes.color.array, o * 3);
-      if (p.attributes.normal && (!flat || p.userData.smooth) && !p.userData.volume) nrm.set(p.attributes.normal.array, o * 3);
+      if (p.attributes.normal && (!flat || p.userData.smooth) && (!p.userData.volume || p.userData.volume.own)) nrm.set(p.attributes.normal.array, o * 3);
       else computeFlatNormals(p.attributes.position.array, nrm, o * 3, n);
       if (p.userData.volume) volumeNormals(p.attributes.position.array, nrm, o * 3, n, p.userData.volume);
       if (limb) {
@@ -401,8 +401,10 @@ export class ModelBuilder {
 // crown of many small leaves does, instead of as a few big facets: a conifer
 // faces out from its trunk and a little up (`axis` [x, z], `up`), a leafy
 // crown out from its centre (`centre` [x, y, z]), keeping `k` of each
-// facet's own direction. Every distance version of a tree gets the same, so
-// it does not change its lighting as it is swapped for a nearer one.
+// facet's own direction (with `own`, a smooth part's own normals instead of
+// its facets': each round clump of a crown lit round within the crown).
+// Every distance version of a tree gets the same, so it does not change its
+// lighting as it is swapped for a nearer one.
 function volumeNormals(src, dst, off, count, v) {
   const k = v.k ?? 0;
   for (let i = 0; i < count; i++) {

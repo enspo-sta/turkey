@@ -6,7 +6,8 @@
 // and the static meshes merge into a few draws (mergeStatic).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { ModelBuilder } from '../util/builder.js';
+import { ModelBuilder, jitterGeometry } from '../util/builder.js';
+import { mulberry32 } from '../util/math.js';
 import { makeSignTexture } from '../util/textures.js';
 import { ROAD_HALF } from './worldgen.js';
 import { buildAreas, areaAvoid } from './areas.js';
@@ -424,14 +425,48 @@ export class Props {
     for (const { id, x, z } of list) {
       const y = W.heightAt(x, z);
       const b = new ModelBuilder();
+      const rand = mulberry32(((x * 13 + z * 7) | 0) ^ 0x51f2);
+      // a ring of rounded field stones, half sunk, of mixed sizes and
+      // colours, blackened with soot on the side toward the fire
+      const n = 14;
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + (rand() - 0.5) * 0.18;
+        const r = 0.12 + rand() * 0.08;
+        const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 1), r * 0.3, rand);
+        const tone = [0x77736a, 0x6a645a, 0x857c6c, 0x5e5c58][i % 4];
+        const sx = Math.cos(a) * 0.78, sz = Math.sin(a) * 0.78;
+        g.scale(1.25, 0.72, 1);
+        g.rotateY(-a);
+        g.translate(sx, r * 0.35, sz);
+        const c = new THREE.Color(tone);
+        const p = g.attributes.position;
+        const col = new Float32Array(p.count * 3);
+        for (let v = 0; v < p.count; v++) {
+          const dx = p.getX(v) - sx, dy = p.getY(v) - r * 0.35, dz = p.getZ(v) - sz;
+          const inward = (-(dx * sx + dz * sz) / 0.78 + dy * 0.3) / (Math.hypot(dx, dy, dz) || 1);
+          const f = 1 - 0.6 * Math.min(1, Math.max(0, (inward - 0.1) / 0.6));
+          col[v * 3] = c.r * f;
+          col[v * 3 + 1] = c.g * f;
+          col[v * 3 + 2] = c.b * f;
+        }
+        g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+        b.add(g, { keepColors: true, jitter: 0.08, smooth: true });
+      }
+      // a bed of pale wood ash inside the ring, with a few black coals
+      b.cyl(0.6, 0.64, 0.04, 16, { pos: [0, 0.01, 0], color: 0x77716a, jitter: 0.12 });
       for (let i = 0; i < 9; i++) {
-        const a = (i / 9) * Math.PI * 2;
-        b.dodeca(0.22, { pos: [Math.cos(a) * 0.75, 0.08, Math.sin(a) * 0.75], color: 0x6a665e, jitter: 0.15 });
+        const a = rand() * Math.PI * 2;
+        const d = rand() * 0.45;
+        b.add(jitterGeometry(new THREE.IcosahedronGeometry(0.04 + rand() * 0.04, 0), 0.02, rand), { pos: [Math.cos(a) * d, 0.04, Math.sin(a) * d], color: i % 3 ? 0x151312 : 0x3a2a20, jitter: 0.2 });
       }
-      for (let i = 0; i < 4; i++) {
-        const a = (i / 4) * Math.PI * 2;
-        b.beam([Math.cos(a) * 0.5, 0.05, Math.sin(a) * 0.5], [0, 0.45, 0], 0.07, 5, { color: 0x3a2618 });
+      // split logs leaning together over the fire, charred at the top
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2 + rand() * 0.4;
+        b.beam([Math.cos(a) * 0.52, 0.03, Math.sin(a) * 0.52], [Math.cos(a) * 0.06, 0.62, Math.sin(a) * 0.06], 0.055, 7, { r2: 0.035, color: 0x4a3420, smooth: true });
+        b.beam([Math.cos(a) * 0.22, 0.38, Math.sin(a) * 0.22], [Math.cos(a) * 0.06, 0.62, Math.sin(a) * 0.06], 0.047, 7, { r2: 0.036, color: 0x1a1512, smooth: true });
       }
+      // a half-burnt log lying in the ashes
+      b.beam([-0.4, 0.06, 0.2], [0.35, 0.07, -0.15], 0.07, 8, { color: 0x2a2018, smooth: true });
       // a log seat and a stump
       b.cyl(0.25, 0.25, 1.8, 9, { pos: [0, 0.22, 2.0], rot: [0, 0.3, Math.PI / 2], color: LOG, surf: 'log' });
       b.cyl(0.24, 0.24, 0.02, 9, { pos: [Math.cos(0.3) * 0.91, 0.22, 2.0 - Math.sin(0.3) * 0.91], rot: [0, 0.3, Math.PI / 2], color: 0xc9a46a, jitter: 0 });

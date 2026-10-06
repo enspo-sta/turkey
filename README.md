@@ -21,7 +21,8 @@ rivers, glacier, forests, animals, the cars, the fish, the sky, the weather,
 the sound effects and the music. The night sky comes from real data packed
 into the game: a star catalogue and the planets' and the Moon's motions.
 There are no downloaded models, textures or audio files, so the whole game is
-a single 1.9 MB HTML file (about 690 KB compressed).
+a single 3.0 MB HTML file (about 1.3 MB compressed), the announcer's recorded
+voice included.
 
 | | |
 |---|---|
@@ -44,23 +45,30 @@ a single 1.9 MB HTML file (about 690 KB compressed).
 | ![Starfall Clearing: the pod and the trees laid flat round it](docs/screenshots/crash.jpg) | ![Zib comes out from behind the pod](docs/screenshots/zib.jpg) |
 | ![Isaac Newton's bust in marble at the Tundra Observatory](docs/screenshots/newton.jpg) | ![The Journal's Scientists page](docs/screenshots/scientists.jpg) |
 
-What changed in the latest round (every family of assets looks better for
-the same work: rounder animals with paler bellies, tree crowns lit as one
-volume, bark that keeps its colour, clear car glass, a truer tone curve and
-softer light under cloud), with before and after pictures, what it costs and
-the audit: [docs/asset-quality-update.html](docs/asset-quality-update.html).
-Since then the hand on the rod holds it as an angler holds a spinning rod,
-and every first-person sleeve is the right way out:
-[docs/rod-hand-fix.html](docs/rod-hand-fix.html). And the card that shows a
+What changed in the latest round (the weakest assets rebuilt within a cost
+budget set beforehand: all 32 animals and birds as smooth shapes with their
+markings, birds that fold their wings at rest and stretch their necks out in
+flight, rounder birch, aspen and poplar crowns, far mountains without blocky
+shading and campfires with stones, ash and split logs; a lighter version of
+every animal for herds far off and for every shadow, so the frame draws fewer
+calls than before for a few percent more triangles), with before and after
+pictures, the costs and the audit:
+[docs/asset-quality-round-two.html](docs/asset-quality-round-two.html).
+The round before it looked through every family of assets for the same work
+(rounder animals with paler bellies, tree crowns lit as one volume, bark that
+keeps its colour, clear car glass, a truer tone curve and softer light under
+cloud): [docs/asset-quality-update.html](docs/asset-quality-update.html).
+After it the hand on the rod holds it as an angler holds a spinning rod, and
+every first-person sleeve is the right way out:
+[docs/rod-hand-fix.html](docs/rod-hand-fix.html). The card that shows a
 catch no longer covers the fish you hold up: on a phone on its side or
 upright, the fish is held up whole in the part of the screen the card leaves
-free: [docs/catch-card-fix.html](docs/catch-card-fix.html). After it, a
-river boulder that looked like glass under the water now reads as wet stone,
-and a photo taken with the phone upright frames every fish whole; what comes
-next and the options for the next round:
-[docs/next-steps.html](docs/next-steps.html).
-The step before the latest round, a fair check of the voice's frame cost
-and a map check that really taps Bear Falls:
+free: [docs/catch-card-fix.html](docs/catch-card-fix.html). A river boulder
+that looked like glass under the water reads as wet stone, and a photo taken
+with the phone upright frames every fish whole; what came next and the
+options for the next round: [docs/next-steps.html](docs/next-steps.html).
+The step before the first asset round, a fair check of the voice's frame
+cost and a map check that really taps Bear Falls:
 [docs/voice-cost-check.html](docs/voice-cost-check.html).
 Earlier rounds: [docs/fullscreen-voice-update.html](docs/fullscreen-voice-update.html),
 [docs/sound-scientists-update.html](docs/sound-scientists-update.html),
@@ -849,7 +857,7 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/entities/glider.js` | The paraglider: launching from an edge, flying, steering, landing and the wing overhead |
 | `src/world/secret.js` | The secret on the mountain (spoilers): Gus's launch, the cairns, the grotto on the ledge, the chest behind Bear Falls, the glint and the lanterns |
 | `src/world/oddities.js` | The strange things in the woods (spoilers): where the ten stand, their models, and finding them, the ringing payphone, the humming, the wandering gnome, the fairy ring's luck and what each gives |
-| `src/entities/wildlife.js`, `animalmodels.js`, `fishmodels.js`, `ambientfish.js` | Animal and bird behaviour and their low-poly models, the 31 fish models, and the fish schools you can see in the water |
+| `src/entities/wildlife.js`, `animalmodels.js`, `animalkit.js`, `fishmodels.js`, `ambientfish.js` | Animal and bird behaviour; their models, smooth lofted shapes (`animalkit.js`) in near and far detail, with the limbs, wings and necks the vertex shader moves; the 31 fish models; and the fish schools you can see in the water |
 | `src/gameplay/fishing.js` | Casting meter, float and bites, the fight, landing, the eagle, and catches |
 | `src/gameplay/hunting.js`, `bears.js` | The longbow, the five kinds of arrow in flight and their hit zones, and the grizzly and black bear encounters |
 | `src/gameplay/bite.js` | How hungry the fish are: time of day, fronts, rain, sunshine and the tide, and each species' own hours |
@@ -865,7 +873,7 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/ui/eyepiece.js`, `skyguide.js` | The telescope's eyepiece views, and the constellation figures and names drawn over the sky |
 | `ios/` | The Xcode project for the native iOS app |
 | `tools/shot.mjs`, `tools/scenarios/` | Headless screenshot and gameplay test harness with scripted scenarios |
-| `tools/perf-tour.mjs`, `tools/perf-compare.mjs`, `tools/perf-stats.mjs`, `tools/first-frame.mjs`, `tools/load-compare.mjs`, `tools/shader-check.mjs`, `tools/cpu-by-thread.py` | Frame times along a scripted tour; two or more builds timed in turns in a balanced order, with the statistics that compare them; loading and the first frames of play, also for builds in turns; every shader built without an error on a development build; and one tour's processor time for every thread of the browser |
+| `tools/perf-tour.mjs`, `tools/perf-compare.mjs`, `tools/perf-stats.mjs`, `tools/first-frame.mjs`, `tools/load-compare.mjs`, `tools/shader-check.mjs`, `tools/gl-errors.mjs`, `tools/cpu-by-thread.py`, `tools/model-sheet.mjs` | Frame times along a scripted tour; two or more builds timed in turns in a balanced order, with the statistics that compare them; loading and the first frames of play, also for builds in turns; every shader built without an error on a development build, and every draw call the browser rejects; one tour's processor time for every thread of the browser; and the animal models on a sheet with their triangle counts |
 | `tools/make-icons.mjs`, `tools/serve.mjs`, `tools/preview-map.mjs` | Icon drawing, the local network server, and a top-down map preview of the world |
 | `tools/mkstars.mjs` | Packs the stars, constellation figures, star names and Milky Way outline from the d3-celestial package into `src/world/skydata.js` |
 | `tools/voice/` | Makes the announcer's voice: `lines.mjs` lists every line and name, `make-voice.py` speaks them with Kokoro and packs `src/audio/voice-clips.js` |
@@ -970,13 +978,15 @@ node tools/shot.mjs tools/scenarios/sites-draws.json     # draw calls and triang
 node tools/shot.mjs tools/scenarios/review-fixes.json    # (spoilers) the code review's cases: Zib after a fast travel, no travel on the rope, driving to Starfall Clearing, a new game clearing the site, the shower view on another tab, continuing with Zib, and old saves' science
 node tools/shot.mjs tools/scenarios/scientists.json      # the scientists' busts close up (bronze, dark bronze and marble), a plaque, the astronomers at the observatory, the plaque's note and the Journal's Scientists page
 node tools/perf-tour.mjs [out.json] [--frames N] [--tally] [--noprofile] [--size WxH] [--dpr N] [--file index.html] # frame times along a scripted tour (standing, walking, driving, the memorial, the observatory at night), with the shaders compiled on the way, the draw calls by group (--tally), and a CPU and allocation profile; --file times another build
-node tools/perf-compare.mjs old/index.html dist/index.html [--rounds N] [--frames N] [--size WxH] [--dpr N] # two or more builds' tours taking turns over several rounds in a balanced order, and each build's difference from the first with a 95% interval
+node tools/perf-compare.mjs old/index.html dist/index.html [--rounds N] [--frames N] [--size WxH] [--dpr N] [--draw] # two or more builds' tours taking turns over several rounds in a balanced order, and each build's difference from the first with a 95% interval; --draw has every frame really drawn and also compares the software renderer's time, a rough stand-in for a graphics chip's load
 node tools/audio-tour.mjs [outdir] [--secs N]            # the sound at nine places, hours and weathers and a walk over four grounds: loudness, balance of lows, mids and highs, the beds sounding and the birds singing, and a WAV of each
 node tools/shot.mjs tools/scenarios/busts-save.json     # plaques read, saved, reloaded and continued, the Journal's Scientists page, and the ten-plaque objective
 node tools/cull-compare.mjs [index.html]                 # the same view with and without leaving out the parts smaller than a pixel, compared pixel by pixel, on the Coast Road and at Hotrod Landing
 node tools/first-frame.mjs [index.html]                  # loading time, the first frames after New game and the shaders built after loading, for this build or an older one
 node tools/load-compare.mjs old/index.html dist/index.html [--rounds N] [--out dir] # two or more builds opened in turns in a balanced order: the time until the game is ready, New game, and the first three frames, each with a 95% interval
 node tools/shader-check.mjs dev/index.html             # on a development build (node build.mjs --dev): every shader built at High, Medium and Low, at morning, sunset, night and in rain, and any that fail to compile with their error
+node tools/gl-errors.mjs dev/index.html                # the same steps with the browser's error read after every draw: each draw it rejects, with the object, material, pass and step
+node tools/model-sheet.mjs out.png [all|moose,eagle] [--pose=rest|flight] [--detail=near|far] # the animal models on a plain sheet in the shader's rest or flight pose, near or far detail, with each one's triangles, vertices and size
 python3 tools/cpu-by-thread.py dist/index.html out.json [--size WxH --dpr N] # one tour's processor time for every thread of the browser (the page's main thread, the software renderer's workers, the sound threads): more work, or only more waiting (Linux)
 node tools/shot.mjs tools/scenarios/sky-night.json    # the real night sky to the north, south, east and overhead, and the Moon
 node tools/shot.mjs tools/scenarios/water-views.json  # the water at every fishing spot
@@ -998,7 +1008,7 @@ node tools/shot.mjs tools/scenarios/travel-lod.json   # after a fast travel the 
 node tools/shot.mjs tools/scenarios/perf-breakdown.json  # draw calls and triangles per rendering pass
 node tools/shot.mjs tools/scenarios/perf-views.json   # draw calls, triangles and frame time at eight places (perf-views-medium.json for Medium)
 node tools/shot.mjs tools/scenarios/gfx-views.json    # fifteen fixed views for comparing the look of two builds (without cloud shadows, which drift with the clock, and with the water's reflection made afresh for each view): the landing in the morning, the river at noon, the forest, the tundra at dusk, Moose Lake at sunset, Bear Falls, night, two mountain views, an aspen, a black bear, a moose, the hot rod, the hands with the rod and the Trading Post
-node tools/shot.mjs tools/scenarios/gfx-budget.json   # what the graphics cost: draw calls (and those of the still world, apart from the animals and other things that move about at random) and triangles at eight places, the textures the materials use and their size, the renderer's textures, geometries and shader programs, and the script's memory
+node tools/shot.mjs tools/scenarios/gfx-budget.json   # what the graphics cost: draw calls (and those of the still world, apart from the animals and other things that move about at random) and triangles at eight places, the animals' own triangles, every triangle and vertex split by kind (the animals, birch, aspen and poplar, the props, the rest by scene group) and by pass (the view or the shadow maps), the textures the materials use and their size, the renderer's textures, geometries and shader programs, and the script's memory
 node tools/shot.mjs tools/scenarios/perf-tricks.json  # rendering time and draws at eight places with the weather effects off, on and soaked
 node tools/shot.mjs tools/scenarios/fps-readout.json  # the frame rate readout, the automatic step-down and its switch
 node tools/shot.mjs tools/scenarios/shader-switches.json  # counts shader variant switches per frame (0 when nothing flips back and forth)

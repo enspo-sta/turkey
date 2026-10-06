@@ -2,6 +2,7 @@
 // fields, rendered with per-type instanced meshes. Instances are re-bucketed
 // into near/far LODs around the camera with CPU frustum culling.
 import * as THREE from 'three';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ModelBuilder, jitterGeometry } from '../util/builder.js';
 import { mulberry32, lerp, clamp, smoothstep, hash2 } from '../util/math.js';
 import { HALF, SIZE, ROAD_HALF, SURF } from './worldgen.js';
@@ -33,6 +34,21 @@ function spruceFar() {
   return b.build();
 }
 
+// A clump of leaves: a jittered icosahedron, finer close up (detail 1) than
+// further off (0), with a sphere's normals either way, so the clump shades
+// round even where its outline is a few big facets
+const _cn = new THREE.Vector3();
+function clump(r, detail, amount, rand) {
+  const g = new THREE.IcosahedronGeometry(r, detail);
+  const p = g.attributes.position;
+  const n = g.attributes.normal;
+  for (let i = 0; i < p.count; i++) {
+    _cn.fromBufferAttribute(p, i).normalize();
+    n.setXYZ(i, _cn.x, _cn.y, _cn.z);
+  }
+  return jitterGeometry(g, amount, rand);
+}
+
 function birchNear() {
   const b = new ModelBuilder();
   b.cyl(0.09, 0.16, 5.4, 6, { pos: [0, 2.7, 0], color: 0xdcd8cc, jitter: 0.12, gradient: 0.25 });
@@ -48,10 +64,10 @@ function birchNear() {
     [-0.3, 7.3, 0.2, 1.1],
   ];
   for (const [x, y, z, r] of blobs) {
-    const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.35, mulberry32((x * 13 + y * 7) | 0));
-    b.add(g, { pos: [x, y, z], color: 0x6a8c36, gradient: 0.35, jitter: 0.12, volume: { centre: [0, 6.0, 0], k: 0.3 } });
+    const g = clump(r, 0, r * 0.3, mulberry32((x * 13 + y * 7) | 0));
+    b.add(g, { pos: [x, y, z], color: 0x6a8c36, gradient: 0.35, jitter: 0.09, smooth: true, volume: { centre: [0, 6.0, 0], k: 0.45, own: true } });
   }
-  return b.build();
+  return shareVertices(b.build());
 }
 
 function birchFar() {
@@ -72,7 +88,7 @@ function bushGeo() {
   ];
   for (const [x, y, z, r] of blobs) {
     const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.4, mulberry32((x * 31 + z * 17 + 5) | 0));
-    b.add(g, { pos: [x, y, z], color: 0xffffff, gradient: 0.4, jitter: 0.12, volume: { centre: [0, 0.4, 0], k: 0.3, squash: 1.4 } });
+    b.add(g, { pos: [x, y, z], color: 0xffffff, gradient: 0.4, jitter: 0.1, smooth: true, volume: { centre: [0, 0.4, 0], k: 0.18, squash: 1.4 } });
   }
   return b.build();
 }
@@ -92,7 +108,7 @@ function bushDetailed() {
       const t = 0.35 + k * 0.16;
       const r = 0.16 + rand() * 0.12;
       const p = [top[0] * t + (rand() - 0.5) * 0.25, top[1] * t + 0.12 + rand() * 0.15, top[2] * t + (rand() - 0.5) * 0.25];
-      b.add(jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.35, mulberry32(i * 13 + k)), { pos: p, scale: [1, 0.8, 1], color: 0xffffff, gradient: 0.35, jitter: 0.16, volume: { centre: [0, 0.45, 0], k: 0.35, squash: 1.4 } });
+      b.add(jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.35, mulberry32(i * 13 + k)), { pos: p, scale: [1, 0.8, 1], color: 0xffffff, gradient: 0.35, jitter: 0.12, smooth: true, volume: { centre: [0, 0.45, 0], k: 0.2, squash: 1.4 } });
     }
   }
   return b.build();
@@ -318,11 +334,12 @@ function poplarDetailed() {
   }
   blobs.push([0, 13.2, 0, 2.1], [0.6, 11.6, -0.8, 1.9], [-0.9, 12.1, 0.7, 1.8]);
   for (const [x, y, z, r] of blobs) {
-    const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.38, mulberry32((x * 17 + y * 11 + z * 5) | 0));
+    // the masses over the centre, mostly hidden inside, in the coarser clump
     const inner = Math.hypot(x, z) < 1.2 ? 0.8 : 1;
-    b.add(g, { pos: [x, y, z], scale: [1, 0.82, 1], color: [0.13 * inner, 0.21 * inner, 0.07 * inner], gradient: 0.42, jitter: 0.18, volume: { centre: [0, 11.0, 0], k: 0.3, squash: 1.8 } });
+    const g = clump(r, inner < 1 ? 0 : 1, r * 0.3, mulberry32((x * 17 + y * 11 + z * 5) | 0));
+    b.add(g, { pos: [x, y, z], scale: [1, 0.82, 1], color: [0.13 * inner, 0.21 * inner, 0.07 * inner], gradient: 0.42, jitter: 0.12, smooth: true, volume: { centre: [0, 11.0, 0], k: 0.45, own: true, squash: 1.8 } });
   }
-  return mergeGeos([b.build(), trunk]);
+  return shareVertices(mergeGeos([b.build(), trunk]));
 }
 
 function poplarNear() {
@@ -337,10 +354,10 @@ function poplarNear() {
     [1.3, 13.0, -1.4, 1.7],
   ];
   for (const [x, y, z, r] of blobs) {
-    const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.35, mulberry32((x * 19 + z * 7 + 3) | 0));
-    b.add(g, { pos: [x, y, z], scale: [1, 0.82, 1], color: [0.13, 0.21, 0.07], gradient: 0.35, jitter: 0.14, volume: { centre: [0, 11.0, 0], k: 0.3, squash: 1.8 } });
+    const g = clump(r, 0, r * 0.3, mulberry32((x * 19 + z * 7 + 3) | 0));
+    b.add(g, { pos: [x, y, z], scale: [1, 0.82, 1], color: [0.13, 0.21, 0.07], gradient: 0.35, jitter: 0.1, smooth: true, volume: { centre: [0, 11.0, 0], k: 0.45, own: true, squash: 1.8 } });
   }
-  return b.build();
+  return shareVertices(b.build());
 }
 
 function poplarFar() {
@@ -380,10 +397,10 @@ function aspenDetailed() {
     [0.9, 7.9, -0.1, 0.75],
   ];
   for (const [x, y, z, r] of blobs) {
-    const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 1), r * 0.3, mulberry32((x * 23 + y * 13 + z * 3) | 0));
-    b.add(g, { pos: [x, y, z], color: [0.3, 0.42, 0.1], gradient: 0.35, jitter: 0.2, volume: { centre: [0, 9.4, 0], k: 0.3, squash: 0.6 } });
+    const g = clump(r, 1, r * 0.3, mulberry32((x * 23 + y * 13 + z * 3) | 0));
+    b.add(g, { pos: [x, y, z], color: [0.3, 0.42, 0.1], gradient: 0.35, jitter: 0.12, smooth: true, volume: { centre: [0, 9.4, 0], k: 0.45, own: true, squash: 0.6 } });
   }
-  return b.build();
+  return shareVertices(b.build());
 }
 
 function aspenNear() {
@@ -395,10 +412,10 @@ function aspenNear() {
     [-0.7, 8.9, -0.3, 1.15],
   ];
   for (const [x, y, z, r] of blobs) {
-    const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.3, mulberry32((x * 29 + y * 3) | 0));
-    b.add(g, { pos: [x, y, z], color: [0.3, 0.42, 0.1], gradient: 0.3, jitter: 0.15, volume: { centre: [0, 9.3, 0], k: 0.3, squash: 0.6 } });
+    const g = clump(r, 0, r * 0.28, mulberry32((x * 29 + y * 3) | 0));
+    b.add(g, { pos: [x, y, z], color: [0.3, 0.42, 0.1], gradient: 0.3, jitter: 0.1, smooth: true, volume: { centre: [0, 9.3, 0], k: 0.45, own: true, squash: 0.6 } });
   }
-  return b.build();
+  return shareVertices(b.build());
 }
 
 function aspenFar() {
@@ -439,10 +456,10 @@ function birchDetailed() {
     [0.2, 5.0, 1.1, 0.75],
   ];
   for (const [x, y, z, r] of blobs) {
-    const g = jitterGeometry(new THREE.IcosahedronGeometry(r, 0), r * 0.42, mulberry32((x * 13 + y * 7 + z * 5) | 0));
-    b.add(g, { pos: [x, y, z], color: 0x6a8c36, gradient: 0.38, jitter: 0.16, volume: { centre: [0, 6.2, 0], k: 0.3 } });
+    const g = clump(r, 1, r * 0.32, mulberry32((x * 13 + y * 7 + z * 5) | 0));
+    b.add(g, { pos: [x, y, z], color: 0x6a8c36, gradient: 0.38, jitter: 0.11, smooth: true, volume: { centre: [0, 6.2, 0], k: 0.45, own: true } });
   }
-  return b.build();
+  return shareVertices(b.build());
 }
 
 // Fern clump: arching fronds that taper to a point.
@@ -813,6 +830,17 @@ function stumpGeo() {
   return b.build();
 }
 
+// A broadleaf crown's clumps are smooth, lit by their place in the crown
+// and their own round shape, with a smooth colour: all of it follows from
+// where a vertex is, so a vertex is the same for every face that meets at
+// it. Shared, the clumps are drawn from far fewer vertices than their
+// triangles' corners (the trunk's faceted parts keep their own).
+function shareVertices(geo) {
+  const g = mergeVertices(geo, 1e-4);
+  g.computeBoundingSphere();
+  return g;
+}
+
 // Merge plain position/colour geometries (normals recomputed per part).
 function mergeGeos(list) {
   let total = 0;
@@ -918,14 +946,41 @@ const BARK_COLOR = /* glsl */ `
 `;
 
 // Material with gentle wind sway for tall vegetation.
-function swayMaterial(uniforms, amount, { base = 1.0, doubleSide = false, bark = false } = {}) {
+// Leaves on a broadleaf crown: clusters of small domes, lit, with the
+// shade between them, from the pebble channel of the ground's detail texture
+// (already in memory) read in the tree's own frame, so the pattern stays on
+// its leaves as the tree sways. Only where the vertex colour is a leaf's
+// (saturated), not on the bark.
+const LEAF_VERT = /* glsl */ `
+#ifdef USE_COLOR
+	{
+		float lfMax = max( color.r, max( color.g, color.b ) );
+		vLeaf = smoothstep( 0.25, 0.45, ( lfMax - min( color.r, min( color.g, color.b ) ) ) / max( lfMax, 1e-4 ) );
+	}
+#endif
+vLeafP = position;
+`;
+const LEAF_FRAG = /* glsl */ `
+#include <color_fragment>
+{
+	float lfc = texture2D( uLeafTex, vLeafP.xz * 0.24 + vLeafP.y * vec2( 0.13, -0.17 ) ).g;
+	diffuseColor.rgb *= mix( 1.0, 0.58 + lfc * 0.72, vLeaf );
+}
+`;
+
+function swayMaterial(uniforms, amount, { base = 1.0, doubleSide = false, bark = false, leafTex = null } = {}) {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true, side: doubleSide ? THREE.DoubleSide : THREE.FrontSide });
   mat.userData.fx = 'foliage';
   // the sway amount is baked into the shader text, so key programs by it
-  mat.customProgramCacheKey = () => 'sway' + amount + '/' + base + (bark ? '/bark' : '') + '|fx:foliage';
+  mat.customProgramCacheKey = () => 'sway' + amount + '/' + base + (bark ? '/bark' : '') + (leafTex ? '/leaves' : '') + '|fx:foliage';
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = uniforms.uTime;
     if (bark) shader.vertexShader = shader.vertexShader.replace('#include <color_vertex>', BARK_COLOR);
+    if (leafTex) {
+      shader.uniforms.uLeafTex = { value: leafTex };
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying float vLeaf;\nvarying vec3 vLeafP;').replace('#include <begin_vertex>', '#include <begin_vertex>\n' + LEAF_VERT);
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D uLeafTex;\nvarying float vLeaf;\nvarying vec3 vLeafP;').replace('#include <color_fragment>', LEAF_FRAG);
+    }
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nuniform float uTime;')
       .replace(
@@ -1052,13 +1107,13 @@ export class Scatter {
     this.uniforms = sharedUniforms;
     this.distScale = 1;
     const sway = swayMaterial(sharedUniforms, 0.0016);
-    const swayBirch = swayMaterial(sharedUniforms, 0.0022, { bark: true });
+    const swayBirch = swayMaterial(sharedUniforms, 0.0022, { bark: true, leafTex: matTex });
     const swayShrub = swayMaterial(sharedUniforms, 0.012, { base: 0.4 });
     const swayPlant = swayMaterial(sharedUniforms, 0.09, { base: 0.1, doubleSide: true });
     const swayClub = swayMaterial(sharedUniforms, 0.06, { base: 0.5, doubleSide: true });
     const swayGrass = swayMaterial(sharedUniforms, 0.3, { base: 0.05, doubleSide: true });
-    const swayPoplar = swayMaterial(sharedUniforms, 0.0012, { bark: true });
-    const swayAspen = swayMaterial(sharedUniforms, 0.0028, { bark: true });
+    const swayPoplar = swayMaterial(sharedUniforms, 0.0012, { bark: true, leafTex: matTex });
+    const swayAspen = swayMaterial(sharedUniforms, 0.0028, { bark: true, leafTex: matTex });
     const plain = new THREE.MeshLambertMaterial({ vertexColors: true });
     // (the far trees, spruce and broadleaf alike, and the bushes: one
     // material, one shader; far off, a birch's trunk is a three-sided
@@ -1080,7 +1135,7 @@ export class Scatter {
       birch: new ScatterType(
         'birch',
         [
-          { geo: birchDetailed(), material: swayBirch, maxDist: 50, capacity: 500, shadow: true },
+          { geo: birchDetailed(), material: swayBirch, maxDist: 45, capacity: 500, shadow: true },
           { geo: birchNear(), material: swayBirch, maxDist: 95, capacity: 1000, shadow: true },
           { geo: birchFar(), material: leafy, maxDist: 560, capacity: 5000 },
         ],
@@ -1098,7 +1153,7 @@ export class Scatter {
       poplar: new ScatterType(
         'poplar',
         [
-          { geo: poplarDetailed(), material: swayPoplar, maxDist: 75, capacity: 400, shadow: true },
+          { geo: poplarDetailed(), material: swayPoplar, maxDist: 66, capacity: 400, shadow: true },
           { geo: poplarNear(), material: swayPoplar, maxDist: 180, capacity: 900, shadow: true },
           { geo: poplarFar(), material: leafy, maxDist: 720, capacity: 3000 },
         ],

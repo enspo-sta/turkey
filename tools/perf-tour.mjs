@@ -17,6 +17,9 @@
 // on its side); --file loads another build (an older one, to compare).
 // --tally lists the draw calls of one frame in the middle of each segment by
 // the scene's top-level groups (and the pass: shadows, reflection, view).
+// With --draw each frame is also waited for after it is drawn: that wait,
+// the software renderer doing the frame's vertices and pixels, is kept as
+// `gpu`, a rough stand-in for a graphics chip's load (not its speed).
 import { createRequire } from 'node:module';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -87,13 +90,13 @@ if (!draw)
 // frame and steps the game by hand.
 const run = async (name, setup, perFrame, n = FRAMES) =>
   page.evaluate(
-    ({ name, setup, perFrame, n, tally }) => {
+    ({ name, setup, perFrame, n, tally, draw }) => {
       const g = __rhf.game;
       const S = __rhf.session;
       const dt = 1 / 60;
       new Function('g', 'S', setup)(g, S);
       const step = new Function('g', 'S', 'i', 'n', perFrame);
-      const rec = { game: [], world: [], render: [], total: [], calls: [], tris: [] };
+      const rec = { game: [], world: [], render: [], total: [], calls: [], tris: [], gpu: [] };
       // shader programs compiled during the segment (each one a stall on a phone)
       const compiled = [];
       let progs = g.renderer.info.programs.length;
@@ -150,6 +153,11 @@ const run = async (name, setup, perFrame, n = FRAMES) =>
         g.render();
         if (undo) undo();
         const t3 = performance.now();
+        // the software renderer's own time for this frame, when it draws
+        if (draw) {
+          drain();
+          rec.gpu.push(performance.now() - t3);
+        }
         g.renderer.info.autoReset = true;
         for (const s of g.systems) s.postRender?.(dt, g);
         rec.game.push(t1 - t0);
@@ -186,9 +194,9 @@ const run = async (name, setup, perFrame, n = FRAMES) =>
         const q = (p) => s[Math.min(s.length - 1, Math.floor(p * s.length))];
         return { mean: +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(2), p50: +q(0.5).toFixed(2), p95: +q(0.95).toFixed(2), p99: +q(0.99).toFixed(2), max: +s[s.length - 1].toFixed(2) };
       };
-      return { name, frames: n, game: st(rec.game), world: st(rec.world), render: st(rec.render), total: st(rec.total), calls: st(rec.calls), tris: st(rec.tris), heapGrowthKB: Math.round((heap1 - heap0) / 1024), compiled, worst: rec.total.map((t, i) => [t, i]).sort((a, b) => b[0] - a[0]).slice(0, 5).map(([t, i]) => `#${i} ${t.toFixed(1)} ms (game ${rec.game[i].toFixed(1)}, world ${rec.world[i].toFixed(1)}, render ${rec.render[i].toFixed(1)})`) };
+      return { name, frames: n, game: st(rec.game), world: st(rec.world), render: st(rec.render), total: st(rec.total), calls: st(rec.calls), tris: st(rec.tris), gpu: rec.gpu.length ? st(rec.gpu) : null, heapGrowthKB: Math.round((heap1 - heap0) / 1024), compiled, worst: rec.total.map((t, i) => [t, i]).sort((a, b) => b[0] - a[0]).slice(0, 5).map(([t, i]) => `#${i} ${t.toFixed(1)} ms (game ${rec.game[i].toFixed(1)}, world ${rec.world[i].toFixed(1)}, render ${rec.render[i].toFixed(1)})`) };
     },
-    { name, setup, perFrame, n, tally }
+    { name, setup, perFrame, n, tally, draw }
   );
 
 const SEG = [

@@ -38,6 +38,7 @@ import {
   beaverLodgeGeometry,
   AnimatedHerd,
 } from './animalmodels.js';
+import { lowDetail } from './animalkit.js';
 import { makeFishModel } from './fishmodels.js';
 import { mulberry32, clamp, damp, dampAngle, angleDiff, lerp, randRange, smoothstep } from '../util/math.js';
 import { HALF, SURF } from '../world/worldgen.js';
@@ -84,42 +85,57 @@ export class Wildlife {
     game.scene.add(this.group);
     this.rand = mulberry32(4242);
     this.animals = [];
+    // each species in near and far detail (see AnimatedHerd)
+    const herd = (model, capacity, o = {}) => new AnimatedHerd(model(), capacity, { ...o, far: lowDetail(model) });
     this.herds = {
-      moose: new AnimatedHerd(mooseModel(true), 12),
-      caribou: new AnimatedHerd(caribouModel(true), 20),
-      deer: new AnimatedHerd(deerModel(true), 14),
-      sheep: new AnimatedHerd(sheepModel(), 12),
-      wolf: new AnimatedHerd(wolfModel(), 6),
-      fox: new AnimatedHerd(foxModel(), 6, { shadow: false }),
-      hare: new AnimatedHerd(hareModel(), 14, { shadow: false }),
-      bear: new AnimatedHerd(bearModel(), 10),
-      eagle: new AnimatedHerd(eagleModel(), 6),
-      raven: new AnimatedHerd(ravenModel(), 6),
-      gull: new AnimatedHerd(gullModel(), 14),
-      goose: new AnimatedHerd(gooseModel(), 12),
-      duck: new AnimatedHerd(duckModel(), 12, { shadow: false }),
-      loon: new AnimatedHerd(loonModel(), 6, { shadow: false }),
-      puffin: new AnimatedHerd(puffinModel(), 8, { shadow: false }),
-      ptarmigan: new AnimatedHerd(ptarmiganModel(), 10, { shadow: false }),
-      whale: new AnimatedHerd(whaleModel(), 3, { shadow: false }),
-      otter: new AnimatedHerd(otterModel(), 6, { shadow: false }),
-      blackbear: new AnimatedHerd(blackBearModel(), 4),
-      goat: new AnimatedHerd(goatModel(), 9),
-      muskox: new AnimatedHerd(muskoxModel(), 9),
-      porcupine: new AnimatedHerd(porcupineModel(), 6, { shadow: false }),
-      lynx: new AnimatedHerd(lynxModel(), 3),
-      squirrel: new AnimatedHerd(squirrelModel(), 16, { shadow: false }),
-      beaver: new AnimatedHerd(beaverModel(), 3, { shadow: false }),
-      orca: new AnimatedHerd(orcaModel(), 4, { shadow: false }),
-      sealion: new AnimatedHerd(seaLionModel(), 8),
-      seal: new AnimatedHerd(sealHeadModel(), 4, { shadow: false }),
-      swan: new AnimatedHerd(swanModel(), 5, { shadow: false }),
-      crane: new AnimatedHerd(craneModel(), 6),
-      magpie: new AnimatedHerd(magpieModel(), 4, { shadow: false }),
-      kingfisher: new AnimatedHerd(kingfisherModel(), 2, { shadow: false }),
+      moose: herd(() => mooseModel(true), 12),
+      caribou: herd(() => caribouModel(true), 20),
+      deer: herd(() => deerModel(true), 14),
+      sheep: herd(sheepModel, 12),
+      wolf: herd(wolfModel, 6),
+      fox: herd(foxModel, 6, { shadow: false }),
+      hare: herd(hareModel, 14, { shadow: false }),
+      bear: herd(bearModel, 10),
+      eagle: herd(eagleModel, 6),
+      raven: herd(ravenModel, 6),
+      gull: herd(gullModel, 14),
+      goose: herd(gooseModel, 12),
+      duck: herd(duckModel, 12, { shadow: false }),
+      loon: herd(loonModel, 6, { shadow: false }),
+      puffin: herd(puffinModel, 8, { shadow: false }),
+      ptarmigan: herd(ptarmiganModel, 10, { shadow: false }),
+      whale: herd(whaleModel, 3, { shadow: false }),
+      otter: herd(otterModel, 6, { shadow: false }),
+      blackbear: herd(blackBearModel, 4),
+      goat: herd(goatModel, 9),
+      muskox: herd(muskoxModel, 9),
+      porcupine: herd(porcupineModel, 6, { shadow: false }),
+      lynx: herd(lynxModel, 3),
+      squirrel: herd(squirrelModel, 16, { shadow: false }),
+      beaver: herd(beaverModel, 3, { shadow: false }),
+      orca: herd(orcaModel, 4, { shadow: false }),
+      sealion: herd(seaLionModel, 8),
+      seal: herd(sealHeadModel, 4, { shadow: false }),
+      swan: herd(swanModel, 5, { shadow: false }),
+      crane: herd(craneModel, 6),
+      magpie: herd(magpieModel, 4, { shadow: false }),
+      kingfisher: herd(kingfisherModel, 2, { shadow: false }),
     };
     this.herdList = Object.values(this.herds);
     for (const h of this.herdList) this.group.add(h.mesh);
+    // every shadow map is drawn with the herds in their low detail: the
+    // renderer draws the shadow maps after it has listed the frame's meshes
+    // (each with its geometry) and before it draws them
+    const shadowMap = game.renderer.shadowMap;
+    const drawShadows = shadowMap.render.bind(shadowMap);
+    shadowMap.render = (...args) => {
+      for (const h of this.herdList) h.shadowDetail(true);
+      try {
+        drawShadows(...args);
+      } finally {
+        for (const h of this.herdList) h.shadowDetail(false);
+      }
+    };
     this.birds = [];
     this.whales = [];
     this.otters = [];
@@ -662,7 +678,7 @@ export class Wildlife {
     this.updateMarine(dt, cam);
     this.updateMoreMarine(dt, cam);
     this.updateJumpers(dt);
-    for (const h of this.herdList) h.end();
+    for (const h of this.herdList) h.end(cam);
   }
 
   think(a, dt, threat) {
@@ -896,7 +912,8 @@ export class Wildlife {
           b.z += Math.cos(b.yaw) * 13 * dt;
           b.flap = 1.2;
           if (b.carried) {
-            b.carried.position.set(b.x, b.y - 0.4, b.z);
+            // in the talons, just under the belly (the eagle's origin is at its feet)
+            b.carried.position.set(b.x, b.y - 0.06, b.z);
             b.carried.rotation.set(0, b.yaw + Math.PI / 2, 0.25);
             b.carried.userData.uniforms.uFlopT.value += dt;
           }
@@ -920,7 +937,8 @@ export class Wildlife {
           break;
         }
         case 'perch':
-          b.flap = 0;
+          // at rest: wings folded (see animatedMaterial)
+          b.flap = -1;
           b.bank = 0;
           if (d < 28) {
             b.mode = 'takeoff';
@@ -1013,7 +1031,7 @@ export class Wildlife {
         }
         case 'swim': {
           b.t -= dt;
-          b.flap = 0;
+          b.flap = -1;
           const level = b.lake ? b.lake.level : 0;
           if (b.t <= 0) {
             b.t = 4 + Math.random() * 8;
@@ -1067,7 +1085,7 @@ export class Wildlife {
           break;
         }
         case 'ground': {
-          b.flap = 0;
+          b.flap = -1;
           b.y = W.heightAt(b.x, b.z);
           if (Math.hypot(b.x - threat.x, b.z - threat.z) < 12) this.flush(b);
           break;
@@ -1135,7 +1153,7 @@ export class Wildlife {
           b.x += Math.sin(b.yaw) * b.speed * dt;
           b.z += Math.cos(b.yaw) * b.speed * dt;
           b.y = W.heightAt(b.x, b.z);
-          b.flap = 0;
+          b.flap = -1;
           b.bank = 0;
           b.amp = b.speed > 0.1 ? 0.7 : 0;
           b.head = b.speed < 0.1 ? 0.6 + Math.sin(g.time * 0.7 + b.x) * 0.3 : 0;
@@ -1153,7 +1171,7 @@ export class Wildlife {
         case 'hop': {
           // magpies: short hops, a look around, now and then a flight to the roof
           b.hopT -= dt;
-          b.flap = 0;
+          b.flap = -1;
           b.bank = 0;
           const ground = W.heightAt(b.x, b.z);
           if (b.hopT <= 0) {
@@ -1168,7 +1186,6 @@ export class Wildlife {
             b.x += Math.sin(b.yaw) * 1.4 * dt;
             b.z += Math.cos(b.yaw) * 1.4 * dt;
             b.y = ground + Math.sin((1 - b.hop / 0.35) * Math.PI) * 0.18;
-            b.flap = 0.4;
           } else b.y = ground;
           if (b.callT <= 0) {
             b.callT = 10 + Math.random() * 25;

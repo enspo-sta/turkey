@@ -99,6 +99,12 @@ export function makeTerrainMaterial(detailTex, matTex, surfaceTex) {
           tone *= mix( 1.0, 0.8 + sd * 0.4, wB );
           tone *= mix( 1.0, 0.58 + ff * 0.8, wA );
           diffuseColor.rgb *= tone;
+          // streaks down the cliffs, where water runs and lichen grows: the
+          // texture stretched tall (read only on steep ground)
+          if ( wR > 0.02 ) {
+            float streak = texture2D( uMat, vec2( vTWorld.x * 0.045 + vTWorld.z * 0.031, vTWorld.y * 0.0045 ) ).r;
+            diffuseColor.rgb *= mix( 1.0, 0.6 + streak * 0.62, wR * steep );
+          }
           // stones vary a little in colour, warm to cool
           // warm low and between the stones, cool on the tops of the big ones
           // (a smooth step: the ringed fract() of the height shimmered as the
@@ -124,13 +130,20 @@ export function makeTerrainMaterial(detailTex, matTex, surfaceTex) {
           fade *= smoothstep( 0.06, 0.3, abs( dot( tn, normalize( cameraPosition - vTWorld ) ) ) );
           tHeight = ( rk * wR * 0.09 + pb * wG * 0.035 + sd * wB * 0.012 + ff * wA * 0.018 ) * fade * ( 1.0 - snow * 0.85 );
           // far away, the mountains get crags, gullies and buttresses a few
-          // tens of metres across: more than the mesh can carry, lit per pixel
+          // tens of metres across: more than the mesh can carry, lit per pixel.
+          // Read from blurred levels of the texture (a mip bias): the bump's
+          // slope is worked out once for each 2 by 2 block of pixels, so a
+          // height that changed within a block lit the faces in blocky steps
           float farV = smoothstep( 140.0, 420.0, length( vViewPosition ) );
           if ( farV > 0.0 ) {
-            float crag = texture2D( uMat, vTWorld.xz * 0.0061 + vec2( 0.17, 0.53 ) ).r;
-            float gully = texture2D( uMat, vec2( vTWorld.x * 0.009 + vTWorld.z * 0.004, vTWorld.y * 0.02 ) ).r;
+            float crag = texture2D( uMat, vTWorld.xz * 0.0061 + vec2( 0.17, 0.53 ), 3.0 ).r;
+            float gully = texture2D( uMat, vec2( vTWorld.x * 0.009 + vTWorld.z * 0.004, vTWorld.y * 0.02 ), 3.0 ).r;
             float steepF = smoothstep( 0.92, 0.55, tn.y );
             tHeight += farV * steepF * ( crag * 9.0 + gully * 4.0 ) * ( 1.0 - snow * 0.6 );
+            // the rock's grain, as colour: read sharp (a colour is filtered
+            // cleanly by the mip levels; only the bump's slope went blocky)
+            float grain = texture2D( uMat, vTWorld.xz * 0.0061 + vec2( 0.17, 0.53 ) ).r;
+            diffuseColor.rgb *= mix( 1.0, 0.7 + grain * 0.6, farV * steepF * ( 1.0 - snow * 0.7 ) );
             // gullies hold shade and old snow
             diffuseColor.rgb *= mix( 1.0, 0.82 + gully * 0.3, farV * steepF * ( 1.0 - snow ) );
           }
