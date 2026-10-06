@@ -39,7 +39,8 @@ const destFile = path.resolve(process.argv[3] || path.join(root, 'docs/graphics-
     );
   };
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const fig = async (f) => `<figure><img src="${await shrink(f.file, f.w || 720)}" alt="${esc(f.caption)}" loading="lazy"><figcaption>${esc(f.caption)}</figcaption></figure>`;
+  // (a figure with wide: true takes the whole width of its section's grid)
+  const fig = async (f) => `<figure${f.wide ? ' class="wide"' : ''}><img src="${await shrink(f.file, f.w || 720)}" alt="${esc(f.caption)}" loading="lazy"><figcaption>${esc(f.caption)}</figcaption></figure>`;
 
   let sections = '';
   for (const sec of data.sections) {
@@ -93,6 +94,7 @@ p,li{max-width:72ch}
 a{color:var(--accent2)}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;margin:0 0 18px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:12px}
+.grid figure.wide{grid-column:1/-1}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
 @media (max-width:700px){.pair{grid-template-columns:1fr}}
 figure{margin:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden}

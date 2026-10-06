@@ -1,0 +1,693 @@
+{
+ "kicker": "Hotrod Outdoor Alaska Fishing \u00b7 round report",
+ "title": "Asset Quality Round Two",
+ "lede": "The weakest assets rebuilt: all 32 animals and birds as smooth shapes with their markings, birds that fold their wings at rest and stretch their necks out in flight, rounder birch, aspen and poplar crowns, far mountains without blocky shading, and campfires with stones, ash and split logs. Against the previous build, over eight places: 6.4% fewer draw calls and 4.4% more triangles, the same textures and one more shader program. Timed in turns, the processor's side of a frame is 0.50 ms faster at 320 by 180 and not clearly different (\u22120.13 ms, 95% interval \u22120.77 to +0.51) at an iPhone's size, and the software renderer's drawing, a stand-in for the graphics chip, is 4.1% slower.",
+ "links": [
+  {
+   "label": "Play the game",
+   "href": "https://claude.ai/artifact/3urJEG61Boov67ViABm26A"
+  },
+  {
+   "label": "Code on GitHub",
+   "href": "https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing"
+  }
+ ],
+ "sections": [
+  {
+   "id": "request",
+   "kicker": "This round",
+   "title": "What this round set out to do",
+   "html": "<p>The request: <i>\"Look for low quality assets and increase quality. Make sure it's not too heavy on cpu and gpu.\"</i></p><p>The previous asset round raised every family of assets by changing colours, normals and shaders only, so that nothing cost more. This round went after what that could not fix: assets whose shapes were too coarse. A finer shape costs triangles, so the round set its budget first and measured against it: draw calls (the processor's cost of each object drawn), triangles and vertices (the graphics chip's cost of shapes, counted in the view and in both shadow maps), textures and their memory, shader programs, and the frame time itself, timed in turns against the previous build.</p><div class=\"tablewrap\"><table class=\"text\"><thead><tr><th>Request</th><th>What was done</th><th>Status</th></tr></thead><tbody><tr><td data-label=\"Request\">Look for low-quality assets</td><td data-label=\"What was done\">Every model built in code, the trees, the ground and the props were looked at in fixed views and on their own. Nine kinds of asset stood out as the weakest; they are listed under \"The weakest assets\" with what was wrong with each.</td><td data-label=\"Status\">Done</td></tr><tr><td data-label=\"Request\">Increase their quality</td><td data-label=\"What was done\">All 32 animals and birds rebuilt, with their poses at rest and in flight; the birch, aspen and poplar crowns; the far mountains' rock; the four campfires.</td><td data-label=\"Status\">Done</td></tr><tr><td data-label=\"Request\">Not too heavy on the processor and the graphics chip</td><td data-label=\"What was done\">A budget set before the work: no new draw calls or textures, at most one more shader program, each place's triangles within about 10%. Measured on the final build: draw calls over the eight budget places 1940 before and 1816 after (\u22126.4%); triangles +4.4% in all, at most +8.6% at one place (Salmon Bend); textures in the materials 87 and 87 (106.27 and 106.27 MB); shader programs 102 and 103. Timed in turns: the processor's side of a frame is 0.50 ms faster at 320 by 180 and not clearly different (\u22120.13 ms, 95% interval \u22120.77 to +0.51) at an iPhone's size; the software renderer's drawing, a stand-in for the graphics chip, is 4.1% slower (+79 ms a frame); loading until the game is ready is not clearly different (\u2212108 ms, 95% interval \u2212663 to +447).</td><td data-label=\"Status\">See Load and Frame time</td></tr></tbody></table></div>"
+  },
+  {
+   "id": "found",
+   "kicker": "The weakest assets",
+   "title": "What was found, and why it looked cheap",
+   "html": "<p>Found by looking at fixed views of the world, at each animal alone in a fixed light, at each model on a plain sheet, and at the number of triangles of each. What was wrong, and what was done:</p><div class=\"tablewrap\"><table class=\"text\"><thead><tr><th>Asset</th><th>What was wrong</th><th>What was done</th></tr></thead><tbody><tr><td data-label=\"Asset\">All 32 animals and birds</td><td data-label=\"What was wrong\">Built from boxes, cylinders and coarse spheres, shaded face by face: 146 to 760 triangles each, legs as plain posts, heads as blocks, no markings beyond a colour per part.</td><td data-label=\"What was done\">Rebuilt as smooth lofted bodies (cross-sections along a spine, so a neck or tail curves without twisting): shaped heads with eyes, ears, muzzles and bills, legs that taper through the joints to hooves, paws and claws, antlers and horns, and markings painted at each vertex (pale bellies, the caribou&#x27;s white mane, the fox&#x27;s black stockings, the loon&#x27;s chequered back). A second, lighter version of every model is drawn while a herd is far off, and every shadow is drawn from it.</td></tr><tr><td data-label=\"Asset\">Birds at rest</td><td data-label=\"What was wrong\">Swimming ducks, loons and swans showed their open flight wings lying flat on the water; perched eagles, walking cranes and hopping magpies held their wings out too.</td><td data-label=\"What was done\">Wings fold along the body while a bird swims, perches, stands, walks or hops, and a perched or standing bird shows its legs; the open wings appear only in flight.</td></tr><tr><td data-label=\"Asset\">Birds in flight</td><td data-label=\"What was wrong\">The goose, swan, crane, mallard and loon kept their necks upright in flight, as when swimming.</td><td data-label=\"What was done\">In flight the neck swings forward and the head rides on its end, level, as these birds fly; the crane&#x27;s legs trail behind.</td></tr><tr><td data-label=\"Asset\">Two species shown wrongly</td><td data-label=\"What was wrong\">The game names its gull a glaucous-winged gull and its puffin a tufted puffin; the gull had black wingtips (a glaucous-winged gull&#x27;s are grey) and the new puffin model was first drawn as a horned puffin (white belly).</td><td data-label=\"What was done\">Grey wingtips on the gull; the puffin all black with a white face, golden tufts, the orange bill and feet.</td></tr><tr><td data-label=\"Asset\">Animal shadows</td><td data-label=\"What was wrong\">Shadows were cast by the standing model: a walking moose&#x27;s shadow did not move its legs, a resting bird&#x27;s shadow had open wings.</td><td data-label=\"What was done\">One shared shadow material moves the same limbs, so shadows walk, swim and fold their wings with the animal.</td></tr><tr><td data-label=\"Asset\">Herds out of view</td><td data-label=\"What was wrong\">Every species was drawn every frame, in the view and in both shadow maps, wherever its animals were.</td><td data-label=\"What was done\">Each herd is skipped when a sphere round its animals is out of view (and, for its shadow, out of the shadow map&#x27;s view).</td></tr><tr><td data-label=\"Asset\">Birch, aspen and poplar crowns</td><td data-label=\"What was wrong\">Clumps of leaves were 20-sided blocks lit facet by facet, so each crown showed hard flat faces.</td><td data-label=\"What was done\">Close up, each clump is a finer 80-sided ball; further off it keeps its 20 sides but is shaded as a ball. Each clump is lit round inside the crown&#x27;s own light, with a pattern of leaves taken from a texture already in memory. Vertices are shared, so the crowns are drawn from fewer vertices than before.</td></tr><tr><td data-label=\"Asset\">The far mountains</td><td data-label=\"What was wrong\">Between 140 and 420 m the rock&#x27;s crags and gullies are lit by a bump worked out per 2 by 2 block of pixels; on sharp detail the blocks showed as a staircase of light and dark squares on every peak.</td><td data-label=\"What was done\">The crags and gullies are read from blurred levels of their texture, so their light changes smoothly; the rock&#x27;s grain is put back as colour, and steep cliffs get faint streaks down them.</td></tr><tr><td data-label=\"Asset\">The four campfires</td><td data-label=\"What was wrong\">Nine dodecahedron stones and four sticks.</td><td data-label=\"What was done\">A ring of fourteen rounded field stones of mixed sizes and colours, sooted on the side toward the fire, a bed of pale ash with black coals, five split logs leaning together over the fire, charred at the top, and a half-burnt log in the ashes.</td></tr></tbody></table></div>"
+  },
+  {
+   "id": "animals",
+   "kicker": "Animals and birds",
+   "title": "All 32 animals and birds rebuilt",
+   "html": "<p>Every animal and bird is now built from smooth lofted shapes: cross-sections along a spine, framed so that a curving neck or tail does not twist, with rounded or pointed ends. Bodies taper into necks and tails, legs narrow through the knee and hock to hooves, paws and claws, and heads have eyes, ears, muzzles, bills and horns. Markings are painted at each vertex: pale bellies, the moose's dark back, the caribou's white mane, the fox's black stockings, the lynx's ear tufts and spots, the loon's chequered back.</p><p>Each species is still one draw call for all its animals (an instanced mesh), and its legs, head, tail and wings still move in the vertex shader. Each model is now indexed: a vertex is stored and shaded once however many triangles meet at it, where the old models repeated it for every triangle. So the new models have about five times the triangles but fewer vertices than before.</p><p>Each species also has a far version, built by the same code with fewer points round each cross-section and fewer cross-sections (about 40% of the triangles). A herd is drawn in it while its nearest animal is more than 28 times the model's radius away, where a sphere round the whole animal fills about 6% of the view's height (a moose 55 m off, a wolf 27 m, a hare 7 m), and every shadow map draws every herd in it: a shadow shows only an outline, softened. At that distance the two versions are hard to tell apart (the last picture below).</p><div class=\"tablewrap\"><table><thead><tr><th>Species</th><th class=\"n\">Before: triangles</th><th class=\"n\">vertices</th><th class=\"n\">Near: triangles</th><th class=\"n\">vertices</th><th class=\"n\">Far: triangles</th><th class=\"n\">vertices</th></tr></thead><tbody><tr><td data-label=\"Species\">Moose</td><td class=\"n\" data-label=\"Before: triangles\">676</td><td class=\"n\" data-label=\"vertices\">2\u00a0028</td><td class=\"n\" data-label=\"Near: triangles\">3\u00a0234</td><td class=\"n\" data-label=\"vertices\">1\u00a0696</td><td class=\"n\" data-label=\"Far: triangles\">1\u00a0344</td><td class=\"n\" data-label=\"vertices\">748</td></tr><tr><td data-label=\"Species\">Caribou</td><td class=\"n\" data-label=\"Before: triangles\">760</td><td class=\"n\" data-label=\"vertices\">2\u00a0280</td><td class=\"n\" data-label=\"Near: triangles\">3\u00a0204</td><td class=\"n\" data-label=\"vertices\">1\u00a0660</td><td class=\"n\" data-label=\"Far: triangles\">1\u00a0132</td><td class=\"n\" data-label=\"vertices\">624</td></tr><tr><td data-label=\"Species\">Sitka black-tailed deer</td><td class=\"n\" data-label=\"Before: triangles\">520</td><td class=\"n\" data-label=\"vertices\">1\u00a0560</td><td class=\"n\" data-label=\"Near: triangles\">2\u00a0468</td><td class=\"n\" data-label=\"vertices\">1\u00a0274</td><td class=\"n\" data-label=\"Far: triangles\">912</td><td class=\"n\" data-label=\"vertices\">496</td></tr><tr><td data-label=\"Species\">Dall sheep</td><td class=\"n\" data-label=\"Before: triangles\">504</td><td class=\"n\" data-label=\"vertices\">1\u00a0512</td><td class=\"n\" data-label=\"Near: triangles\">2\u00a0504</td><td class=\"n\" data-label=\"vertices\">1\u00a0288</td><td class=\"n\" data-label=\"Far: triangles\">948</td><td class=\"n\" data-label=\"vertices\">510</td></tr><tr><td data-label=\"Species\">Mountain goat</td><td class=\"n\" data-label=\"Before: triangles\">450</td><td class=\"n\" data-label=\"vertices\">1\u00a0350</td><td class=\"n\" data-label=\"Near: triangles\">2\u00a0424</td><td class=\"n\" data-label=\"vertices\">1\u00a0250</td><td class=\"n\" data-label=\"Far: triangles\">876</td><td class=\"n\" data-label=\"vertices\">476</td></tr><tr><td data-label=\"Species\">Muskox</td><td class=\"n\" data-label=\"Before: triangles\">560</td><td class=\"n\" data-label=\"vertices\">1\u00a0680</td><td class=\"n\" data-label=\"Near: triangles\">2\u00a0420</td><td class=\"n\" data-label=\"vertices\">1\u00a0240</td><td class=\"n\" data-label=\"Far: triangles\">852</td><td class=\"n\" data-label=\"vertices\">456</td></tr><tr><td data-label=\"Species\">Grizzly bear</td><td class=\"n\" data-label=\"Before: triangles\">734</td><td class=\"n\" data-label=\"vertices\">2\u00a0202</td><td class=\"n\" data-label=\"Near: triangles\">2\u00a0940</td><td class=\"n\" data-label=\"vertices\">1\u00a0544</td><td class=\"n\" data-label=\"Far: triangles\">1\u00a0220</td><td class=\"n\" data-label=\"vertices\">684</td></tr><tr><td data-label=\"Species\">Black bear</td><td class=\"n\" data-label=\"Before: triangles\">734</td><td class=\"n\" data-label=\"vertices\">2\u00a0202</td><td class=\"n\" data-label=\"Near: triangles\">2\u00a0908</td><td class=\"n\" data-label=\"vertices\">1\u00a0528</td><td class=\"n\" data-label=\"Far: triangles\">1\u00a0204</td><td class=\"n\" data-label=\"vertices\">676</td></tr><tr><td data-label=\"Species\">Gray wolf</td><td class=\"n\" data-label=\"Before: triangles\">378</td><td class=\"n\" data-label=\"vertices\">1\u00a0134</td><td class=\"n\" data-label=\"Near: triangles\">2\u00a0492</td><td class=\"n\" data-label=\"vertices\">1\u00a0288</td><td class=\"n\" data-label=\"Far: triangles\">872</td><td class=\"n\" data-label=\"vertices\">478</td></tr><tr><td data-label=\"Species\">Red fox</td><td class=\"n\" data-label=\"Before: triangles\">384</td><td class=\"n\" data-label=\"vertices\">1\u00a0152</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0660</td><td class=\"n\" data-label=\"vertices\">856</td><td class=\"n\" data-label=\"Far: triangles\">648</td><td class=\"n\" data-label=\"vertices\">350</td></tr><tr><td data-label=\"Species\">Canada lynx</td><td class=\"n\" data-label=\"Before: triangles\">530</td><td class=\"n\" data-label=\"vertices\">1\u00a0590</td><td class=\"n\" data-label=\"Near: triangles\">2\u00a0042</td><td class=\"n\" data-label=\"vertices\">1\u00a0063</td><td class=\"n\" data-label=\"Far: triangles\">736</td><td class=\"n\" data-label=\"vertices\">410</td></tr><tr><td data-label=\"Species\">Snowshoe hare</td><td class=\"n\" data-label=\"Before: triangles\">382</td><td class=\"n\" data-label=\"vertices\">1\u00a0146</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0300</td><td class=\"n\" data-label=\"vertices\">676</td><td class=\"n\" data-label=\"Far: triangles\">512</td><td class=\"n\" data-label=\"vertices\">282</td></tr><tr><td data-label=\"Species\">Porcupine</td><td class=\"n\" data-label=\"Before: triangles\">524</td><td class=\"n\" data-label=\"vertices\">1\u00a0572</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0756</td><td class=\"n\" data-label=\"vertices\">988</td><td class=\"n\" data-label=\"Far: triangles\">1\u00a0144</td><td class=\"n\" data-label=\"vertices\">682</td></tr><tr><td data-label=\"Species\">Red squirrel</td><td class=\"n\" data-label=\"Before: triangles\">370</td><td class=\"n\" data-label=\"vertices\">1\u00a0110</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0280</td><td class=\"n\" data-label=\"vertices\">662</td><td class=\"n\" data-label=\"Far: triangles\">516</td><td class=\"n\" data-label=\"vertices\">280</td></tr><tr><td data-label=\"Species\">Bald eagle</td><td class=\"n\" data-label=\"Before: triangles\">230</td><td class=\"n\" data-label=\"vertices\">690</td><td class=\"n\" data-label=\"Near: triangles\">2\u00a0320</td><td class=\"n\" data-label=\"vertices\">1\u00a0220</td><td class=\"n\" data-label=\"Far: triangles\">1\u00a0180</td><td class=\"n\" data-label=\"vertices\">650</td></tr><tr><td data-label=\"Species\">Common raven</td><td class=\"n\" data-label=\"Before: triangles\">172</td><td class=\"n\" data-label=\"vertices\">516</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0728</td><td class=\"n\" data-label=\"vertices\">900</td><td class=\"n\" data-label=\"Far: triangles\">812</td><td class=\"n\" data-label=\"vertices\">442</td></tr><tr><td data-label=\"Species\">Glaucous-winged gull</td><td class=\"n\" data-label=\"Before: triangles\">172</td><td class=\"n\" data-label=\"vertices\">516</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0300</td><td class=\"n\" data-label=\"vertices\">672</td><td class=\"n\" data-label=\"Far: triangles\">580</td><td class=\"n\" data-label=\"vertices\">312</td></tr><tr><td data-label=\"Species\">Canada goose</td><td class=\"n\" data-label=\"Before: triangles\">196</td><td class=\"n\" data-label=\"vertices\">588</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0504</td><td class=\"n\" data-label=\"vertices\">774</td><td class=\"n\" data-label=\"Far: triangles\">656</td><td class=\"n\" data-label=\"vertices\">350</td></tr><tr><td data-label=\"Species\">Black-billed magpie</td><td class=\"n\" data-label=\"Before: triangles\">220</td><td class=\"n\" data-label=\"vertices\">660</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0620</td><td class=\"n\" data-label=\"vertices\">850</td><td class=\"n\" data-label=\"Far: triangles\">816</td><td class=\"n\" data-label=\"vertices\">448</td></tr><tr><td data-label=\"Species\">Belted kingfisher</td><td class=\"n\" data-label=\"Before: triangles\">192</td><td class=\"n\" data-label=\"vertices\">576</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0292</td><td class=\"n\" data-label=\"vertices\">682</td><td class=\"n\" data-label=\"Far: triangles\">604</td><td class=\"n\" data-label=\"vertices\">334</td></tr><tr><td data-label=\"Species\">Tufted puffin</td><td class=\"n\" data-label=\"Before: triangles\">160</td><td class=\"n\" data-label=\"vertices\">480</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0608</td><td class=\"n\" data-label=\"vertices\">832</td><td class=\"n\" data-label=\"Far: triangles\">704</td><td class=\"n\" data-label=\"vertices\">380</td></tr><tr><td data-label=\"Species\">Willow ptarmigan</td><td class=\"n\" data-label=\"Before: triangles\">164</td><td class=\"n\" data-label=\"vertices\">492</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0684</td><td class=\"n\" data-label=\"vertices\">886</td><td class=\"n\" data-label=\"Far: triangles\">860</td><td class=\"n\" data-label=\"vertices\">474</td></tr><tr><td data-label=\"Species\">Sandhill crane</td><td class=\"n\" data-label=\"Before: triangles\">260</td><td class=\"n\" data-label=\"vertices\">780</td><td class=\"n\" data-label=\"Near: triangles\">2\u00a0448</td><td class=\"n\" data-label=\"vertices\">1\u00a0282</td><td class=\"n\" data-label=\"Far: triangles\">1\u00a0168</td><td class=\"n\" data-label=\"vertices\">642</td></tr><tr><td data-label=\"Species\">Mallard</td><td class=\"n\" data-label=\"Before: triangles\">176</td><td class=\"n\" data-label=\"vertices\">528</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0258</td><td class=\"n\" data-label=\"vertices\">659</td><td class=\"n\" data-label=\"Far: triangles\">568</td><td class=\"n\" data-label=\"vertices\">310</td></tr><tr><td data-label=\"Species\">Common loon</td><td class=\"n\" data-label=\"Before: triangles\">288</td><td class=\"n\" data-label=\"vertices\">864</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0428</td><td class=\"n\" data-label=\"vertices\">736</td><td class=\"n\" data-label=\"Far: triangles\">616</td><td class=\"n\" data-label=\"vertices\">330</td></tr><tr><td data-label=\"Species\">Trumpeter swan</td><td class=\"n\" data-label=\"Before: triangles\">248</td><td class=\"n\" data-label=\"vertices\">744</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0564</td><td class=\"n\" data-label=\"vertices\">804</td><td class=\"n\" data-label=\"Far: triangles\">656</td><td class=\"n\" data-label=\"vertices\">350</td></tr><tr><td data-label=\"Species\">Humpback whale</td><td class=\"n\" data-label=\"Before: triangles\">350</td><td class=\"n\" data-label=\"vertices\">1\u00a0050</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0152</td><td class=\"n\" data-label=\"vertices\">612</td><td class=\"n\" data-label=\"Far: triangles\">592</td><td class=\"n\" data-label=\"vertices\">332</td></tr><tr><td data-label=\"Species\">Orca</td><td class=\"n\" data-label=\"Before: triangles\">376</td><td class=\"n\" data-label=\"vertices\">1\u00a0128</td><td class=\"n\" data-label=\"Near: triangles\">752</td><td class=\"n\" data-label=\"vertices\">388</td><td class=\"n\" data-label=\"Far: triangles\">344</td><td class=\"n\" data-label=\"vertices\">184</td></tr><tr><td data-label=\"Species\">Steller sea lion</td><td class=\"n\" data-label=\"Before: triangles\">304</td><td class=\"n\" data-label=\"vertices\">912</td><td class=\"n\" data-label=\"Near: triangles\">1\u00a0428</td><td class=\"n\" data-label=\"vertices\">748</td><td class=\"n\" data-label=\"Far: triangles\">612</td><td class=\"n\" data-label=\"vertices\">340</td></tr><tr><td data-label=\"Species\">Harbor seal</td><td class=\"n\" data-label=\"Before: triangles\">244</td><td class=\"n\" data-label=\"vertices\">732</td><td class=\"n\" data-label=\"Near: triangles\">612</td><td class=\"n\" data-label=\"vertices\">318</td><td class=\"n\" data-label=\"Far: triangles\">272</td><td class=\"n\" data-label=\"vertices\">148</td></tr><tr><td data-label=\"Species\">Sea otter</td><td class=\"n\" data-label=\"Before: triangles\">146</td><td class=\"n\" data-label=\"vertices\">438</td><td class=\"n\" data-label=\"Near: triangles\">872</td><td class=\"n\" data-label=\"vertices\">458</td><td class=\"n\" data-label=\"Far: triangles\">380</td><td class=\"n\" data-label=\"vertices\">212</td></tr><tr><td data-label=\"Species\">Beaver</td><td class=\"n\" data-label=\"Before: triangles\">220</td><td class=\"n\" data-label=\"vertices\">660</td><td class=\"n\" data-label=\"Near: triangles\">656</td><td class=\"n\" data-label=\"vertices\">344</td><td class=\"n\" data-label=\"Far: triangles\">276</td><td class=\"n\" data-label=\"vertices\">154</td></tr><tr><td data-label=\"Species\"><b>All 32</b></td><td class=\"n\" data-label=\"Before: triangles\"><b>11\u00a0624</b></td><td class=\"n\" data-label=\"vertices\"><b>34\u00a0872</b></td><td class=\"n\" data-label=\"Near: triangles\"><b>57\u00a0858</b></td><td class=\"n\" data-label=\"vertices\"><b>30\u00a0178</b></td><td class=\"n\" data-label=\"Far: triangles\"><b>24\u00a0612</b></td><td class=\"n\" data-label=\"vertices\"><b>13\u00a0544</b></td></tr></tbody></table></div><p class=\"note\">From <code>tools/model-sheet.mjs</code>, which builds each model on its own and counts it. The old models were not indexed: their vertices are three per triangle.</p>",
+   "figs": [
+    {
+     "file": "a2r/sheets/before.png",
+     "caption": "Before: the 32 models on a plain sheet, alphabetically by their names in the code (bear, beaver, black bear, caribou, crane, deer, mallard, eagle; fox, goat, goose, gull, hare, kingfisher, loon, lynx; magpie, moose, muskox, orca, otter, porcupine, ptarmigan, puffin; raven, sea lion, seal, sheep, squirrel, swan, humpback, wolf)",
+     "w": 1000
+    },
+    {
+     "file": "a2r/sheets/near.png",
+     "caption": "After, near detail: the same 32 in the same order and light",
+     "w": 1000
+    },
+    {
+     "file": "a2r/sheets/far.png",
+     "caption": "After, far detail: what a herd far off is drawn with, and what every shadow is drawn from",
+     "w": 1000
+    },
+    {
+     "file": "a2r/sheets/switch.png",
+     "caption": "The switch: 12 species, each at its own switch distance in the game's view (64 degrees high, as on a phone on its side), cropped round the animal and enlarged three times, with the grass and small plants hidden so that none stands in front of the smallest: near detail on the left of each pair, far detail on the right. From tools/scenarios/detail-switch.json.",
+     "w": 1100,
+     "wide": true
+    }
+   ]
+  },
+  {
+   "id": "lineup",
+   "kicker": "One by one",
+   "title": "Every species, before and after",
+   "html": "<p>Each species alone in the game, in the same place, light and pose in both builds, framed by its own size: land animals and land birds on open tundra at 10:30 in the morning, sea animals and water birds off the end of Halibut Pier. Flying birds are shown with their wings level; the swimming birds, the standing crane and the sea animals at rest. The grass is hidden so the smallest show whole.</p>",
+   "pairs": [
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-moose.jpg",
+      "caption": "Before: Moose"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-moose.jpg",
+      "caption": "After: Moose. The shoulders stand high over long legs, pale below the knee; the long face ends in a heavy overhanging nose, with the bell under the throat and broad palmate antlers."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-caribou.jpg",
+      "caption": "Before: Caribou"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-caribou.jpg",
+      "caption": "After: Caribou. Tall branching antlers with one brow tine flattened into a shovel over the face, the long white mane under the neck and the white rump patch."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-deer.jpg",
+      "caption": "Before: Sitka black-tailed deer"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-deer.jpg",
+      "caption": "After: Sitka black-tailed deer. A slim deer with a white throat, small branching antlers, legs that narrow to small hooves, and the black-topped tail of a Sitka black-tailed deer."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-sheep.jpg",
+      "caption": "Before: Dall sheep"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-sheep.jpg",
+      "caption": "After: Dall sheep. All white, with the ram's amber horns curling back, down and forward round the ear."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-goat.jpg",
+      "caption": "Before: Mountain goat"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-goat.jpg",
+      "caption": "After: Mountain goat. Shaggy and white with a hump over the shoulders, the long beard, short black horns curving back, and the long hair over the upper legs."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-muskox.jpg",
+      "caption": "Before: Muskox"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-muskox.jpg",
+      "caption": "After: Muskox. A massive body with a high shoulder hump, long guard hair hanging almost to the ground, and the horns' heavy boss sweeping down past the eyes and hooking up."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-bear.jpg",
+      "caption": "Before: Grizzly bear"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-bear.jpg",
+      "caption": "After: Grizzly bear. The grizzly's shoulder hump, a broad dished face with a blunt muzzle, silver-tipped hair over the back and claws on the paws."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-blackbear.jpg",
+      "caption": "Before: Black bear"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-blackbear.jpg",
+      "caption": "After: Black bear. No hump: the back runs level to higher hips, with a straight face and a long tan muzzle."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-wolf.jpg",
+      "caption": "Before: Gray wolf"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-wolf.jpg",
+      "caption": "After: Gray wolf. A deep narrow chest and a tucked waist on long legs, and the bushy tail held low, dark at the tip."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-fox.jpg",
+      "caption": "Before: Red fox"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-fox.jpg",
+      "caption": "After: Red fox. A narrow pointed face with white cheeks, black stockings, and the long bushy tail with its white tip."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-lynx.jpg",
+      "caption": "Before: Canada lynx"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-lynx.jpg",
+      "caption": "After: Canada lynx. A round face with a pale ruff, black tufts on the ear tips, long legs on big furred snowshoe paws, and the short black-tipped tail."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-hare.jpg",
+      "caption": "Before: Snowshoe hare"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-hare.jpg",
+      "caption": "After: Snowshoe hare. Sitting hunched on its long hind feet (the snowshoes), the long ears dark at the tips and laid a little back."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-porcupine.jpg",
+      "caption": "Before: Porcupine"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-porcupine.jpg",
+      "caption": "After: Porcupine. A round dark body under raised quills, pale at their tips."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-squirrel.jpg",
+      "caption": "Before: Red squirrel"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-squirrel.jpg",
+      "caption": "After: Red squirrel. The big bushy tail curled up over the back."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-eagle.jpg",
+      "caption": "Before: Bald eagle"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-eagle.jpg",
+      "caption": "After: Bald eagle. The white head and tail, the yellow hooked bill, a dark brown body and broad wings ending in spread primary feathers."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-raven.jpg",
+      "caption": "Before: Common raven"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-raven.jpg",
+      "caption": "After: Common raven. All black, with the heavy bill and wings ending in spread primary feathers."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-gull.jpg",
+      "caption": "Before: Glaucous-winged gull"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-gull.jpg",
+      "caption": "After: Glaucous-winged gull. White with a pale grey back, wingtips a shade darker than the back, and the yellow bill with its red spot."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-goose.jpg",
+      "caption": "Before: Canada goose"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-goose.jpg",
+      "caption": "After: Canada goose. The black neck and head with the white chin strap and the pale breast; in flight the neck is stretched out ahead."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-magpie.jpg",
+      "caption": "Before: Black-billed magpie"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-magpie.jpg",
+      "caption": "After: Black-billed magpie. Black with a white belly and white shoulders, and the long green-blue tail."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-kingfisher.jpg",
+      "caption": "Before: Belted kingfisher"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-kingfisher.jpg",
+      "caption": "After: Belted kingfisher. Blue-grey with a ragged crest, a white collar, the blue band across the breast and the big dagger bill."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-puffin.jpg",
+      "caption": "Before: Tufted puffin"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-puffin.jpg",
+      "caption": "After: Tufted puffin. All black with a white face, a golden tuft curling back from behind each eye, and the thick orange bill."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-ptarmigan.jpg",
+      "caption": "Before: Willow ptarmigan"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-ptarmigan.jpg",
+      "caption": "After: Willow ptarmigan. Mottled brown in summer with white wings and belly, and the red comb over the eye."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-crane.jpg",
+      "caption": "Before: Sandhill crane"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-crane.jpg",
+      "caption": "After: Sandhill crane. Grey with a rusty wash on the back, the red crown, the drooping bustle over the tail, standing on its long dark legs."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-duck.jpg",
+      "caption": "Before: Mallard"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-duck.jpg",
+      "caption": "After: Mallard. The mallard drake swimming with its wings folded: the green head, the white collar, the chestnut breast and grey flanks."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-loon.jpg",
+      "caption": "Before: Common loon"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-loon.jpg",
+      "caption": "After: Common loon. Low in the water with its wings folded: the black head, the white necklace and the chequered black and white back."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-swan.jpg",
+      "caption": "Before: Trumpeter swan"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-swan.jpg",
+      "caption": "After: Trumpeter swan. Swimming with its wings folded, all white, the long neck in an S and the black bill."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-whale.jpg",
+      "caption": "Before: Humpback whale"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-whale.jpg",
+      "caption": "After: Humpback whale. The humpback's long white flippers, its pale knobbed head and the small dorsal fin on its hump; the flukes are under the water here (see the model sheets)."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-orca.jpg",
+      "caption": "Before: Orca"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-orca.jpg",
+      "caption": "After: Orca. The tall dorsal fin, the white patch behind the eye, the white belly sweeping up the flank and the grey saddle."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-sealion.jpg",
+      "caption": "Before: Steller sea lion"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-sealion.jpg",
+      "caption": "After: Steller sea lion. A Steller sea lion bull at the surface: the heavy neck and chest, the long fore flippers, the hind flippers trailing and the whiskers on the muzzle."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-seal.jpg",
+      "caption": "Before: Harbor seal"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-seal.jpg",
+      "caption": "After: Harbor seal. A harbour seal looking up out of the water: the spotted grey head and the big dark eyes."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-otter.jpg",
+      "caption": "Before: Sea otter"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-otter.jpg",
+      "caption": "After: Sea otter. A sea otter floating on its back with its forepaws on its chest, the pale grizzled head and the thick tail."
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/lineup/before/l-beaver.jpg",
+      "caption": "Before: Beaver"
+     },
+     "after": {
+      "file": "a2r/lineup/after/l-beaver.jpg",
+      "caption": "After: Beaver. Swimming low: the round head with small ears, the orange incisors and the flat paddle tail."
+     }
+    }
+   ]
+  },
+  {
+   "id": "birds",
+   "kicker": "Birds",
+   "title": "Wings folded at rest, necks out in flight",
+   "html": "<p>Birds now have two sets of wings: open wings for flight and wings folded along the body for rest, with the legs of a perched or standing bird. The shader shows one set or the other from what the bird is doing: swimming, perching, standing, walking and hopping birds fold their wings (before, a swimming duck showed its flight wings lying open on the water).</p><p>In flight, the five long-necked birds stretch their necks out: the neck swings forward from its base and the head is carried to its end, staying level, so the bill points ahead. The crane trails its legs. As these birds fly: the sandhill crane (<a href=\"https://allaboutbirds.org/guide/Sandhill_Crane/id\">All About Birds</a>), the trumpeter swan (<a href=\"https://allaboutbirds.org/guide/Trumpeter_Swan/id\">All About Birds</a>), the Canada goose (<a href=\"https://www.chesapeakebay.net/discover/field-guide/entry/canada-goose\">Chesapeake Bay Program</a>); the common loon flies hunchbacked with its head held low (<a href=\"https://www.hww.ca/wildlife/birds/loons/\">Hinterland Who&#x27;s Who</a>), which the loon's forward-leaning neck gives too.</p><p>Two species now look like the ones the game names in its photo album: the glaucous-winged gull has grey wingtips, a shade darker than its back, not the black ones of most gulls (<a href=\"https://allaboutbirds.org/guide/Glaucous-winged_Gull/overview\">All About Birds</a>); the tufted puffin is all black with a white face, yellow tufts curling back over the nape, a thick orange bill and orange feet (<a href=\"https://audubon.org/field-guide/bird/tufted-puffin\">National Audubon Society</a>).</p>",
+   "figs": [
+    {
+     "file": "a2r/sheets/flight.png",
+     "caption": "The twelve birds in their flight pose, as the shader places them: crane, mallard, eagle, goose; gull, kingfisher, loon, magpie; ptarmigan, puffin, raven, swan",
+     "w": 1000
+    }
+   ]
+  },
+  {
+   "id": "trees",
+   "kicker": "Trees",
+   "title": "Birch, aspen and poplar crowns without their facets",
+   "html": "<p>A broadleaf crown is a set of clumps. Close up, the birch's and the poplar's clumps are now 80-sided balls instead of 20-sided blocks (the aspen's close clumps had 80 sides already, but were lit facet by facet); further off every clump keeps its 20 sides, which its outline does not show at that distance, but is shaded as a ball. Every clump is lit by its place in the crown (its outside bright, its inside dark) and by its own round shape, and a pattern of leaves is laid over it from the pebble channel of the ground's detail texture, which is already in memory, read in the tree's own frame so it sways with the leaves. The pattern stays off the bark (told apart by its colour, as the bark's shading already was).</p><p>The shading depends only on where a vertex is, so the faces that meet at a vertex share it: the crowns are drawn from fewer vertices than before, the close ones from more triangles. The close bands were shortened a little (birch 50 \u2192 45 m, poplar 75 \u2192 66 m) and the poplar's inner clumps, mostly hidden, keep 20 sides.</p><div class=\"tablewrap\"><table><thead><tr><th>Version</th><th class=\"n\">Before: triangles</th><th class=\"n\">vertices</th><th class=\"n\">After: triangles</th><th class=\"n\">vertices</th></tr></thead><tbody><tr><td data-label=\"Version\">Paper birch, close (to 45 m; 50 m before)</td><td class=\"n\" data-label=\"Before: triangles\">556</td><td class=\"n\" data-label=\"vertices\">1\u00a0668</td><td class=\"n\" data-label=\"After: triangles\">1\u00a0156</td><td class=\"n\" data-label=\"vertices\">906</td></tr><tr><td data-label=\"Version\">Paper birch, middle distance (to 95 m)</td><td class=\"n\" data-label=\"Before: triangles\">204</td><td class=\"n\" data-label=\"vertices\">612</td><td class=\"n\" data-label=\"After: triangles\">204</td><td class=\"n\" data-label=\"vertices\">202</td></tr><tr><td data-label=\"Version\">Paper birch, far off</td><td class=\"n\" data-label=\"Before: triangles\">14</td><td class=\"n\" data-label=\"vertices\">42</td><td class=\"n\" data-label=\"After: triangles\">14</td><td class=\"n\" data-label=\"vertices\">42</td></tr><tr><td data-label=\"Version\">Balsam poplar, close (to 66 m; 75 m before)</td><td class=\"n\" data-label=\"Before: triangles\">812</td><td class=\"n\" data-label=\"vertices\">2\u00a0436</td><td class=\"n\" data-label=\"After: triangles\">1\u00a0712</td><td class=\"n\" data-label=\"vertices\">1\u00a0254</td></tr><tr><td data-label=\"Version\">Balsam poplar, middle distance (to 180 m)</td><td class=\"n\" data-label=\"Before: triangles\">144</td><td class=\"n\" data-label=\"vertices\">432</td><td class=\"n\" data-label=\"After: triangles\">144</td><td class=\"n\" data-label=\"vertices\">98</td></tr><tr><td data-label=\"Version\">Balsam poplar, far off</td><td class=\"n\" data-label=\"Before: triangles\">14</td><td class=\"n\" data-label=\"vertices\">42</td><td class=\"n\" data-label=\"After: triangles\">14</td><td class=\"n\" data-label=\"vertices\">42</td></tr><tr><td data-label=\"Version\">Quaking aspen, close (to 55 m)</td><td class=\"n\" data-label=\"Before: triangles\">876</td><td class=\"n\" data-label=\"vertices\">2\u00a0628</td><td class=\"n\" data-label=\"After: triangles\">876</td><td class=\"n\" data-label=\"vertices\">754</td></tr><tr><td data-label=\"Version\">Quaking aspen, middle distance (to 115 m)</td><td class=\"n\" data-label=\"Before: triangles\">80</td><td class=\"n\" data-label=\"vertices\">240</td><td class=\"n\" data-label=\"After: triangles\">80</td><td class=\"n\" data-label=\"vertices\">78</td></tr><tr><td data-label=\"Version\">Quaking aspen, far off</td><td class=\"n\" data-label=\"Before: triangles\">14</td><td class=\"n\" data-label=\"vertices\">42</td><td class=\"n\" data-label=\"After: triangles\">14</td><td class=\"n\" data-label=\"vertices\">42</td></tr><tr><td data-label=\"Version\">Bush, close (to 40 m)</td><td class=\"n\" data-label=\"Before: triangles\">812</td><td class=\"n\" data-label=\"vertices\">2\u00a0436</td><td class=\"n\" data-label=\"After: triangles\">812</td><td class=\"n\" data-label=\"vertices\">2\u00a0436</td></tr><tr><td data-label=\"Version\">Bush, further off (to 160 m)</td><td class=\"n\" data-label=\"Before: triangles\">80</td><td class=\"n\" data-label=\"vertices\">240</td><td class=\"n\" data-label=\"After: triangles\">80</td><td class=\"n\" data-label=\"vertices\">240</td></tr></tbody></table></div><p class=\"note\">Counted from the builders in <code>src/world/scatter.js</code> before and after. The far versions and the bushes' shapes are unchanged; the bushes are shaded a little smoother.</p>",
+   "pairs": [
+    {
+     "before": {
+      "file": "a2r/crops/bend-crowns-before.jpg",
+      "caption": "Before: balsam poplars at Salmon Bend, 1 in the afternoon"
+     },
+     "after": {
+      "file": "a2r/crops/bend-crowns-after.jpg",
+      "caption": "After: the crowns as round clumps, each lit on top and shaded beneath"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/crops/forest-crowns-before.jpg",
+      "caption": "Before: a paper birch in the forest, 10:30 in the morning"
+     },
+     "after": {
+      "file": "a2r/crops/forest-crowns-after.jpg",
+      "caption": "After: finer clumps with a pattern of leaves; the spruce unchanged"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/crops/aspen-crowns-before.jpg",
+      "caption": "Before: aspens and birches near Hotrod Landing, 11 in the morning"
+     },
+     "after": {
+      "file": "a2r/crops/aspen-crowns-after.jpg",
+      "caption": "After: the same crowns without their flat facets"
+     }
+    }
+   ]
+  },
+  {
+   "id": "mountains",
+   "kicker": "Mountains",
+   "title": "Far rock without the blocky staircase",
+   "html": "<p>Between 140 and 420 m, the mountains' rock gets crags and gullies tens of metres across, more than the ground's mesh carries, as a bump: a height read from a texture, lit per pixel by its slope. The slope is worked out once for each 2 by 2 block of pixels (<a href=\"https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/ddx-coarse\">Microsoft, ddx_coarse</a>), so a height that changed sharply within a block lit whole blocks light or dark: a staircase of squares over every far peak.</p><p>The crags and gullies are now read from blurred levels of the same texture (a mipmap bias of 3), whose heights change smoothly within a block. The sharp grain the bump lost is put back as colour, which the texture's filtering handles cleanly, and steep rock gets faint streaks down it from the same texture stretched tall. It is the same texture: the crags and gullies are the same two reads as before, and two reads are new: one for the grain, on all ground beyond 140 m, and one for the streaks, wherever the ground is rock.</p>",
+   "pairs": [
+    {
+     "before": {
+      "file": "a2r/crops/bend-peak-before.jpg",
+      "caption": "Before: the peak behind Salmon Bend, a staircase of light and dark squares"
+     },
+     "after": {
+      "file": "a2r/crops/bend-peak-after.jpg",
+      "caption": "After: crags and gullies lit smoothly, the rock's grain kept as colour"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/crops/massif-before.jpg",
+      "caption": "Before: the massif from Caribou Tundra, 10 in the morning"
+     },
+     "after": {
+      "file": "a2r/crops/massif-after.jpg",
+      "caption": "After: the same slopes without the square steps"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/crops/glacier-before.jpg",
+      "caption": "Before: the mountains from the glacier, 1 in the afternoon"
+     },
+     "after": {
+      "file": "a2r/crops/glacier-after.jpg",
+      "caption": "After: smooth crags, grain and faint streaks down the steep rock"
+     }
+    }
+   ]
+  },
+  {
+   "id": "campfire",
+   "kicker": "Campfires",
+   "title": "Stones, ash and split logs",
+   "html": "<p>The four campfires (Hotrod Landing, Salmon Bend, Bear Falls and the glacier) are part of the props' merged meshes, so the new stones and logs add triangles but no draw call. The fire's flames, smoke and sparks are unchanged.</p>",
+   "pairs": [
+    {
+     "before": {
+      "file": "a2r/fire/before.jpg",
+      "caption": "Before: the campfire at Hotrod Landing, 10:30 in the morning"
+     },
+     "after": {
+      "file": "a2r/fire/after.jpg",
+      "caption": "After: the same fire from the same place"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/fire/before-zoom.jpg",
+      "caption": "Before, closer: nine dodecahedron stones and four sticks"
+     },
+     "after": {
+      "file": "a2r/fire/after-zoom.jpg",
+      "caption": "After, closer: rounded field stones sooted toward the fire, pale ash, coals, a teepee of split logs charred at the top, a half-burnt log"
+     }
+    }
+   ]
+  },
+  {
+   "id": "views",
+   "kicker": "Before and after",
+   "title": "The fifteen fixed views",
+   "html": "<p>The fifteen fixed views from <code>tools/scenarios/gfx-views.json</code>, both builds: the same places and hours with the clock stopped, the same random numbers, High quality at 800 by 450, no cloud shadows. Animals and fish move between runs, so the ones in view are not always the same.</p><p class=\"note\">Two pictures were taken again. The previous build's night came out moonless in its first run and moonlit when the same view was taken again on the same build, as in the final build's run; the moonlit one is shown, so both sides have the same sky. The final build's Moose Lake at sunset first showed another place in the water: the machine was running four tests at once, no frame was drawn in the three seconds the view waits, and the water's reflection was made from where the camera had been. Taken again it reflects the lake's own shore, and the scenario now also waits for three of the game's frames before it makes the reflection.</p>",
+   "pairs": [
+    {
+     "before": {
+      "file": "a2r/views/before/gv-01-landing-morning.jpg",
+      "caption": "Before: Hotrod Landing at 7:12 in the morning, across the lake"
+     },
+     "after": {
+      "file": "a2r/views/after/gv-01-landing-morning.jpg",
+      "caption": "After: the broadleaf crowns across the lake in round clumps instead of flat facets; the peaks, sky and water as before"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/views/before/gv-02-bend-noon.jpg",
+      "caption": "Before: Salmon Bend at 1 in the afternoon"
+     },
+     "after": {
+      "file": "a2r/views/after/gv-02-bend-noon.jpg",
+      "caption": "After: the poplars' crowns as round clumps lit on top and shaded beneath, and the peak behind them without its staircase of squares"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/views/before/gv-03-forest.jpg",
+      "caption": "Before: In the forest at 10:30 in the morning"
+     },
+     "after": {
+      "file": "a2r/views/after/gv-03-forest.jpg",
+      "caption": "After: the birch crowns in finer, softly shaded clumps with a pattern of leaves; the spruce, the ground and the light unchanged"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/views/before/gv-04-tundra-evening.jpg",
+      "caption": "Before: Caribou Tundra at 7:36 in the evening"
+     },
+     "after": {
+      "file": "a2r/views/after/gv-04-tundra-evening.jpg",
+      "caption": "After: little to see: the range is mostly beyond 420 m, where the rock was not changed; the road, the haze and the sky as before"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/views/before/gv-05-moose-sunset.jpg",
+      "caption": "Before: Moose Lake with the sun low, 9:18 in the evening"
+     },
+     "after": {
+      "file": "a2r/views/after/gv-05-moose-sunset.jpg",
+      "caption": "After: the slopes of the range across the lake smoother; the reflection in the water as before (this picture was taken again: see the note above)"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/views/before/gv-06-falls.jpg",
+      "caption": "Before: Bear Falls at 10:30 in the morning"
+     },
+     "after": {
+      "file": "a2r/views/after/gv-06-falls.jpg",
+      "caption": "After: the falls, the cliffs and the powerhouse as before: their rock is modelled, not the ground's"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/views/before/gv-07-night.jpg",
+      "caption": "Before: Hotrod Landing at 1 at night"
+     },
+     "after": {
+      "file": "a2r/views/after/gv-07-night.jpg",
+      "caption": "After: the same moonlit night (the before picture was taken again: see the note above); the crowns across the lake rounder"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/views/before/gv-08-massif.jpg",
+      "caption": "Before: The massif from Caribou Tundra at 10 in the morning"
+     },
+     "after": {
+      "file": "a2r/views/after/gv-08-massif.jpg",
+      "caption": "After: the massif's rock without the dark checkerboard of square steps: smooth crags and gullies with the rock's grain"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/views/before/gv-09-glacier.jpg",
+      "caption": "Before: The mountains from the glacier at 1 in the afternoon"
+     },
+     "after": {
+      "file": "a2r/views/after/gv-09-glacier.jpg",
+      "caption": "After: the slope beside the ice without its speckle of dark squares; faint streaks down the steep rock"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/views/before/gv-10-aspen.jpg",
+      "caption": "Before: Aspens and birches near the landing at 11 in the morning"
+     },
+     "after": {
+      "file": "a2r/views/after/gv-10-aspen.jpg",
+      "caption": "After: every crown in round clumps with a pattern of leaves; the trunks unchanged"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/views/before/gv-11-blackbear.jpg",
+      "caption": "Before: A black bear at 10:30 in the morning"
+     },
+     "after": {
+      "file": "a2r/views/after/gv-11-blackbear.jpg",
+      "caption": "After: the bear's rounded body, level back and tan muzzle"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/views/before/gv-12-moose.jpg",
+      "caption": "Before: A moose at Moose Lake at 9:30 in the morning"
+     },
+     "after": {
+      "file": "a2r/views/after/gv-12-moose.jpg",
+      "caption": "After: the moose's high shoulders, long legs and palmate antlers; the birches behind in round clumps"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/views/before/gv-13-hotrod.jpg",
+      "caption": "Before: The hot rod at 10:30 in the morning"
+     },
+     "after": {
+      "file": "a2r/views/after/gv-13-hotrod.jpg",
+      "caption": "After: the car as before; the crowns along the shore rounder"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/views/before/gv-14-hands-rod.jpg",
+      "caption": "Before: The hands and the rod at Salmon Bend at 1 in the afternoon"
+     },
+     "after": {
+      "file": "a2r/views/after/gv-14-hands-rod.jpg",
+      "caption": "After: the hands and rod as before; the poplars across the water in round clumps"
+     }
+    },
+    {
+     "before": {
+      "file": "a2r/views/before/gv-15-trading-post.jpg",
+      "caption": "Before: The Kenai Trading Post at 10:30 in the morning"
+     },
+     "after": {
+      "file": "a2r/views/after/gv-15-trading-post.jpg",
+      "caption": "After: the building as before; the crowns behind it rounder"
+     }
+    }
+   ]
+  },
+  {
+   "id": "load",
+   "kicker": "Load",
+   "title": "What it costs: draw calls, triangles, vertices, memory, shaders",
+   "html": "<p>From the budget scenario (<code>tools/scenarios/gfx-budget.json</code>, extended to split the count by kind and pass): one frame's draw calls and triangles at eight places at 10:30 in the morning, the view and both shadow maps together. The previous build was measured 6 times and the final build 3 times; each number is the mean.</p><div class=\"tablewrap\"><table><thead><tr><th>Place</th><th class=\"n\">Draw calls before</th><th class=\"n\">after</th><th class=\"n\">Million triangles before</th><th class=\"n\">after</th><th class=\"n\">Change</th></tr></thead><tbody><tr><td data-label=\"Place\">Hotrod Landing</td><td class=\"n\" data-label=\"Draw calls before\">269.3</td><td class=\"n\" data-label=\"after\">248.3</td><td class=\"n\" data-label=\"Million triangles before\">1.330</td><td class=\"n\" data-label=\"after\">1.381</td><td class=\"n\" data-label=\"Change\">+3.8%</td></tr><tr><td data-label=\"Place\">Salmon Bend</td><td class=\"n\" data-label=\"Draw calls before\">280.7</td><td class=\"n\" data-label=\"after\">273.0</td><td class=\"n\" data-label=\"Million triangles before\">1.382</td><td class=\"n\" data-label=\"after\">1.501</td><td class=\"n\" data-label=\"Change\">+8.6%</td></tr><tr><td data-label=\"Place\">Bear Falls</td><td class=\"n\" data-label=\"Draw calls before\">278.5</td><td class=\"n\" data-label=\"after\">260.7</td><td class=\"n\" data-label=\"Million triangles before\">1.294</td><td class=\"n\" data-label=\"after\">1.347</td><td class=\"n\" data-label=\"Change\">+4.1%</td></tr><tr><td data-label=\"Place\">The glacier</td><td class=\"n\" data-label=\"Draw calls before\">197.7</td><td class=\"n\" data-label=\"after\">180.7</td><td class=\"n\" data-label=\"Million triangles before\">0.988</td><td class=\"n\" data-label=\"after\">0.986</td><td class=\"n\" data-label=\"Change\">\u22120.2%</td></tr><tr><td data-label=\"Place\">Moose Lake</td><td class=\"n\" data-label=\"Draw calls before\">239.5</td><td class=\"n\" data-label=\"after\">224.3</td><td class=\"n\" data-label=\"Million triangles before\">1.142</td><td class=\"n\" data-label=\"after\">1.181</td><td class=\"n\" data-label=\"Change\">+3.5%</td></tr><tr><td data-label=\"Place\">Halibut Pier</td><td class=\"n\" data-label=\"Draw calls before\">130.5</td><td class=\"n\" data-label=\"after\">108.3</td><td class=\"n\" data-label=\"Million triangles before\">0.565</td><td class=\"n\" data-label=\"after\">0.583</td><td class=\"n\" data-label=\"Change\">+3.2%</td></tr><tr><td data-label=\"Place\">Caribou Tundra</td><td class=\"n\" data-label=\"Draw calls before\">212.0</td><td class=\"n\" data-label=\"after\">200.0</td><td class=\"n\" data-label=\"Million triangles before\">1.035</td><td class=\"n\" data-label=\"after\">1.043</td><td class=\"n\" data-label=\"Change\">+0.7%</td></tr><tr><td data-label=\"Place\">The forest</td><td class=\"n\" data-label=\"Draw calls before\">332.3</td><td class=\"n\" data-label=\"after\">321.0</td><td class=\"n\" data-label=\"Million triangles before\">1.763</td><td class=\"n\" data-label=\"after\">1.895</td><td class=\"n\" data-label=\"Change\">+7.5%</td></tr><tr><td data-label=\"Place\"><b>All eight</b></td><td class=\"n\" data-label=\"Draw calls before\"><b>1940.5</b></td><td class=\"n\" data-label=\"after\"><b>1816.3</b></td><td class=\"n\" data-label=\"Million triangles before\"><b>9.499</b></td><td class=\"n\" data-label=\"after\"><b>9.918</b></td><td class=\"n\" data-label=\"Change\"><b>+4.4%</b></td></tr></tbody></table></div><h3>Where the triangles and vertices go</h3><p>Summed over the eight places, from the 3 and 3 runs that split the count. Vertices are the least the vertex shader runs: a mesh's distinct vertices for each copy drawn (for a mesh without an index, as the old animals and crowns were, that is three per triangle).</p><div class=\"tablewrap\"><table><thead><tr><th>Kind and pass</th><th class=\"n\">Triangles before</th><th class=\"n\">after</th><th class=\"n\">Vertices before</th><th class=\"n\">after</th></tr></thead><tbody><tr><td data-label=\"Kind and pass\">The animals and birds, in the view</td><td class=\"n\" data-label=\"Triangles before\">139\u00a0895</td><td class=\"n\" data-label=\"after\">235\u00a0266</td><td class=\"n\" data-label=\"Vertices before\">417\u00a0714</td><td class=\"n\" data-label=\"after\">131\u00a0265</td></tr><tr><td data-label=\"Kind and pass\">The animals and birds, in the shadow maps</td><td class=\"n\" data-label=\"Triangles before\">182\u00a0104</td><td class=\"n\" data-label=\"after\">330\u00a0308</td><td class=\"n\" data-label=\"Vertices before\">540\u00a0395</td><td class=\"n\" data-label=\"after\">188\u00a0086</td></tr><tr><td data-label=\"Kind and pass\">Birch, aspen and poplar, in the view</td><td class=\"n\" data-label=\"Triangles before\">299\u00a0736</td><td class=\"n\" data-label=\"after\">357\u00a0112</td><td class=\"n\" data-label=\"Vertices before\">899\u00a0208</td><td class=\"n\" data-label=\"after\">563\u00a0486</td></tr><tr><td data-label=\"Kind and pass\">Birch, aspen and poplar, in the shadow maps</td><td class=\"n\" data-label=\"Triangles before\">599\u00a0472</td><td class=\"n\" data-label=\"after\">714\u00a0224</td><td class=\"n\" data-label=\"Vertices before\">1\u00a0798\u00a0416</td><td class=\"n\" data-label=\"after\">1\u00a0126\u00a0972</td></tr><tr><td data-label=\"Kind and pass\">Props (the campfires among them), in the view</td><td class=\"n\" data-label=\"Triangles before\">86\u00a0419</td><td class=\"n\" data-label=\"after\">94\u00a0051</td><td class=\"n\" data-label=\"Vertices before\">259\u00a0085</td><td class=\"n\" data-label=\"after\">281\u00a0981</td></tr><tr><td data-label=\"Kind and pass\">Props (the campfires among them), in the shadow maps</td><td class=\"n\" data-label=\"Triangles before\">211\u00a0256</td><td class=\"n\" data-label=\"after\">231\u00a0608</td><td class=\"n\" data-label=\"Vertices before\">632\u00a0271</td><td class=\"n\" data-label=\"after\">693\u00a0327</td></tr><tr><td data-label=\"Kind and pass\">Everything else, both passes</td><td class=\"n\" data-label=\"Triangles before\">8\u00a0009\u00a0283</td><td class=\"n\" data-label=\"after\">7\u00a0955\u00a0423</td><td class=\"n\" data-label=\"Vertices before\">14\u00a0762\u00a0020</td><td class=\"n\" data-label=\"after\">14\u00a0732\u00a0459</td></tr></tbody></table></div><p class=\"note\">\"Everything else\" moves from run to run by itself: the ground in the water's reflection alone was 265\u00a0557 triangles before and 189\u00a0781 after over the eight places, with no change to it in this round; it depends on how far the reflection's ground has streamed in when the frame is counted.</p><h3>Memory, shaders and the game's file</h3><div class=\"tablewrap\"><table><thead><tr><th>Measure</th><th class=\"n\">Before</th><th class=\"n\">After</th><th class=\"n\">Change</th></tr></thead><tbody><tr><td data-label=\"Measure\">Textures the materials use</td><td class=\"n\" data-label=\"Before\">87</td><td class=\"n\" data-label=\"After\">87</td><td class=\"n\" data-label=\"Change\">0</td></tr><tr><td data-label=\"Measure\">Their memory with mipmaps, MB</td><td class=\"n\" data-label=\"Before\">106.27</td><td class=\"n\" data-label=\"After\">106.27</td><td class=\"n\" data-label=\"Change\">0.00</td></tr><tr><td data-label=\"Measure\">Textures the renderer holds</td><td class=\"n\" data-label=\"Before\">111 to 112</td><td class=\"n\" data-label=\"After\">111</td><td class=\"n\" data-label=\"Change\">none</td></tr><tr><td data-label=\"Measure\">Geometries the renderer holds</td><td class=\"n\" data-label=\"Before\">698 to 729</td><td class=\"n\" data-label=\"After\">720 to 729</td><td class=\"n\" data-label=\"Change\">within the runs' spread</td></tr><tr><td data-label=\"Measure\">Shader programs built</td><td class=\"n\" data-label=\"Before\">102</td><td class=\"n\" data-label=\"After\">103</td><td class=\"n\" data-label=\"Change\">+1</td></tr><tr><td data-label=\"Measure\">Script memory, MB</td><td class=\"n\" data-label=\"Before\">190</td><td class=\"n\" data-label=\"After\">190</td><td class=\"n\" data-label=\"Change\">0</td></tr><tr><td data-label=\"Measure\">The game's file, KB</td><td class=\"n\" data-label=\"Before\">2\u00a0911</td><td class=\"n\" data-label=\"After\">2\u00a0951</td><td class=\"n\" data-label=\"Change\">+40</td></tr><tr><td data-label=\"Measure\">The same compressed (gzip), KB</td><td class=\"n\" data-label=\"Before\">1\u00a0322</td><td class=\"n\" data-label=\"After\">1\u00a0336</td><td class=\"n\" data-label=\"Change\">+14</td></tr></tbody></table></div><p class=\"note\">The renderer's textures and geometries move by a few between runs of the same build, as things are made when first needed (one run of the previous build held one more texture). The far versions of the animals add 32 small geometries, within that spread. The one more shader program is the shadow material that moves the animals' limbs, shared by every herd. The leaf pattern reads the ground's detail texture, already in memory; the ground's shader reads its rock texture twice more (the grain on ground beyond 140 m, the streaks on rock). The game's file grows by the code that builds the new models; the models themselves are built when the game starts, as before.</p>"
+  },
+  {
+   "id": "frames",
+   "kicker": "Frame time and loading",
+   "title": "Timed in turns against the previous build",
+   "html": "<p>The frame-time tour of both builds in turns with <code>tools/perf-compare.mjs</code>: 6 rounds of each comparison, each build first in half of them, every run a fresh browser and the whole tour: five stretches of 90 frames each (turning on the spot at Hotrod Landing in the afternoon, a walk in the forest, a drive along a road, Bear Falls with the Tesla memorial, and the observatory at night). Each run's average is fitted on its round, its place in the round and its build, and a difference counts only when its 95% interval leaves out zero.</p><p>The first two rows time the processor's side of each frame: the game's update and the renderer issuing its draw calls. The third has each frame really drawn by the test machine's software renderer, which does the graphics chip's work (vertices and pixels) on the processor: a rough stand-in for a graphics chip's load, not for its speed. It takes about 2 seconds a frame, so its tour has 16 frames a stretch instead of 90 (a tour of 90 could not finish inside the 15 minutes the tool allows it).</p><div class=\"tablewrap\"><table><thead><tr><th>Measure</th><th class=\"n\">Before, ms a frame</th><th class=\"n\">After</th><th class=\"n\">Difference (95% interval)</th><th>Reading</th></tr></thead><tbody><tr><td data-label=\"Measure\">Processor's side, 320 by 180</td><td class=\"n\" data-label=\"Before, ms a frame\">8.22</td><td class=\"n\" data-label=\"After\">7.71</td><td class=\"n\" data-label=\"Difference (95% interval)\">\u22120.50 (\u22120.92 to \u22120.08)</td><td data-label=\"Reading\">faster</td></tr><tr><td data-label=\"Measure\">Processor's side, 844 by 390 at 2 pixels a point</td><td class=\"n\" data-label=\"Before, ms a frame\">10.79</td><td class=\"n\" data-label=\"After\">10.66</td><td class=\"n\" data-label=\"Difference (95% interval)\">\u22120.13 (\u22120.77 to +0.51)</td><td data-label=\"Reading\">no clear difference</td></tr><tr><td data-label=\"Measure\">Software renderer's drawing, 320 by 180</td><td class=\"n\" data-label=\"Before, ms a frame\">1\u00a0919</td><td class=\"n\" data-label=\"After\">1\u00a0998</td><td class=\"n\" data-label=\"Difference (95% interval)\">+79 (+3 to +155), +4.1%</td><td data-label=\"Reading\">slower</td></tr></tbody></table></div><h3>The drawing, stretch by stretch</h3><p>The software renderer's time in each stretch of the drawn tour, averaged over the six runs of each build, with the triangles of a frame in the middle of the stretch. The extra time is spread over every stretch, the observatory at night among them, where the frame has fewer triangles than before. So at least part of it is work done for each pixel rather than for each triangle, most likely the new texture reads (the leaf pattern on the broadleaf crowns, the grain on far ground and the streaks on rock). Switching each read off in turn at the observatory changed the drawing by less than the machine itself drifted while it was measured (175 ms between two measurements of the unchanged shaders, of about 2\u00a0300), so no one read stands out.</p><div class=\"tablewrap\"><table><thead><tr><th>Stretch</th><th class=\"n\">Before, ms a frame</th><th class=\"n\">After</th><th class=\"n\">Change</th><th class=\"n\">Thousand triangles before</th><th class=\"n\">after</th></tr></thead><tbody><tr><td data-label=\"Stretch\">Turning on the spot at Hotrod Landing, afternoon</td><td class=\"n\" data-label=\"Before, ms a frame\">1\u00a0834</td><td class=\"n\" data-label=\"After\">1\u00a0880</td><td class=\"n\" data-label=\"Change\">+2.5%</td><td class=\"n\" data-label=\"Thousand triangles before\">1\u00a0221</td><td class=\"n\" data-label=\"after\">1\u00a0284</td></tr><tr><td data-label=\"Stretch\">A walk in the forest</td><td class=\"n\" data-label=\"Before, ms a frame\">1\u00a0808</td><td class=\"n\" data-label=\"After\">1\u00a0896</td><td class=\"n\" data-label=\"Change\">+4.9%</td><td class=\"n\" data-label=\"Thousand triangles before\">1\u00a0305</td><td class=\"n\" data-label=\"after\">1\u00a0360</td></tr><tr><td data-label=\"Stretch\">A drive along a road</td><td class=\"n\" data-label=\"Before, ms a frame\">2\u00a0570</td><td class=\"n\" data-label=\"After\">2\u00a0702</td><td class=\"n\" data-label=\"Change\">+5.1%</td><td class=\"n\" data-label=\"Thousand triangles before\">1\u00a0500</td><td class=\"n\" data-label=\"after\">1\u00a0547</td></tr><tr><td data-label=\"Stretch\">Bear Falls and the Tesla memorial</td><td class=\"n\" data-label=\"Before, ms a frame\">1\u00a0915</td><td class=\"n\" data-label=\"After\">1\u00a0984</td><td class=\"n\" data-label=\"Change\">+3.6%</td><td class=\"n\" data-label=\"Thousand triangles before\">1\u00a0378</td><td class=\"n\" data-label=\"after\">1\u00a0435</td></tr><tr><td data-label=\"Stretch\">The observatory at night</td><td class=\"n\" data-label=\"Before, ms a frame\">1\u00a0469</td><td class=\"n\" data-label=\"After\">1\u00a0527</td><td class=\"n\" data-label=\"Change\">+4.0%</td><td class=\"n\" data-label=\"Thousand triangles before\">903</td><td class=\"n\" data-label=\"after\">854</td></tr></tbody></table></div><h3>Loading</h3><p>Every model, crown and texture is built in code while the game loads, the animals' new far versions among them, so a heavier build shows here first. Timed the same way with <code>tools/load-compare.mjs</code>: 6 rounds, each run a fresh browser at 320 by 180 that opens the game and notes when it is ready, then starts a new game and draws its first three frames.</p><div class=\"tablewrap\"><table><thead><tr><th>Measure</th><th class=\"n\">Before, ms</th><th class=\"n\">After</th><th class=\"n\">Difference (95% interval)</th><th>Reading</th></tr></thead><tbody><tr><td data-label=\"Measure\">From opening the page until the game is ready</td><td class=\"n\" data-label=\"Before, ms\">14\u00a0180</td><td class=\"n\" data-label=\"After\">14\u00a0072</td><td class=\"n\" data-label=\"Difference (95% interval)\">\u2212108 (\u2212663 to +447)</td><td data-label=\"Reading\">no clear difference</td></tr><tr><td data-label=\"Measure\">New game</td><td class=\"n\" data-label=\"Before, ms\">440</td><td class=\"n\" data-label=\"After\">389</td><td class=\"n\" data-label=\"Difference (95% interval)\">\u221251 (\u2212176 to +73)</td><td data-label=\"Reading\">no clear difference</td></tr><tr><td data-label=\"Measure\">The first three frames after it</td><td class=\"n\" data-label=\"Before, ms\">99</td><td class=\"n\" data-label=\"After\">87</td><td class=\"n\" data-label=\"Difference (95% interval)\">\u221211 (\u221250 to +28)</td><td data-label=\"Reading\">no clear difference</td></tr></tbody></table></div>"
+  },
+  {
+   "id": "audit",
+   "kicker": "Audit",
+   "title": "What the audit found, and what was fixed",
+   "html": "<h3>Every shader built, without an error</h3><p>A development build checks each shader program as it is first used. Both builds were loaded, everything in the world and the hands compiled and drawn once at High, Medium and Low in turn, and frames drawn at morning, sunset, night, noon and in rain (<code>tools/shader-check.mjs</code>): 254 programs before with 0 failing, 255 after with 0 failing (the one more is the animals' shadow material). The browser printed 95 and 1 errors or warnings: in both runs, that the software renderer cannot compile shaders in parallel; in the previous build's run also the warm-up draws it rejected. The browser does not print every such warning: read directly after every draw, the final build has the same rejected draws as the previous one (below).</p><p>With <code>tools/gl-errors.mjs</code> (the same steps, with the browser's error read after every draw): the draws it rejects are the same in both builds, and only in the warm-up draw the game makes once at load, before any shadow map exists: the water reflection's ground and trees and the far ground, drawn in the view instead of in the reflection, with an empty texture where their shadow sampler expects a depth texture. Every one of these meshes is drawn correctly in the frames after it; the warm-up still compiles their programs. It was there before this round.</p><p><b>Before</b></p><div class=\"tablewrap\"><table class=\"text\"><thead><tr><th>Object</th><th>Material</th><th class=\"n\">Draws rejected</th><th>When</th></tr></thead><tbody><tr><td data-label=\"Object\"><code>Scene/reflectionTerrain/Mesh</code></td><td data-label=\"Material\">MeshLambertMaterial</td><td class=\"n\" data-label=\"Draws rejected\">64</td><td data-label=\"When\">high warm-up</td></tr><tr><td data-label=\"Object\"><code>Scene/farTerrain/Mesh</code></td><td data-label=\"Material\">MeshLambertMaterial</td><td class=\"n\" data-label=\"Draws rejected\">5</td><td data-label=\"When\">high warm-up</td></tr><tr><td data-label=\"Object\"><code>Scene/scatter/spruce-reflect</code></td><td data-label=\"Material\">MeshLambertMaterial</td><td class=\"n\" data-label=\"Draws rejected\">5</td><td data-label=\"When\">high warm-up</td></tr><tr><td data-label=\"Object\"><code>Scene/scatter/birch-reflect</code></td><td data-label=\"Material\">MeshLambertMaterial</td><td class=\"n\" data-label=\"Draws rejected\">5</td><td data-label=\"When\">high warm-up</td></tr><tr><td data-label=\"Object\"><code>Scene/scatter/blackSpruce-reflect</code></td><td data-label=\"Material\">MeshLambertMaterial</td><td class=\"n\" data-label=\"Draws rejected\">5</td><td data-label=\"When\">high warm-up</td></tr><tr><td data-label=\"Object\"><code>Scene/scatter/poplar-reflect</code></td><td data-label=\"Material\">MeshLambertMaterial</td><td class=\"n\" data-label=\"Draws rejected\">5</td><td data-label=\"When\">high warm-up</td></tr><tr><td data-label=\"Object\"><code>Scene/scatter/aspen-reflect</code></td><td data-label=\"Material\">MeshLambertMaterial</td><td class=\"n\" data-label=\"Draws rejected\">5</td><td data-label=\"When\">high warm-up</td></tr></tbody></table></div><p><b>After</b></p><div class=\"tablewrap\"><table class=\"text\"><thead><tr><th>Object</th><th>Material</th><th class=\"n\">Draws rejected</th><th>When</th></tr></thead><tbody><tr><td data-label=\"Object\"><code>Scene/reflectionTerrain/Mesh</code></td><td data-label=\"Material\">MeshLambertMaterial</td><td class=\"n\" data-label=\"Draws rejected\">64</td><td data-label=\"When\">high warm-up</td></tr><tr><td data-label=\"Object\"><code>Scene/farTerrain/Mesh</code></td><td data-label=\"Material\">MeshLambertMaterial</td><td class=\"n\" data-label=\"Draws rejected\">5</td><td data-label=\"When\">high warm-up</td></tr><tr><td data-label=\"Object\"><code>Scene/scatter/spruce-reflect</code></td><td data-label=\"Material\">MeshLambertMaterial</td><td class=\"n\" data-label=\"Draws rejected\">5</td><td data-label=\"When\">high warm-up</td></tr><tr><td data-label=\"Object\"><code>Scene/scatter/birch-reflect</code></td><td data-label=\"Material\">MeshLambertMaterial</td><td class=\"n\" data-label=\"Draws rejected\">5</td><td data-label=\"When\">high warm-up</td></tr><tr><td data-label=\"Object\"><code>Scene/scatter/blackSpruce-reflect</code></td><td data-label=\"Material\">MeshLambertMaterial</td><td class=\"n\" data-label=\"Draws rejected\">5</td><td data-label=\"When\">high warm-up</td></tr><tr><td data-label=\"Object\"><code>Scene/scatter/poplar-reflect</code></td><td data-label=\"Material\">MeshLambertMaterial</td><td class=\"n\" data-label=\"Draws rejected\">5</td><td data-label=\"When\">high warm-up</td></tr><tr><td data-label=\"Object\"><code>Scene/scatter/aspen-reflect</code></td><td data-label=\"Material\">MeshLambertMaterial</td><td class=\"n\" data-label=\"Draws rejected\">5</td><td data-label=\"When\">high warm-up</td></tr></tbody></table></div><h3>Regression scenarios on the final build</h3><div class=\"tablewrap\"><table class=\"text\"><thead><tr><th>Scenario</th><th>What it covers</th><th class=\"n\">Pictures</th><th>Result</th></tr></thead><tbody><tr><td data-label=\"Scenario\"><code>shader-switches</code></td><td data-label=\"What it covers\">counts shader changes per frame (0 when nothing switches back and forth)</td><td class=\"n\" data-label=\"Pictures\">0</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>round-smoke</code></td><td data-label=\"What it covers\">save and continue, every screen opened, the memorial&#x27;s plaque, coil and board</td><td class=\"n\" data-label=\"Pictures\">1</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>animals</code></td><td data-label=\"What it covers\">the newer animals and birds posed in front of the camera</td><td class=\"n\" data-label=\"Pictures\">14</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>eagle</code></td><td data-label=\"What it covers\">a bald eagle swooping on a hooked fish and carrying it off</td><td class=\"n\" data-label=\"Pictures\">3</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>hunt</code></td><td data-label=\"What it covers\">the bow drawn on an animal, the arrow, and the kill claimed</td><td class=\"n\" data-label=\"Pictures\">3</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>bear</code></td><td data-label=\"What it covers\">a grizzly at Bear Falls: alert, charging, and after</td><td class=\"n\" data-label=\"Pictures\">4</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>bears-arrows</code></td><td data-label=\"What it covers\">the arrow shop and a bear chipped by an arrow</td><td class=\"n\" data-label=\"Pictures\">2</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>wildlife</code></td><td data-label=\"What it covers\">every species present in the world (a missing one fails it)</td><td class=\"n\" data-label=\"Pictures\">0</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>trees</code></td><td data-label=\"What it covers\">balsam poplar, quaking aspen, black spruce and coastal spruce up close</td><td class=\"n\" data-label=\"Pictures\">4</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>whale</code></td><td data-label=\"What it covers\">humpbacks surfacing in the bay, and an orca attack</td><td class=\"n\" data-label=\"Pictures\">2</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>vistas</code></td><td data-label=\"What it covers\">the volcano, the snow massif, the glacier and a cascade</td><td class=\"n\" data-label=\"Pictures\">5</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>camera</code></td><td data-label=\"What it covers\">the viewfinder, a photo of a catch, the album</td><td class=\"n\" data-label=\"Pictures\">4</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>mountains</code></td><td data-label=\"What it covers\">the mountains from Ruben&#x27;s cabin, Salmon Bend, the north and the Sawtooth</td><td class=\"n\" data-label=\"Pictures\">4</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>water-views</code></td><td data-label=\"What it covers\">the water at every fishing spot</td><td class=\"n\" data-label=\"Pictures\">7</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>areas</code></td><td data-label=\"What it covers\">the geyser, Bear Falls, Mosquito Flats and Shipwreck Cove</td><td class=\"n\" data-label=\"Pictures\">9</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>catch-room</code></td><td data-label=\"What it covers\">every fish species held up whole beside the catch card, on its side and upright</td><td class=\"n\" data-label=\"Pictures\">2</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>travel-lod</code></td><td data-label=\"What it covers\">the ground&#x27;s detail right after a fast travel</td><td class=\"n\" data-label=\"Pictures\">1</td><td data-label=\"Result\">clean</td></tr><tr><td data-label=\"Scenario\"><code>light-views</code></td><td data-label=\"What it covers\">morning, noon, evening, sunset and night light</td><td class=\"n\" data-label=\"Pictures\">7</td><td data-label=\"Result\">clean</td></tr></tbody></table></div><p class=\"note\">Clean: the scenario ran to its end with no page error, failed step, failed picture or error printed by the page.</p><h3>The independent code review</h3><p>A separate review of the whole change looked for defects that would break drawing, animation, shadows, culling, hunting, memory or the tools, and verified each finding against the code before reporting it.</p><div class=\"tablewrap\"><table class=\"text\"><thead><tr><th>Finding</th><th>Severity</th><th>What was done</th></tr></thead><tbody><tr><td data-label=\"Finding\">The whale&#x27;s and the orca&#x27;s flukes and flippers were mirrored with a half turn, which does not mirror a part: one fluke pointed straight back and the other forward through the tail stock, the orca&#x27;s second fluke poked out of its right flank, and the right flipper was raised and swept forward.</td><td data-label=\"Severity\">Visible defect, new in this round</td><td data-label=\"What was done\">Mirrored with a scale of \u22121 across the body instead. Checked in numbers (the two flukes now span the same distance to either side and sweep back by the same amount) and on the model sheet.</td></tr><tr><td data-label=\"Finding\">The fish an eagle steals hung 0.58 m below its belly instead of 0.24 m: the eagle&#x27;s origin moved from its body to its feet, so it could stand on a perch, and the fish was still placed 0.4 m below the origin.</td><td data-label=\"Severity\">Cosmetic, new in this round</td><td data-label=\"What was done\">The fish is placed 0.34 m higher, in the talons just under the belly.</td></tr></tbody></table></div><p>The review also checked, and found correct: every shader text the change inserts against three.js r186&#x27;s own shader pieces (the Lambert and depth shaders); that no two shader variants share one compiled program by mistake; the one shadow material shared by every herd; the culling sphere against sampled poses of all 32 models (legs, heads, tails, wings and necks at their widest swing); that every model stays under 65\u00a0536 vertices and carries every attribute the shader reads; the limb numbers and pivots; the hunting hit zones of all seven species that can be hunted (within about 0.1 m of the old models); that nothing still treats the new models or crowns as unindexed; the flap values every bird state sends; the terrain shader on every quality level; the leaf pattern&#x27;s names against the other patches on the same material; the campfire&#x27;s colours; and the timing tools&#x27; new option.</p><h3>What the pictures and the measurements showed</h3><div class=\"tablewrap\"><table class=\"text\"><thead><tr><th>Found</th><th>What was done</th></tr></thead><tbody><tr><td data-label=\"Found\">The gull had black wingtips; the game names it a glaucous-winged gull, whose wingtips are grey like its back.</td><td data-label=\"What was done\">The wingtips are now a shade darker than the grey back, as the species&#x27; are.</td></tr><tr><td data-label=\"Found\">The first new puffin was a horned puffin (white belly); the game names it a tufted puffin.</td><td data-label=\"What was done\">Rebuilt as a tufted puffin: all black, a white face, golden tufts curling back from behind the eyes, the orange bill and orange feet.</td></tr><tr><td data-label=\"Found\">In flight the goose, swan, crane, mallard and loon kept their necks upright, as when swimming.</td><td data-label=\"What was done\">The neck now swings forward in flight and the head rides on its end, level (two new limb kinds in the shader); the crane trails its legs.</td></tr><tr><td data-label=\"Found\">The campfire&#x27;s ash bed read as a blue disc: a near-black surface lit mostly by the blue sky.</td><td data-label=\"What was done\">Pale wood-ash grey, with black coals on it and soot on the stones&#x27; inner faces.</td></tr><tr><td data-label=\"Found\">The first change to the crowns (each facet lit a little less sharply) was a small improvement only.</td><td data-label=\"What was done\">Finer clumps close up, each clump shaded round inside the crown&#x27;s light, and a leaf pattern.</td></tr><tr><td data-label=\"Found\">The first complete build put each frame&#x27;s triangles up by 7 to 28% at the eight budget places, against a budget of about 10%: the new animals were drawn at full detail however far off, and so were their shadows, and the finer crowns ran out to 180 m.</td><td data-label=\"What was done\">A lighter version of every animal for herds far off, every shadow drawn from it, the finer crowns only in the closest band (birch to 45 m, poplar to 66 m) with the poplar&#x27;s inner clumps coarse, and coarse clumps shaded round beyond. Measured again in the Load section.</td></tr><tr><td data-label=\"Found\">The final build&#x27;s first picture of Moose Lake at sunset showed another place in the water.</td><td data-label=\"What was done\">Not the game, the test: with four tests running at once no frame was drawn in the three seconds the view waits, so the water&#x27;s reflection was made from where the camera had been. Three more runs read where each reflection was made: in the one that went wrong it was the last place, and the reflection was right after the next frames. The views scenario now waits for three of the game&#x27;s frames as well.</td></tr><tr><td data-label=\"Found\">The shader check of the previous build showed the browser rejecting some draws (a texture of the wrong kind for its sampler).</td><td data-label=\"What was done\">Found with a new tool, tools/gl-errors.mjs: only the game&#x27;s warm-up draw at load, which draws the water reflection&#x27;s ground and trees once before any shadow map exists. It was there before this round and nothing is drawn wrongly because of it; see the shader check.</td></tr><tr><td data-label=\"Found\">The drawn timing, with the software renderer drawing every frame, could not finish: at about two seconds a frame, a tour of 90 frames a stretch ran past the 15 minutes the timing tool allows each tour.</td><td data-label=\"What was done\">Timed again with 16 frames a stretch, after one short tour of each build had measured how long a frame takes; see Frame time.</td></tr><tr><td data-label=\"Found\">The README gave the game&#x27;s file as 1.9 MB (690 KB compressed), out of date since the recorded voice was packed in.</td><td data-label=\"What was done\">Corrected to 3.0 MB (about 1.3 MB compressed); this round adds 40 KB of it (see Load).</td></tr></tbody></table></div>"
+  },
+  {
+   "id": "limits",
+   "kicker": "Limits",
+   "title": "What this report cannot show",
+   "html": "<ul><li><b>No real iPhone or iPad was used.</b> The pictures and the timings come from Chromium drawing in software on the test machine. The shapes and colours are the same on any device; how an iPhone's graphics chip handles the extra triangles and texture reads was not measured.</li><li><b>The software renderer's drawing time stands in for a graphics chip's load, not its speed.</b> An iPhone's graphics chip first sorts every triangle of a frame into small tiles of the screen and only then shades them (<a href=\"https://developer.apple.com/documentation/metal/tailor-your-apps-for-apple-gpus-and-tile-based-deferred-rendering\">Apple</a>), so its cost per triangle and per pixel differs from a processor's.</li><li><b>The counts move between runs.</b> Animals walk and fly, and the reflection's ground streams in at its own pace, so one place's triangles varied by up to 47 thousand between runs of the previous build and 41 thousand between runs of the final one. The means of several runs and the total over eight places are steadier than any one number.</li><li><b>A herd is drawn near or far as a whole.</b> While any one of its animals is close, the whole herd is drawn in near detail; a big herd or flock round the player costs more than the eight places show. The worst case is the caribou's herd of up to 20 at 3\u00a0204 triangles each in view.</li><li><b>The smallest difference the timings could see</b> is about 0.42 ms a frame at 320 by 180, 0.64 ms at an iPhone's size and 76 ms in the software renderer, and about 555 ms in the loading time: the half-widths of the 95% intervals. A smaller cost could still be there.</li><li><b>Each species was pictured once in the lineup</b>, in one pose and light; the model sheets show every model from one more side. A fault seen only from another side, or only in motion, would not show here.</li><li><b>Sources were read through web search.</b> curl is blocked for every host in this environment, so the pages below were found and summarised by search, not downloaded in full. To allow hosts: the cloud environment menu in the session's title bar, then Edit, then Network access (a broader level, or Custom with the hosts added under Allowed domains); the steps are at <a href=\"https://code.claude.com/docs/en/cloud-environments#network-access\">https://code.claude.com/docs/en/cloud-environments#network-access</a>.</li></ul>"
+  },
+  {
+   "id": "conclusion",
+   "cls": "conclusion",
+   "kicker": "Conclusion",
+   "title": "What would change this conclusion",
+   "html": "<p><b>The conclusion:</b> the weakest assets look much better for a small, measured cost, all of it on the graphics chip's side: about 4% more drawing time in the software renderer, while the processor's side of a frame is no slower. Over the eight budget places the frame draws 1816 calls where it drew 1940, and 4.4% more triangles (at most 8.6% more at one place), with the same 87 textures in the materials and one more shader program (102 \u2192 103). Timed in turns, the processor's side of a frame is 0.50 ms faster at 320 by 180 and not clearly different (\u22120.13 ms, 95% interval \u22120.77 to +0.51) at an iPhone's size, the software renderer's drawing is 4.1% slower (+79 ms a frame), and loading is not clearly different (\u2212108 ms, 95% interval \u2212663 to +447). This would change if:</p><ul><li><b>An iPhone's graphics chip finds the new work heavier than measured here.</b> The new work is the extra triangles and three new texture reads: one for every pixel of a close or middle-distance birch, aspen or poplar (the leaf pattern), one for every pixel of ground beyond 140 m (the grain) and one for every pixel of rock (the streaks), which cost most where far mountains fill the view. The test that would settle it is the two builds taking turns on the same iPhone, timed with Safari's Web Inspector on its frame timeline, at Salmon Bend and in the forest, where the crowns add most, and at the glacier, where rock fills the view.</li><li><b>Players spend their time beside big herds and flocks.</b> A herd with one animal close is drawn in near detail entirely; if that shows in the frame time, the next step is a near and a far copy of each herd, which costs a draw call more for a species seen both near and far.</li><li><b>The switch from near to far detail is seen.</b> It happens where a sphere round the whole animal fills about 6% of the view's height. Pictured still at that distance, the two versions are hard to tell apart (the last picture under Animals and birds): between 2 and 42 of the 1\u00a0536 pixels in a box round each animal's middle change by more than a tenth of their brightness. In motion a switch could still catch the eye; if it does, the distance can be raised, at a cost in triangles.</li><li><b>The new crowns or animals look wrong in a light the views do not show.</b> The fifteen views cover morning, noon, evening, sunset and night, and the regression scenarios add close looks at the trees, the animals, the hunt and the bear; a dusk under heavy cloud was not pictured.</li></ul>"
+  }
+ ],
+ "footer": "<p>Built on the <code>claude/ruben-hotrod-fishing</code> branch: <a href=\"https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing\">the code on GitHub</a>, the <a href=\"https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/README.md\">README</a> and <a href=\"https://claude.ai/artifact/3urJEG61Boov67ViABm26A\">the playable build</a>. The tools: <code>tools/model-sheet.mjs</code>, <code>tools/scenarios/gfx-views.json</code>, <code>tools/scenarios/gfx-budget.json</code>, <code>tools/perf-compare.mjs</code>, <code>tools/load-compare.mjs</code>, <code>tools/scenarios/detail-switch.json</code>, <code>tools/shader-check.mjs</code>, <code>tools/gl-errors.mjs</code>.</p><p><b>Sources.</b> One draw call for every animal of a species: three.js documentation, InstancedMesh, <a href=\"https://threejs.org/docs/pages/InstancedMesh.html\">https://threejs.org/docs/pages/InstancedMesh.html</a> \u00b7 Shared vertices in the tree crowns: three.js documentation, BufferGeometryUtils.mergeVertices, <a href=\"https://threejs.org/docs/pages/module-BufferGeometryUtils.html\">https://threejs.org/docs/pages/module-BufferGeometryUtils.html</a> \u00b7 Shadows that follow the animation: three.js documentation, Object3D.customDepthMaterial, <a href=\"https://threejs.org/docs/api/en/core/Object3D.html\">https://threejs.org/docs/api/en/core/Object3D.html</a> \u00b7 Why fewer vertices cost less than the triangle count suggests: meshoptimizer, vertex cache and vertex reuse, <a href=\"https://github.com/zeux/meshoptimizer\">https://github.com/zeux/meshoptimizer</a> \u00b7 Why the far mountains turned blocky: slopes worked out once per 2 by 2 pixels: Microsoft, ddx_coarse, <a href=\"https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/ddx-coarse\">https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/ddx-coarse</a> \u00b7 How an iPhone&#x27;s graphics chip draws (geometry first, then tile by tile): Apple, Tailor your apps for Apple GPUs and tile-based deferred rendering, <a href=\"https://developer.apple.com/documentation/metal/tailor-your-apps-for-apple-gpus-and-tile-based-deferred-rendering\">https://developer.apple.com/documentation/metal/tailor-your-apps-for-apple-gpus-and-tile-based-deferred-rendering</a> \u00b7 The glaucous-winged gull&#x27;s grey wingtips: All About Birds, Glaucous-winged Gull, <a href=\"https://allaboutbirds.org/guide/Glaucous-winged_Gull/overview\">https://allaboutbirds.org/guide/Glaucous-winged_Gull/overview</a> \u00b7 The tufted puffin: all black, white face, yellow tufts, orange bill and feet: National Audubon Society, Tufted Puffin, <a href=\"https://audubon.org/field-guide/bird/tufted-puffin\">https://audubon.org/field-guide/bird/tufted-puffin</a> \u00b7 The sandhill crane flies with its neck stretched out and its legs trailing: All About Birds, Sandhill Crane identification, <a href=\"https://allaboutbirds.org/guide/Sandhill_Crane/id\">https://allaboutbirds.org/guide/Sandhill_Crane/id</a> \u00b7 The trumpeter swan flies with head and neck straight out: All About Birds, Trumpeter Swan identification, <a href=\"https://allaboutbirds.org/guide/Trumpeter_Swan/id\">https://allaboutbirds.org/guide/Trumpeter_Swan/id</a> \u00b7 The Canada goose flies with a long, straight neck: Chesapeake Bay Program field guide, Canada Goose, <a href=\"https://www.chesapeakebay.net/discover/field-guide/entry/canada-goose\">https://www.chesapeakebay.net/discover/field-guide/entry/canada-goose</a> \u00b7 The common loon flies hunchbacked, head held low, feet trailing: Hinterland Who&#x27;s Who, Loons, <a href=\"https://www.hww.ca/wildlife/birds/loons/\">https://www.hww.ca/wildlife/birds/loons/</a>.</p>"
+}

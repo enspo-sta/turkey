@@ -1,0 +1,166 @@
+{
+"width": 800,
+"height": 450,
+"timeout": 600000,
+"steps": [
+{
+"wait": 1500
+},
+{
+"eval": "__rhf.start(false)"
+},
+{
+"wait": 6000
+},
+{
+"eval": "(()=>{\nconst g=__rhf.game, W=g.world, C=g.colliders, wl=g.wildlife;\ng.state.settings.autoQuality=false; g.setQuality('high'); g.dpr=1; g.renderer.setPixelRatio(1); g.resize();\ng.bears.directorT=1e9;\nconst we=g.env.weather; we.cloud=we.cloudTarget=0.2; we.rain=we.rainTarget=0; we.timer=1e9;\ng.env.setTime(10.5); g.env.timeScale=0; g.hud.firstShown=-1000; g.hud.hint('',0); g.hud.show(false); __rhf.god(true);\ng.player.tool='none'; g.viewmodel.setTool('none');\nwl.threatPos=()=>({x:1e7,z:1e7,loud:0});\nconst V=g.camera.position.constructor, Q=g.camera.quaternion.constructor, E=g.camera.rotation.constructor, M4=g.camera.matrix.constructor;\nconst _m=new M4(), _q=new Q(), _e=new E(), _v=new V(), _s=new V();\n// wildlife draws only the one animal on show\nwl.update=function(){ for(const h of wl.herdList) h.begin(); const s=window.__show; if(s){ _e.set(s.pitch||0,s.yaw,s.roll||0,'YXZ'); _q.setFromEuler(_e); _v.set(s.x,s.y,s.z); _s.setScalar(s.scale||1); _m.compose(_v,_q,_s); wl.herds[s.sp].push(_m,s.phase||0,s.amp||0,s.head||0,s.extra||0); } for(const h of wl.herdList) h.end(); };\nwindow.__wait=(ms)=>new Promise(r=>setTimeout(r,ms));\n// no grass, so the smallest animals show whole\ng.grass.group.visible=false; const gu=g.grass.update.bind(g.grass); g.grass.update=(...a)=>{ gu(...a); g.grass.group.visible=false; };\n// open flat tundra: no water within 16 m, nothing standing within 18 m\nconst T=W.place('tundra'); let land=null;\nfor(let r=0;r<=260;r+=8) for(let a=0;a<36;a++){ const x=T.x+Math.cos(a/36*6.2832)*r, z=T.z+Math.sin(a/36*6.2832)*r; if(!W.inBounds(x,z,40)||W.waterAt(x,z)) continue; let ok=true; for(let k=0;k<12&&ok;k++){ if(W.waterAt(x+Math.cos(k/12*6.2832)*16,z+Math.sin(k/12*6.2832)*16)) ok=false; } if(!ok||C.circlesNear(x,z,18).length) continue; const sc=W.slopeAt(x,z)*10+W.grass[W.cellIndex(x,z)]/255+r*0.002; if(!land||sc<land.sc) land={x,z,sc}; }\nwindow.__land=land;\n// the end of Halibut Pier's dock, looking out along it\nconst pier=W.place('pier'), d=pier.dock; const gx=d.x1-d.x0, gz=d.z1-d.z0, gl=Math.hypot(gx,gz);\nwindow.__sea={x:d.x1,z:d.z1,ux:gx/gl,uz:gz/gl};\n// the sun over the camera's shoulder, a little to one side\nconst sd=g.env.sunDir, sl=Math.hypot(sd.x,sd.z)||1; const ca=Math.cos(0.6), sa=Math.sin(0.6);\nwindow.__sunSide={x:(sd.x*ca-sd.z*sa)/sl, z:(sd.x*sa+sd.z*ca)/sl};\n// frame one species: its size from its own model\nwindow.__frame=async(sp,o={})=>{\n  const geo=wl.herds[sp].mesh.geometry; geo.computeBoundingBox(); const b=geo.boundingBox; const sc=o.scale||1;\n  const bx=(b.max.x-b.min.x)*sc, by=(b.max.y-b.min.y)*sc, bz=(b.max.z-b.min.z)*sc; const cy=(b.max.y+b.min.y)/2*sc;\n  const vis=Math.max(bx,bz*0.9+bx*0.3); const asp=innerWidth/innerHeight;\n  let cx,cz,ch,tx,tz,ty,yaw;\n  if(o.sea){ const S=__sea; const need=Math.max(by/0.55, vis/0.5/asp); const dist=o.dist||Math.max(4,need/(2*Math.tan(13*Math.PI/180))); cx=S.x; cz=S.z; ch=(g.colliders.deckAt?g.colliders.deckAt(cx,cz,1e9,1.1):null); ch=(ch==null?W.heightAt(cx,cz):Math.max(ch,W.heightAt(cx,cz))); tx=cx+S.ux*dist; tz=cz+S.uz*dist; ty=(o.y??0)+cy; yaw=Math.atan2(tx-cx,tz-cz)+(Math.PI/2+0.5); window.__show={sp,x:tx,y:o.y??0,z:tz,yaw,roll:o.roll||0,pitch:o.pitch||0,scale:sc,phase:o.phase||0,amp:o.amp||0,head:o.head||0,extra:o.extra||0}; }\n  else { const L=__land; const gy=W.heightAt(L.x,L.z); const need=Math.max(by/0.55, vis/0.5/asp); const dist=Math.max(need/(2*Math.tan(13*Math.PI/180)), o.air?0:(1.7-by*0.5)/Math.tan(0.45)); cx=L.x+__sunSide.x*dist; cz=L.z+__sunSide.z*dist; ch=W.heightAt(cx,cz); tx=L.x; tz=L.z; const y0=o.air?ch+1.7+dist*0.3-cy:gy; ty=y0+cy; yaw=Math.atan2(tx-cx,tz-cz)+(Math.PI/2+0.5); window.__show={sp,x:tx,y:y0,z:tz,yaw,pitch:o.pitch||0,roll:o.roll||0,scale:sc,phase:o.phase||0,amp:o.amp||0,head:o.head||0,extra:o.extra||0}; }\n  const hd=Math.hypot(tx-cx,tz-cz); g.player.place(cx,cz,Math.atan2(-(tx-cx),-(tz-cz))); await __wait(400);\n  const eye=g.player.pos.y+1.7; g.player.pitch=Math.atan2(ty-eye,hd);\n  const need=Math.max(by/0.55, vis/0.5/asp); const fov=Math.min(40,Math.max(5,2*Math.atan(need/2/Math.hypot(hd,ty-eye))*180/Math.PI)); g.baseFov=fov;\n  await __wait(3000);\n  return sp+': '+(b.max.x-b.min.x).toFixed(2)+' x '+(b.max.y-b.min.y).toFixed(2)+' x '+(b.max.z-b.min.z).toFixed(2)+' m, '+(geo.attributes.position.count/3)+' triangles, seen from '+hd.toFixed(1)+' m, view '+fov.toFixed(1)+' degrees';\n};\nreturn 'land '+(land?land.x.toFixed(0)+','+land.z.toFixed(0)+' slope '+W.slopeAt(land.x,land.z).toFixed(3):'none')+' | sea '+__sea.x.toFixed(0)+','+__sea.z.toFixed(0);\n})()"
+},
+{
+"eval": "(()=>{\nconst g=__rhf.game, W=g.world, C=g.colliders, wl=g.wildlife;\n// after the update above, force every herd's detail: near, or far\nconst up=wl.update;\nwl.update=function(...args){ up.apply(this,args); for(const h of wl.herdList) if(h.far&&h.n) h.mesh.geometry=window.__forceFar?h.far:h.near; };\n// no small plants either: the camera spot below is checked against the\n// ground and the trees, not against bushes and flowers, which can hide a\n// small animal at its switch distance\nconst small=new Set(['bush','willow','fern','fireweed','lupine','devilsClub','blueberry','labradorTea','cottonGrass','horsetail','skunkCabbage','mushroom']);\ng.scene.traverse((o)=>{ if(o.name&&o.name.endsWith('-lod')&&small.has(o.name.slice(0,-4))) o.visible=false; });\n// wait for frames really drawn (under load none may come in a few seconds)\nwindow.__frames=(n)=>new Promise(r=>{const f=()=>(--n<=0?r():requestAnimationFrame(f));requestAnimationFrame(f);});\nconst V=g.camera.position.constructor;\n// a camera spot at distance D from (tx,tz) with a clear line of sight to a\n// point at height ty, the sun as near behind it as such a spot allows\nconst camSpot=(tx,tz,ty,D)=>{ let best=null; const L=__sunSide;\n  for(let k=0;k<48;k++){ const a=k/48*6.2832; const ux=Math.cos(a), uz=Math.sin(a); const x=tx+ux*D, z=tz+uz*D;\n    if(!W.inBounds(x,z,10)) continue; const wat=W.waterAt(x,z); if(wat&&wat.depth>0.05) continue; if(C.circlesNear(x,z,1.6).length) continue;\n    const eye=W.heightAt(x,z)+1.7; let clear=true;\n    for(let i=1;i<40;i++){ const t=i/40; const px=x+(tx-x)*t, pz=z+(tz-z)*t; if(W.heightAt(px,pz)>eye+(ty-eye)*t-0.25||C.circlesNear(px,pz,0.8).length){clear=false;break;} }\n    if(!clear) continue; const sc=-(ux*L.x+uz*L.z); if(!best||sc<best.sc) best={x,z,sc}; }\n  return best; };\n// one species at exactly its switch distance (scale 1), in the game's own\n// view (64 degrees high, as on a phone on its side); returns where on the\n// screen the animal's middle is, for the crops\nwindow.__pop=async(sp,far,o={})=>{\n  const h=wl.herds[sp]; if(!h.near.boundingBox) h.near.computeBoundingBox(); const b=h.near.boundingBox;\n  const D=h.lodDist; const cy=(b.max.y+b.min.y)/2;\n  let cx,cz,tx,tz,y0;\n  if(o.sea){ const S=__sea; cx=S.x; cz=S.z; tx=cx+S.ux*D; tz=cz+S.uz*D; y0=o.y??0; }\n  else { const L=__land; tx=L.x; tz=L.z; y0=W.heightAt(L.x,L.z)+(o.air?3.5:0); const c=window.__camAt?.[sp]||camSpot(tx,tz,y0+cy,D); if(!c) return sp+': no clear spot'; (window.__camAt||(window.__camAt={}))[sp]=c; cx=c.x; cz=c.z; }\n  window.__forceFar=far;\n  g.player.place(cx,cz,Math.atan2(-(tx-cx),-(tz-cz))); await __wait(300); await __frames(2);\n  const eye=g.player.pos.y+1.7;\n  const yaw=Math.atan2(tx-cx,tz-cz)+(Math.PI/2+0.5);\n  window.__show={sp,x:tx,y:y0,z:tz,yaw,pitch:0,roll:0,scale:1,phase:0,amp:0,head:0,extra:o.extra||0};\n  g.player.pitch=Math.atan2(y0+cy-eye,Math.hypot(tx-cx,tz-cz))-0.05; g.zoom=1; g.baseFov=64;\n  await __wait(1200); await __frames(4);\n  const p=new V(tx,y0+cy,tz).project(g.camera); const sx=(p.x+1)/2*innerWidth, sy=(1-p.y)/2*innerHeight;\n  return sp+' at '+D.toFixed(1)+' m, '+(far?'far':'near')+' ('+h.mesh.geometry.index.count/3+' triangles) screen '+sx.toFixed(0)+','+sy.toFixed(0)+' height '+(b.max.y-b.min.y).toFixed(2)+' m';\n};\nreturn 'pop ready';\n})()"
+},
+{
+"eval": "(async()=>__pop(\"moose\",0,{}))()"
+},
+{
+"shot": "switch-moose-near"
+},
+{
+"eval": "(async()=>__pop(\"moose\",1,{}))()"
+},
+{
+"shot": "switch-moose-far"
+},
+{
+"eval": "(async()=>__pop(\"caribou\",0,{}))()"
+},
+{
+"shot": "switch-caribou-near"
+},
+{
+"eval": "(async()=>__pop(\"caribou\",1,{}))()"
+},
+{
+"shot": "switch-caribou-far"
+},
+{
+"eval": "(async()=>__pop(\"bear\",0,{}))()"
+},
+{
+"shot": "switch-bear-near"
+},
+{
+"eval": "(async()=>__pop(\"bear\",1,{}))()"
+},
+{
+"shot": "switch-bear-far"
+},
+{
+"eval": "(async()=>__pop(\"wolf\",0,{}))()"
+},
+{
+"shot": "switch-wolf-near"
+},
+{
+"eval": "(async()=>__pop(\"wolf\",1,{}))()"
+},
+{
+"shot": "switch-wolf-far"
+},
+{
+"eval": "(async()=>__pop(\"fox\",0,{}))()"
+},
+{
+"shot": "switch-fox-near"
+},
+{
+"eval": "(async()=>__pop(\"fox\",1,{}))()"
+},
+{
+"shot": "switch-fox-far"
+},
+{
+"eval": "(async()=>__pop(\"hare\",0,{}))()"
+},
+{
+"shot": "switch-hare-near"
+},
+{
+"eval": "(async()=>__pop(\"hare\",1,{}))()"
+},
+{
+"shot": "switch-hare-far"
+},
+{
+"eval": "(async()=>__pop(\"crane\",0,{\"extra\": -1}))()"
+},
+{
+"shot": "switch-crane-near"
+},
+{
+"eval": "(async()=>__pop(\"crane\",1,{\"extra\": -1}))()"
+},
+{
+"shot": "switch-crane-far"
+},
+{
+"eval": "(async()=>__pop(\"eagle\",0,{\"air\": 1, \"extra\": 0}))()"
+},
+{
+"shot": "switch-eagle-near"
+},
+{
+"eval": "(async()=>__pop(\"eagle\",1,{\"air\": 1, \"extra\": 0}))()"
+},
+{
+"shot": "switch-eagle-far"
+},
+{
+"eval": "(async()=>__pop(\"goose\",0,{\"air\": 1}))()"
+},
+{
+"shot": "switch-goose-near"
+},
+{
+"eval": "(async()=>__pop(\"goose\",1,{\"air\": 1}))()"
+},
+{
+"shot": "switch-goose-far"
+},
+{
+"eval": "(async()=>__pop(\"gull\",0,{\"air\": 1}))()"
+},
+{
+"shot": "switch-gull-near"
+},
+{
+"eval": "(async()=>__pop(\"gull\",1,{\"air\": 1}))()"
+},
+{
+"shot": "switch-gull-far"
+},
+{
+"eval": "(async()=>__pop(\"raven\",0,{\"air\": 1}))()"
+},
+{
+"shot": "switch-raven-near"
+},
+{
+"eval": "(async()=>__pop(\"raven\",1,{\"air\": 1}))()"
+},
+{
+"shot": "switch-raven-far"
+},
+{
+"eval": "(async()=>__pop(\"duck\",0,{\"sea\": 1, \"y\": -0.05, \"extra\": -1}))()"
+},
+{
+"shot": "switch-duck-near"
+},
+{
+"eval": "(async()=>__pop(\"duck\",1,{\"sea\": 1, \"y\": -0.05, \"extra\": -1}))()"
+},
+{
+"shot": "switch-duck-far"
+}
+]
+}
