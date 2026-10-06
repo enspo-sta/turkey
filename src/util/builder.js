@@ -12,7 +12,7 @@
 // before it is placed: across and up a wall, across and along a floor or a
 // roof (`surfSwap` turns them a quarter turn, `surfScale` scales them).
 import * as THREE from 'three';
-import { FINISH_ID } from '../world/finish.js';
+import { FINISH_ID } from '../world/finishids.js';
 
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();

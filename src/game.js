@@ -296,6 +296,16 @@ export class Game {
     st.render = st.render * 0.9 + (t3 - t2) * 0.1;
   }
 
+  // A game has just started: for a while the work of its first moments (the
+  // ground filling in around you, the sounds handed over) is no reason to
+  // step the graphics down for good, which would recompile every shader (a
+  // stall of its own) and lower the look for the rest of the game.
+  settleIn(secs) {
+    const a = this.adapt || (this.adapt = { avg: 1 / 60, t: 0, good: 0, clock: 0, hold: 0, backoff: 20 });
+    a.calmUntil = a.clock + secs;
+    a.slow = 0;
+  }
+
   // Dynamic resolution: drop the pixel ratio when frames run long, raise it
   // again (up to the quality preset) when there is headroom.
   adaptResolution(rawDt) {
@@ -320,9 +330,10 @@ export class Game {
       a.slow = 0;
       if (a.clock - (a.raisedAt ?? -1e9) < 20) a.backoff = Math.min(600, a.backoff * 2);
       a.hold = a.clock + a.backoff;
-    } else if (a.avg > 1 / 40 && this.started && !this.paused && !this.menuOpen) {
+    } else if (a.avg > 1 / 40 && this.started && !this.paused && !this.menuOpen && a.clock >= (a.calmUntil || 0)) {
       // already at the lowest resolution: step the graphics preset down after
-      // a few slow checks in a row, if the player allows it
+      // a few slow checks in a row, if the player allows it (never while a
+      // game is settling in, see settleIn)
       a.slow = (a.slow || 0) + 1;
       const settings = this.state?.settings;
       const next = this.qualityName === 'high' ? 'medium' : this.qualityName === 'medium' ? 'low' : null;

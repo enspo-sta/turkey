@@ -25,12 +25,8 @@
 // Inside the car the outside goes dull; under water, duller still.
 import { FX } from '../world/worldfx.js';
 import { SURF } from '../world/worldgen.js';
-import { Bakery, stereoNoise, babble, patter, drips, rustle, drum, chatter, footsteps, impulse } from './bake.js';
-
-// (older Safari makes no buffer below 22 050 samples a second)
-const LO = 22050;
-const MID = 22050;
-const HI = 44100;
+import { AMB_RATES } from './bake.js';
+import { Oven } from './oven.js';
 
 // All the beds together, against the rest of the mix (the effects and the
 // music are set against the announcer's voice, see LEVEL in audio.js)
@@ -95,20 +91,15 @@ export class Ambience {
   constructor(engine) {
     this.A = engine;
     this.ctx = null;
-    this.bakery = new Bakery();
-    // the textures, in the order they are wanted
-    this.rates = { white: HI, pink: MID, brown: LO, babble: MID, rustle: MID, patter: MID, drips: MID, drum: MID, chatter: MID, steps: MID };
-    this.bakery.add('pink', stereoNoise(5, 'pink', 12, MID));
-    this.bakery.add('brown', stereoNoise(6, 'brown', 13, LO));
-    this.bakery.add('white', stereoNoise(4, 'white', 11, HI));
-    this.bakery.add('steps', footsteps(61, MID));
-    this.bakery.add('babble', babble(8, 21, MID));
-    this.bakery.add('rustle', rustle(6, 31, MID));
-    this.bakery.add('patter', patter(5, 41, MID));
-    this.bakery.add('drips', drips(6, 51, MID));
-    this.bakery.add('drum', drum(71, MID));
-    this.bakery.add('chatter', chatter(81, MID));
-    this.bakery.onDone = (name, v) => this.baked(name, v);
+    // the textures (bake.js's list), made in the sound's worker where there
+    // is one (oven.js), and the rate each is made at
+    this.bakery = new Oven('ambience');
+    this.bakery.onReady = (name, v) => this.baked(name, v);
+    this.rates = AMB_RATES;
+    // the reverb's impulse has to be at the sound context's own rate, which
+    // is known only at the first tap: in the worker it is made ahead at the
+    // two usual rates, so it is ready then (see start)
+    if (this.bakery.inWorker) for (const sr of [48000, 44100]) this.bakery.first('ir:' + sr, 'impulse', [1.5, 7, sr]);
     this.buffers = {};
     this.beds = {};
     this.here = { forest: 0, open: 0, tundra: 0, shore: 0, river: 0, riverFast: 0, falls: 0, sea: 0, lake: 0, flats: 0, ground: 0 };
@@ -125,31 +116,32 @@ export class Ambience {
     this.mozzies = null;
   }
 
-  // Sounds made in advance, a little a frame, from the title screen on.
+  // Sounds made in advance, a little a frame from the title screen on, where
+  // there is no worker to make them (oven.js).
   bake(ms) {
     if (this.bakery.busy) this.bakery.step(ms);
   }
 
+  // A finished texture becomes a buffer (true), once there is a context to
+  // make it in (false until then: it waits).
   baked(name, v) {
-    if (!this.ctx) return;
+    if (!this.ctx) return false;
     const ctx = this.ctx;
     const sr = this.rates[name];
     if (name === 'steps') {
       this.steps = {};
       for (const [k, list] of Object.entries(v)) this.steps[k] = list.map((d) => this.buffer([d], sr));
-      delete this.bakery.done[name];
-      return;
+      return true;
     }
-    if (name === 'ir') {
-      this.verb.buffer = this.buffer(v, ctx.sampleRate);
-      delete this.bakery.done[name];
-      return;
+    if (name.startsWith('ir:')) {
+      // (one made at another rate is let go)
+      if (+name.slice(3) === ctx.sampleRate) this.verb.buffer = this.buffer(v, ctx.sampleRate);
+      return true;
     }
     this.buffers[name] = this.buffer(Array.isArray(v) ? v : [v], sr);
     // the beds waiting for this texture start (or swap to it) now
     for (const b of Object.values(this.beds)) if (b.want === name) this.swap(b);
-    // the arrays are in the buffer now
-    delete this.bakery.done[name];
+    return true;
   }
 
   buffer(chs, sr) {
@@ -178,7 +170,12 @@ export class Ambience {
     this.verbSend.connect(this.verb);
     this.verb.connect(this.verbOut);
     this.verbOut.connect(this.muffle);
-    this.bakery.jobs.unshift({ name: 'ir', gen: impulse(1.5, 7, ctx.sampleRate) });
+    // its impulse at this context's rate: handed over now if the worker has
+    // made it (the tap's frame is a long one anyway; later it would be a
+    // stutter of its own), else made first; one at another rate is let go
+    const ir = 'ir:' + ctx.sampleRate;
+    for (const n of [...Object.keys(this.bakery.done), ...this.bakery.jobs.map((j) => j.name)]) if (n.startsWith('ir:') && n !== ir) this.bakery.drop(n);
+    if (!this.bakery.handOver(ir)) this.bakery.first(ir, 'impulse', [1.5, 7, ctx.sampleRate]);
     // a bird's note: a whistle with a little of its octave and twelfth
     this.waves = {
       whistle: ctx.createPeriodicWave(new Float32Array([0, 0, 0, 0]), new Float32Array([0, 1, 0.12, 0.035])),
@@ -219,8 +216,8 @@ export class Ambience {
     B('rain', 'white', 'highpass', 1700, 0.45);
     B('patter', 'patter', 'highpass', 800, 0.5);
     B('drips', 'drips', 'highpass', 250, 0.5);
-    // what was baked before there was a context to give it to
-    for (const [name, v] of Object.entries(this.bakery.done)) this.baked(name, v);
+    // (what was made before there was a context is handed over a texture a
+    // frame from now on, see AudioEngine.update)
   }
 
   // A bed's loop: started when it is wanted and its texture is ready, let go

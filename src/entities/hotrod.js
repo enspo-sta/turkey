@@ -1235,7 +1235,12 @@ export class HotRod extends Car {
 
   // Dress Ruben at the wheel from the wardrobe.
   setLook(look) {
-    this.driver.setLook(lookColors(look));
+    // (the same look again rebuilds nothing)
+    const key = JSON.stringify(look ?? null);
+    if (key !== this.lookKey) {
+      this.lookKey = key;
+      this.driver.setLook(lookColors(look));
+    }
     this.poseDriver();
   }
 
@@ -1253,6 +1258,10 @@ export class HotRod extends Car {
 
   setPaint(id) {
     const p = PAINTS.find((q) => q.id === id) || PAINTS[0];
+    // (the same paint again, as on the tap that starts a game, would only
+    // redraw its texture and send it to the graphics chip again)
+    if (p.id === this.paintId) return;
+    this.paintId = p.id;
     const M = this.materials;
     M.paint.map?.dispose();
     M.paint.map = bodyTexture(p);

@@ -13,8 +13,7 @@
 // speakers cannot play), a gentle compressor that holds the mix together,
 // and a limiter that keeps the loudest moments from clipping.
 import { Ambience } from './ambience.js';
-import { Bakery, impulse } from './bake.js';
-import { kitJobs } from './kit.js';
+import { Oven } from './oven.js';
 import { Music, INSTRUMENTS } from './music.js';
 
 // How loud each baked sound plays at a gain of 1: its loudest 0.2 seconds,
@@ -93,12 +92,15 @@ export class AudioEngine {
     this.reelOn = false;
     this.reelT = 0;
     this.stepCount = 0;
-    // the ambience bakes its sounds from the title screen on, before the
-    // first tap lets the sound start, and the library after it
+    // the ambience's textures and the library's sounds are made from the
+    // page's start, in the sound's worker where there is one (oven.js), the
+    // ambience's first
     this.ambience = new Ambience(this);
-    this.bakery = new Bakery();
-    for (const j of kitJobs()) this.bakery.add(j.name, j.gen);
-    this.bakery.onDone = (name, v) => this.kitBaked(name, v);
+    this.bakery = new Oven('library');
+    this.bakery.onReady = (name, v) => this.kitBaked(name, v);
+    // the music's hall, made ahead at the two usual rates as the
+    // ambience's reverb is (see unlock)
+    if (this.bakery.inWorker) for (const sr of [48000, 44100]) this.bakery.first('hall:' + sr, 'impulse', [1.8, 17, sr, 0.35]);
     this.kit = {};
     this.music = new Music(this);
     this.wolfT = 90;
@@ -191,10 +193,13 @@ export class AudioEngine {
 
     this.ambience.start(ctx);
     this.music.start(ctx);
-    // the music's hall: its reverb's impulse, made at the context's own rate
-    // before the rest of the library
-    this.bakery.jobs.unshift({ name: 'hall', gen: impulse(1.8, 17, sr, 0.35) });
-    // (what was baked before there was a context is handed over a sound a
+    // the music's hall: its reverb's impulse at the context's own rate,
+    // handed over now if it is made (in the tap's frame, a long one anyway),
+    // else made before the rest of the library; one at another rate is let go
+    const hall = 'hall:' + sr;
+    for (const n of [...Object.keys(this.bakery.done), ...this.bakery.jobs.map((j) => j.name)]) if (n.startsWith('hall:') && n !== hall) this.bakery.drop(n);
+    if (!this.bakery.handOver(hall)) this.bakery.first(hall, 'impulse', [1.8, 17, sr, 0.35]);
+    // (the rest made before there was a context is handed over a sound a
     // frame, see update)
     this.ready = true;
   }
@@ -270,12 +275,14 @@ export class AudioEngine {
   // ------------------------------------------------------------ the library
   // A sound of the library is baked: its takes become buffers (the arrays
   // are let go), each with the gain that brings it to its LEVEL.
+  // (true once handed over; false while there is no context to make the
+  // buffers in: the sound waits)
   kitBaked(name, v) {
-    if (!this.ctx) return;
-    delete this.bakery.done[name];
-    if (name === 'hall') {
-      this.music.setHall(this.buffer(v, this.ctx.sampleRate));
-      return;
+    if (!this.ctx) return false;
+    if (name.startsWith('hall:')) {
+      // (one made at another rate is let go)
+      if (+name.slice(5) === this.ctx.sampleRate) this.music.setHall(this.buffer(v, this.ctx.sampleRate));
+      return true;
     }
     const level = LEVEL[name] ?? -26;
     this.kit[name] = {
@@ -284,6 +291,7 @@ export class AudioEngine {
       norm: v.loud.map((l) => Math.pow(10, (level - l) / 20)),
       last: -1,
     };
+    return true;
   }
 
   buffer(chs, sr) {
@@ -1512,22 +1520,21 @@ export class AudioEngine {
   // ------------------------------------------------------------- per frame
   update(dt, g) {
     this.dt = dt;
-    // the ambience's sounds and the library are baked a little each frame,
-    // from the title screen on (the context only exists after the first
-    // tap). The title screen can spare more time, for both at once; in a
-    // game the library waits for the ambience, and they share less.
+    // Where there is no worker to make the ambience's sounds and the
+    // library (oven.js), they are made here a little each frame, from the
+    // title screen on: the title screen can spare more time, for both at
+    // once; in a game the library waits for the ambience, and they share
+    // less. (With a worker these do nothing.)
     if (!g.started) {
       this.ambience.bake(2);
       this.bakery.step(2);
     } else if (this.ambience.bakery.busy) this.ambience.bake(1.2);
     else if (this.bakery.busy) this.bakery.step(1.2);
     if (!this.ready) return;
-    // sounds baked before the first tap become buffers a sound a frame
-    // (all at once would hold the tap's frame up)
-    for (const name in this.bakery.done) {
-      this.kitBaked(name, this.bakery.done[name]);
-      break;
-    }
+    // finished sounds become buffers, one of each kind a frame (all at once
+    // would hold a frame up)
+    this.ambience.bakery.handOver();
+    this.bakery.handOver();
     if (!g.world) return;
     const cam = g.camera;
     const dir = cam.getWorldDirection(this._d || (this._d = cam.position.clone()));

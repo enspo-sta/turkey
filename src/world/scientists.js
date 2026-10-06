@@ -17,6 +17,7 @@ import { frame, groundRange } from './buildings.js';
 import { clearGrass } from './worldtex.js';
 import { graniteTex } from './tesla.js';
 import { SCIENTISTS, GROUPS } from './scientistdata.js';
+import { sculptorURL } from '../workers/url.js';
 import { bustArraysSteps, packBust } from './bustcore.js';
 
 // the busts at a little under life size, on plinths that put their eyes a
@@ -366,15 +367,9 @@ export class Scientists {
     const g = this.game;
     const start = g.world.place('landing');
     if (fresh) this.queue = this.sites.slice().sort((a, b) => Math.hypot(a.x - start.x, a.z - start.z) - Math.hypot(b.x - start.x, b.z - start.z));
-    let src = null;
-    try {
-      src = typeof __SCULPT_WORKER__ === 'string' ? __SCULPT_WORKER__ : null;
-    } catch (e) {
-      src = null;
-    }
-    if (src && typeof Worker !== 'undefined' && typeof Blob !== 'undefined' && typeof URL !== 'undefined') {
+    const url = sculptorURL();
+    if (url) {
       try {
-        const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
         // one or two, leaving the phone a core or more for the game
         const n = Math.max(1, Math.min(2, (navigator.hardwareConcurrency || 2) - 1));
         for (let i = 0; i < n; i++) {

@@ -502,6 +502,27 @@ export function* impulse(seconds, seed, sr = SR, bright = 0) {
   return yield* normalise(chs, 0.9);
 }
 
+// ------------------------------------------------------------ the list
+// The ambience's textures, in the order they are wanted, and the rate each is
+// made at (see ambience.js; the sound's worker makes them from this list,
+// see oven.js). Older Safari makes no buffer below 22 050 samples a second.
+export const AMB_RATES = { white: 44100, pink: 22050, brown: 22050, babble: 22050, rustle: 22050, patter: 22050, drips: 22050, drum: 22050, chatter: 22050, steps: 22050 };
+export function ambienceJobs() {
+  const R = AMB_RATES;
+  return [
+    { name: 'pink', gen: stereoNoise(5, 'pink', 12, R.pink) },
+    { name: 'brown', gen: stereoNoise(6, 'brown', 13, R.brown) },
+    { name: 'white', gen: stereoNoise(4, 'white', 11, R.white) },
+    { name: 'steps', gen: footsteps(61, R.steps) },
+    { name: 'babble', gen: babble(8, 21, R.babble) },
+    { name: 'rustle', gen: rustle(6, 31, R.rustle) },
+    { name: 'patter', gen: patter(5, 41, R.patter) },
+    { name: 'drips', gen: drips(6, 51, R.drips) },
+    { name: 'drum', gen: drum(71, R.drum) },
+    { name: 'chatter', gen: chatter(81, R.chatter) },
+  ];
+}
+
 // ------------------------------------------------------------ the baker
 // Runs the jobs above a little at a time, within a budget of milliseconds a
 // frame, and hands each result to onDone.

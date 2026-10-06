@@ -446,6 +446,10 @@ export class Viewmodel {
 
   // Dress the arms in the wardrobe's shirt, skin and gloves.
   applyLook(look) {
+    // (the same look again, as on the tap that starts a game: nothing to do)
+    const key = JSON.stringify(look ?? null);
+    if (key === this.lookKey) return;
+    this.lookKey = key;
     const c = lookColors(look);
     const swap = (group, parts) => {
       const [h, cl] = group.children;

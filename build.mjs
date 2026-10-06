@@ -9,9 +9,30 @@ const dev = process.argv.includes('--dev');
 mkdirSync('dist', { recursive: true });
 
 // the sculptor's worker, bundled on its own and carried in the game's script
-// as text (a worker is started from it with a blob URL: one file still)
+// as text (a worker is started from it with a blob URL: one file still). It
+// carves Tesla's statue too, with three.js's core alone (its renderer half,
+// unused there, would more than double the worker)
+const threeCore = {
+  name: 'three-core',
+  setup(b) {
+    b.onResolve({ filter: /^three$/ }, () => ({ path: new URL('./node_modules/three/build/three.core.js', import.meta.url).pathname }));
+  },
+};
 const worker = await esbuild.build({
   entryPoints: ['src/workers/sculpt.js'],
+  plugins: [threeCore],
+  bundle: true,
+  format: 'iife',
+  minify: !dev,
+  target: ['es2020', 'safari15'],
+  write: false,
+  legalComments: 'none',
+});
+
+// the sound's worker, the same way: the ambience's textures, the library's
+// sounds and the reverbs' impulses made off the main thread (audio/oven.js)
+const soundWorker = await esbuild.build({
+  entryPoints: ['src/workers/sound.js'],
   bundle: true,
   format: 'iife',
   minify: !dev,
@@ -29,7 +50,7 @@ const result = await esbuild.build({
   target: ['es2020', 'safari15'],
   write: false,
   legalComments: 'none',
-  define: { 'process.env.NODE_ENV': dev ? '"development"' : '"production"', __SCULPT_WORKER__: JSON.stringify(worker.outputFiles[0].text) },
+  define: { 'process.env.NODE_ENV': dev ? '"development"' : '"production"', __SCULPT_WORKER__: JSON.stringify(worker.outputFiles[0].text), __SOUND_WORKER__: JSON.stringify(soundWorker.outputFiles[0].text) },
 });
 let js = result.outputFiles[0].text;
 // never let the script close its own tag when inlined

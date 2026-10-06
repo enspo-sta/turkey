@@ -9,9 +9,9 @@
 // a brightness pattern with a matching bump that fades with distance.
 import * as THREE from 'three';
 import { fxPatch } from './worldfx.js';
+import { FINISHES, FINISH_ID } from './finishids.js';
 
-export const FINISHES = ['plank', 'batten', 'log', 'shingle', 'stone', 'metal', 'deck', 'concrete'];
-export const FINISH_ID = Object.fromEntries(FINISHES.map((n, i) => [n, i + 1]));
+export { FINISHES, FINISH_ID };
 
 // texels per 2 m tile
 const SIZE = 512;

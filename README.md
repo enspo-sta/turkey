@@ -602,17 +602,19 @@ Earlier rounds: [docs/fullscreen-voice-update.html](docs/fullscreen-voice-update
   a bear brings timpani, toms and a racing heartbeat. Stingers mark the
   moments: a catch, a trophy, a legend's fanfare, a new species' discovery,
   a perfect hook set, a frenzy, the one that got away.
-- The effects are small physical models, made ahead of time while the title
-  screen is up: the cast's swish and the line peeling off the spool, the lure
-  landing and the bubble it drags down, splashes as bubbles and droplets, the
-  reel's ratchet and gears, the drag screaming as fast as the fish takes line,
-  the rod creaking and the line singing near breaking, the till's bell and
-  coins. Animals have voices shaped as theirs are (a throat's pulses through
-  its resonances): the grizzly's growl and roar, Canada geese, a mallard,
-  sandhill cranes, a magpie, sea lions, and the kingfisher's rattle, a
-  beaver's tail slap and a whale's blow. The hot rod's V8 fires its eight
-  cylinders in a cross-plane V8's order (the burble), the outboard is a
-  two-stroke twin and the race car a turbocharged V6.
+- The effects are small physical models, made ahead of time in a worker of
+  their own, off the main thread, while the game loads and the title screen
+  is up (so a frame never waits for them): the cast's swish and the line
+  peeling off the spool, the lure landing and the bubble it drags down,
+  splashes as bubbles and droplets, the reel's ratchet and gears, the drag
+  screaming as fast as the fish takes line, the rod creaking and the line
+  singing near breaking, the till's bell and coins. Animals have voices
+  shaped as theirs are (a throat's pulses through its resonances): the
+  grizzly's growl and roar, Canada geese, a mallard, sandhill cranes, a
+  magpie, sea lions, and the kingfisher's rattle, a beaver's tail slap and a
+  whale's blow. The hot rod's V8 fires its eight cylinders in a cross-plane
+  V8's order (the burble), the outboard is a two-stroke twin and the race
+  car a turbocharged V6.
 - Everything is mixed to a plan: each sound plays at the loudness it is meant
   to have against the announcer's voice (measured, see `tools/sound-sheet.mjs`
   and `tools/sound-measure.mjs`), the music and the place dip while the voice
@@ -890,7 +892,7 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/world/observatory.js` | The Tundra Observatory: the turning dome and its telescope, the radio dish, the hut, the deck chairs, the notice board, the mast and the all-sky camera |
 | `src/world/solarwalk.js` | The scale model of the solar system along the Lighthouse Road |
 | `src/world/tors.js`, `src/gameplay/climbing.js` | The Granite Tors: the granite blocks, the routes and their holds, the ropes, the tops, the register and the route board; and the climbing: reaching, grip, chalk, rests, falls, the top and lowering off |
-| `src/world/tesla.js` | The Tesla Memorial at Bear Falls: the sculpted statue, the terrace, the coil house and its sparks, and Bear Falls Hydro |
+| `src/world/tesla.js`, `teslacore.js` | The Tesla Memorial at Bear Falls: the terrace, the coil house and its sparks, and Bear Falls Hydro; the statue itself (`teslacore.js`), carved in the sculptor's worker (`src/workers/sculpt.js`, with the scientists' busts) |
 | `src/world/scientistdata.js` | The 34 scientists: who they were, what they found, how they look and where they stand |
 | `src/world/scientists.js` | The busts on their plinths: finding each a spot, the plinths, the plaques, the sculpting worker |
 | `src/world/bustcore.js` | The bust sculptor: faces, hair, beards, glasses and clothes of their time, and the finish (no three.js) |
@@ -927,17 +929,18 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/gameplay/skytargets.js`, `skywatch.js`, `tonight.js` | The telescope's and radio dish's targets and their notes, whether each can be reached right now and the sky log, and the night's almanac |
 | `src/gameplay/data.js`, `state.js` | Fish, lures, rods, gear, places and challenges, and the save game |
 | `src/audio/audio.js` | The sound engine and the mix: the buses, the compressor and limiter, every effect, animal call and engine, each played at its loudness |
-| `src/audio/kit.js` | The sound library: the effects, animal voices, engine loops and the music's instruments as small physical models, made ahead of time a little a frame, each take's loudness measured |
+| `src/audio/kit.js` | The sound library: the effects, animal voices, engine loops and the music's instruments as small physical models, each take's loudness measured |
+| `src/audio/oven.js`, `src/workers/sound.js` | Where the sounds made ahead of time are made: the sound's worker, off the main thread, from the page's start (a little a frame on the main thread where there is no worker), and handed to the browser a sound a frame, the reverbs at the tap |
 | `src/audio/music.js` | The music: the songs written as chords and tunes, the band that plays them, the fight and bear music and the stingers |
 | `src/audio/ambience.js` | The sound of the place: wind, water, rain, birds and other singers, footsteps, placed in space with a reverb |
-| `src/audio/bake.js` | The ambience's textures, footsteps and reverbs made ahead of time, a little a frame |
+| `src/audio/bake.js` | The ambience's textures, footsteps and reverbs made ahead of time |
 | `src/audio/announcer.js`, `lines.js` | The announcer's lines and their banners, said in the game's voice or, if Settings picks one, a device voice |
 | `src/audio/voice.js`, `voice-clips.js` | The game's voice: every line and name as a small MP3 (made by `tools/voice`), decoded when first needed |
 | `src/ui/` | HUD, the small map, menus, the Trading Post, garage, map and journal, the observatory's screens, touch and keyboard input, and styles |
 | `src/ui/eyepiece.js`, `skyguide.js` | The telescope's eyepiece views, and the constellation figures and names drawn over the sky |
 | `ios/` | The Xcode project for the native iOS app |
 | `tools/shot.mjs`, `tools/scenarios/` | Headless screenshot and gameplay test harness with scripted scenarios |
-| `tools/perf-tour.mjs`, `tools/perf-compare.mjs`, `tools/perf-stats.mjs`, `tools/first-frame.mjs`, `tools/load-compare.mjs`, `tools/shader-check.mjs`, `tools/gl-errors.mjs`, `tools/cpu-by-thread.py`, `tools/model-sheet.mjs` | Frame times along a scripted tour; two or more builds timed in turns in a balanced order, with the statistics that compare them; loading and the first frames of play, also for builds in turns; every shader built without an error on a development build, and every draw call the browser rejects; one tour's processor time for every thread of the browser; and the animal models on a sheet with their triangle counts |
+| `tools/perf-tour.mjs`, `tools/perf-compare.mjs`, `tools/perf-stats.mjs`, `tools/first-frame.mjs`, `tools/load-compare.mjs`, `tools/start-lag.mjs`, `tools/bake-cost.mjs`, `tools/shader-check.mjs`, `tools/gl-errors.mjs`, `tools/cpu-by-thread.py`, `tools/model-sheet.mjs` | Frame times along a scripted tour; two or more builds timed in turns in a balanced order, with the statistics that compare them; loading and the first frames of play, also for builds in turns; the first minute of a game frame by frame on a slowed processor, and what making the sound costs; every shader built without an error on a development build, and every draw call the browser rejects; one tour's processor time for every thread of the browser; and the animal models on a sheet with their triangle counts |
 | `tools/make-icons.mjs`, `tools/serve.mjs`, `tools/preview-map.mjs` | Icon drawing, the local network server, and a top-down map preview of the world |
 | `tools/mkstars.mjs` | Packs the stars, constellation figures, star names and Milky Way outline from the d3-celestial package into `src/world/skydata.js` |
 | `tools/voice/` | Makes the announcer's voice: `lines.mjs` lists every line and name, `make-voice.py` speaks them with Kokoro and packs `src/audio/voice-clips.js` |
@@ -1046,6 +1049,8 @@ node tools/perf-tour.mjs [out.json] [--frames N] [--tally] [--noprofile] [--size
 node tools/perf-compare.mjs old/index.html dist/index.html [--rounds N] [--frames N] [--size WxH] [--dpr N] [--draw] # two or more builds' tours taking turns over several rounds in a balanced order, and each build's difference from the first with a 95% interval; --draw has every frame really drawn and also compares the software renderer's time, a rough stand-in for a graphics chip's load
 node tools/audio-tour.mjs [outdir] [--secs N]            # the sound at nine places, hours and weathers and a walk over four grounds: loudness, balance of lows, mids and highs, the beds sounding and the birds singing, and a WAV of each
 node tools/sound-sheet.mjs [outdir] [--file build.html] [--only=id,id] [--music=SECS]   # every effect, animal call, engine, stinger and each mood's music played one at a time and recorded from the mix as WAV files (the announcer's voice too, as the reference); a take an older build cannot play records silence
+node tools/start-lag.mjs [--file index.html] [--throttle N] [--title SECS] [--secs SECS] [--size WxH] [--json out.json] [--main]   # the first minute of a game frame by frame on a slowed processor (a phone's stand-in): each frame's own work, what in it was the sound being made or handed over and the statue being carved, the longest frames, every hand-over over a millisecond, the tap that starts a game; --main makes the sound on the main thread as older builds did
+node tools/bake-cost.mjs [--file index.html] [--title SECS] [--main]   # what making the sound ahead of time costs: the worker's time for each job and when it was all made, the main thread's hand-overs (or, with --main, each frame's making and its longest steps), and the buffers' size
 node tools/sound-measure.mjs dir [dir2] [--png]         # each take's loudness (its loudest 0.2 s and the whole take, weighted as ITU-R BS.1770 weights), level, peak, brightness, noisiness, bands, clicks (and the recorder's own glitches apart); two sheets side by side; --png draws each take's spectrogram
 node tools/shot.mjs tools/scenarios/busts-save.json     # plaques read, saved, reloaded and continued, the Journal's Scientists page, and the ten-plaque objective
 node tools/cull-compare.mjs [index.html]                 # the same view with and without leaving out the parts smaller than a pixel, compared pixel by pixel, on the Coast Road and at Hotrod Landing

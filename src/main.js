@@ -494,6 +494,7 @@ class Session {
     $('title').hidden = true;
     g.hud.show(true);
     g.hud.resetGoal();
+    g.settleIn(20);
     g.overlay.enabled = true;
     g.env.setTime(s.time);
     g.env.day = s.day;
