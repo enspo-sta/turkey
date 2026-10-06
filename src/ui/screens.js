@@ -549,7 +549,7 @@ export class Screens {
     g.menuOpen = true;
     g.input.resetAll();
     g.input.exitPointerLock();
-    g.audio?.click();
+    g.audio?.slide?.(true);
     this.tab = opts.tab || null;
     this.render();
   }
@@ -561,7 +561,7 @@ export class Screens {
     this.overlay.hidden = true;
     this.body.innerHTML = '';
     this.game.menuOpen = false;
-    this.game.audio?.click();
+    this.game.audio?.slide?.(false);
     if (this.opts && this.opts.onClose) this.opts.onClose();
     if (was === 'shop' || was === 'wardrobe') this.game.save();
     if (was === 'telescope') {

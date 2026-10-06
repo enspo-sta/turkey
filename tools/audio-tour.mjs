@@ -44,6 +44,7 @@ await page.evaluate(() => {
   const A = g.audio;
   A.unlock();
   A.ambience.bakery.finish();
+  if (A.bakery) A.bakery.finish();
   A.setVolumes(0.8, 0);
   g.bears.directorT = 9999;
   // the recorder: after the compressor, before the speakers
@@ -60,8 +61,10 @@ await page.evaluate(() => {
     R.L.push(new Float32Array(a));
     R.R.push(new Float32Array(b));
   };
-  A.comp.disconnect();
-  A.comp.connect(proc);
+  // (the last node before the speakers, whatever the build calls it)
+  const last = A.limiter || A.comp;
+  last.disconnect();
+  last.connect(proc);
   proc.connect(ctx.destination);
   window.__sr = ctx.sampleRate;
 });

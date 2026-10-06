@@ -9,7 +9,7 @@
 // samples per second of everything baked (the context resamples)
 export const SR = 44100;
 
-function mulberry(seed) {
+export function mulberry(seed) {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;
@@ -22,7 +22,7 @@ function mulberry(seed) {
 
 // A loop that joins without a click: made `fade` seconds too long, its end
 // is blended into its start (equal power), and the extra cut off.
-function* seamless(ch, n, fade, sr) {
+export function* seamless(ch, n, fade, sr) {
   const f = Math.floor(fade * sr);
   const out = new Float32Array(n);
   out.set(ch.subarray(0, n));
@@ -34,21 +34,33 @@ function* seamless(ch, n, fade, sr) {
   return out;
 }
 
-// Scale a set of channels so the loudest sample is `peak`.
-function* normalise(chs, peak = 0.9) {
+// Scale a set of channels so the loudest sample is `peak` (the loops are
+// plain functions run a slice at a time: a loop inside a generator runs
+// several times slower).
+function peakRun(c, i0, i1, m) {
+  for (let i = i0; i < i1; i++) {
+    const a = c[i] < 0 ? -c[i] : c[i];
+    if (a > m) m = a;
+  }
+  return m;
+}
+function scaleRun(c, i0, i1, k) {
+  for (let i = i0; i < i1; i++) c[i] *= k;
+}
+export function* normalise(chs, peak = 0.9) {
+  const S = 16384;
   let m = 1e-9;
   for (const c of chs) {
-    for (let i = 0; i < c.length; i++) {
-      if ((i & 8191) === 8191) yield;
-      const a = c[i] < 0 ? -c[i] : c[i];
-      if (a > m) m = a;
+    for (let i = 0; i < c.length; i += S) {
+      m = peakRun(c, i, Math.min(c.length, i + S), m);
+      yield;
     }
   }
   const k = peak / m;
   for (const c of chs) {
-    for (let i = 0; i < c.length; i++) {
-      if ((i & 8191) === 8191) yield;
-      c[i] *= k;
+    for (let i = 0; i < c.length; i += S) {
+      scaleRun(c, i, Math.min(c.length, i + S), k);
+      yield;
     }
   }
   return chs;
@@ -463,8 +475,9 @@ export function* footsteps(seed, sr = SR) {
 // ------------------------------------------------------------ the reverb
 // The sound of a big outdoor space: a few early echoes off the ground and
 // the nearest trees, then a dense tail dying away, losing its highs as it
-// goes (air and leaves soak them up).
-export function* impulse(seconds, seed, sr = SR) {
+// goes (air and leaves soak them up). bright (0 to 1) keeps more of the
+// highs, for a room rather than the woods: the music's hall.
+export function* impulse(seconds, seed, sr = SR, bright = 0) {
   const rnd = mulberry(seed);
   const n = Math.floor(seconds * sr);
   const chs = [];
@@ -480,7 +493,7 @@ export function* impulse(seconds, seed, sr = SR) {
       if ((i & 2047) === 2047) yield;
       const t = i / sr;
       // the tail grows darker as it fades
-      const k = Math.max(0.04, 0.85 * Math.exp(-t * 2.6));
+      const k = Math.max(0.04 + bright * 0.2, 0.85 * Math.exp(-t * 2.6 * (1 - bright * 0.6)));
       lp += (rnd() * 2 - 1 - lp) * k;
       d[i] += lp * Math.exp(-t * (6.9 / seconds)) * 0.55 * Math.min(1, t / 0.03);
     }

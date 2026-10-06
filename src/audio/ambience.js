@@ -32,6 +32,10 @@ const LO = 22050;
 const MID = 22050;
 const HI = 44100;
 
+// All the beds together, against the rest of the mix (the effects and the
+// music are set against the announcer's voice, see LEVEL in audio.js)
+const BEDS = 0.8;
+
 const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
 const smooth = (x, a, b) => {
   const t = clamp01((x - a) / (b - a));
@@ -180,7 +184,10 @@ export class Ambience {
       whistle: ctx.createPeriodicWave(new Float32Array([0, 0, 0, 0]), new Float32Array([0, 1, 0.12, 0.035])),
       reed: ctx.createPeriodicWave(new Float32Array([0, 0, 0, 0, 0, 0]), new Float32Array([0, 1, 0.5, 0.33, 0.2, 0.12])),
     };
-    // the beds, silent until wanted
+    // the beds, silent until wanted. The low ones are band-passed rather
+    // than low-passed: the deep rumble under them (below about 80 Hz) is
+    // what a microphone hears in the wind, not an ear, and a phone's speaker
+    // cannot play it; their body is kept, a little higher.
     const B = (name, want, type, freq, q, dir = false) => {
       const f = ctx.createBiquadFilter();
       f.type = type;
@@ -199,16 +206,16 @@ export class Ambience {
       this.beds[name] = bed;
       return bed;
     };
-    B('windLow', 'brown', 'lowpass', 240, 0.6);
+    B('windLow', 'brown', 'bandpass', 260, 0.55);
     B('windHigh', 'pink', 'bandpass', 700, 0.55);
     B('whistle', 'pink', 'bandpass', 1300, 9);
     B('leaves', 'rustle', 'highpass', 1200, 0.5);
-    B('riverLow', 'brown', 'lowpass', 170, 0.7, true);
+    B('riverLow', 'brown', 'bandpass', 210, 0.6, true);
     B('riverRush', 'pink', 'bandpass', 650, 0.45, true);
     B('babble', 'babble', 'highpass', 160, 0.5, true);
     B('falls', 'pink', 'lowpass', 2600, 0.4, true);
-    B('fallsLow', 'brown', 'lowpass', 140, 0.6, true);
-    B('sea', 'brown', 'lowpass', 430, 0.5, true);
+    B('fallsLow', 'brown', 'bandpass', 170, 0.6, true);
+    B('sea', 'brown', 'bandpass', 380, 0.5, true);
     B('rain', 'white', 'highpass', 1700, 0.45);
     B('patter', 'patter', 'highpass', 800, 0.5);
     B('drips', 'drips', 'highpass', 250, 0.5);
@@ -257,7 +264,7 @@ export class Ambience {
       }
     }
     if (Math.abs((bed.last ?? -1) - v) > 0.0004) {
-      bed.g.gain.setTargetAtTime(v, t, tc);
+      bed.g.gain.setTargetAtTime(v * BEDS, t, tc);
       bed.last = v;
     }
   }
@@ -395,7 +402,8 @@ export class Ambience {
     const wind = clamp01((0.18 + exposed * 0.45) * breeze + gust * (0.5 + exposed * 0.5) + w.rain * 0.25);
     // the trees break the wind: under them it is mostly the leaves you hear
     const shelter = 1 - H.forest * 0.55;
-    this.set('windLow', (0.035 + wind * 0.2 * shelter + glide * 0.25) * k);
+    // (the low beds a little up since they lost their rumble: see start())
+    this.set('windLow', (0.05 + wind * 0.28 * shelter + glide * 0.33) * k);
     this.set('windHigh', (0.01 + wind * wind * 0.16 * shelter + glide * 0.3) * k);
     this.beds.windHigh.f.frequency.setTargetAtTime(450 + wind * 900 + glide * 700, t, 0.4);
     this.set('whistle', exposed * gust * gust * 0.05 * k);
@@ -404,14 +412,14 @@ export class Ambience {
     this.set('leaves', H.forest * (0.025 + gust * 0.16 + w.rain * 0.04) * k);
     // ---- water
     const rv = H.river;
-    this.set('riverLow', rv * (0.12 + H.riverFast * 0.14) * k);
+    this.set('riverLow', rv * (0.15 + H.riverFast * 0.175) * k);
     this.set('riverRush', rv * (0.05 + H.riverFast * 0.12) * k);
     // the babble only close to the water
     this.set('babble', rv * smooth(30 - (H.riverNear ?? 99), 0, 25) * (0.18 + H.riverFast * 0.2) * k);
     this.set('falls', H.falls * 0.42 * k);
     this.set('fallsLow', H.falls * 0.32 * k);
     // the wash, as present at the shore as a river is on its bank
-    this.set('sea', H.sea * (0.14 + 0.08 * Math.sin(t * 0.21)) * k);
+    this.set('sea', H.sea * (0.17 + 0.095 * Math.sin(t * 0.21)) * k);
     if (rv > 0.001) this.aim(this.beds.riverLow.p, H.riverX, H.riverZ, 0.55, this.beds.riverRush.p, this.beds.babble.p);
     if (H.falls > 0.001) this.aim(this.beds.falls.p, H.fallsX, H.fallsZ, 0.75, this.beds.fallsLow.p);
     if (H.sea > 0.001) this.aim(this.beds.sea.p, H.seaX, H.seaZ, 0.6);
@@ -512,10 +520,10 @@ export class Ambience {
     this.voices++;
     const t = ctx.currentTime + 0.03;
     // let the chain go when the sound is over
-    setTimeout(() => {
+    this.A.afterSound((dur + 0.6) * 1000, () => {
       this.voices--;
       for (const n of [input, lp, g, p, send]) n.disconnect();
-    }, (dur + 0.6) * 1000);
+    });
     return { in: input, t, d };
   }
 
@@ -680,10 +688,10 @@ export class Ambience {
         const m = this.mozzies;
         this.mozzies = null;
         m.g.gain.setTargetAtTime(0, ctx.currentTime, 0.3);
-        setTimeout(() => {
+        this.A.afterSound(1500, () => {
           for (const o of m.osc) o.stop();
           m.g.disconnect();
-        }, 1500);
+        });
       }
       return;
     }
@@ -987,8 +995,18 @@ export class Ambience {
   // ------------------------------------------------------------ calls
   // (also used for the animals the world places: see AudioEngine)
   raven(x, y, z, k = 1) {
-    // a deep croak or two (kraa, kraa), throaty and rough
-    const v = this.voice(x, y, z, { range: 280, gain: 1.0 * k, verb: 0.5, dur: 1.6, ref: 30 });
+    // a deep croak or two (kraa, kraa), throaty and rough: the library's
+    // (a voice through a throat's resonances, see kit.js) once it is made
+    const A = this.A;
+    if (A.kit?.croak) {
+      const v = this.voice(x, y, z, { range: 280, gain: k, verb: 0.5, dur: 2.2, ref: 30 });
+      if (!v) return;
+      const n = 1 + Math.floor(Math.random() * 3);
+      const r = rand(0.92, 1.08);
+      for (let i = 0; i < n; i++) A.play('croak', { at: v.t + i * rand(0.42, 0.55), dest: v.in, rate: r * rand(0.97, 1.03) });
+      return;
+    }
+    const v = this.voice(x, y, z, { range: 280, gain: 3.3 * k, verb: 0.5, dur: 1.6, ref: 30 });
     if (!v) return;
     const n = 1 + Math.floor(Math.random() * 3);
     const f0 = rand(300, 380);
@@ -1022,7 +1040,7 @@ export class Ambience {
 
   gull(x, y, z, k = 1) {
     // a glaucous-winged gull: the long call, kee-ow, then a laughing ha-ha-ha
-    const v = this.voice(x, y, z, { range: 260, gain: 0.9 * k, verb: 0.3, dur: 2.4, ref: 30 });
+    const v = this.voice(x, y, z, { range: 260, gain: 1.6 * k, verb: 0.3, dur: 2.4, ref: 30 });
     if (!v) return;
     const f0 = rand(1250, 1500);
     this.note(v, v.t, [f0 * 1.15, f0, f0 * 0.66], 0.32, 0.06, { wave: 'reed', attack: 0.02 });
@@ -1036,7 +1054,7 @@ export class Ambience {
 
   eagle(x, y, z, k = 1) {
     // the bald eagle: a thin, high chittering, kleek-kik-ik-ik-ik
-    const v = this.voice(x, y, z, { range: 380, gain: 0.9 * k, verb: 0.45, dur: 1.6, ref: 50 });
+    const v = this.voice(x, y, z, { range: 380, gain: 1.4 * k, verb: 0.45, dur: 1.6, ref: 50 });
     if (!v) return;
     let t = v.t;
     const n = 5 + Math.floor(Math.random() * 4);
@@ -1050,10 +1068,10 @@ export class Ambience {
   // The common loon: the wail, rising and falling across the water, or
   // the quavering tremolo.
   loonCall(x, y, z, k = 1, kind = 'wail') {
-    const v = this.voice(x, y, z, { range: 900, gain: 1.4 * k, verb: 0.9, dur: 3.5, ref: 120 });
+    const v = this.voice(x, y, z, { range: 900, gain: 1.25 * k, verb: 0.9, dur: 3.5, ref: 120 });
     if (!v) return;
     if (kind === 'wail') {
-      const o = this.note(v, v.t, [560, 880, 860, 820, 700], 2.7, 0.09, { wave: 'whistle', attack: 0.4, release: 0.3 });
+      const o = this.note(v, v.t, [560, 880, 860, 820, 700], 2.7, 0.067, { wave: 'whistle', attack: 0.4, release: 0.3 });
       const vib = this.ctx.createOscillator();
       vib.frequency.value = 5.2;
       const vg = this.ctx.createGain();
@@ -1063,7 +1081,8 @@ export class Ambience {
       vib.start(v.t);
       vib.stop(v.t + 2.8);
     } else {
-      const o = this.note(v, v.t, [1050, 1100, 1060], 2.0, 0.07, { wave: 'whistle', buzz: 0.95, buzzHz: 9, attack: 0.1 });
+      // (louder than the wail: the tremolo's flutter takes half of it away)
+      const o = this.note(v, v.t, [1050, 1100, 1060], 2.0, 0.11, { wave: 'whistle', buzz: 0.95, buzzHz: 9, attack: 0.1 });
       const fm = this.ctx.createOscillator();
       fm.frequency.value = 9;
       const fg = this.ctx.createGain();
@@ -1085,7 +1104,7 @@ export class Ambience {
     const z = L.z + Math.cos(a) * d;
     const n = 2 + Math.floor(Math.random() * 2);
     for (let i = 0; i < n; i++) {
-      const v = this.voice(x + rand(-20, 20), L.y + 10, z + rand(-20, 20), { range: 1200, gain: 1.8 * k, verb: 0.9, dur: 9, ref: 150 });
+      const v = this.voice(x + rand(-20, 20), L.y + 10, z + rand(-20, 20), { range: 1200, gain: 2.2 * k, verb: 0.9, dur: 9, ref: 150 });
       if (!v) return;
       const f0 = rand(330, 460) * (i ? rand(1.1, 1.35) : 1);
       const t = v.t + i * rand(0.6, 1.6);
@@ -1189,7 +1208,7 @@ export class Ambience {
     s.buffer = bank[i];
     s.playbackRate.value = rand(0.92, 1.08) * (sprint ? 1.06 : 1);
     const g = ctx.createGain();
-    g.gain.value = (sprint ? 0.5 : 0.36) * rand(0.85, 1.1);
+    g.gain.value = (sprint ? 0.32 : 0.23) * rand(0.85, 1.1);
     const p = ctx.createStereoPanner();
     this.stepSide = -this.stepSide;
     p.pan.value = this.stepSide * 0.08;

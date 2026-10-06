@@ -257,7 +257,7 @@ export class Bears {
             b.headT = 1.2;
           }
           // surprise: player walks right up to a fishing bear with fish on him
-          if (onFoot && fish && d < 16 && !this.threat) this.alert(b, 2.2);
+          if (onFoot && fish && d < 16 && !this.threat && !this.fishingBusy()) this.alert(b, 2.2);
           break;
         }
         case 'roam': {
@@ -270,7 +270,7 @@ export class Bears {
           desired = Math.atan2((b.tx ?? b.x) - b.x, (b.tz ?? b.z) - b.z);
           b.targetSpeed = b.cfg.walk;
           const smell = KIND[b.kind].smell + g.state.cooler.length * 6;
-          if (onFoot && fish && d < Math.min(smell, 45) && !this.threat) this.alert(b, 3.2);
+          if (onFoot && fish && d < Math.min(smell, 45) && !this.threat && !this.fishingBusy()) this.alert(b, 3.2);
           break;
         }
         case 'stalk': {
@@ -282,7 +282,11 @@ export class Bears {
             b.growlT = 4 + Math.random() * 3;
             g.audio?.huff(b.x, b.z);
           }
-          if (d < 42 || b.t <= 0) this.alert(b, 3.6);
+          // (a fish on the line is fought to the end first: the bear holds
+          // back, sniffing, and comes on once it is landed or gone)
+          if (this.fishingBusy()) {
+            if (d < 34) b.targetSpeed = 0;
+          } else if (d < 42 || b.t <= 0) this.alert(b, 3.6);
           if (!onFoot || !fish) {
             b.state = 'retreat';
             b.t = 8;
@@ -413,6 +417,13 @@ export class Bears {
         g.hud?.danger(rel, Math.abs(rel) > 0.35 ? inten : 0);
       }
     }
+  }
+
+  // A fish on the line, being landed or on the catch card: no bear starts
+  // a charge until that is over.
+  fishingBusy() {
+    const s = this.game.fishing?.state;
+    return s === 'fight' || s === 'landing' || s === 'catch' || s === 'stolen';
   }
 
   alert(b, warn) {

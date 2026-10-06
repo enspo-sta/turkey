@@ -338,6 +338,11 @@ svg { width: 1em; height: 1em; display: block; }
 .catch-stats small { display: block; font-size: 11px; letter-spacing: .14em; color: var(--ink-dim); text-transform: uppercase; font-weight: 700; }
 .catch-stats b { font-size: 20px; font-variant-numeric: tabular-nums; }
 .catch-info { margin: 0 0 12px; font-size: 14px; line-height: 1.35; color: var(--ink-dim); }
+.catch-bonus { margin: -2px 0 8px; font-size: 13px; line-height: 1.35; font-weight: 700; color: var(--flame-2); letter-spacing: .02em; }
+/* money coming in: the amount rising off the counter */
+#hud-gain { position: relative; font-size: 18px; opacity: 0; pointer-events: none; }
+#hud-gain.show { animation: gainUp 1.4s ease-out; }
+@keyframes gainUp { 0% { opacity: 0; transform: translateY(6px); } 15% { opacity: 1; transform: none; } 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(-14px); } }
 .catch-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .catch-actions:has(#catch-photo:not([hidden])) { grid-template-columns: auto 1fr 1fr; }
 #catch-photo { padding: 0 14px; }

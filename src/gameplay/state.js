@@ -148,6 +148,13 @@ export class GameState {
     return COOLERS[this.gear.cooler].cap;
   }
 
+  // The least valuable fish in the cooler (the one a full cooler swaps).
+  cheapestInCooler() {
+    let best = null;
+    for (const f of this.cooler) if (!best || (f.value || 0) < (best.value || 0)) best = f;
+    return best;
+  }
+
   coolerFull() {
     return this.cooler.length >= this.coolerCap();
   }
@@ -324,6 +331,17 @@ export class GameState {
 
   currentChallenge() {
     return CHALLENGES.find((c) => !this.challenges[c.id]) || null;
+  }
+
+  // The first n challenges not yet done.
+  openChallenges(n) {
+    const out = [];
+    for (const c of CHALLENGES) {
+      if (this.challenges[c.id]) continue;
+      out.push(c);
+      if (out.length >= n) break;
+    }
+    return out;
   }
 
   // ---- persistence ----------------------------------------------------

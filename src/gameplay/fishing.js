@@ -1,7 +1,10 @@
 // Fishing: aim at water, a 3-tap cast (power, then a timing bar) with the
 // throw marked out over the water, lure flight, float with nibbles and bites,
 // hook timing, a tension/stamina fight with rod steering and jumps, landing
-// and the catch card.
+// and the catch card. Skill pays: a hook set right on the take, a rod
+// lowered to a jumping fish, a run turned by steering against it and a run
+// of catches without losing one each add to what the fish is worth; and now
+// and then the fish go into a feeding frenzy round the float.
 import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
@@ -37,6 +40,7 @@ export class Fishing {
     this.hotspots = [];
     this.hotPlace = null;
     this.nextApproach = 10;
+    this.frenzy = null;
     this.tip = new THREE.Vector3();
     this.perfect = false;
     this.catchInfo = null;
@@ -221,6 +225,10 @@ export class Fishing {
   cancel(message) {
     const g = this.game;
     this.settleCatch();
+    // a fish on the line dropped (quitting, driving off, fast travel, a
+    // bear) is a fish lost: the run of catches ends
+    if (this.state === 'fight' || this.state === 'landing') this.endStreak();
+    this.twitchAt = null;
     this.state = 'idle';
     this.snag = false;
     this.encounter = null;
@@ -245,6 +253,7 @@ export class Fishing {
     const P = g.player;
     this.t += dt;
     this.updateHotspots(dt);
+    this.updateFrenzy(dt);
     const onFoot = P.mode === 'foot' && P.tool === 'rod' && !g.menuOpen;
     if (!onFoot && this.state !== 'idle' && this.state !== 'catch') this.cancel();
     if (!onFoot) {
@@ -271,7 +280,8 @@ export class Fishing {
         this.updateMeter(dt, primaryPressed);
         break;
       case 'tangle':
-        this.t2 -= dt;
+        // each tap picks a loop of the bird's nest out
+        this.t2 -= dt + (primaryPressed ? 0.35 : 0);
         if (this.t2 <= 0) {
           this.state = 'idle';
           P.moveLocked = false;
@@ -497,8 +507,65 @@ export class Fishing {
     }
     rate *= clamp(match / Math.max(wsum, 1e-3), 0.3, 2);
     if (this.salmonRunHere()) rate *= 1.8;
+    if (this.frenzyHere()) rate *= 3;
     const mean = 1 / rate;
-    return Math.max(1.2, -Math.log(1 - Math.random()) * mean);
+    // (the odd long wait, but never more than two and a half times the
+    // usual: an hour of nothing is not patience, it is a broken rod)
+    return Math.max(1.2, Math.min(2.5 * mean, -Math.log(1 - Math.random()) * mean));
+  }
+
+  // ------------------------------------------------------------ the frenzy
+  // Now and then, after a while with a line in the water, the fish round the
+  // float go into a feeding frenzy: the water boils with them, and for 40
+  // seconds they take three times as fast, and without nibbling first.
+  updateFrenzy(dt) {
+    const g = this.game;
+    const fz = this.frenzy;
+    if (fz) {
+      fz.t -= dt;
+      fz.splashT -= dt;
+      if (fz.splashT <= 0) {
+        fz.splashT = 0.4 + Math.random() * 0.9;
+        const a = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(Math.random()) * fz.r * 0.6;
+        const x = fz.x + Math.cos(a) * r;
+        const z = fz.z + Math.sin(a) * r;
+        const w = g.world.waterAt(x, z);
+        if (w && w.depth > 0.4) {
+          g.effects.splash(x, w.level, z, 0.25 + Math.random() * 0.25);
+          g.effects.ripples.add(x, w.level, z, 1.2, 1);
+          if (Math.random() < 0.6) g.audio?.splash(0.3, x, z);
+        }
+      }
+      if (fz.t <= 0) {
+        this.frenzy = null;
+        g.hud.toast('The frenzy has passed');
+      }
+      return;
+    }
+    // its clock only runs with a line in the water
+    if (this.state !== 'waiting' || this.snag || !this.water || this.water.kind === 'hotpool') return;
+    this.frenzyClock = (this.frenzyClock ?? 150 + Math.random() * 150) - dt;
+    if (this.frenzyClock <= 0) this.startFrenzy();
+  }
+
+  startFrenzy() {
+    const g = this.game;
+    this.frenzyClock = 180 + Math.random() * 200;
+    const fl = this.float.position;
+    this.frenzy = { x: fl.x, z: fl.z, r: 45, t: 40, splashT: 0 };
+    g.state.stats.frenzies = (g.state.stats.frenzies || 0) + 1;
+    g.hud.banner('FEEDING FRENZY!', 'good', 'The water is boiling with fish');
+    g.announcer.say('bite', { banner: false });
+    g.audio?.frenzy?.();
+    if (this.state === 'waiting' && !this.encounter) this.nextApproach = Math.min(this.nextApproach, 1.5 + Math.random());
+  }
+
+  frenzyHere() {
+    const fz = this.frenzy;
+    if (!fz) return false;
+    const f = this.float.position;
+    return Math.hypot(f.x - fz.x, f.z - fz.z) < fz.r;
   }
 
   salmonRunHere() {
@@ -614,10 +681,19 @@ export class Fishing {
         g.audio?.plop(0.3);
         this.spook();
       } else {
-        // twitch
+        // a twitch now and then draws a fish's eye; a flurry of them
+        // splashing about puts the fish off (counted once the press turns
+        // out to be a tap: one held on into a reel is not a twitch)
         this.pullFloat(0.45, false);
         g.effects.ripples.add(fl.x, this.floatBase, fl.z, 0.8, 0.8);
-        this.nextApproach = Math.max(0.5, this.nextApproach * 0.85);
+        this.twitchAt = this.t;
+      }
+    }
+    if (this.twitchAt != null) {
+      if (reeling) this.twitchAt = null;
+      else if (!held) {
+        this.countTwitch(this.twitchAt);
+        this.twitchAt = null;
       }
     }
     if (reeling) {
@@ -649,6 +725,21 @@ export class Fishing {
     this.float.position.y = this.floatBase + Math.sin(this.t * 2.2) * 0.012 - dip;
     this.float.rotation.z = Math.sin(this.t * 1.7) * 0.08 + (enc && enc.phase === 'bite' ? 0.5 : 0);
     g.hud.setWaitingHint(enc && enc.phase === 'bite');
+  }
+
+  // A twitch (made at time at): one after a pause brings the next fish on
+  // sooner, a flurry of them puts it off.
+  countTwitch(at) {
+    const since = at - (this.lastTwitch ?? -9);
+    this.lastTwitch = at;
+    if (since >= 1.5) {
+      this.twitches = 0;
+      this.nextApproach = Math.max(0.5, this.nextApproach * 0.8);
+    } else if (++this.twitches >= 3) {
+      this.twitches = 0;
+      this.nextApproach += 4;
+      this.game.hud.toast('Easy on the twitching: all that splashing puts the fish off');
+    }
   }
 
   // Pull the float toward the player. Reeling it into the shallows brings
@@ -707,7 +798,7 @@ export class Fishing {
       dipT: 0,
       gap: 0.4 + Math.random() * 0.6,
       window: clamp(0.95 - big * 0.3 - (fish.legend ? 0.2 : 0), 0.45, 0.95) * (this.rod().hookWindow || 1),
-      skipNibble: false,
+      skipNibble: this.frenzyHere(),
       size: clamp(lengthFor(fish.species, fish.weight) / 100, 0.3, 2.2),
     };
     this.showJumper(fish.species, fish.weight);
@@ -772,7 +863,7 @@ export class Fishing {
           e.nibbles--;
           e.dipT = 0.35;
           g.effects.ripples.add(fl.x, this.floatBase, fl.z, 0.7, 0.8);
-          g.audio?.plop(0.25);
+          g.audio?.nibble?.();
           g.haptic?.('light');
           e.gap = 0.6 + Math.random() * 1.0;
         } else {
@@ -820,8 +911,17 @@ export class Fishing {
     const P = g.player;
     const fl = this.float.position;
     g.hud.prompt(null);
+    // set in the first third of the take: the hook goes home deep, the fish
+    // starts a little spent and is worth more
+    const clean = e.t <= e.window * 0.35;
     if (fish.legend) g.announcer.say('legend', { sub: `${fish.name.toUpperCase()}!`, kind: 'legend' });
-    else g.announcer.say('fishOn');
+    else g.announcer.say('fishOn', { sub: clean ? 'PERFECT HOOKSET' : null });
+    if (clean) {
+      g.state.stats.perfectHooks = (g.state.stats.perfectHooks || 0) + 1;
+      g.audio?.perfect?.();
+      if (fish.legend) g.hud.toast('Perfect hookset!', 'good');
+    }
+    g.player.shake = Math.min(1, (g.player.shake || 0) + (fish.legend ? 0.5 : 0.25));
     // a heavy one gets a second shout once the first has had its moment
     this.bigCallT = !fish.legend && fish.weight > f.min + (f.max - f.min) * 0.6 ? 1.6 : -1;
     g.audio?.fishOn(!!fish.legend);
@@ -832,7 +932,12 @@ export class Fishing {
     this.fight = {
       fish,
       power,
-      stamina: 1,
+      stamina: clean ? 0.85 : 1,
+      clean,
+      bows: 0,
+      turns: 0,
+      turnT: 0,
+      turned: false,
       dist,
       baseYaw,
       angle: 0,
@@ -873,6 +978,8 @@ export class Fishing {
     if (next === 'run') {
       F.stateT = 1.1 + Math.random() * 2.2;
       F.dir = Math.random() < 0.5 ? -1 : 1;
+      F.turnT = 0;
+      F.turned = false;
       this.game.audio?.reelScream(true);
     } else {
       this.game.audio?.reelScream(false);
@@ -1006,7 +1113,31 @@ export class Fishing {
       F.jumpT += dt;
       if (!F.jumpChecked && F.jumpT > 0.45) {
         F.jumpChecked = true;
-        if (reeling && Math.random() < 0.45) return this.lose('Ease off the reel while it jumps', false, 'threwHook');
+        if (reeling && Math.random() < (F.clean ? 0.25 : 0.45)) return this.lose('Ease off the reel while it jumps', false, 'threwHook');
+        if (!reeling) {
+          // the rod lowered to the leap: the hook holds, the fish tires
+          F.bows = (F.bows || 0) + 1;
+          F.stamina = Math.max(0, F.stamina - 0.08);
+          g.hud.toast(F.bows > 1 ? `Bowed to the jump again (${F.bows})` : 'Nice! You bowed to the jump', 'good');
+          g.audio?.nice?.();
+        }
+      }
+    }
+    // steering hard against a run turns the fish's head
+    if (F.state === 'run' && opposition > 0.5 && !F.turned) {
+      F.turnT += dt;
+      if (F.turnT > 1.2) {
+        F.turned = true;
+        F.turns = (F.turns || 0) + 1;
+        F.stamina = Math.max(0, F.stamina - 0.05);
+        // the run is over: it swims back the way the rod leads it, and the
+        // drag goes quiet
+        F.state = 'swim';
+        F.stateT = 1.2 + Math.random() * 1.2;
+        F.dir = -F.dir;
+        g.audio?.reelScream(false);
+        g.hud.toast('Turned its head!', 'good');
+        g.haptic?.('light');
       }
     }
 
@@ -1016,6 +1147,9 @@ export class Fishing {
         F.state = 'run';
         F.stateT = 1.5;
         F.dir = Math.random() < 0.5 ? -1 : 1;
+        F.turnT = 0;
+        F.turned = false;
+        g.audio?.reelScream(true);
         g.hud.toast('Still too green to land. Wear it out');
       } else if (reeling) {
         this.state = 'landing';
@@ -1051,7 +1185,9 @@ export class Fishing {
     if (g.input.lookTouch.id === null && !g.input.mouseDown) P.yaw += angleDiff(P.yaw, fishYaw) * Math.min(1, dt * 1.4);
     g.audio?.reel(reeling, tNorm);
     g.audio?.creak(tNorm > 0.82 ? (tNorm - 0.82) * 5 : 0);
-    if (tNorm > 0.9) g.haptic?.('light');
+    // a buzz as the line goes into the red (not every frame it stays there)
+    if (tNorm > 0.9 && !F.redBuzz) g.haptic?.('light');
+    F.redBuzz = tNorm > 0.85;
 
     g.hud.setFight({
       tension: tNorm,
@@ -1113,6 +1249,8 @@ export class Fishing {
         F.splashOut = true;
         this.game.effects.splash(F.pos.x, F.level, F.pos.z, 1.1);
         this.game.audio?.splash(1);
+        const P = this.game.player;
+        P.shake = Math.min(1, (P.shake || 0) + 0.12 + this.jumperLen * 0.08);
       }
     } else {
       // fighting under the surface: runs deep and sideways, rolls when tired
@@ -1140,12 +1278,21 @@ export class Fishing {
       g.audio?.snap();
       g.haptic?.('heavy');
     } else g.audio?.splash(0.5);
+    g.audio?.lost?.();
+    this.endStreak();
     if (line) {
       g.announcer.say(line, { kind: 'bad' });
       g.hud.toast(message, 'bad');
     } else g.hud.banner(message, 'bad');
     this.cancel();
     return false;
+  }
+
+  // The run of catches without losing one is over.
+  endStreak() {
+    const st = this.game.state.stats;
+    if ((st.streak || 0) >= 3) this.game.hud.toast(`Your run of ${st.streak} ends`, 'bad');
+    st.streak = 0;
   }
 
   // ----------------------------------------------------------------- landing
@@ -1269,6 +1416,37 @@ export class Fishing {
     const len = lengthFor(fish.species, fish.weight);
     let value = Math.round(fish.weight * f.perKg * RARITY[f.rarity].value);
     if (fish.legend) value += LEGENDS[fish.legend].bonus;
+    // what the fight was worth: a clean hook set, jumps bowed to, runs
+    // turned, and the run of catches without losing one
+    const st = g.state.stats;
+    st.streak = (st.streak || 0) + 1;
+    st.bestStreak = Math.max(st.bestStreak || 0, st.streak);
+    const bonus = [];
+    let mult = 1;
+    if (F.clean) {
+      mult += 0.1;
+      bonus.push('Perfect hookset +10%');
+    }
+    const bows = Math.min(3, F.bows || 0);
+    if (bows) {
+      mult += 0.05 * bows;
+      bonus.push(`${bows === 1 ? 'Bowed to the jump' : `Bowed to ${bows} jumps`} +${5 * bows}%`);
+    }
+    const turns = Math.min(2, F.turns || 0);
+    if (turns) {
+      mult += 0.05 * turns;
+      bonus.push(`${turns === 1 ? 'Turned a run' : 'Turned 2 runs'} +${5 * turns}%`);
+    }
+    if (st.streak >= 2) {
+      const k = Math.min(5, st.streak - 1);
+      mult += 0.1 * k;
+      bonus.push(`${st.streak} in a row +${10 * k}%`);
+    }
+    value = Math.round(value * mult);
+    if (st.streak === 3 || st.streak === 5 || st.streak === 10) {
+      g.hud.toast(`${st.streak} in a row! Each catch is worth more until you lose one`, 'good');
+      g.audio?.nice?.();
+    }
     const flags = g.state.recordCatch({ species: fish.species, weight: fish.weight, length: len, legend: fish.legend });
     this.catchInfo = {
       species: fish.species,
@@ -1281,11 +1459,14 @@ export class Fishing {
       rarity: fish.legend ? 'legendary' : f.rarity,
       ...flags,
       place: this.hotPlace ? this.hotPlace.name : null,
+      bonus,
     };
     this.state = 'catch';
     g.viewmodel.showFish(fish.species, len);
     g.player.lookLocked = true;
-    g.audio?.fanfare(!!fish.legend || flags.isNew);
+    // the stinger: a legend's fanfare, a new species' discovery, a trophy's
+    // or a plain catch's
+    g.audio?.fanfare(fish.legend ? 'legend' : flags.isNew ? 'new' : flags.isBest || f.rarity === 'rare' || f.rarity === 'epic' ? 'big' : 'catch');
     g.haptic?.('success');
     // the announcer calls it: a legend, a new species, a personal best or
     // just a nice fish
@@ -1300,6 +1481,8 @@ export class Fishing {
     }
     g.onEvent({ type: 'catch', fish: { species: fish.species, weight: fish.weight, legend: fish.legend }, fromBoat: !!g.player.boat });
     g.hud.showCatch(this.catchInfo, g.state.coolerFull(), (keep) => this.resolveCatch(keep));
+    // a bonus is counted out in coins as its line comes up on the card
+    if (bonus.length) g.audio?.coins?.(Math.min(1, 0.6 + bonus.length * 0.15), 1.1);
   }
 
   // A catch card still waiting for a choice when something else takes over
@@ -1308,15 +1491,28 @@ export class Fishing {
   settleCatch() {
     if (!this.catchInfo) return;
     this.game.hud.closeCatch();
-    this.resolveCatch(!this.game.state.coolerFull());
+    // (a full cooler lets this one go: nothing in it is swapped out unasked,
+    // it might be the fish a job wants)
+    this.resolveCatch(true, false);
   }
 
-  resolveCatch(keep) {
+  resolveCatch(keep, swap = true) {
     const g = this.game;
     const c = this.catchInfo;
+    // a full cooler: the least valuable fish in it goes back for a better one
+    let swapped = null;
+    if (keep && swap && g.state.coolerFull()) {
+      const cheap = g.state.cheapestInCooler();
+      if (cheap && (cheap.value || 0) < c.value) {
+        g.state.cooler.splice(g.state.cooler.indexOf(cheap), 1);
+        g.state.stats.released++;
+        swapped = cheap;
+      }
+    }
     if (keep && !g.state.coolerFull()) {
       g.state.cooler.push({ species: c.species, weight: c.weight, length: c.length, value: c.value, legend: c.legend, name: c.name, lure: g.state.gear.lure });
-      g.hud.toast(`${c.name} in the cooler (${g.state.cooler.length}/${g.state.coolerCap()})`);
+      if (swapped) g.hud.toast(`Swapped: the ${swapped.name.toLowerCase()} goes back, the ${c.name.toLowerCase()} goes in the cooler`);
+      else g.hud.toast(`${c.name} in the cooler (${g.state.cooler.length}/${g.state.coolerCap()})`);
       g.bears?.onFishKept?.();
     } else {
       g.state.stats.released++;

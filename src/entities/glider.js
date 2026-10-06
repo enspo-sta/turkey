@@ -158,7 +158,7 @@ export class Glider {
     this.hold = { x: mv.x, y: mv.y };
     this.edgeWarned = false;
     this.canopy.visible = true;
-    g.audio?.whoosh();
+    g.audio?.gust?.();
     g.hud?.prompt('', 'hot', 0);
     const s = g.state;
     if (!s.flags.glided) {

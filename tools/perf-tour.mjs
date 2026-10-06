@@ -11,7 +11,7 @@
 // let catch up before each frame (outside the timing), so a frame never pays
 // for work queued before it.
 // Usage: node tools/perf-tour.mjs [out.json] [--frames N] [--noprofile] [--draw] [--tally]
-//          [--size WxH] [--dpr N] [--file path/to/index.html]
+//          [--size WxH] [--dpr N] [--file path/to/index.html] [--sound]
 // --size and --dpr set the page's size and pixel ratio (the culling of small
 // parts depends on how many pixels the view has; 844x390 at 2 is an iPhone
 // on its side); --file loads another build (an older one, to compare).
@@ -20,6 +20,11 @@
 // With --draw each frame is also waited for after it is drawn: that wait,
 // the software renderer doing the frame's vertices and pixels, is kept as
 // `gpu`, a rough stand-in for a graphics chip's load (not its speed).
+// With --sound the sound is switched on before the tour (as the first tap
+// does) and everything it makes ahead of time is made first, so the tour
+// times each frame's sound work as it is once the game is under way (the
+// music, the place, the engines); without it the sound stays off, as on
+// the title screen before a tap.
 import { createRequire } from 'node:module';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -38,6 +43,7 @@ const FRAMES = fi >= 0 ? +args[fi + 1] : 120;
 const profile = !args.includes('--noprofile');
 const draw = args.includes('--draw');
 const tally = args.includes('--tally');
+const sound = args.includes('--sound');
 
 const zi = args.indexOf('--size');
 const [VW, VH] = zi >= 0 ? args[zi + 1].split('x').map(Number) : [320, 180];
@@ -45,7 +51,7 @@ const di = args.indexOf('--dpr');
 const DPR = di >= 0 ? +args[di + 1] : 1;
 const fl = args.indexOf('--file');
 const FILE = fl >= 0 ? args[fl + 1] : 'dist/index.html';
-const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-precise-memory-info'] });
+const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-precise-memory-info', ...(sound ? ['--autoplay-policy=no-user-gesture-required'] : [])] });
 const page = await browser.newPage({ viewport: { width: VW, height: VH }, deviceScaleFactor: DPR });
 // no pointer lock: the headless browser floods a locked pointer with mouse
 // events, which pile up while a frame is being stepped (see tools/shot.mjs)
@@ -56,6 +62,13 @@ await page.goto('file://' + resolve(FILE));
 await page.waitForFunction(() => window.__rhf && window.__rhf.ready, null, { timeout: 180000 });
 console.log(`loaded and warmed up in ${(await page.evaluate(() => performance.now() / 1000)).toFixed(1)} s`);
 await page.evaluate(() => __rhf.start(false));
+if (sound)
+  await page.evaluate(() => {
+    const A = __rhf.game.audio;
+    A.unlock();
+    A.ambience.bakery.finish();
+    if (A.bakery) A.bakery.finish();
+  });
 await page.waitForTimeout(1500);
 // time three.js's check of each new shader (it waits for the compile to
 // finish) and name the program it waited on

@@ -282,7 +282,7 @@ export class Boat {
     this.where = 'moving';
     this.speed = 0;
     this.anchored = false;
-    g.audio?.tone?.('square', 140, 0.6, 0.03, { f2: 90 });
+    g.audio?.winch?.();
     g.hud?.toast('Winched onto the trailer. Ready to tow', 'good');
   }
 

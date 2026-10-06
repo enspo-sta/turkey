@@ -52,7 +52,7 @@
     <div id="hitmark"></div>
 
     <div class="top-left">
-      <div class="stat money"><span id="hud-money">$0</span></div>
+      <div class="stat money"><span id="hud-money">$0</span><span id="hud-gain" aria-hidden="true"></span></div>
       <div class="stat health"><svg><use href="#i-heart"/></svg><div class="bar"><i id="hud-health"></i></div></div>
       <div class="stat-row">
         <div class="stat chip" id="chip-cooler"><svg><use href="#i-cooler"/></svg><span id="hud-cooler">0/8</span></div>
@@ -162,6 +162,7 @@
       <div><small>Length</small><b id="catch-length">0 cm</b></div>
       <div><small>Value</small><b id="catch-value">$0</b></div>
     </div>
+    <p class="catch-bonus" id="catch-bonus" hidden></p>
     <p class="catch-info" id="catch-info"></p>
     <div class="catch-actions">
       <button class="btn big ghost" id="catch-photo" aria-label="Take a photo" hidden><svg><use href="#i-cam"/></svg></button>

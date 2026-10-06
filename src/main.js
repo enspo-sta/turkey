@@ -493,6 +493,7 @@ class Session {
     g.started = true;
     $('title').hidden = true;
     g.hud.show(true);
+    g.hud.resetGoal();
     g.overlay.enabled = true;
     g.env.setTime(s.time);
     g.env.day = s.day;
@@ -729,7 +730,9 @@ class Session {
       g.audio.chime();
     }
     if (done.length) {
+      // the next one named, and the GOAL line, the compass and the map on it
       const next = g.state.currentChallenge();
+      g.hud.resetGoal();
       if (next) setTimeout(() => g.hud.toast(`Next: ${next.text}`), 1200);
     }
   }
@@ -1057,7 +1060,7 @@ class Session {
       } else g.hud.hint(IS_TOUCH ? 'Hold GAS, steer by dragging on the left.' : 'W gas, S brake, A/D steer, C camera, E to get out.', 4);
       return;
     }
-    g.audio.tone?.('square', 200, 0.05, 0.05);
+    g.audio.door?.();
     g.hud.hint(IS_TOUCH ? 'Hold GAS, steer by dragging on the left. Camera button for the outside view.' : 'W gas, S brake, A/D steer, C camera, H horn, E to get out.', 5);
   }
 

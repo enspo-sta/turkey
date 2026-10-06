@@ -9,12 +9,13 @@
 // average frame and, against the first build, the difference with a 95%
 // interval, read within rounds and with the place in the round taken out.
 // Usage: node tools/perf-compare.mjs a/index.html b/index.html [c/index.html ...]
-//          [--rounds N] [--frames N] [--size WxH] [--dpr N] [--draw] [--out dir]
+//          [--rounds N] [--frames N] [--size WxH] [--dpr N] [--draw] [--sound] [--out dir]
 // --rounds defaults to three blocks (three times the number of builds); the
 // frames (90 by default), size and pixel ratio go to each tour, whose JSON is
 // kept in --out (tools/out/perf-compare by default) with a summary. --draw
 // has each tour really draw (see tools/perf-tour.mjs): the software renderer
-// then does the graphics chip's work, a rough stand-in for its load.
+// then does the graphics chip's work, a rough stand-in for its load. --sound
+// switches each tour's sound on first, as the first tap does.
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { resolve, relative, sep, dirname } from 'node:path';
@@ -35,8 +36,9 @@ for (const f of ['--rounds', '--frames', '--size', '--dpr', '--out']) {
 }
 const builds = args.filter((a, i) => !a.startsWith('--') && !flagged.has(i));
 const drawPixels = args.includes('--draw');
+const withSound = args.includes('--sound');
 if (builds.length < 2) {
-  console.log('Usage: node tools/perf-compare.mjs a/index.html b/index.html [more] [--rounds N] [--frames N] [--size WxH] [--dpr N] [--draw] [--out dir]');
+  console.log('Usage: node tools/perf-compare.mjs a/index.html b/index.html [more] [--rounds N] [--frames N] [--size WxH] [--dpr N] [--draw] [--sound] [--out dir]');
   process.exit(1);
 }
 for (const b of builds) {
@@ -61,6 +63,7 @@ const names = builds.map((b) => {
 const extra = [];
 for (const f of ['--size', '--dpr']) if (opt(f)) extra.push(f, opt(f));
 if (drawPixels) extra.push('--draw');
+if (withSound) extra.push('--sound');
 
 const runs = [];
 const orders = balancedOrders(k, rounds);

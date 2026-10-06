@@ -21,7 +21,7 @@ rivers, glacier, forests, animals, the cars, the fish, the sky, the weather,
 the sound effects and the music. The night sky comes from real data packed
 into the game: a star catalogue and the planets' and the Moon's motions.
 There are no downloaded models, textures or audio files, so the whole game is
-a single 3.0 MB HTML file (about 1.3 MB compressed), the announcer's recorded
+a single 3.0 MB HTML file (about 1.4 MB compressed), the announcer's recorded
 voice included.
 
 | | |
@@ -45,16 +45,22 @@ voice included.
 | ![Starfall Clearing: the pod and the trees laid flat round it](docs/screenshots/crash.jpg) | ![Zib comes out from behind the pod](docs/screenshots/zib.jpg) |
 | ![Isaac Newton's bust in marble at the Tundra Observatory](docs/screenshots/newton.jpg) | ![The Journal's Scientists page](docs/screenshots/scientists.jpg) |
 
-What changed in the latest round (the weakest assets rebuilt within a cost
-budget set beforehand: all 32 animals and birds as smooth shapes with their
-markings, birds that fold their wings at rest and stretch their necks out in
-flight, rounder birch, aspen and poplar crowns, far mountains without blocky
-shading and campfires with stones, ash and split logs; a lighter version of
-every animal for herds far off and for every shadow, so the frame draws fewer
-calls than before for a few percent more triangles), with before and after
-pictures, the costs and the audit:
+What changed in the latest round (the sound rebuilt: a library of 66 sounds
+made in code as small physical models, six songs, a fight theme and music for
+a bear played by a little band, every sound set to a planned loudness against
+the announcer's voice and checked by recording, engines without the old clicks
+and the ambience's rumble moved to where a phone can play it; and the fishing
+made more fun: a perfect hook set, jumps bowed to and runs turned rewarded, a
+run of catches worth more, feeding frenzies, shorter waits and five
+frustrations gone), with every sound before and after to listen to, the costs
+and the audit:
+[docs/sound-and-play-round.html](docs/sound-and-play-round.html).
+The round before it rebuilt the weakest assets within a cost budget set
+beforehand (all 32 animals and birds as smooth shapes with their markings,
+rounder birch, aspen and poplar crowns, far mountains without blocky shading,
+campfires with stones, ash and split logs):
 [docs/asset-quality-round-two.html](docs/asset-quality-round-two.html).
-The round before it looked through every family of assets for the same work
+The round before that looked through every family of assets for the same work
 (rounder animals with paler bellies, tree crowns lit as one volume, bark that
 keeps its colour, clear car glass, a truer tone curve and softer light under
 cloud): [docs/asset-quality-update.html](docs/asset-quality-update.html).
@@ -111,14 +117,38 @@ Earlier rounds: [docs/fullscreen-voice-update.html](docs/fullscreen-voice-update
   Voice can switch to one of the device's own voices, or turn the announcer
   off.
 - Watch the float: nibbles are twitches, a real bite pulls it under and you have
-  a moment to tap **HOOK!** The line only comes in when you reel: the current
+  a moment to tap **HOOK!** Tap it in the first third of that moment for a
+  **PERFECT HOOKSET**: the hook goes home deep, the fish starts a little spent,
+  holds better through its jumps and is worth 10% more. A twitch of the float
+  (a tap; a press held on into a reel is not one) now and then draws a fish's
+  eye; a flurry of twitches splashes them off. No
+  wait drags on: the longest is two and a half times the usual one for that
+  water, hour and lure. The line only comes in when you reel: the current
   carries the float along but never back to your feet, and a lure that lands on
   the bank stays there until you hold **REEL**.
 - The fight: hold **REEL** while keeping the tension needle in the green, let
   go when the fish runs, steer the rod against its runs, and stop reeling when
   it jumps or it throws the hook. Lines snap, go slack and get spooled. Only
   reeling brings a fish closer: let go and it stays out, and a tired fish is
-  landed when you reel it in to your feet.
+  landed when you reel it in to your feet. Skill pays: lowering the rod to a
+  jump (**Nice! You bowed to the jump**) and steering hard against a run until
+  you **turn its head** (the run ends and the drag goes quiet) both tire the
+  fish and add to its worth, and every fish landed without losing one in
+  between adds 10% more (up to 50% for six in a row); a fish dropped by
+  walking off, driving off or going back to the title ends the run too. The
+  catch card lists what the fight earned, and a bonus is counted out in
+  coins.
+- Now and then, after a while with a line in the water, the fish round your
+  float go into a **FEEDING FRENZY**: the water boils with them, and for 40
+  seconds they take three times as fast and without nibbling first.
+- A bear that smells fish holds back while you fight one, and only comes on
+  once it is landed or gone. A full cooler no longer turns a better fish away:
+  **Swap** lets the least valuable fish in it go to keep the new one (only
+  when you choose it: a card closed by something else keeps the fish only if
+  there is room). A bird's nest in the reel comes out faster the more you tap.
+  The goal line takes the first three challenges you have not done in turn,
+  half a minute each, so one hard one never holds it; the compass and the
+  map's marker point at the one it shows.
 - 31 species in four tiers of rarity. Common: Pink and Sockeye Salmon, Dolly
   Varden, Arctic Grayling, Northern Pike, Pacific Cod, Round Whitefish, Black
   Rockfish, Kelp Greenling, Pacific Staghorn Sculpin and the Alaska Blackfish
@@ -559,6 +589,38 @@ Earlier rounds: [docs/fullscreen-voice-update.html](docs/fullscreen-voice-update
 
 **Sound**
 
+- Music for the hours and the weather, played by a little band built in code:
+  a steel-string guitar picked and strummed, a bass, a felt piano, a
+  glockenspiel, brushes and drums, with a whistle playing the tunes and a soft
+  pad under the slow ones. Six songs: *Hotrod Landing* (the day's folk
+  tune), *Kenai Trail* (an upbeat strum for the road), *Morning on the
+  River*, *Evening Light*, *Northern Lights* (the felt piano alone at night)
+  and *Cabin Window* for the rain, each written out with its chords and tune
+  and played through, then a rest so the place is heard on its own. When a
+  fish is on, *Fish On!* takes over, fuller the harder it pulls (the hats
+  alone for a fish swimming quietly, drums and a riff for one running hard);
+  a bear brings timpani, toms and a racing heartbeat. Stingers mark the
+  moments: a catch, a trophy, a legend's fanfare, a new species' discovery,
+  a perfect hook set, a frenzy, the one that got away.
+- The effects are small physical models, made ahead of time while the title
+  screen is up: the cast's swish and the line peeling off the spool, the lure
+  landing and the bubble it drags down, splashes as bubbles and droplets, the
+  reel's ratchet and gears, the drag screaming as fast as the fish takes line,
+  the rod creaking and the line singing near breaking, the till's bell and
+  coins. Animals have voices shaped as theirs are (a throat's pulses through
+  its resonances): the grizzly's growl and roar, Canada geese, a mallard,
+  sandhill cranes, a magpie, sea lions, and the kingfisher's rattle, a
+  beaver's tail slap and a whale's blow. The hot rod's V8 fires its eight
+  cylinders in a cross-plane V8's order (the burble), the outboard is a
+  two-stroke twin and the race car a turbocharged V6.
+- Everything is mixed to a plan: each sound plays at the loudness it is meant
+  to have against the announcer's voice (measured, see `tools/sound-sheet.mjs`
+  and `tools/sound-measure.mjs`), the music and the place dip while the voice
+  talks and the music dips under a stinger, and a gentle compressor and a
+  limiter at the end keep the loudest moments from clipping. The Music slider
+  moves the songs and the musical stingers together; the short cues (a
+  chime, the ping of a perfect hook set or a run of catches) are the game
+  talking and stay at their level.
 - The place sounds like itself, all of it synthesised: wind in two bands
   whose gusts are the same gusts that roll across the grass and bend the trees
   round you, leaves rustling in them under the trees and a whistle round the
@@ -864,9 +926,11 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/gameplay/camera.js` | The camera, the star rating of a shot and the photo album |
 | `src/gameplay/skytargets.js`, `skywatch.js`, `tonight.js` | The telescope's and radio dish's targets and their notes, whether each can be reached right now and the sky log, and the night's almanac |
 | `src/gameplay/data.js`, `state.js` | Fish, lures, rods, gear, places and challenges, and the save game |
-| `src/audio/audio.js` | All sound and music, synthesised with the Web Audio interface |
+| `src/audio/audio.js` | The sound engine and the mix: the buses, the compressor and limiter, every effect, animal call and engine, each played at its loudness |
+| `src/audio/kit.js` | The sound library: the effects, animal voices, engine loops and the music's instruments as small physical models, made ahead of time a little a frame, each take's loudness measured |
+| `src/audio/music.js` | The music: the songs written as chords and tunes, the band that plays them, the fight and bear music and the stingers |
 | `src/audio/ambience.js` | The sound of the place: wind, water, rain, birds and other singers, footsteps, placed in space with a reverb |
-| `src/audio/bake.js` | The ambience's textures, footsteps and reverb made ahead of time, a little a frame |
+| `src/audio/bake.js` | The ambience's textures, footsteps and reverbs made ahead of time, a little a frame |
 | `src/audio/announcer.js`, `lines.js` | The announcer's lines and their banners, said in the game's voice or, if Settings picks one, a device voice |
 | `src/audio/voice.js`, `voice-clips.js` | The game's voice: every line and name as a small MP3 (made by `tools/voice`), decoded when first needed |
 | `src/ui/` | HUD, the small map, menus, the Trading Post, garage, map and journal, the observatory's screens, touch and keyboard input, and styles |
@@ -914,6 +978,7 @@ node tools/shot.mjs tools/scenarios/catch-room.json   # every fish at its smalle
 node tools/shot.mjs tools/scenarios/reel-stuck.json   # a held REEL button always lets go, and nothing reels unless you press
 node tools/shot.mjs tools/scenarios/line-stays.json   # a lure on the bank and a float in the current stay out until you hold REEL
 node tools/shot.mjs tools/scenarios/fight-stays.json  # hooked fish at every fishing place: none comes closer unless you reel, and careful reeling lands them
+node tools/shot.mjs tools/scenarios/fun.json   # a quick and a late hook set, a jump bowed to and a run turned, three catches in a row and their bonuses, a lost fish ending the run, Swap with a full cooler, the waits and the feeding frenzy, twitching, picking out a bird's nest, the goal line taking turns, and a bear holding back during a fight
 node tools/shot.mjs tools/scenarios/timing-bar.json   # the timing bar and the throw line on a phone-sized screen, and where a tap in each zone sends the lure
 node tools/shot.mjs tools/scenarios/ui-check.json     # phone layout: the small map clear of the buttons, RUN on and off, the full map, a tap on a lake, Bear Falls dragged into view and tapped, then the river
 node tools/shot.mjs tools/scenarios/bears-arrows.json # bears leave you alone with an empty cooler, black bears, the arrow shop, the arrows chip, a whistler past a charging grizzly and an old save
@@ -980,6 +1045,8 @@ node tools/shot.mjs tools/scenarios/scientists.json      # the scientists' busts
 node tools/perf-tour.mjs [out.json] [--frames N] [--tally] [--noprofile] [--size WxH] [--dpr N] [--file index.html] # frame times along a scripted tour (standing, walking, driving, the memorial, the observatory at night), with the shaders compiled on the way, the draw calls by group (--tally), and a CPU and allocation profile; --file times another build
 node tools/perf-compare.mjs old/index.html dist/index.html [--rounds N] [--frames N] [--size WxH] [--dpr N] [--draw] # two or more builds' tours taking turns over several rounds in a balanced order, and each build's difference from the first with a 95% interval; --draw has every frame really drawn and also compares the software renderer's time, a rough stand-in for a graphics chip's load
 node tools/audio-tour.mjs [outdir] [--secs N]            # the sound at nine places, hours and weathers and a walk over four grounds: loudness, balance of lows, mids and highs, the beds sounding and the birds singing, and a WAV of each
+node tools/sound-sheet.mjs [outdir] [--file build.html] [--only=id,id] [--music=SECS]   # every effect, animal call, engine, stinger and each mood's music played one at a time and recorded from the mix as WAV files (the announcer's voice too, as the reference); a take an older build cannot play records silence
+node tools/sound-measure.mjs dir [dir2] [--png]         # each take's loudness (its loudest 0.2 s and the whole take, weighted as ITU-R BS.1770 weights), level, peak, brightness, noisiness, bands, clicks (and the recorder's own glitches apart); two sheets side by side; --png draws each take's spectrogram
 node tools/shot.mjs tools/scenarios/busts-save.json     # plaques read, saved, reloaded and continued, the Journal's Scientists page, and the ten-plaque objective
 node tools/cull-compare.mjs [index.html]                 # the same view with and without leaving out the parts smaller than a pixel, compared pixel by pixel, on the Coast Road and at Hotrod Landing
 node tools/first-frame.mjs [index.html]                  # loading time, the first frames after New game and the shaders built after loading, for this build or an older one

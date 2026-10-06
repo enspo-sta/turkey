@@ -36,6 +36,7 @@ export class HUD {
     this.root = $('hud');
     this.el = {
       money: $('hud-money'),
+      gain: $('hud-gain'),
       health: $('hud-health'),
       cooler: $('hud-cooler'),
       chipCooler: $('chip-cooler'),
@@ -155,7 +156,8 @@ export class HUD {
     input.bindTap($('btn-map'), () => game.screens.open('map'));
     // the always-on minimap; tapping it opens the full map
     this.minimap = new Minimap(game, $('minimap'), $('minimap-canvas'), $('minimap-n'), () => {
-      const ch = game.state.currentChallenge();
+      // the goal the GOAL line shows now (they take turns)
+      const ch = this.goalShown ?? game.state.currentChallenge();
       return ch ? OBJECTIVE_PLACE[ch.id] : null;
     });
     input.bindTap($('minimap'), () => game.screens.open('map'));
@@ -470,6 +472,14 @@ export class HUD {
     this.el.leftHint.textContent = '';
   }
 
+  // The GOAL line starts its turns over at the first challenge not yet done
+  // (a new game, or one just done and the next named).
+  resetGoal() {
+    this.goalT = 0;
+    this.goalTurn = null;
+    this.goalShown = null;
+  }
+
   setFight(f) {
     const el = this.el;
     el.fightNeedle.style.left = `${clamp(f.tension, 0, 1.05) * 95}%`;
@@ -517,17 +527,31 @@ export class HUD {
     $('catch-weight').textContent = `${info.weight.toFixed(1)} kg`;
     $('catch-length').textContent = `${info.length} cm`;
     $('catch-value').textContent = formatMoney(info.value);
-    $('catch-info').textContent = coolerFull ? 'Your cooler is full. Sell at the Trading Post or release this one.' : FISH[info.species].info;
+    // what the fight added to its worth
+    const bonus = $('catch-bonus');
+    bonus.hidden = !info.bonus?.length;
+    bonus.textContent = (info.bonus || []).join(' · ');
+    // a full cooler: Swap lets the least valuable fish in it go to keep this
+    // one, if this one is worth more
+    const cheap = coolerFull ? this.game.state.cheapestInCooler() : null;
+    const swap = !!cheap && cheap.value < info.value;
+    const blocked = coolerFull && !swap;
+    $('catch-info').textContent = blocked
+      ? 'Your cooler is full of better fish. Release this one, or sell at the Trading Post.'
+      : swap
+        ? `Your cooler is full: Swap lets your ${cheap.name.toLowerCase()} (${formatMoney(cheap.value)}) go to keep this one.`
+        : FISH[info.species].info;
     const keep = $('catch-keep');
     const rel = $('catch-release');
-    keep.disabled = coolerFull;
-    keep.classList.toggle('disabled', coolerFull);
+    keep.disabled = blocked;
+    keep.classList.toggle('disabled', blocked);
+    keep.firstChild.textContent = swap ? 'Swap' : 'Keep';
     // a mouse locked to the view would hide the cursor and send every click
     // to the game instead of these buttons
     this.game.input.exitPointerLock();
     // one way out for taps, clicks and keys (E or Enter keeps, R releases)
     this.catchChoice = (k) => {
-      if (card.hidden || (k && coolerFull)) return;
+      if (card.hidden || (k && blocked)) return;
       this.closeCatch();
       this.game.audio?.click();
       cb(k);
@@ -613,7 +637,18 @@ export class HUD {
         fn(v);
       }
     };
-    set('money', s.money, (v) => (el.money.textContent = formatMoney(v)));
+    set('money', s.money, (v) => {
+      el.money.textContent = formatMoney(v);
+      // money coming in shows the amount rising off the counter
+      const gain = v - (this.lastMoney ?? v);
+      this.lastMoney = v;
+      if (gain >= 1 && g.started) {
+        el.gain.textContent = '+' + formatMoney(gain);
+        el.gain.className = '';
+        void el.gain.offsetWidth;
+        el.gain.className = 'show';
+      }
+    });
     set('health', Math.round(P.health), (v) => (el.health.style.width = v + '%'));
     const cool = `${s.cooler.length}/${s.coolerCap()}`;
     set('cooler', cool, (v) => {
@@ -656,8 +691,19 @@ export class HUD {
         el.chipArrows.classList.toggle('full', s.totalArrows() > s.arrowsLeft());
       });
 
-    // objective
-    const ch = s.currentChallenge();
+    // the goal: the first three challenges not yet done, in turn, half a
+    // minute each, so one hard one never holds the line for good (looked
+    // up when its turn ends or it is done, see resetGoal)
+    this.goalT = (this.goalT ?? 0) - dt;
+    if (this.goalT <= 0 || (this.goalShown && s.challenges[this.goalShown.id])) {
+      if (this.goalT <= 0) {
+        this.goalT = 30;
+        this.goalTurn = this.goalTurn == null ? 0 : this.goalTurn + 1;
+      }
+      const open = s.openChallenges(3);
+      this.goalShown = open.length ? open[this.goalTurn % open.length] : null;
+    }
+    const ch = this.goalShown;
     set('objective', ch ? ch.id : 'none', () => {
       el.objective.innerHTML = ch ? `<b>GOAL</b>${ch.text}` : '<b>DONE</b>Every challenge complete. Legend of the Kenai!';
     });
@@ -875,7 +921,7 @@ export class HUD {
     const px = cam.position.x;
     const pz = cam.position.z;
     const s = g.state;
-    const ch = s.currentChallenge();
+    const ch = this.goalShown ?? s.currentChallenge();
     const goal = ch ? OBJECTIVE_PLACE[ch.id] : null;
     for (const p of g.world.places) {
       const known = s.discovered[p.id];
