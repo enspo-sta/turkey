@@ -45,7 +45,13 @@ voice included.
 | ![Starfall Clearing: the pod and the trees laid flat round it](docs/screenshots/crash.jpg) | ![Zib comes out from behind the pod](docs/screenshots/zib.jpg) |
 | ![Isaac Newton's bust in marble at the Tundra Observatory](docs/screenshots/newton.jpg) | ![The Journal's Scientists page](docs/screenshots/scientists.jpg) |
 
-What changed in the latest round (the sound rebuilt: a library of 66 sounds
+What changed in the latest step (the lag at the start of a game fixed: the
+sounds and Tesla's statue are made in workers, off the main thread, the tap
+that starts a game no longer rebuilds what has not changed, and the graphics
+are no longer stepped down for good in a game's first 20 seconds), measured
+frame by frame on a slowed processor against the two builds before it:
+[docs/start-lag-fix.html](docs/start-lag-fix.html).
+The round before it (the sound rebuilt: a library of 66 sounds
 made in code as small physical models, six songs, a fight theme and music for
 a bear played by a little band, every sound set to a planned loudness against
 the announcer's voice and checked by recording, engines without the old clicks
@@ -55,12 +61,12 @@ run of catches worth more, feeding frenzies, shorter waits and five
 frustrations gone), with every sound before and after to listen to, the costs
 and the audit:
 [docs/sound-and-play-round.html](docs/sound-and-play-round.html).
-The round before it rebuilt the weakest assets within a cost budget set
+The round before that rebuilt the weakest assets within a cost budget set
 beforehand (all 32 animals and birds as smooth shapes with their markings,
 rounder birch, aspen and poplar crowns, far mountains without blocky shading,
 campfires with stones, ash and split logs):
 [docs/asset-quality-round-two.html](docs/asset-quality-round-two.html).
-The round before that looked through every family of assets for the same work
+The one before it looked through every family of assets for the same work
 (rounder animals with paler bellies, tree crowns lit as one volume, bark that
 keeps its colour, clear car glass, a truer tone curve and softer light under
 cloud): [docs/asset-quality-update.html](docs/asset-quality-update.html).
