@@ -45,7 +45,15 @@ voice included.
 | ![Starfall Clearing: the pod and the trees laid flat round it](docs/screenshots/crash.jpg) | ![Zib comes out from behind the pod](docs/screenshots/zib.jpg) |
 | ![Isaac Newton's bust in marble at the Tundra Observatory](docs/screenshots/newton.jpg) | ![The Journal's Scientists page](docs/screenshots/scientists.jpg) |
 
-What changed in the latest step (the frame made cheaper for the processor
+What changed in the latest step (a full audit: nine reviewers read the
+whole game, 78 defects were found and 73 fixed outright, 3 in part; among
+them a bear from the last game that mauled a new player, a car saved on the
+bridge that came back in the river, photos that could stop the game saving,
+taps on the view that did nothing on a phone, and roads that did not meet at
+their junctions; the car's movement, the bears' threat and the start of
+each game were rewritten where their structure kept causing bugs):
+[docs/full-audit.html](docs/full-audit.html).
+The step before it (the frame made cheaper for the processor
 without changing a pixel: the still parts of the sites and the cars drawn into
 the sun's shadow map together, each placed by its own matrix; far ground
 drawn four chunks at a time; grass that cannot be seen skipping its work; and
@@ -54,7 +62,7 @@ per cent fewer draw calls and the drawing 5 per cent faster on the test
 machine, and the same moment drawn with the changes on and off matching pixel
 for pixel in ten views:
 [docs/frame-rate-same-picture.html](docs/frame-rate-same-picture.html).
-The step before it (the lag at the start of a game fixed: the
+The step before that (the lag at the start of a game fixed: the
 sounds and Tesla's statue are made in workers, off the main thread, the tap
 that starts a game no longer rebuilds what has not changed, and the graphics
 are no longer stepped down for good in a game's first 20 seconds), measured
