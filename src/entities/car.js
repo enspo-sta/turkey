@@ -289,6 +289,9 @@ export class Car {
     const steps = Math.min(8, Math.max(1, Math.ceil(travel / 0.8)));
     let gr = null;
     for (let i = 0; i < steps; i++) gr = this.moveStep(dt / steps, fwd, g, gr);
+    // the heading's sine and cosine, for the exhaust and dust below
+    const c = Math.cos(this.yaw);
+    const s = Math.sin(this.yaw);
     this.onBridge = this.game.colliders.deckAt(this.pos.x, this.pos.z, this.pos.y, 1.4) !== null;
 
     // vertical

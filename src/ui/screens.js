@@ -1345,6 +1345,9 @@ export class Screens {
       const can = s.money >= price;
       let btn;
       if (equipped) btn = `<span class="tag good">EQUIPPED</span>`;
+      // (an engine, tyres or a cooler below the one you have are upgrades
+      // you have passed: there is nothing to switch back to)
+      else if (owned && (action === 'engine' || action === 'tires' || action === 'cooler')) btn = '';
       else if (owned) btn = `<button class="btn" data-act="${action}" data-id="${id}">Use</button>`;
       else btn = `<button class="btn ${can ? 'hot' : ''}" data-act="buy-${action}" data-id="${id}" ${can ? '' : 'disabled'}>Buy</button>`;
       cards.push(

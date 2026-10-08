@@ -859,8 +859,8 @@ export class RaceCar extends Car {
 
   setPaint() {}
 
-  place(x, z, yaw) {
-    super.place(x, z, yaw);
+  place(x, z, yaw, fromY) {
+    super.place(x, z, yaw, fromY);
     this.poseDriver();
   }
 

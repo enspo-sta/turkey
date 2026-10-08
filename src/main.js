@@ -489,9 +489,45 @@ class Session {
     // screen and the bear itself are let go
     g.bears.clearThreat();
     if (g.audio.ctx) g.audio.music?.reset();
+    // the title's view at its normal width, and deferred work of this game
+    // left to lapse
+    g.zoom = 1;
+    g.camera.fov = g.baseFov;
+    g.camera.updateProjectionMatrix();
+    this.session = (this.session || 0) + 1;
     clearTimeout(this.koRetry);
     this.koRetry = null;
     this.showTitle();
+  }
+
+  // Everything that belongs to one game and not to its save, set as at the
+  // start of any game (new or continued): what the last game left running
+  // must not carry over into this one.
+  resetSession() {
+    const g = this.game;
+    const s = g.state;
+    // deferred work from the last game (a fade, a knock-out's fee) knows it
+    // is stale by this
+    this.session = (this.session || 0) + 1;
+    // the animals and bears: nothing dead from the last game, no bear
+    // already on your trail
+    g.bears.reset();
+    g.wildlife.reset();
+    // the fairy ring's luck and the bug dope: this game's, not the last one's
+    g.env.luckUntil = (s.flags.odd && s.flags.odd.luckUntil) || 0;
+    g.bugDopeT = 0;
+    // tonight's alerts (aurora, the outburst) are said again
+    this.alertNight = null;
+    this.outburstNight = null;
+    // the view at its normal width (not zoomed or aiming)
+    g.zoom = 1;
+    g.camera.fov = g.baseFov;
+    g.camera.updateProjectionMatrix();
+    // the flake on the big tor: chipped in this save or whole
+    if (g.tors.flake) {
+      if (s.climb && s.climb.sample) g.tors.flake.scale.set(0.85, 0.9, 0.85);
+      else g.tors.flake.scale.setScalar(1);
+    }
   }
 
   startGame(continueSave) {
@@ -513,8 +549,6 @@ class Session {
       s.wipe();
       g.photo.wipe();
     }
-    // the fairy ring's luck is this game's, not the last one's
-    g.env.luckUntil = (s.flags.odd && s.flags.odd.luckUntil) || 0;
     // a save from before the magazine's sales were kept: what is in the
     // album was sold then, so it does not sell twice
     if (continueSave && s.photoSoldMissing) {
@@ -576,15 +610,7 @@ class Session {
         g.player.place(ex.x, ex.z, g.hotrod.yaw + Math.PI);
       }
     }
-    // the animals and bears as at the start of any game: nothing dead from
-    // the last one, no bear already on your trail
-    g.bears.reset();
-    g.wildlife.reset();
-    // the flake on the big tor: chipped in this save or whole
-    if (g.tors.flake) {
-      if (s.climb && s.climb.sample) g.tors.flake.scale.set(0.85, 0.9, 0.85);
-      else g.tors.flake.scale.setScalar(1);
-    }
+    this.resetSession();
     this.mode = 'play';
     g.input.resetAll();
     if (!IS_TOUCH) g.input.requestPointerLock();
@@ -629,7 +655,9 @@ class Session {
         }
         return;
       }
-      if (e.code === 'Escape' && !g.screens.isOpen && !g.hud.blocking) {
+      // (an Esc that just closed a screen, see screens.js, does not open the
+      // pause menu in its place)
+      if (e.code === 'Escape' && !e.defaultPrevented && !g.screens.isOpen && !g.hud.blocking) {
         if (g.hunting.aiming) g.hunting.setAiming(false);
         else g.screens.open('pause');
       }
@@ -849,19 +877,26 @@ class Session {
   async withFade(text, fn) {
     if (this.fadeBusy) return;
     this.fadeBusy = true;
-    // a trip, a sleep or a knock-out gets you up out of a deck chair
-    this.endGaze();
-    this.fade(true, text);
-    await new Promise((r) => setTimeout(r, 700));
-    await fn();
-    // after a jump, finish the ground detail while the screen is dark
-    // instead of two chunks a frame after the fade has lifted
-    const g = this.game;
-    const at = g.player.mode === 'drive' ? g.car.pos : g.player.pos;
-    g.terrain.prime(at.x, at.z);
-    await new Promise((r) => setTimeout(r, 900));
-    this.fade(false);
-    this.fadeBusy = false;
+    const session = this.session;
+    try {
+      // a trip, a sleep or a knock-out gets you up out of a deck chair
+      this.endGaze();
+      this.fade(true, text);
+      await new Promise((r) => setTimeout(r, 700));
+      // (the game it was for has ended meanwhile: nothing is done to the next)
+      if (this.session !== session) return;
+      await fn();
+      // after a jump, finish the ground detail while the screen is dark
+      // instead of two chunks a frame after the fade has lifted
+      const g = this.game;
+      const at = g.player.mode === 'drive' ? g.car.pos : g.player.pos;
+      g.terrain.prime(at.x, at.z);
+      await new Promise((r) => setTimeout(r, 900));
+    } finally {
+      // whatever happened in it, the screen never stays dark
+      this.fade(false);
+      this.fadeBusy = false;
+    }
   }
 
   // A soak in the hot pool: an hour gone, every ache with it.

@@ -349,7 +349,9 @@ export class Game {
         this.state.saveSettings?.();
         this.onQualityDrop?.(next);
       }
-    } else if (a.avg < 1 / 55 && this.dpr < maxDpr - 0.01 && a.clock >= a.hold) {
+    } else if (a.avg < 1 / 55 && this.dpr < maxDpr - 0.01 && a.clock >= a.hold && !this.menuOpen) {
+      // (not while a menu is open: the view is drawn one frame in three
+      // then, and the frames look quicker than play will be)
       a.good++;
       if (a.good >= 4) {
         this.dpr = Math.min(maxDpr, this.dpr + 0.25);
