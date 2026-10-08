@@ -1,6 +1,7 @@
 // Bundles the game into a single self-contained HTML file (fonts, CSS and JS
 // inlined) plus an artifact-friendly fragment and PWA files.
 // Usage: node build.mjs [--dev]
+import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
 import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync } from 'node:fs';
 import { privacyPage } from './src/ui/privacy.js';
@@ -15,7 +16,7 @@ mkdirSync('dist', { recursive: true });
 const threeCore = {
   name: 'three-core',
   setup(b) {
-    b.onResolve({ filter: /^three$/ }, () => ({ path: new URL('./node_modules/three/build/three.core.js', import.meta.url).pathname }));
+    b.onResolve({ filter: /^three$/ }, () => ({ path: fileURLToPath(new URL('./node_modules/three/build/three.core.js', import.meta.url)) }));
   },
 };
 const worker = await esbuild.build({

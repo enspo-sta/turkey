@@ -110,12 +110,35 @@ export class AudioEngine {
   // Must be called from a user gesture (tap/click).
   unlock() {
     if (this.ctx) {
-      if (this.ctx.state !== 'running') this.ctx.resume();
+      if (this.ctx.state !== 'running' && this.ctx.state !== 'closed') this.ctx.resume().catch(() => {});
       return;
     }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
-    const ctx = new AC({ latencyHint: 'interactive' });
+    // a device that cannot give the game a sound context plays on without
+    // sound, and never stops a game from starting
+    let ctx;
+    try {
+      ctx = new AC({ latencyHint: 'interactive' });
+    } catch (e) {
+      return;
+    }
+    try {
+      this.build(ctx);
+    } catch (e) {
+      console.warn('sound could not start', e);
+      this.ctx = null;
+      this.ready = false;
+      try {
+        ctx.close();
+      } catch (e2) {
+        /* gone already */
+      }
+    }
+  }
+
+  // The sound's graph, built on the first tap.
+  build(ctx) {
     this.ctx = ctx;
     const sr = ctx.sampleRate;
     // the end of the chain: the low cut, the compressor, the limiter
@@ -169,7 +192,7 @@ export class AudioEngine {
     s.buffer = b;
     s.connect(ctx.destination);
     s.start(0);
-    ctx.resume();
+    ctx.resume().catch(() => {});
 
     // noise buffers
     this.white = this.makeNoise(2, 'white');
@@ -396,7 +419,8 @@ export class AudioEngine {
       send.gain.value = verb * (0.6 + d / range);
       g.connect(send);
       send.connect(this.ambience.verbSend);
-      this.afterSound((dur + 1) * 1000, () => send.disconnect());
+      // (let go with the rest, after the sound's late start from afar)
+      this.afterSound((dur + 1 + d / 343) * 1000, () => send.disconnect());
     }
     this.afterSound((dur + 1 + d / 343) * 1000, () => {
       for (const n of [input, lp, g, p]) n.disconnect();
@@ -458,7 +482,9 @@ export class AudioEngine {
     const ctx = this.ctx;
     const t = ctx.currentTime + when;
     // the noise buffer is two seconds long: loop it for anything longer
-    const s = this.noiseSource(buf || this.white, dur > 1.4);
+    const src = buf || this.white;
+    const loop = dur > 1.4;
+    const s = this.noiseSource(src, loop);
     const f = ctx.createBiquadFilter();
     f.type = type;
     f.frequency.setValueAtTime(freq, t);
@@ -472,7 +498,10 @@ export class AudioEngine {
     f.connect(g);
     g.connect(p);
     p.connect(dest);
-    s.start(t, Math.random() * 1.5);
+    // a start somewhere in the buffer, early enough that a sound that does
+    // not loop never runs off its end
+    const room = loop ? 1.5 : Math.max(0, Math.min(1.5, src.duration - dur - attack - 0.06));
+    s.start(t, Math.random() * room);
     s.stop(t + attack + dur + 0.05);
     return g;
   }

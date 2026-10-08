@@ -479,6 +479,10 @@ class Session {
     g.audio.stopEngine();
     g.audio.updateOutboard?.(0, 0, 999, false);
     g.announcer.stop();
+    // a bear on your trail stays in this game: its music, the danger on
+    // screen and the bear itself are let go
+    g.bears.clearThreat();
+    if (g.audio.ctx) g.audio.music?.reset();
     clearTimeout(this.koRetry);
     this.koRetry = null;
     this.showTitle();
