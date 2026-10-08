@@ -100,8 +100,10 @@ export class Wildlife {
       raven: herd(ravenModel, 6),
       gull: herd(gullModel, 14),
       goose: herd(gooseModel, 12),
-      duck: herd(duckModel, 12, { shadow: false }),
-      loon: herd(loonModel, 6, { shadow: false }),
+      // (room for every lake's birds when several lakes are in range: seven
+      // ducks on Moose Lake and three on each other, two loons on each)
+      duck: herd(duckModel, 24, { shadow: false }),
+      loon: herd(loonModel, 12, { shadow: false }),
       puffin: herd(puffinModel, 8, { shadow: false }),
       ptarmigan: herd(ptarmiganModel, 10, { shadow: false }),
       whale: herd(whaleModel, 3, { shadow: false }),
@@ -545,6 +547,18 @@ export class Wildlife {
     return false;
   }
 
+  // A new game, or a save continued: every animal shot in the last one alive
+  // again somewhere in its habitat, out of sight.
+  reset() {
+    for (const a of this.animals) {
+      if (!a.dead && a.state !== 'gone' && a.state !== 'dead') continue;
+      a.dead = false;
+      a.deadT = 0;
+      a.hp = GAME[a.species] ? GAME[a.species].hp : 30;
+      this.respawn(a);
+    }
+  }
+
   removeAnimal(a) {
     // respawn somewhere else in its habitat, out of sight, after a while
     a.dead = false;
@@ -783,8 +797,17 @@ export class Wildlife {
     if (w && w.depth > c.wade) return false;
     const slope = W.slopeAt(x, z);
     if (slope > c.maxSlope) return false;
-    const road = W.roadD[W.cellIndex(x, z)];
-    if (a.state !== 'flee' && road < 6 && this.rand() < 0.7) return false;
+    const cell = W.cellIndex(x, z);
+    const road = W.roadD[cell];
+    // most of the road is avoided, the same stretches at any frame rate (a
+    // fixed choice per cell of the map, not a new throw every frame)
+    if (a.state !== 'flee' && road < 6) {
+      const h = Math.sin(cell * 12.9898) * 43758.5453;
+      if (h - Math.floor(h) < 0.7) return false;
+    }
+    // cabins, rocks, logs and fences: walked round, not through
+    const r = this.game.colliders.resolve(x, z, 0.4, W.heightAt(x, z), 1.2);
+    if (r.hit) return false;
     return true;
   }
 
@@ -813,6 +836,8 @@ export class Wildlife {
     a.head = damp(a.head, a.headT || 0, 3, dt);
     const gaitSpeed = a.speed * c.gait;
     a.phase += dt * (gaitSpeed + (a.speed > 0.1 ? 1.5 : 0));
+    // (a thousand whole turns at a time: the gait stays smooth after hours)
+    if (a.phase > 6283.185307) a.phase -= 6283.185307;
     let amp = clamp(a.speed / c.walk, 0, 1) * 0.55 + clamp((a.speed - c.walk) / (c.run - c.walk), 0, 1) * 0.5;
     if (c.hop && a.speed > 0.2) amp = 1;
     a.amp = damp(a.amp, amp, 6, dt);
@@ -1220,7 +1245,9 @@ export class Wildlife {
           const lvl = W.riverLevel(b.s);
           if (b.phaseK === 'fly') {
             b.s += b.dir * 9 * dt;
-            if (b.s < 20 || b.s > W.river.length - 20) b.dir = -b.dir;
+            // (turning at the ends of the river, away from them, not to and fro)
+            if (b.s < 20) b.dir = 1;
+            else if (b.s > W.river.length - 20) b.dir = -1;
             const p = W.river.sample(b.s);
             const off = Math.sin(b.t * 0.7) * W.riverWidth(b.s) * 0.5;
             const nx = p.x - p.tz * off;
@@ -1231,9 +1258,12 @@ export class Wildlife {
             b.y = damp(b.y, lvl + 3.5 + Math.sin(b.t * 2.1) * 0.8, 2, dt);
             b.flap = 1.3;
             b.bank = 0.1;
-            if (b.t > 6 + Math.random() * 20) {
+            // (how long it flies is chosen once per flight)
+            if (b.flyFor === undefined) b.flyFor = 6 + Math.random() * 20;
+            if (b.t > b.flyFor) {
               b.phaseK = 'hover';
               b.t = 0;
+              b.flyFor = undefined;
             }
           } else if (b.phaseK === 'hover') {
             b.flap = 1.6;
@@ -1289,7 +1319,7 @@ export class Wildlife {
       }
       if (d > 700 || b.under > 0) continue;
       const flapRate = b.sp === 'crane' ? (b.mode === 'walk' ? 2.2 : 5) : FLAP_RATE[b.sp] || 8;
-      b.phase = (b.phase || Math.random() * 10) + dt * flapRate;
+      b.phase = ((b.phase || Math.random() * 10) + dt * flapRate) % 6283.185307;
       const herd = this.herds[b.sp];
       _e.set(0, b.yaw, 0, 'YXZ');
       _q.setFromEuler(_e);

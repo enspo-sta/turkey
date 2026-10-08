@@ -815,6 +815,15 @@ export class TeslaMemorial {
     return this.coilT > 0;
   }
 
+  // The coil off at once, sparks, glow and tube (quitting to the title).
+  stopCoil() {
+    this.coilT = 0;
+    this.coilCool = 0;
+    this.arcs.visible = false;
+    this.glow.material.opacity = 0;
+    this.tubeMat.emissiveIntensity = 0;
+  }
+
   // Press the red button: six seconds of sparks.
   runCoil() {
     if (this.coilT > 0 || this.coilCool > 0) return false;
@@ -877,8 +886,17 @@ export class TeslaMemorial {
     const ms = shared ? Math.min(budget, g.sculptLeft) : budget;
     if (ms <= 0) return false;
     const t0 = performance.now();
-    let r = this.sculpt.next();
-    while (!r.done && performance.now() - t0 < ms) r = this.sculpt.next();
+    let r;
+    try {
+      r = this.sculpt.next();
+      while (!r.done && performance.now() - t0 < ms) r = this.sculpt.next();
+    } catch (e) {
+      // the carving failed: the plinth stands empty rather than the game
+      // stopping on every frame near it
+      console.warn('statue could not be carved', e);
+      this.sculpt = null;
+      return true;
+    }
     if (shared) g.sculptLeft -= performance.now() - t0;
     if (!r.done) return false;
     this.statue.geometry.dispose();

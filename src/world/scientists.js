@@ -384,7 +384,12 @@ export class Scientists {
         }
         return;
       } catch (e) {
-        for (const w of this.workers) w.terminate();
+        // a worker that could not start: the busts already handed to the
+        // others go back in the queue, to be carved here
+        for (const w of this.workers) {
+          if (w.busy && !w.busy.ready && !this.queue.includes(w.busy)) this.queue.unshift(w.busy);
+          w.terminate();
+        }
         this.workers = [];
       }
     }

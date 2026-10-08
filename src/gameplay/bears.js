@@ -111,17 +111,40 @@ export class Bears {
     return this.game.state.cooler.length > 0;
   }
 
+  // The bear after you (if any) goes home to what it was doing: a fishing
+  // bear back to its fishing.
   clearThreat() {
     if (this.threat) {
       const b = this.threat;
       if (!b.dead) {
-        b.state = 'roam';
+        b.state = b.mode;
         b.x = b.homeX;
         b.z = b.homeZ;
       }
     }
     this.threat = null;
     this.game.hud?.danger(0, 0);
+  }
+
+  // A new game, or a save continued: every bear alive and at home, nothing
+  // after you, the encounters' clock started over.
+  reset() {
+    this.clearThreat();
+    for (const b of this.bears) {
+      b.state = b.mode;
+      b.x = b.homeX;
+      b.z = b.homeZ;
+      b.y = this.world.heightAt(b.x, b.z);
+      b.hp = KIND[b.kind].hp;
+      b.dead = false;
+      b.deadT = 0;
+      b.speed = 0;
+      b.t = Math.random() * 5;
+      b.lunge = 0;
+      b.visible = true;
+    }
+    this.directorT = 70;
+    this.firstEncounterDone = false;
   }
 
   onFishKept() {
@@ -144,7 +167,8 @@ export class Bears {
   // ---------------------------------------------------------------- director
   director(dt) {
     const g = this.game;
-    if (!g.started || this.threat) return;
+    // (one bear at a time: none while one is stalking you either)
+    if (!g.started || this.threat || this.bears.some((b) => b.state === 'stalk')) return;
     const P = this.playerPos();
     let place = null;
     let pd = 1e9;
@@ -177,8 +201,10 @@ export class Bears {
     let bear = null;
     let best = 1e9;
     for (const b of this.bears) {
-      if (b.dead || b.mode === 'fish') continue;
+      if (b.dead || b.mode === 'fish' || b.state === 'gone') continue;
       const d = Math.hypot(b.x - P.x, b.z - P.z);
+      // (a bear close enough to be seen is not moved out of sight)
+      if (d < 120) continue;
       if (d < best) {
         best = d;
         bear = b;
@@ -220,7 +246,9 @@ export class Bears {
       if (b.state === 'gone') {
         b.t -= dt;
         b.visible = false;
-        if (b.t <= 0) {
+        // (back at home only while you are not there to see it appear)
+        if (b.t <= 0 && Math.hypot(P.x - b.homeX, P.z - b.homeZ) > 300) {
+          b.deadT = 0;
           b.state = b.mode;
           b.x = b.homeX;
           b.z = b.homeZ;
@@ -306,7 +334,7 @@ export class Bears {
             if (!onFoot || d > 70 || !fish) {
               b.state = 'retreat';
               b.t = 10;
-              this.endThreat(false);
+              this.endThreat(false, b);
             } else {
               b.state = 'charge';
               b.t = 12;
@@ -333,11 +361,12 @@ export class Bears {
           } else if (d < 2.6) {
             b.state = 'attack';
             b.t = 0.4;
+            b.reachT = 0;
           }
           if (!onFoot || b.t <= 0) {
             b.state = 'retreat';
             b.t = 10;
-            this.endThreat(true);
+            this.endThreat(true, b);
           }
           break;
         }
@@ -348,19 +377,36 @@ export class Bears {
           if (b.t <= 0) {
             b.state = 'retreat';
             b.t = 10;
-            this.endThreat(true);
+            this.endThreat(true, b);
           }
           break;
         case 'attack': {
           desired = toPlayer;
           b.targetSpeed = d > 2.4 ? 4 : 0;
           b.headT = 0.3;
+          // in the car or on the boat: out of reach before any swipe
+          if (!onFoot) {
+            b.state = 'retreat';
+            b.t = 10;
+            this.endThreat(true, b);
+            break;
+          }
           b.swipeT -= dt;
+          // kept from you (behind something) for long enough: it gives up
+          b.reachT = (b.reachT || 0) + dt;
+          if (b.reachT > 8) {
+            b.reachT = 0;
+            b.state = 'retreat';
+            b.t = 10;
+            this.endThreat(true, b);
+            break;
+          }
           if (d > 6) {
             b.state = 'charge';
             b.t = 6;
           } else if (b.swipeT <= 0 && d < 3) {
             b.swipeT = 1.15;
+            b.reachT = 0;
             b.lunge = 0.35;
             const [d0, d1] = KIND[b.kind].dmg;
             const dmg = d0 + Math.random() * (d1 - d0);
@@ -371,11 +417,6 @@ export class Bears {
           if (b.lunge > 0) {
             b.lunge -= dt;
             b.standT = 0.6;
-          }
-          if (!onFoot) {
-            b.state = 'retreat';
-            b.t = 10;
-            this.endThreat(true);
           }
           break;
         }
@@ -442,8 +483,11 @@ export class Bears {
     if (g.fishing.state === 'fight' || g.fishing.state === 'waiting') g.fishing.cancel('You drop the line');
   }
 
-  endThreat(survived) {
+  // The threat over. b: the bear whose charge ended; another bear's ending
+  // leaves the one after you as it is.
+  endThreat(survived, b = this.threat) {
     const g = this.game;
+    if (b !== this.threat) return;
     if (survived && this.threat) {
       g.state.stats.bearsSurvived++;
       g.onEvent({ type: 'bearSurvived' });
@@ -466,6 +510,11 @@ export class Bears {
       b.state = 'flee';
       b.t = 12;
       if (this.threat === b) this.endThreat(true);
+      g.audio?.growl(b.x, b.z, 0.8);
+    } else if (this.threat && this.threat !== b) {
+      // one bear after you at a time: a second one, hurt, makes off
+      b.state = 'flee';
+      b.t = 12;
       g.audio?.growl(b.x, b.z, 0.8);
     } else if (b.state === 'roam' || b.state === 'fish' || b.state === 'stalk' || b.state === 'alert') {
       this.threat = b;
@@ -554,6 +603,7 @@ export class Bears {
       b.head = damp(b.head, b.headT, 4, dt);
       b.stand = damp(b.stand, b.standT, 5, dt);
       b.phase += dt * (b.speed * 1.1 + (b.speed > 0.1 ? 1 : 0));
+      if (b.phase > 6283.185307) b.phase -= 6283.185307;
       const amp = clamp(b.speed / C.walk, 0, 1) * 0.5 + clamp((b.speed - C.walk) / (C.run - C.walk), 0, 1) * 0.5;
       b.amp = damp(b.amp, b.dead ? 0 : amp, 6, dt);
       W.normalAt(b.x, b.z, _n);

@@ -471,7 +471,13 @@ class Session {
     g.hunting.reset();
     // off the rock: the next game must not start with the climbing hands
     if (g.climbing.active) g.climbing.finish('foot');
+    // the coil's note not shown yet: kept for the next time the coil runs
+    if (this.coilNoteT > 0) {
+      g.state.flags.coilNote = false;
+      this.save();
+    }
     this.coilNoteT = 0;
+    g.tesla.stopCoil();
     if (g.player.mode === 'drive') this.exitCar(true);
     if (g.player.mode === 'boat' || g.player.boat) g.boat.leave(true);
     g.glider.end();
@@ -569,6 +575,15 @@ class Session {
         const ex = this.exitSpot();
         g.player.place(ex.x, ex.z, g.hotrod.yaw + Math.PI);
       }
+    }
+    // the animals and bears as at the start of any game: nothing dead from
+    // the last one, no bear already on your trail
+    g.bears.reset();
+    g.wildlife.reset();
+    // the flake on the big tor: chipped in this save or whole
+    if (g.tors.flake) {
+      if (s.climb && s.climb.sample) g.tors.flake.scale.set(0.85, 0.9, 0.85);
+      else g.tors.flake.scale.setScalar(1);
     }
     this.mode = 'play';
     g.input.resetAll();
@@ -726,11 +741,12 @@ class Session {
     g.hud.toast(first ? 'Sparks a metre long, and the tube on the stand lights up with no wire to it: the coil\'s field drives the gas inside to glow' : 'The coil crackles; the tube glows', 'good', first ? 7 : 3);
     if (first) {
       g.state.flags.coil = true;
-      // what it is, once the show is over (see update)
-      this.coilNoteT = 6.5;
       this.onEvent({ type: 'coil' });
       this.save();
     }
+    // what it is, once the show is over (see update): the first time, or the
+    // next time when the game was left before it could be shown
+    if (first || g.state.flags.coilNote === false) this.coilNoteT = 6.5;
   }
 
   readHydro() {
@@ -1337,6 +1353,7 @@ class Session {
       if (this.coilNoteT <= 0) {
         const n = g.tesla.coilNote();
         g.screens.note(n.title, n.html);
+        g.state.flags.coilNote = true;
       }
     }
 

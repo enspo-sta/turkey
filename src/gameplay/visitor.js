@@ -409,6 +409,9 @@ export class Visitor {
     }
     this.buildSite();
     this.spawnZib();
+    // (riding in the car when the last game ended: back in the world first,
+    // so the place set below is a place in the world)
+    this.detach();
     const Z = this.zib;
     if (st.follow) {
       const P = this.game.player.pos;
@@ -682,9 +685,12 @@ export class Visitor {
       g.scene.remove(this.zib.group);
       this.zib = null;
     }
+    // Zib's button goes with Zib (a new one comes with the next Zib)
     if (this.interaction) {
-      this.interaction.x = 1e6;
-      this.interaction.z = 1e6;
+      const list = g.props.interactions;
+      const i = list.indexOf(this.interaction);
+      if (i >= 0) list.splice(i, 1);
+      this.interaction = null;
     }
     if (!this.site) return;
     this.group.remove(this.site);

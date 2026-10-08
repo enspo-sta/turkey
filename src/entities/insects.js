@@ -367,7 +367,9 @@ export class Insects {
 
   update(dt) {
     const g = this.game;
-    this.time.value += dt;
+    // (kept within an hour: a clock that grew all day would leave the wing
+    // beats too few digits to move smoothly; the swarms reset once an hour)
+    this.time.value = (this.time.value + dt) % 3600;
     const cam = g.camera.position;
     this.cam.value.set(cam.x, cam.z);
     const env = g.env;
