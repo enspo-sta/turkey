@@ -59,8 +59,10 @@ export class Car {
   // subclasses move their own parts (steering wheel, gauges, lights)
   animate() {}
 
-  place(x, z, yaw) {
-    this.pos.set(x, 0, z);
+  // (from the height it was kept at, else from high above: a car kept on the
+  // bridge comes back on its deck, not in the river under it)
+  place(x, z, yaw, fromY = 1e9) {
+    this.pos.set(x, Number.isFinite(fromY) ? fromY + 0.5 : 1e9, z);
     this.yaw = yaw;
     this.speed = 0;
     this.vel.set(0, 0);
@@ -132,6 +134,96 @@ export class Car {
     return { throttle, brake, steerIn };
   }
 
+  // One step of the move: velocity with slip, the world's edge, deep water,
+  // collisions and cliffs. Returns the ground under the tyres after it.
+  moveStep(dt, fwd, g, prev) {
+    const W = this.game.world;
+    const S = this.spec;
+    const dvx = fwd.x * this.speed;
+    const dvz = fwd.z * this.speed;
+    const k = 1 - Math.exp(-g * dt);
+    this.vel.x += (dvx - this.vel.x) * k;
+    this.vel.y += (dvz - this.vel.y) * k;
+    const lateral = this.vel.x * Math.cos(this.yaw) - this.vel.y * Math.sin(this.yaw);
+    this.slip = lateral;
+
+    let nx = this.pos.x + this.vel.x * dt;
+    let nz = this.pos.z + this.vel.y * dt;
+    const lim = HALF - 30;
+    if (Math.abs(nx) > lim || Math.abs(nz) > lim) {
+      nx = clamp(nx, -lim, lim);
+      nz = clamp(nz, -lim, lim);
+      this.speed *= 0.5;
+    }
+
+    // too deep or too steep: refuse
+    const w2 = W.waterAt(nx, nz);
+    const deckAhead = this.game.colliders.deckAt(nx, nz, this.pos.y, 1.4);
+    if (w2 && w2.depth > S.wade.deep && deckAhead === null) {
+      nx = this.pos.x;
+      nz = this.pos.z;
+      this.speed *= -0.2;
+      this.vel.set(0, 0);
+      if (this.game.time - this.deepWarned > 5 && this.occupied) {
+        this.deepWarned = this.game.time;
+        this.game.hud?.toast(S.wade.toast);
+      }
+    }
+
+    // collisions: circles along the body
+    const c = Math.cos(this.yaw);
+    const s = Math.sin(this.yaw);
+    let pushX = 0;
+    let pushZ = 0;
+    let hit = null;
+    this.game.colliders.removeBox(this.collider);
+    for (const lz of S.circles.at) {
+      const cx = nx + lz * s;
+      const cz = nz + lz * c;
+      const r = this.game.colliders.resolve(cx, cz, S.circles.r, this.pos.y, 1.4);
+      if (r.hit) {
+        pushX += r.x - cx;
+        pushZ += r.z - cz;
+        hit = r.hit;
+      }
+    }
+    this.game.colliders.boxes.push(this.collider);
+    if (hit) {
+      nx += pushX;
+      nz += pushZ;
+      const impact = Math.abs(this.speed);
+      if (impact > 5 && this.game.time - this.lastImpact > 0.6) {
+        this.lastImpact = this.game.time;
+        this.shake = Math.min(1, impact / 20);
+        this.game.audio?.thud(Math.min(1, impact / 25));
+        this.game.effects?.dust(nx + s * S.circles.at[0], this.pos.y + 0.6, nz + c * S.circles.at[0], 8);
+      }
+      this.speed *= Math.exp(-14 * dt);
+      const n = Math.hypot(pushX, pushZ) || 1;
+      const vn = (this.vel.x * pushX + this.vel.y * pushZ) / n;
+      if (vn < 0) {
+        this.vel.x -= (pushX / n) * vn;
+        this.vel.y -= (pushZ / n) * vn;
+      }
+    }
+    // refuse cliffs: compare ground under the nose before and after the move
+    const oldX = this.pos.x;
+    const oldZ = this.pos.z;
+    const gCur = prev ? prev.y : this.pos.y;
+    this.pos.x = nx;
+    this.pos.z = nz;
+    let gr = this.groundY();
+    const horiz = Math.hypot(nx - oldX, nz - oldZ);
+    if (!this.airborne && horiz > 1e-4 && (gr.y - gCur) / horiz > S.climb && gr.y - gCur > 0.25) {
+      this.pos.x = oldX;
+      this.pos.z = oldZ;
+      this.speed *= -0.15;
+      this.vel.set(0, 0);
+      gr = this.groundY();
+    }
+    return gr;
+  }
+
   update(dt, input, state) {
     const W = this.game.world;
     const S = this.spec;
@@ -188,89 +280,15 @@ export class Car {
       this.yaw -= yawRate * dt;
     }
 
-    // velocity with slip
-    const dvx = fwd.x * this.speed;
-    const dvz = fwd.z * this.speed;
+    // the move, in steps of under a metre: a fast car can neither pass
+    // through a tree between two frames nor cross a deep channel narrower
+    // than one frame's travel, and grip and crash braking come out the same
+    // at any frame rate
     const g = this.airborne ? 0.3 : grip;
-    this.vel.x += (dvx - this.vel.x) * Math.min(1, g * dt);
-    this.vel.y += (dvz - this.vel.y) * Math.min(1, g * dt);
-    const lateral = this.vel.x * Math.cos(this.yaw) - this.vel.y * Math.sin(this.yaw);
-    this.slip = lateral;
-
-    let nx = this.pos.x + this.vel.x * dt;
-    let nz = this.pos.z + this.vel.y * dt;
-    const lim = HALF - 30;
-    if (Math.abs(nx) > lim || Math.abs(nz) > lim) {
-      nx = clamp(nx, -lim, lim);
-      nz = clamp(nz, -lim, lim);
-      this.speed *= 0.5;
-    }
-
-    // too deep or too steep: refuse
-    const w2 = W.waterAt(nx, nz);
-    const deckAhead = this.game.colliders.deckAt(nx, nz, this.pos.y, 1.4);
-    if (w2 && w2.depth > S.wade.deep && deckAhead === null) {
-      nx = this.pos.x;
-      nz = this.pos.z;
-      this.speed *= -0.2;
-      this.vel.set(0, 0);
-      if (this.game.time - this.deepWarned > 5 && this.occupied) {
-        this.deepWarned = this.game.time;
-        this.game.hud?.toast(S.wade.toast);
-      }
-    }
-
-    // collisions: circles along the body
-    const c = Math.cos(this.yaw);
-    const s = Math.sin(this.yaw);
-    let pushX = 0;
-    let pushZ = 0;
-    let hit = null;
-    this.game.colliders.removeBox(this.collider);
-    for (const lz of S.circles.at) {
-      const cx = nx + lz * s;
-      const cz = nz + lz * c;
-      const r = this.game.colliders.resolve(cx, cz, S.circles.r, this.pos.y, 1.4);
-      if (r.hit) {
-        pushX += r.x - cx;
-        pushZ += r.z - cz;
-        hit = r.hit;
-      }
-    }
-    this.game.colliders.boxes.push(this.collider);
-    if (hit) {
-      nx += pushX;
-      nz += pushZ;
-      const impact = Math.abs(this.speed);
-      if (impact > 5 && this.game.time - this.lastImpact > 0.6) {
-        this.lastImpact = this.game.time;
-        this.shake = Math.min(1, impact / 20);
-        this.game.audio?.thud(Math.min(1, impact / 25));
-        this.game.effects?.dust(nx + s * S.circles.at[0], this.pos.y + 0.6, nz + c * S.circles.at[0], 8);
-      }
-      this.speed *= Math.max(0, 1 - dt * 14);
-      const n = Math.hypot(pushX, pushZ) || 1;
-      const vn = (this.vel.x * pushX + this.vel.y * pushZ) / n;
-      if (vn < 0) {
-        this.vel.x -= (pushX / n) * vn;
-        this.vel.y -= (pushZ / n) * vn;
-      }
-    }
-    // refuse cliffs: compare ground under the nose before and after the move
-    const oldX = this.pos.x;
-    const oldZ = this.pos.z;
-    const gCur = this.pos.y;
-    this.pos.x = nx;
-    this.pos.z = nz;
-    let gr = this.groundY();
-    const horiz = Math.hypot(nx - oldX, nz - oldZ);
-    if (!this.airborne && horiz > 1e-4 && (gr.y - gCur) / horiz > S.climb && gr.y - gCur > 0.25) {
-      this.pos.x = oldX;
-      this.pos.z = oldZ;
-      this.speed *= -0.15;
-      this.vel.set(0, 0);
-      gr = this.groundY();
-    }
+    const travel = Math.max(Math.hypot(this.vel.x, this.vel.y), Math.abs(this.speed)) * dt;
+    const steps = Math.min(8, Math.max(1, Math.ceil(travel / 0.8)));
+    let gr = null;
+    for (let i = 0; i < steps; i++) gr = this.moveStep(dt / steps, fwd, g, gr);
     this.onBridge = this.game.colliders.deckAt(this.pos.x, this.pos.z, this.pos.y, 1.4) !== null;
 
     // vertical

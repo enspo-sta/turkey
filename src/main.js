@@ -536,17 +536,17 @@ class Session {
     g.hotrod.setLook(s.look);
     g.viewmodel.setBowWood(s.gear.yew);
     g.viewmodel.applyLook(s.look);
-    if (continueSave && s.car) g.hotrod.place(s.car.x, s.car.z, s.car.yaw);
+    if (continueSave && s.car) g.hotrod.place(s.car.x, s.car.z, s.car.yaw, s.car.y);
     else this.placeAtStart();
     // the race car: where you left it once found, else under its tarp
     const found = !!s.flags.racer;
-    if (continueSave && found && s.racer) g.racer.place(s.racer.x, s.racer.z, s.racer.yaw);
+    if (continueSave && found && s.racer) g.racer.place(s.racer.x, s.racer.z, s.racer.yaw, s.racer.y);
     else g.racer.place(PITSTOP.x, PITSTOP.z, PITSTOP.yaw);
     g.pitstop.cover(g.racer, found);
     // a fireball's stone still lying where it fell
     this.endGaze();
     g.meteors.restore(s.meteorite);
-    if (continueSave && s.player) g.player.place(s.player.x, s.player.z, s.player.yaw);
+    if (continueSave && s.player) g.player.place(s.player.x, s.player.z, s.player.yaw, s.player.y);
     else {
       // start on the riverbank in front of the cabin, facing the water
       const landing = g.world.place('landing');
@@ -804,10 +804,11 @@ class Session {
       P = { x: r.base.x + r.n.x * 0.6, z: r.base.z + r.n.z * 0.6 };
       yaw = Math.atan2(r.n.x, r.n.z);
     }
-    s.player = { x: P.x, z: P.z, yaw, aboard };
+    // (the height too, when standing: it tells a deck from the ground under it)
+    s.player = { x: P.x, z: P.z, yaw, aboard, ...(P === g.player.pos ? { y: P.y } : {}) };
     s.boat = g.boat.toJSON();
-    s.car = { x: g.hotrod.pos.x, z: g.hotrod.pos.z, yaw: g.hotrod.yaw };
-    s.racer = { x: g.racer.pos.x, z: g.racer.pos.z, yaw: g.racer.yaw };
+    s.car = { x: g.hotrod.pos.x, z: g.hotrod.pos.z, yaw: g.hotrod.yaw, y: g.hotrod.pos.y };
+    s.racer = { x: g.racer.pos.x, z: g.racer.pos.z, yaw: g.racer.yaw, y: g.racer.pos.y };
     const ok = s.save();
     if (ok) g.hud.savedFlash();
     else if (!this.saveWarned) {
@@ -1250,14 +1251,22 @@ class Session {
   exitSpot() {
     const g = this.game;
     const car = g.car;
+    let shallow = null;
+    let least = Infinity;
     for (const side of [1, -1]) {
       const e = car.exitPoint(side);
       const w = g.world.waterAt(e.x, e.z);
-      if (w && w.depth > 0.8) continue;
+      const depth = w ? w.depth : 0;
+      if (depth < least) {
+        least = depth;
+        shallow = e;
+      }
+      if (depth > 0.8) continue;
       const r = g.colliders.resolve(e.x, e.z, 0.4, car.pos.y, 1.8);
       if (Math.hypot(r.x - e.x, r.z - e.z) < 0.3) return e;
     }
-    return car.exitPoint(1);
+    // both sides deep or blocked: the shallower one
+    return shallow;
   }
 
   exitCar(force = false) {
@@ -1640,7 +1649,7 @@ class Session {
         else if (near && B.canLoad()) ia2 = { label: 'LOAD BOAT', icon: 'boat', act: () => B.load() };
       }
       // at an edge with Gus's paraglider
-      if ((!ia || !ia2) && g.glider.offer()) {
+      if ((!ia || !ia2) && !this.gaze && g.glider.offer()) {
         const glide = { label: 'GLIDE', icon: 'glide', act: () => g.glider.launch() };
         if (!ia) ia = glide;
         else ia2 = glide;

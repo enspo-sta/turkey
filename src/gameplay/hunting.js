@@ -77,6 +77,8 @@ export class Hunting {
 
   reset() {
     this.setAiming(false);
+    // (a draw cut short lets the string down, and its creak with it)
+    if (this.drawing) this.letDown();
     this.drawing = false;
     this.draw = 0;
   }

@@ -36,8 +36,10 @@ export class Player {
     this.onStep = null;
   }
 
-  place(x, z, yaw = this.yaw) {
-    this.pos.set(x, this.groundAt(x, z, 1e9), z);
+  // (fromY: the height to look for ground from, so a save made under the
+  // bridge comes back under it; from high above when not known)
+  place(x, z, yaw = this.yaw, fromY = 1e9) {
+    this.pos.set(x, this.groundAt(x, z, Number.isFinite(fromY) ? fromY + 0.5 : 1e9), z);
     this.vel.set(0, 0, 0);
     this.yaw = yaw;
     this.pitch = 0;
@@ -153,15 +155,20 @@ export class Player {
       const rise = gNew - gOld;
       const grade = rise / horiz;
       const w2 = W.waterAt(nx, nz);
-      const tooDeep = w2 && w2.depth > 1.15;
+      // too deep: past wading depth and deeper than where you stand (a step
+      // back towards the shallows is always allowed, even from too deep)
+      const wHere = W.waterAt(this.pos.x, this.pos.z);
+      const here = wHere ? wHere.depth : 0;
+      const deep = (w) => w && w.depth > 1.15 && w.depth > here;
+      const tooDeep = deep(w2);
       if (grade > 1.25 || tooDeep) {
         // try sliding along each axis
         const ax = this.groundAt(nx, this.pos.z, gOld);
         const wa = W.waterAt(nx, this.pos.z);
-        const okX = (ax - gOld) / Math.max(1e-4, Math.abs(nx - this.pos.x)) <= 1.25 && !(wa && wa.depth > 1.15 && !this._deck);
+        const okX = (ax - gOld) / Math.max(1e-4, Math.abs(nx - this.pos.x)) <= 1.25 && !(deep(wa) && !this._deck);
         const az = this.groundAt(this.pos.x, nz, gOld);
         const wb = W.waterAt(this.pos.x, nz);
-        const okZ = (az - gOld) / Math.max(1e-4, Math.abs(nz - this.pos.z)) <= 1.25 && !(wb && wb.depth > 1.15 && !this._deck);
+        const okZ = (az - gOld) / Math.max(1e-4, Math.abs(nz - this.pos.z)) <= 1.25 && !(deep(wb) && !this._deck);
         if (okX && Math.abs(nx - this.pos.x) > Math.abs(nz - this.pos.z)) nz = this.pos.z;
         else if (okZ) nx = this.pos.x;
         else if (okX) nz = this.pos.z;

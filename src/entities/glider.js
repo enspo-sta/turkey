@@ -253,7 +253,26 @@ export class Glider {
       // running up a little rise before the edge: keep running
       if (this.run && ground - this.pos.y < this.speed * dt * 1.25 + 0.02) y = ground + 0.02;
       else {
-        this.land(nx, nz, ground);
+        // into a steep slope: land where the path met the ground, not up
+        // the hill where this step would have ended inside it
+        let lx = nx;
+        let lz = nz;
+        let ly = ground;
+        if (ground - ny > 0.5) {
+          let lo = 0;
+          let hi = 1;
+          for (let i = 0; i < 10; i++) {
+            const m = (lo + hi) / 2;
+            const yy = this.pos.y + (ny - this.pos.y) * m;
+            const gm = P.groundAt(this.pos.x + (nx - this.pos.x) * m, this.pos.z + (nz - this.pos.z) * m, yy + 0.3);
+            if (yy <= gm) hi = m;
+            else lo = m;
+          }
+          lx = this.pos.x + (nx - this.pos.x) * hi;
+          lz = this.pos.z + (nz - this.pos.z) * hi;
+          ly = P.groundAt(lx, lz, this.pos.y + (ny - this.pos.y) * hi + 0.3);
+        }
+        this.land(lx, lz, ly);
         return;
       }
     }
