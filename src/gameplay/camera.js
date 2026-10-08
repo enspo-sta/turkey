@@ -242,20 +242,31 @@ export class PhotoCamera {
     return !!this.game.state.gear.camera;
   }
 
+  // Keep the album. When the device runs out of room, the roll's oldest
+  // pictures go first, one at a time.
   persist() {
-    try {
-      window.localStorage.setItem(STORE_KEY, JSON.stringify(this.album));
-      return true;
-    } catch (e) {
-      // the device ran out of room: drop the roll and try once more
-      this.album.roll.length = 0;
+    for (;;) {
       try {
         window.localStorage.setItem(STORE_KEY, JSON.stringify(this.album));
         return true;
-      } catch (e2) {
-        return false;
+      } catch (e) {
+        if (!this.album.roll.length) return false;
+        this.album.roll.pop();
       }
     }
+  }
+
+  // Room for the save game, which shares the storage: the roll's oldest
+  // picture dropped. False when there is nothing left to drop.
+  makeRoom() {
+    if (!this.album.roll.length) return false;
+    this.album.roll.pop();
+    try {
+      window.localStorage.setItem(STORE_KEY, JSON.stringify(this.album));
+    } catch (e) {
+      /* the next try drops another */
+    }
+    return true;
   }
 
   // Wipe the album with the save (a new game).

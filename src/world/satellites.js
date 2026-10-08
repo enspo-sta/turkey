@@ -133,7 +133,7 @@ export class Satellites {
     this.issVisible = false;
     if (P && g.started) {
       // tell the player at dusk
-      if (!this.announced && env.time > 21.3 && env.time < 22.9 && (P.t0 > 12 || P.t0 < 1)) {
+      if (!this.announced && env.time > 21.3 && env.time < 22.9) {
         this.announced = true;
         g.hud?.toast(`The space station passes over tonight at ${passText(P)}`, 'good', 7);
       }

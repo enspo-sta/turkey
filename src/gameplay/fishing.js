@@ -226,8 +226,8 @@ export class Fishing {
     const g = this.game;
     this.settleCatch();
     // a fish on the line dropped (quitting, driving off, fast travel, a
-    // bear) is a fish lost: the run of catches ends
-    if (this.state === 'fight' || this.state === 'landing') this.endStreak();
+    // bear, an eagle) is a fish lost: the run of catches ends
+    if (this.state === 'fight' || this.state === 'landing' || this.state === 'stolen') this.endStreak();
     this.twitchAt = null;
     this.state = 'idle';
     this.snag = false;
@@ -655,6 +655,12 @@ export class Fishing {
         const rl = Math.hypot(rx, rz) || 1;
         const inward = -(mx * rx + mz * rz) / rl;
         if (rl < 4.5 && inward > 0) {
+          mx += (rx / rl) * inward;
+          mz += (rz / rl) * inward;
+        }
+        // and the line holds it a little past the longest cast: past that it
+        // only swings round with the current, it is not carried further out
+        if (rl > this.maxCast() + 5 && inward < 0) {
           mx += (rx / rl) * inward;
           mz += (rz / rl) * inward;
         }
@@ -1142,15 +1148,23 @@ export class Fishing {
     }
 
     // land when close and tired, as you reel it in
+    F.greenT = Math.max(0, (F.greenT || 0) - dt);
     if (F.dist < 3.2) {
       if (F.stamina >= 0.4) {
-        F.state = 'run';
-        F.stateT = 1.5;
-        F.dir = Math.random() < 0.5 ? -1 : 1;
-        F.turnT = 0;
-        F.turned = false;
-        g.audio?.reelScream(true);
-        g.hud.toast('Still too green to land. Wear it out');
+        // too fresh: it bolts (once: a fish already running is left to run,
+        // and the warning is not repeated for a while)
+        if (F.state !== 'run') {
+          F.state = 'run';
+          F.stateT = 1.5;
+          F.dir = Math.random() < 0.5 ? -1 : 1;
+          F.turnT = 0;
+          F.turned = false;
+          g.audio?.reelScream(true);
+          if (F.greenT <= 0) {
+            F.greenT = 5;
+            g.hud.toast('Still too green to land. Wear it out');
+          }
+        }
       } else if (reeling) {
         this.state = 'landing';
         this.landT = 0;

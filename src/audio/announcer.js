@@ -96,8 +96,13 @@ export class Announcer {
       this.voice = null;
       return;
     }
-    const want = this.game.state?.settings?.voiceName;
-    this.voice = (want && good.find((v) => v.name === want)) || good[0];
+    const st = this.game.state?.settings;
+    const want = st?.voiceName;
+    const found = want && good.find((v) => v.name === want);
+    // the voice picked is not on this device (removed, or the settings came
+    // from another one): back to the game's own voice
+    if (want && !found && st) st.voiceName = null;
+    this.voice = found || good[0];
   }
 
   // Settings: the next voice, said aloud so you can hear it. The game's own

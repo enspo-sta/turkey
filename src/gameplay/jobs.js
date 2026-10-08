@@ -67,7 +67,9 @@ export class Jobs {
     if (!open.length) return [];
     const day = this.game.env.day;
     const out = [];
-    for (let i = 0; i < Math.min(3, open.length); i++) out.push(open[(day * 5 + i) % open.length]);
+    // (the board moves on three a day, so over the days every open job
+    // comes round, whatever their number)
+    for (let i = 0; i < Math.min(3, open.length); i++) out.push(open[(day * 3 + i) % open.length]);
     return [...new Set(out)];
   }
 

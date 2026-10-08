@@ -1,18 +1,19 @@
 // Persistent game state (money, gear, cooler, journal, challenges) with
 // localStorage save/load and challenge evaluation.
-import { CHALLENGES, SPECIES_IDS, COOLERS, RODS, FISH, ARROWS, ARROW_ORDER, QUIVER, LOOKS, LOOK_DEFAULT } from './data.js';
+import { CHALLENGES, SPECIES_IDS, COOLERS, RODS, FISH, ARROWS, ARROW_ORDER, QUIVER, LOOKS, LOOK_DEFAULT, LURES } from './data.js';
 import { JOBS } from './jobs.js';
 import { SCIENCE } from './science.js';
 
 const SAVE_KEY = 'rubenHotrodFishing.save.v1';
 const SETTINGS_KEY = 'rubenHotrodFishing.settings.v1';
 
+// Web storage, or null where it is blocked. (Found by reading, not by a test
+// write: a test write fails when the storage is full, and a full storage must
+// still let the save be read and continued.)
 function storage() {
   try {
     const s = window.localStorage;
-    const k = '__rhf_test';
-    s.setItem(k, '1');
-    s.removeItem(k);
+    s.getItem(SAVE_KEY);
     return s;
   } catch (e) {
     return null;
@@ -382,16 +383,26 @@ export class GameState {
     };
   }
 
+  // Write the save. A storage that is full (the photos share it) is given
+  // room by makeRoom, if set (the camera drops its oldest roll pictures), and
+  // the save is tried again; false if it still could not be written.
   save() {
     const s = storage();
     if (!s) return false;
+    let json;
     try {
-      const json = JSON.stringify(this.toJSON());
-      s.setItem(SAVE_KEY, json);
-      mirror(SAVE_KEY, json);
-      return true;
+      json = JSON.stringify(this.toJSON());
     } catch (e) {
       return false;
+    }
+    for (;;) {
+      try {
+        s.setItem(SAVE_KEY, json);
+        mirror(SAVE_KEY, json);
+        return true;
+      } catch (e) {
+        if (!this.makeRoom || !this.makeRoom()) return false;
+      }
     }
   }
 
@@ -419,8 +430,8 @@ export class GameState {
       this.reset();
       Object.assign(this, {
         money: d.money ?? this.money,
-        cooler: d.cooler || [],
-        trophies: d.trophies || [],
+        cooler: Array.isArray(d.cooler) ? d.cooler.filter((f) => f && typeof f === 'object') : [],
+        trophies: Array.isArray(d.trophies) ? d.trophies : [],
         journal: d.journal || {},
         legends: d.legends || {},
         hunted: d.hunted || {},
@@ -449,7 +460,19 @@ export class GameState {
         health: d.health ?? 100,
         started: !!d.started,
       });
-      this.gear = { ...this.gear, ...(d.gear || {}) };
+      this.gear = { ...this.gear, ...(d.gear && typeof d.gear === 'object' ? d.gear : {}) };
+      // gear that no longer exists, or a damaged save: back to what is sure
+      const G = this.gear;
+      G.cooler = Math.max(0, Math.min(COOLERS.length - 1, Math.floor(Number(G.cooler) || 0)));
+      if (!Array.isArray(G.rods)) G.rods = ['classic'];
+      if (!Array.isArray(G.lures)) G.lures = ['spinner'];
+      G.rods = G.rods.filter((id) => RODS.some((r) => r.id === id));
+      G.lures = G.lures.filter((id) => LURES[id]);
+      if (!G.rods.includes('classic')) G.rods.unshift('classic');
+      if (!G.lures.includes('spinner')) G.lures.unshift('spinner');
+      if (!G.rods.includes(G.rod)) G.rod = 'classic';
+      if (!G.lures.includes(G.lure)) G.lure = 'spinner';
+      if (!Number.isFinite(this.money)) this.money = 0;
       // saves from the rifle days: the scope becomes the bow sight and the
       // quiver starts full
       if (d.gear && d.gear.arrows === undefined && !d.gear.quiver) {

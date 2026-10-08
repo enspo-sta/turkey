@@ -15,8 +15,23 @@ const DAY1_UTC = Date.UTC(2026, 7, 20, 8, 0, 0);
 const OBS = new Observer(SITE.lat, SITE.lon, 40);
 const DEG = Math.PI / 180;
 
+// The game's clock is Alaska's: daylight time (UTC-8) from the second Sunday
+// of March to the first Sunday of November, both at 2 am, and standard time
+// (UTC-9) the rest of the year.
 export function gameDate(day, hours) {
-  return new Date(DAY1_UTC + ((day - 1) * 24 + hours) * 3600e3);
+  const t = DAY1_UTC + ((day - 1) * 24 + hours) * 3600e3;
+  return new Date(t + (daylightTime(t) ? 0 : 3600e3));
+}
+
+function daylightTime(t) {
+  const y = new Date(t).getUTCFullYear();
+  // the nth Sunday of a month, at 2 am local (10 am UTC in daylight time,
+  // 11 am in standard time)
+  const sunday = (month, n, hourUTC) => {
+    const first = new Date(Date.UTC(y, month, 1)).getUTCDay();
+    return Date.UTC(y, month, 1 + ((7 - first) % 7) + 7 * (n - 1), hourUTC);
+  };
+  return t >= sunday(2, 2, 11) && t < sunday(10, 1, 10);
 }
 
 export function dateLabel(day) {
@@ -83,12 +98,13 @@ export const PLANETS = [
 ];
 
 // Everything the sky needs at one moment: the planets, the Sun and the Moon
-// as right ascension and declination (degrees, of date), their brightness,
-// the Moon's phase.
+// as right ascension and declination (degrees, in the stars' own frame,
+// J2000, so the Moon hides the right stars and the guide's rings sit on the
+// planets), their brightness, the Moon's phase.
 export function skyAt(date) {
   const t = MakeTime(date);
   const eq = (b) => {
-    const e = Equator(b, t, OBS, true, true);
+    const e = Equator(b, t, OBS, false, true);
     return { ra: e.ra * 15, dec: e.dec, dist: e.dist };
   };
   const planets = PLANETS.map((p) => {

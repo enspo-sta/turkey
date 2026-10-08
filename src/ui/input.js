@@ -126,10 +126,13 @@ export class Input {
     root.addEventListener('touchend', end, opts);
     root.addEventListener('touchcancel', end, opts);
     // Safety net: a button whose finger is no longer on the screen is let go,
-    // even if its own touchend never arrived.
+    // even if its own touchend never arrived. (The fingers lifted by this very
+    // event are left to their own handlers, which run after this one: the
+    // view's needs to see its finger still there to tell a tap.)
     const sweep = (e) => {
       const live = new Set();
       for (const t of e.touches) live.add(t.identifier);
+      if (e.type !== 'touchstart') for (const t of e.changedTouches) live.add(t.identifier);
       for (const b of this.buttons.values()) {
         if (b.down && typeof b.touchId === 'number' && !live.has(b.touchId)) this.releaseButton(b);
       }
@@ -202,11 +205,7 @@ export class Input {
     window.addEventListener('keyup', (e) => this.releaseKey(e.code));
     // let go of everything when the game loses focus or is hidden, so no key,
     // mouse button or touch button stays held while nobody holds it
-    const letGo = () => {
-      this.keys.clear();
-      this.mouseDown = false;
-      for (const b of this.buttons.values()) this.releaseButton(b);
-    };
+    const letGo = () => this.resetAll();
     window.addEventListener('blur', letGo);
     window.addEventListener('pagehide', letGo);
     document.addEventListener('visibilitychange', () => {
@@ -423,9 +422,10 @@ export class Input {
     if (this.stick.active) this.stick.held += 1 / 60;
   }
 
+  // Everything let go: on a menu, and when the game loses focus or is hidden.
   resetAll() {
     for (const b of this.buttons.values()) {
-      b.down = false;
+      this.releaseButton(b);
       b.pressed = false;
       b.released = false;
     }
@@ -436,5 +436,11 @@ export class Input {
     this.lookTouch.id = null;
     this.hideStick();
     this.keys.clear();
+    this.keyEdges.clear();
+    this.mouseDown = false;
+    this.mouseStart = null;
+    // (a drag made while a menu was open must not turn the view on closing)
+    this.look.dx = 0;
+    this.look.dy = 0;
   }
 }

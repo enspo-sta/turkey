@@ -120,6 +120,9 @@ class Session {
     g.hud = new HUD(g);
     g.announcer = new Announcer(g);
     g.photo = new PhotoCamera(g);
+    // the save shares the device's storage with the photos: when it is full,
+    // the camera roll's oldest pictures make room for it
+    g.state.makeRoom = () => g.photo.makeRoom();
     g.areas = new Areas(g);
     g.jobs = new Jobs(g);
     g.bigfoot = new Bigfoot(g);
@@ -486,11 +489,22 @@ class Session {
     g.audio.unlock();
     g.announcer.unlock();
     const s = g.state;
-    if (continueSave) s.load();
-    else {
+    if (continueSave) {
+      // a save that cannot be read is never written over by a fresh game:
+      // the player chooses
+      if (!s.load()) {
+        g.screens.dialog("This save can't be read", 'It may be damaged. A new game would replace it.', [
+          ['Cancel', 'ghost', null],
+          ['New game', 'hot', () => this.startGame(false)],
+        ]);
+        return;
+      }
+    } else {
       s.wipe();
       g.photo.wipe();
     }
+    // the fairy ring's luck is this game's, not the last one's
+    g.env.luckUntil = (s.flags.odd && s.flags.odd.luckUntil) || 0;
     // a save from before the magazine's sales were kept: what is in the
     // album was sold then, so it does not sell twice
     if (continueSave && s.photoSoldMissing) {
@@ -799,7 +813,7 @@ class Session {
     else if (!this.saveWarned) {
       // private browsing or blocked website data: say so instead of losing progress silently
       this.saveWarned = true;
-      g.hud.toast("Can't save: this browser is blocking website data for this page", 'bad');
+      g.hud.toast("Can't save: this device's storage for the game is full, or the browser is blocking it", 'bad');
     }
     return ok;
   }

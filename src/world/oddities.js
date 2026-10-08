@@ -662,7 +662,8 @@ export class Oddities {
       const f = this.found;
       if (f.luckDay !== g.env.day) {
         f.luckDay = g.env.day;
-        g.env.luckUntil = g.env.day * 24 + g.env.time + 4;
+        // (kept in the save, so it lasts across a continue and ends with the game)
+        f.luckUntil = g.env.luckUntil = g.env.day * 24 + g.env.time + 4;
         g.audio?.fairy?.();
         g.hud.toast('The air goes still and smells of honey. You feel lucky: the fish will bite better for the next four hours.', 'good', 6);
       }

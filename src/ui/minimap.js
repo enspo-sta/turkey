@@ -33,6 +33,8 @@ export class Minimap {
     const r = this.button.getBoundingClientRect();
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const px = Math.max(40, Math.round(r.width * dpr));
+    // (hidden, as at load, it measures nothing: sized again once it shows)
+    this.sized = r.width > 0;
     if (px !== this.px) {
       this.px = px;
       this.canvas.width = this.canvas.height = px;
@@ -50,7 +52,7 @@ export class Minimap {
     if (this.t > 0) return;
     this.t = 1 / 15;
     if (!this.image || this.button.offsetParent === null) return;
-    if (this.px <= 1) this.resize();
+    if (!this.sized) this.resize();
     const focus = driving ? g.car.pos : g.player.mode === 'boat' ? g.boat.pos : g.player.pos;
     const moved = Math.abs(focus.x - this.last.x) + Math.abs(focus.z - this.last.z);
     const turned = Math.abs(heading - this.last.h);
