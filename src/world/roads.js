@@ -89,7 +89,10 @@ export function buildRoads(world) {
     const uv = [];
     const idx = [];
     const step = 3;
-    const n = Math.floor(P.length / step) + 1;
+    // (one more row at the very end when the length is not a whole number of
+    // steps, so the ribbon reaches the road's end)
+    const whole = Math.floor(P.length / step);
+    const n = whole + (P.length - whole * step > 0.01 ? 2 : 1);
     const segLen = P.length / (P.count - 1);
     for (let i = 0; i < n; i++) {
       const s = Math.min(P.length, i * step);

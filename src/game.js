@@ -86,6 +86,17 @@ export class Game {
 
   async init(progress = () => {}) {
     installWorldFx();
+    // the page's own font, loaded before any sign or label is painted with
+    // it (fonts in the page load only when first asked for: a sign painted
+    // before would keep a stand-in font for good); never waits long
+    try {
+      if (document.fonts && document.fonts.load) {
+        const fonts = Promise.all(['500', '600', '700', '800'].map((w) => document.fonts.load(`${w} 30px "Barlow Condensed"`)));
+        await Promise.race([fonts, new Promise((r) => setTimeout(r, 2000))]);
+      }
+    } catch (e) {
+      /* a stand-in font then */
+    }
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: 'high-performance',

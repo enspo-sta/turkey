@@ -25,6 +25,28 @@ const LOG = 0x7a5534;
 const STEEL = 0x3e6b5a;
 const CONCRETE = 0x9a968c;
 
+// The nearest spot to (x, z) at least min metres from the middle of any road,
+// on dry ground: for things set beside a road, not in it.
+function offRoad(W, x, z, min) {
+  // (measured to each road's own line: the map's road distance is by cell,
+  // too coarse for a sign by the lane)
+  const ok = (px, pz) => {
+    for (const r of W.roads) if (r.path.nearest(px, pz).d < min) return false;
+    const w = W.waterAt(px, pz);
+    return !(w && w.depth > 0.05);
+  };
+  if (ok(x, z)) return { x, z };
+  for (let r = 1; r <= 16; r += 1) {
+    for (let k = 0; k < 16; k++) {
+      const a = (k / 16) * Math.PI * 2;
+      const px = x + Math.cos(a) * r;
+      const pz = z + Math.sin(a) * r;
+      if (ok(px, pz)) return { x: px, z: pz };
+    }
+  }
+  return { x, z };
+}
+
 export class Props {
   constructor(game) {
     this.game = game;
@@ -114,7 +136,8 @@ export class Props {
     L.fires = ['landing', 'bend', 'falls', 'glacier'].map((id) => {
       const p = W.place(id);
       const d = { x: -Math.sin(p.face), z: -Math.cos(p.face) };
-      return { id, x: p.x - d.x * 5.5 + d.z * 3, z: p.z - d.z * 5.5 - d.x * 3 };
+      // (clear of the road, which ends right at Glacier Lake)
+      return { id, ...offRoad(W, p.x - d.x * 5.5 + d.z * 3, p.z - d.z * 5.5 - d.x * 3, ROAD_HALF + 1.6) };
     });
     for (const p of W.places) {
       // (at the wreck the stand is out on her deck: park by the beach)
@@ -331,8 +354,8 @@ export class Props {
   buildGlacierProps() {
     const p = this.world.place('glacier');
     const d = { x: -Math.sin(p.face), z: -Math.cos(p.face) };
-    const x = p.x + d.z * 5 - d.x * 1;
-    const z = p.z - d.x * 5 - d.z * 1;
+    // (clear of the road's end)
+    const { x, z } = offRoad(this.world, p.x + d.z * 5 - d.x * 1, p.z - d.x * 5 - d.z * 1, ROAD_HALF + 2.6);
     // a kayak pulled up on the shore: its cockpit, the deck lines and the
     // paddle beside it
     const b = new ModelBuilder();
@@ -402,8 +425,8 @@ export class Props {
       this.colliders.addBox(x, z, 1.4, 0.15, yaw);
     }
     // junction signpost at the Trading Post
-    const jx = -60 + 9;
-    const jz = 428 - 7;
+    // (beside the roads, its arrows clear of the lanes)
+    const { x: jx, z: jz } = offRoad(W, -60 + 9, 428 - 7, ROAD_HALF + 2);
     const jy = W.heightAt(jx, jz);
     const pole = new ModelBuilder();
     pole.cyl(0.11, 0.13, 3.9, 9, { pos: [0, 1.8, 0], color: 0x7a5a3a, surf: 'log' });

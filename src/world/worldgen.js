@@ -667,6 +667,47 @@ export class World {
       this.roads.push({ id: def.id, name: def.name, path, elev: prof, bridgeMask });
     }
 
+    // junctions: a road that begins or ends on another one meets it at that
+    // road's height, eased in over its last 60 m (each road's profile is
+    // smoothed on its own, which left one buried and the other in the air
+    // where they joined)
+    // (the road met along its length keeps its height; where two roads end
+    // at each other, the later one in the list eases to the earlier)
+    const BLEND = 15;
+    for (let ri = 0; ri < this.roads.length; ri++) {
+      const R = this.roads[ri];
+      const n = R.elev.length;
+      for (const end of [0, n - 1]) {
+        const ex = R.path.x[end];
+        const ez = R.path.z[end];
+        let best = 12 * 12;
+        let target = null;
+        for (let rj = 0; rj < this.roads.length; rj++) {
+          if (rj === ri) continue;
+          const O = this.roads[rj];
+          const m = O.elev.length;
+          for (let q = 0; q < m; q++) {
+            if (rj > ri && (q < BLEND || q >= m - BLEND)) continue;
+            const dx = O.path.x[q] - ex;
+            const dz = O.path.z[q] - ez;
+            const d2 = dx * dx + dz * dz;
+            if (d2 < best) {
+              best = d2;
+              target = O.elev[q];
+            }
+          }
+        }
+        if (target === null) continue;
+        for (let k = 0; k <= BLEND && k < n; k++) {
+          const q = end === 0 ? k : n - 1 - k;
+          if (R.bridgeMask[q]) break;
+          let w = 1 - k / BLEND;
+          w = w * w * (3 - 2 * w);
+          R.elev[q] = lerp(R.elev[q], target, w);
+        }
+      }
+    }
+
     // rasterize road corridor with elevation
     const radius = 20;
     for (let ri = 0; ri < this.roads.length; ri++) {
@@ -1138,9 +1179,16 @@ export class World {
           bx += g.x * (14 - c) * 0.8;
           bz += g.z * (14 - c) * 0.8;
         }
-        const len = 78;
+        let len = 78;
         const x1 = bx - g.x * len;
         const z1 = bz - g.z * len;
+        // (it starts where the beach is below its deck, not buried in the
+        // bank: the sea end stays where it is)
+        for (let i = 0; i < 20 && this.heightAt(bx, bz) > 3.2 - 0.15; i++) {
+          bx -= g.x * 0.5;
+          bz -= g.z * 0.5;
+          len -= 0.5;
+        }
         p.dock = { x0: bx, z0: bz, x1, z1, width: 4.2, top: 3.2, pier: true };
         p.x = bx - g.x * (len - 4);
         p.z = bz - g.z * (len - 4);
