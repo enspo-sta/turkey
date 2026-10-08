@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Full Audit, All Fixed</title>
+<style>
+:root{color-scheme:dark;--bg:#101216;--surface:#181b21;--surface2:#1f232b;--border:#2a2f39;--text:#e7eaf0;--muted:#9aa3b1;--accent:#d9a441;--accent2:#56b6c2;--danger:#e06c75;--ok:#98c379}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 16px 56px}
+header{margin-bottom:22px}
+.kicker{text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:700;color:var(--accent2);margin-bottom:6px}
+h1{font-size:30px;line-height:1.2;margin:0 0 10px}
+h2{font-size:22px;line-height:1.25;margin:0 0 12px}
+h3{font-size:17px;margin:18px 0 8px}
+p,li{max-width:72ch}
+.lede{color:var(--text);font-size:18px;margin:0 0 12px}
+.links{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 0}
+.links a{display:inline-block;padding:8px 14px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--accent2);text-decoration:none;font-weight:600}
+a{color:var(--accent2)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;margin:0 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:12px}
+.grid figure.wide{grid-column:1/-1}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+@media (max-width:700px){.pair{grid-template-columns:1fr}}
+figure{margin:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+figure img{display:block;width:100%;height:auto}
+figcaption{padding:8px 10px;font-size:14px;color:var(--muted)}
+.sounds{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:12px}
+figure.sound{padding:0 0 10px}
+figure.sound figcaption b{color:var(--text)}
+figure.sound audio{display:block;width:calc(100% - 20px);margin:0 10px}
+.tag{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:0 0 6px;padding:2px 8px;border-radius:6px}
+.tag.before{background:#2a2f39;color:var(--muted)}
+.tag.after{background:#1d3a2a;color:var(--ok)}
+.tablewrap{overflow-x:auto;margin-top:10px}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:15px}
+th,td{border-bottom:1px solid var(--border);padding:8px 10px;text-align:left}
+th{color:var(--muted);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+table.text{min-width:0}
+td code{overflow-wrap:anywhere}
+@media (max-width:640px){table.text,table.text tbody,table.text tr,table.text td{display:block;width:auto}table.text thead{display:none}table.text tr{border-bottom:1px solid var(--border);padding:10px 0}table.text td{border:0;padding:2px 0;text-align:left}table.text td:first-child{font-weight:700}table.text td[data-label]::before{content:attr(data-label);display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}}
+.muted{color:var(--muted)}
+.note{color:var(--muted);font-size:14px;margin:6px 0 0}
+code{font-family:ui-monospace,Menlo,monospace;background:var(--surface2);padding:1px 5px;border-radius:5px;font-size:14px;overflow-wrap:anywhere}
+ul{padding-left:20px}
+pre{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;overflow-x:auto;margin:10px 0}
+pre code{background:none;padding:0;overflow-wrap:normal;white-space:pre}
+.chart{margin:14px 0 8px;max-width:760px}
+.conclusion{border-color:#3a3322}
+.conclusion .kicker{color:var(--accent)}
+footer{color:var(--muted);font-size:14px;border-top:1px solid var(--border);padding-top:14px;margin-top:24px}
+footer a{word-break:break-all}
+.clips{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:12px}
+.clipset{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.clipset b{display:block;margin-bottom:6px}
+.clip{display:flex;align-items:center;gap:8px;margin:4px 0}
+.clip audio{flex:1;min-width:0;height:34px}
+.clip .tag{margin:0;min-width:62px;text-align:center}
+.tag.new{background:#1d2f3a;color:var(--accent2)}
+.quote{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--text);overflow-wrap:anywhere}
+.fix{margin:0 0 12px}
+.fix .sev{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:1px 8px;border-radius:6px;margin-right:6px;background:var(--surface2);border:1px solid var(--border)}
+.sev.high{color:var(--danger)}
+.sev.medium{color:var(--accent)}
+.sev.low{color:var(--muted)}
+
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:4px 0 0}
+.legend i{display:inline-block;width:14px;height:3px;margin-right:6px;vertical-align:middle}
+.ok{color:var(--ok)}
+.bad{color:var(--danger)}
+ul.spaced li{margin-bottom:10px}
+table.reg td:nth-child(-n+3){white-space:nowrap}
+table.compact{min-width:0;font-size:14px}
+table.compact th,table.compact td{padding:6px 7px}
+table.compact tr.group th{color:var(--text);font-weight:700;padding-top:14px;text-align:left}
+.small{font-size:13px}
+table.compact td[data-label]::before{text-transform:none;letter-spacing:.02em;font-size:13px}
+table.reg td code{overflow-wrap:normal}
+@media (max-width:640px){table.text td:first-child{font-weight:400}}
+
+</style>
+
+</head>
+<body><div class="wrap">
+<header>
+<div class="kicker">Full audit · Hotrod Outdoor Alaska Fishing</div>
+<h1>Full Audit, All Fixed</h1>
+<p class="lede">Nine reviewers read the whole game, about 57,000 lines in 106 files. Each worked one area, and between them they reported 78 defects. 73 of these are fixed and pushed, and three are partly fixed. Two were not changed: one is a missing feature rather than a fault, the other a way of working.</p>
+<p>Fixing introduced one crash of my own, caught before release by the check run on the final build; it is fixed and described below. All 17 regression scenarios pass on the final build, and the flows that were broken were driven again to check them. Parts were rewritten only where their structure kept causing bugs: the car's movement step, who owns a bear's threat, and one reset for each new game.</p>
+<div class="links"><a href="#how">How</a><a href="#worst">The worst</a><a href="#rewrites">Rewrites</a><a href="#all">Every finding</a><a href="#checks">Checks</a><a href="#conclusion">What would change this</a></div>
+</header>
+
+<section class="card" id="how"><div class="kicker">Method</div><h2>How the audit was done</h2>
+<p>The code was split into nine areas, and one reviewer read each area in full:</p>
+<ul>
+<li>fishing and money;</li>
+<li>starting, saving and the menus;</li>
+<li>touch input, the camera and the sky;</li>
+<li>the player and the vehicles;</li>
+<li>the animals and the visitor's story;</li>
+<li>the drawing of the world;</li>
+<li>world generation and the buildings;</li>
+<li>the landmarks;</li>
+<li>sound and the build.</li>
+</ul>
+<p>A reviewer reported a defect only after tracing it through the code. Most also confirmed it by driving the game headless in Chromium, at several frame rates. Every report came with a concrete case: what you do, and what goes wrong.</p>
+<p>I checked each finding against the code before fixing it. The fixes went out in seven commits on the branch. The checks at the end ran on the final build, <code>dist/index.html</code>, which is rebuilt from these sources.</p>
+</section>
+
+<section class="card" id="worst"><div class="kicker">What mattered most</div><h2>The worst of what was found</h2>
+<ul class="spaced">
+<li><b>A bear from the last game mauled the new player.</b> Quit to the title while a grizzly was charging, then start a new game. The bear was still on your trail, and within 4 seconds the new player went from 100 to 0 health and lost 10% of their money. The same leftover charge could also pay out the $300 "Survive a grizzly charge" challenge to a fresh game. Shot animals stayed dead into the next game, and a shot bear could be claimed again for money. Now one reset at the start of every game puts each bear and animal back alive and at home, with nothing on your trail.</li>
+<li><b>A car kept on the bridge came back at the bottom of the river.</b> The save kept only where the car was across the map, not its height. On Continue, the car was placed on the river bed under 4 metres of water, where it could hardly move. Now the height is saved, and the car is placed from it.</li>
+<li><b>Photos could quietly stop the game saving.</b> The album shares the device's storage with the save. Once the album had filled it, every save failed without a word, and the Continue button could disappear. Now the camera roll's oldest pictures make room for the save. Continue no longer depends on a test write, and a save that still fails says so.</li>
+<li><b>Tapping a hold did nothing on a phone.</b> Climbing asks you to tap the next hold, but a tap on the view was never registered on touch screens.</li>
+<li><b>Roads did not meet at their junctions.</b> At the Springs junction one road was buried 2 metres in a gravel bank while the other floated 2 metres above the ground. The same happened, by about a metre, at three other junctions. Roads now meet at one height.</li>
+<li><b>The race car drove through trees at 30 frames a second.</b> At top speed it moved 2.9 metres a frame, further than its collision check could see. The car now moves in steps of under a metre.</li>
+</ul>
+</section>
+
+<section class="card" id="rewrites"><div class="kicker">Rewrites</div><h2>Which parts were rewritten, and which were not</h2>
+<p>A rewrite was done only where one structure lay behind several findings.</p>
+<ul class="spaced">
+<li><b>The car's movement</b> (<code>src/entities/car.js</code>): each frame's move is now a series of steps under a metre long. Each step checks grip, deep water, collisions and cliffs. This fixed driving through trees, crossing narrow deep channels in one frame, and grip and crash braking that changed with the frame rate.</li>
+<li><b>Bears</b> (<code>src/gameplay/bears.js</code>): one bear at a time can be after you, and it ends its threat itself. Before, any bear's charge could end another bear's threat, a second wounded bear could take it over, and a fishing bear came back as a roaming one. There is also now one reset per game.</li>
+<li><b>One reset for each new game</b> (<code>resetSession</code> in <code>src/main.js</code>). Several things belong to a game and not to its save, and some were reset in some flows only, some in none: bears, animals, fairy luck, bug dope, tonight's alerts, the view's zoom and the tor's flake. Every new or continued game now starts from the same state. Fades and other delayed work also check that their game is still the one being played.</li>
+<li><b>The shadow hooks</b> (<code>src/world/shadowbatch.js</code>, <code>src/entities/wildlife.js</code>): both put themselves back after a lost graphics context.</li>
+<li><b>Not rewritten:</b>
+  <ul>
+  <li>the menus' navigation, which a reviewer suggested turning into a stack;</li>
+  <li>the many ways a fishing attempt can end;</li>
+  <li>the save's field-by-field loading.</li>
+  </ul>
+  Their bugs are fixed in place, and none of the three is causing a bug now. Rewriting them would risk new bugs for no change you could see.</li>
+</ul>
+</section>
+
+<section class="card" id="all"><div class="kicker">Every finding</div><h2>All 78 findings and what was done</h2>
+<p class="note">Severity is the reviewer's: high means a crash, getting stuck, lost data or wrong money; medium means behaviour you can see is wrong; low is minor.</p>
+<h3>Fishing and money (8)</h3>
+<div class="tablewrap"><table class="text"><thead><tr><th>Finding</th><th>Severity</th><th>Status</th><th>What was done</th></tr></thead><tbody>
+<tr><td>The &#x27;Still too green to land&#x27; warning fired every frame near the bank, up to 535 times in one fight, pushing useful messages away</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">The fish bolts once; the warning waits 5 s</td></tr>
+<tr><td>A float in a river drifted without limit while you waited, out past 140 m, so a hooked fish could strip the line at once</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">It swings with the current but goes no further than the longest cast plus 5 m</td></tr>
+<tr><td>The fairy ring&#x27;s luck carried into a new game, and a continued save lost luck already won</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Kept in the save with the ring&#x27;s day; set from it at every start</td></tr>
+<tr><td>With 5, 10 or 15 jobs open, some jobs were never offered on the board</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">The board moves on three a day, which reaches every job for any number</td></tr>
+<tr><td>An eagle stealing your fish kept your run of catches going</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">A theft ends the streak like any other lost fish</td></tr>
+<tr><td>Continue on a save that could not be read started a fresh game and wrote over the save</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">It says the save cannot be read and offers a new game; nothing is overwritten</td></tr>
+<tr><td>Loading did not check a save&#x27;s gear: a damaged one could throw on every screen update</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Cooler, rods, lures, money and lists checked against what exists</td></tr>
+<tr><td>A device voice saved in Settings but missing on this device silently used another, re-picked before every line</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Back to the game&#x27;s own voice</td></tr>
+</tbody></table></div>
+<h3>Starting, saving and the menus (9)</h3>
+<div class="tablewrap"><table class="text"><thead><tr><th>Finding</th><th>Severity</th><th>Status</th><th>What was done</th></tr></thead><tbody>
+<tr><td>Esc on an open screen closed it and opened the pause menu in its place; Esc could not close pause</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">An Esc that closed a screen stops there</td></tr>
+<tr><td>A bear&#x27;s charge carried into the next game and paid its $300 challenge to it</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">The threat is let go on the way to the title; every game starts with no bear on your trail</td></tr>
+<tr><td>Quitting with the camera zoomed left the title screen zoomed in</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">The view&#x27;s width is reset on the way to the title and at every start</td></tr>
+<tr><td>Continue overwrote a save it could not read (the same fault as in fishing and money)</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">As above</td></tr>
+<tr><td>A fade&#x27;s work could land in the next game (a knock-out&#x27;s fee taken from it), and an error in it left the screen black for good</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Each fade knows its game, and the screen always comes back</td></tr>
+<tr><td>Use buttons on engines, tyres and coolers below the one you have did nothing</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Shown as owned, without a button: they are upgrades you have passed</td></tr>
+<tr><td>Bug dope and tonight&#x27;s aurora and outburst alerts carried into a new game</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Reset at every start</td></tr>
+<tr><td>The tor&#x27;s chipped flake was not tied to the save</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Shown chipped or whole as the save says</td></tr>
+<tr><td>The resolution stepped up while a menu was open, then dropped again in play with a hitch</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">No step up while a menu is open</td></tr>
+</tbody></table></div>
+<h3>Touch input, the camera and the sky (8)</h3>
+<div class="tablewrap"><table class="text"><thead><tr><th>Finding</th><th>Severity</th><th>Status</th><th>What was done</th></tr></thead><tbody>
+<tr><td>On a touch screen a tap on the view was never registered, so climbing&#x27;s &#x27;tap a hold&#x27; did nothing</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">The safety sweep leaves the fingers lifted by that event to their own handlers</td></tr>
+<tr><td>The minimap was drawn at 40 pixels until the phone was turned</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Sized once it first shows</td></tr>
+<tr><td>The joystick kept walking after the page lost focus (a call banner, Control Centre)</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Everything is let go on losing focus</td></tr>
+<tr><td>Photos share the save&#x27;s storage: once full, every save failed silently and Continue could vanish</td><td data-label="Severity">medium</td><td data-label="Status"><span class="">partly fixed</span></td><td data-label="What was done">The roll&#x27;s oldest pictures make room for the save; storage is found by reading; a failed save says so. Moving photos to IndexedDB was not done</td></tr>
+<tr><td>A drag made while a menu was open turned the view in one jump on closing</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Look, mouse and key edges cleared when a menu opens</td></tr>
+<tr><td>Planets and the Moon were placed in a different frame from the stars, about 0.36 degrees off</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">All in the stars&#x27; frame (J2000)</td></tr>
+<tr><td>The clock stayed on Alaska daylight time after it ends on 1 November</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Standard time from the first Sunday of November to the second Sunday of March</td></tr>
+<tr><td>Morning passes of the space station were never announced</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Every pass is announced at dusk</td></tr>
+</tbody></table></div>
+<h3>The player and the vehicles (8)</h3>
+<div class="tablewrap"><table class="text"><thead><tr><th>Finding</th><th>Severity</th><th>Status</th><th>What was done</th></tr></thead><tbody>
+<tr><td>A car saved on the bridge came back at the bottom of the river and could not drive out</td><td data-label="Severity">high</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Its height is saved and it is placed from it, or from above for old saves</td></tr>
+<tr><td>Stepping out of the hot rod in deep water left you unable to walk</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">A step towards the shallows is always allowed; the shallower side is chosen to step out</td></tr>
+<tr><td>The bow&#x27;s creak kept playing after a draw was cut short</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">A cut draw lets the string down</td></tr>
+<tr><td>The race car passed through trees and parked cars at 30 frames a second</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">The car moves in steps of under a metre</td></tr>
+<tr><td>The glider could land you metres up a hillside</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">It lands where its path met the ground</td></tr>
+<tr><td>A save made under a deck came back on top of it</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">The player&#x27;s height is saved and used</td></tr>
+<tr><td>Car grip and crash braking changed with the frame rate</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Exponential blending in the steps</td></tr>
+<tr><td>GLIDE was offered while lying in a deck chair</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Not offered there</td></tr>
+</tbody></table></div>
+<h3>The animals and the visitor (15)</h3>
+<div class="tablewrap"><table class="text"><thead><tr><th>Finding</th><th>Severity</th><th>Status</th><th>What was done</th></tr></thead><tbody>
+<tr><td>A bear attack carried into a new game and mauled the new player</td><td data-label="Severity">high</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">One reset for the bears at every start</td></tr>
+<tr><td>Dead bears and animals carried into a new game, and a dead bear&#x27;s trophy could be claimed again</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Every animal alive again at every start</td></tr>
+<tr><td>Losing a bear&#x27;s threat turned the Bear Falls fishing bears into roaming bears for good</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">A bear goes back to what it was doing</td></tr>
+<tr><td>A bear&#x27;s swipe landed while you were in the car</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Out of reach is checked before any swipe</td></tr>
+<tr><td>Ducks and loons beyond their room were not drawn, though heard</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Room for every lake&#x27;s birds</td></tr>
+<tr><td>A second wounded bear could take over the threat, and either bear&#x27;s charge ending cleared it</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">One bear after you at a time; only its own charge ends its threat</td></tr>
+<tr><td>A bear could be staged in view, or while another was stalking you</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Not within 120 m, and not while one stalks</td></tr>
+<tr><td>A bear&#x27;s attack had no time limit</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Kept from you for 8 s, it gives up</td></tr>
+<tr><td>The kingfisher stalled flapping in place near the ends of the river</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">It turns away from the ends</td></tr>
+<tr><td>Zib&#x27;s button was left behind on every new game, and Zib&#x27;s meshes are never freed</td><td data-label="Severity">low</td><td data-label="Status"><span class="">partly fixed</span></td><td data-label="What was done">The button goes with Zib; the meshes are not freed (some materials may be shared, and it happens once per story)</td></tr>
+<tr><td>Zib appeared far away for a frame after Continue</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Back in the world before being placed</td></tr>
+<tr><td>A claimed bear came back at home even in plain view</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Only while you are over 300 m from its home</td></tr>
+<tr><td>Animals walked through cabins, rocks and logs</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Colliders checked as they walk</td></tr>
+<tr><td>Two random choices were thrown again every frame, so animals crossed roads more often at higher frame rates</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Chosen once per place or flight</td></tr>
+<tr><td>Animation clocks grew all session and lost precision</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Wrapped at whole turns</td></tr>
+</tbody></table></div>
+<h3>Drawing the world (11)</h3>
+<div class="tablewrap"><table class="text"><thead><tr><th>Finding</th><th>Severity</th><th>Status</th><th>What was done</th></tr></thead><tbody>
+<tr><td>After a lost graphics context the sky-visibility map stayed empty and the world stayed darker in the shade</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Drawn again on restore, with the shade map</td></tr>
+<tr><td>The sun&#x27;s shadow map (up to 64 MB) was kept when shadows were turned off on Low</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Freed on Low</td></tr>
+<tr><td>Particles were drawn too small while the bow sight or the camera zoomed</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Their scale follows the field of view</td></tr>
+<tr><td>After a lost context the shadow batching quietly stopped</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Hooked again on restore, as is the animals&#x27; shadow detail</td></tr>
+<tr><td>Shadow batches keep copies of their parts&#x27; vertices, including parts released later</td><td data-label="Severity">low</td><td data-label="Status"><span class="">partly fixed</span></td><td data-label="What was done">Released parts&#x27; geometry and materials are let go; the vertex copies stay, which the exact method needs</td></tr>
+<tr><td>The shadow batches made strings and arrays every frame</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Nothing allocated per frame</td></tr>
+<tr><td>A material change on a batched part (hidden, another side) was not noticed</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">A change takes the part out of its batch</td></tr>
+<tr><td>Trees out of view cast no shadows into the view at a low sun</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Cells whose shadows reach the view are kept (shadow reach up to 120 m)</td></tr>
+<tr><td>The water reflected black faces for a few frames after a lost context</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">No reflection until its faces are drawn again</td></tr>
+<tr><td>The shaders&#x27; clocks grew all session; waves and gusts lose smoothness after hours</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">They start over every two hours</td></tr>
+<tr><td>A few small allocations every frame</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Removed</td></tr>
+</tbody></table></div>
+<h3>World generation and the buildings (7)</h3>
+<div class="tablewrap"><table class="text"><thead><tr><th>Finding</th><th>Severity</th><th>Status</th><th>What was done</th></tr></thead><tbody>
+<tr><td>Roads did not meet at their junctions: one buried up to 2 m, the other floating</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">A road meets the road it joins at that road&#x27;s height, eased in over 60 m</td></tr>
+<tr><td>The saved height did not reach the hot rod and the race car, whose own place() dropped it</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Passed through</td></tr>
+<tr><td>The junction signpost stood in the Tundra Road lane</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Placed clear of every road&#x27;s line</td></tr>
+<tr><td>The Glacier Lake campfire and kayak sat on the River Road</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Placed clear of the road</td></tr>
+<tr><td>Road ribbons stopped up to 2.7 m short of their ends</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">A last row at the end</td></tr>
+<tr><td>Signs and labels could be painted before the game&#x27;s font had loaded, keeping a stand-in font</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">The font is loaded first (at most 2 s)</td></tr>
+<tr><td>The land end of Halibut Pier was buried in the bank</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">The pier starts where the beach is below its deck</td></tr>
+</tbody></table></div>
+<h3>The landmarks (5)</h3>
+<div class="tablewrap"><table class="text"><thead><tr><th>Finding</th><th>Severity</th><th>Status</th><th>What was done</th></tr></thead><tbody>
+<tr><td>A bust was lost for good if the second sculpting worker could not start</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Busts already handed over go back in the queue</td></tr>
+<tr><td>The Tesla coil kept sparking into the next game, and its first-time note could be lost</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Stopped on the way to the title; the note waits for the next run</td></tr>
+<tr><td>The tor&#x27;s flake (the same fault as in the menus)</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">As above</td></tr>
+<tr><td>A failure carving the statue without a worker stopped the game near it every frame</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">The plinth stays empty instead</td></tr>
+<tr><td>Calving ice has no collision</td><td data-label="Severity">low</td><td data-label="Status"><span class="muted">not changed</span></td><td data-label="What was done">A missing feature, not a fault: nothing can hurt or trap you</td></tr>
+</tbody></table></div>
+<h3>Sound and the build (7)</h3>
+<div class="tablewrap"><table class="text"><thead><tr><th>Finding</th><th>Severity</th><th>Status</th><th>What was done</th></tr></thead><tbody>
+<tr><td>Quitting during a bear encounter left the bear music playing on the title and into the next game</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Music and threat reset on the way to the title</td></tr>
+<tr><td>The committed game file was older than its sources</td><td data-label="Severity">medium</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Rebuilt and committed with these fixes</td></tr>
+<tr><td>The build failed from a folder whose path has a space</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Paths from URLs decoded properly</td></tr>
+<tr><td>Short noises could run off the end of their buffer and click</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Started early enough in the buffer</td></tr>
+<tr><td>A distant sound&#x27;s reverb was cut before the sound ended</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">Kept as long as the sound</td></tr>
+<tr><td>A device that could not start sound could block the start of a game</td><td data-label="Severity">low</td><td data-label="Status"><span class="ok">fixed</span></td><td data-label="What was done">The game plays on silently</td></tr>
+<tr><td>The development build writes to the same file that is published</td><td data-label="Severity">low</td><td data-label="Status"><span class="muted">not changed</span></td><td data-label="What was done">A way of working, not a fault in the game; noted</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="card" id="checks"><div class="kicker">Checks</div><h2>Checks on the final build</h2>
+<h3>The regression scenarios</h3>
+<p>17 of 17 scenarios ran without an error on the final build. They cover the fishing, the look and its wardrobe, the Tesla Memorial, saving and continuing, the sites' draw calls, the arms, a catch, the interface, the phone layouts, the voice, the bear, the boat, climbing, the paraglider and the eagle.</p>
+<div class="tablewrap"><table class="text reg"><thead><tr><th>Scenario</th><th>Result</th><th>Time</th></tr></thead><tbody><tr><td><code>fun.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">111 s</td></tr><tr><td><code>wardrobe.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">253 s</td></tr><tr><td><code>tesla.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">492 s</td></tr><tr><td><code>round-smoke.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">122 s</td></tr><tr><td><code>sites-draws.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">197 s</td></tr><tr><td><code>arms.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">452 s</td></tr><tr><td><code>catch.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">407 s</td></tr><tr><td><code>save.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">198 s</td></tr><tr><td><code>ui-check.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">424 s</td></tr><tr><td><code>mobile.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">238 s</td></tr><tr><td><code>layout-phone-small.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">240 s</td></tr><tr><td><code>voice-pick.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">204 s</td></tr><tr><td><code>bear.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">343 s</td></tr><tr><td><code>boat.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">1014 s</td></tr><tr><td><code>climbing.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">280 s</td></tr><tr><td><code>secret-flight.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">335 s</td></tr><tr><td><code>eagle.json</code></td><td data-label="Result"><span class="ok">passed</span></td><td data-label="Time">613 s</td></tr></tbody></table></div>
+<h3>The flows the audit fixed, driven on the final build</h3>
+<div class="tablewrap"><table class="text"><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody>
+<tr><td>A grizzly charging, quit to the title, start a new game, play 20 s</td><td data-label="Result"><span class="ok">no bear on your trail; health 100 → 100; money $150 → $150</span></td></tr>
+<tr><td>A black bear and a deer dead, then a new game</td><td data-label="Result"><span class="ok">both alive again</span></td></tr>
+<tr><td>A fishing bear at the falls alerted, then its threat cleared</td><td data-label="Result"><span class="ok">back to fishing</span></td></tr>
+<tr><td>A bear attacking beside the car with you inside</td><td data-label="Result"><span class="ok">health 100 → 100; the bear retreats</span></td></tr>
+<tr><td>Esc on the pause menu; Esc on the map; Esc in play</td><td data-label="Result"><span class="ok">closed; closed; pause opens</span></td></tr>
+<tr><td>Quit with the camera zoomed 8 times</td><td data-label="Result"><span class="ok">the title's view at its normal 64 degrees</span></td></tr>
+<tr><td>The hot rod driven for 3 s (after the substep change)</td><td data-label="Result"><span class="ok">14.9 m/s, 22.4 m travelled</span></td></tr>
+<tr><td>The hot rod saved on the bridge, then Continue</td><td data-label="Result"><span class="ok">back on the deck at 5.41 m (the river bed under it is at −2.07 m)</span></td></tr>
+</tbody></table></div>
+<p class="note">A first version of this check script fired Esc as an event that could not be cancelled, and started the drive away from the car. Both lines failed there for that reason. The corrected script passed both, and those are the results shown.</p>
+<h3>The picture: the last round's optimisations still exact</h3>
+<p><code>tools/same-frame.mjs</code> drew the same moment with each of the last round's frame-rate optimisations on and off, in all ten views. Every picture had 0 differing pixels.</p>
+<h3>A crash I introduced, and caught</h3>
+<p>Part 2 of the fixes moved the car's movement into steps. The exhaust and dust code further down still used the heading's sine and cosine, which had been worked out in the moved block. So the game threw an error on every frame in which a car moved. This was pushed in part 2, found by the drive check before release, and fixed in part 6. The game was not republished between those two commits.</p>
+<h3>Roads at their junctions</h3>
+<p>The number of road sections whose ribbon is more than 0.35 m off the ground fell from 51 to 28. All 22 left on the Coast Road are the bridge deck, which is meant to stand above the river bed. The other 6 are road edges at most 0.73 m off. Five of them are at the Springs junction, where the ground under one road's edge belongs to the other road's verge; the sixth is one edge of the River Road, 0.37 m off.</p>
+</section>
+
+<section class="card" id="limits"><div class="kicker">Limits</div><h2>What this report cannot show</h2>
+<ul class="spaced">
+<li><b>Nothing was tested on a real iPhone.</b> The checks ran in headless Chromium with a software renderer on a desktop processor, at an iPhone's screen size. Safari on iOS, its touch handling and its graphics chip were not used.</li>
+<li><b>Nine reviewers do not find everything.</b> Each read one area in full, but bugs that only appear between areas, or only after hours of play, can remain.</li>
+<li><b>Some fixes change what you see, on purpose:</b>
+  <ul>
+  <li>roads at the four junctions;</li>
+  <li>the positions of the junction signpost, the Glacier Lake campfire and the kayak;</li>
+  <li>the start of Halibut Pier;</li>
+  <li>tree shadows that now reach into view at a low sun;</li>
+  <li>particles that keep their size while zoomed.</li>
+  </ul>
+  The previous round's pixel-for-pixel guarantee covered only that round's own changes.</li>
+<li><b>The sources below could not be read again from here.</b> Outbound requests from this environment were blocked: curl got a refusal from the network proxy. The claims about three.js were checked in its source as installed with the game.</li>
+</ul>
+</section>
+
+<section class="card conclusion" id="conclusion"><div class="kicker">What would change this conclusion</div><h2>What would change this conclusion</h2>
+<ul class="spaced">
+<li><b>A bug report from a real phone in any of the fixed flows:</b> quitting and starting again, Continue, saving with photos, touch taps, or driving. That would mean a fix did not reach the case it was meant for. The headless checks imitate these flows; they are not the device.</li>
+<li><b>The game running out of storage on a phone even with the roll emptied.</b> That would mean the album alone fills the storage. The fix then is to move the photos to the browser's database (IndexedDB) and keep web storage for the save only, as a reviewer suggested.</li>
+<li><b>Frame time going up at sunset.</b> Trees whose shadows reach into the view are now drawn even when they themselves are out of view. That costs some drawing at a low sun. If a trace on the phone shows it, the shadow reach (120 m) can be shortened.</li>
+<li><b>New code that moves an object between the water's reflection and the view.</b> The one-matrix-update optimisation from the last round assumes nothing does. Both the reviewers and I checked that this holds today, but nothing enforces it.</li>
+</ul>
+</section>
+
+<footer>
+<p><b>Sources</b> (the web pages are cited, not re-read: outbound requests are blocked in this environment. To allow hosts, open the cloud environment menu in the session's title bar, choose Edit and then Network access; see <a href="https://code.claude.com/docs/en/cloud-environments#network-access">https://code.claude.com/docs/en/cloud-environments#network-access</a>.)</p>
+<ul>
+<li>A lost graphics context and its restore event: Khronos, WebGL 1.0 specification, "Context Lost Events", <a href="https://registry.khronos.org/webgl/specs/latest/1.0/#5.15.3">https://registry.khronos.org/webgl/specs/latest/1.0/#5.15.3</a></li>
+<li>three.js rebuilding its shadow map on a restored context: <code>WebGLRenderer.js</code>, <a href="https://github.com/mrdoob/three.js/blob/r186/src/renderers/WebGLRenderer.js">https://github.com/mrdoob/three.js/blob/r186/src/renderers/WebGLRenderer.js</a></li>
+<li>Web storage and its quota errors: WHATWG HTML Standard, "Web storage", <a href="https://html.spec.whatwg.org/multipage/webstorage.html">https://html.spec.whatwg.org/multipage/webstorage.html</a></li>
+<li>Storing larger data in the browser's database instead: MDN, "IndexedDB API", <a href="https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API">https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API</a></li>
+<li>Touch events, and which touches a touchend lists: W3C, <i>Touch Events</i>, <a href="https://www.w3.org/TR/touch-events/">https://www.w3.org/TR/touch-events/</a></li>
+<li>Loading a web font before drawing with it: MDN, "FontFaceSet: load() method", <a href="https://developer.mozilla.org/en-US/docs/Web/API/FontFaceSet/load">https://developer.mozilla.org/en-US/docs/Web/API/FontFaceSet/load</a></li>
+<li>Starting sound on iOS, and a context that cannot be created: W3C, <i>Web Audio API</i>, "AudioContext", <a href="https://www.w3.org/TR/webaudio/#AudioContext">https://www.w3.org/TR/webaudio/#AudioContext</a></li>
+<li>File paths from module URLs in Node: Node.js, "url.fileURLToPath", <a href="https://nodejs.org/api/url.html#urlfileurltopathurl-options">https://nodejs.org/api/url.html#urlfileurltopathurl-options</a></li>
+<li>Alaska's clock change: Alaska Daylight Time ends on the first Sunday of November; US Code, 15 U.S.C. § 260a, <a href="https://www.law.cornell.edu/uscode/text/15/260a">https://www.law.cornell.edu/uscode/text/15/260a</a></li>
+<li>Planet positions in the stars' frame (J2000) or of date: Astronomy Engine, "Equator", <a href="https://github.com/cosinekitty/astronomy/tree/master/source/js#Equator">https://github.com/cosinekitty/astronomy/tree/master/source/js#Equator</a></li>
+<li>The game, its code, the tools named here and their results: <a href="https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing">https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing</a></li>
+</ul>
+</footer></div></body>
+</html>
