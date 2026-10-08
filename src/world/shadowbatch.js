@@ -70,6 +70,21 @@ function ranges(o) {
   return out.length ? out : null;
 }
 
+// What of a part's materials decides how it casts, as one number: a change
+// (hidden, another side, a cut-out added) takes the part out of its stand-in.
+function castKey(o) {
+  const ms = Array.isArray(o.material) ? o.material : [o.material];
+  let h = 0;
+  for (const m of ms) {
+    if (!m) continue;
+    const sh = m.shadowSide === null || m.shadowSide === undefined ? 3 : m.shadowSide;
+    const cut = m.alphaTest > 0 && (m.map || m.alphaMap) ? 1 : 0;
+    const k = (m.visible ? 1 : 0) + 2 * m.side + 8 * sh + 32 * cut + 64 * (m.wireframe ? 1 : 0) + 128 * (m.alphaToCoverage ? 1 : 0) + 256 * (m.displacementMap && m.displacementScale !== 0 ? 1 : 0) + 512 * (m.clippingPlanes && m.clippingPlanes.length ? 1 : 0);
+    h = (h * 1031 + k) | 0;
+  }
+  return h;
+}
+
 export class ShadowBatcher {
   constructor(game) {
     this.game = game;
@@ -92,6 +107,14 @@ export class ShadowBatcher {
     // (always on in the game; tools/same-frame.mjs turns it off to check the
     // picture is the same without it)
     this.enabled = true;
+    this.hook();
+    // three.js makes a new shadow map when a lost graphics context comes
+    // back: hooked again then
+    game.renderer.domElement.addEventListener('webglcontextrestored', () => this.hook());
+  }
+
+  hook() {
+    const game = this.game;
     const shadowMap = game.renderer.shadowMap;
     const draw = shadowMap.render.bind(shadowMap);
     shadowMap.render = (lights, scene, camera) => {
@@ -205,10 +228,10 @@ export class ShadowBatcher {
   }
 
   addBatch(frame, objects) {
-    const B = { frame, parts: [], meshes: new Map(), dirty: true, key: '', position: null, part: null };
+    const B = { frame, parts: [], meshes: new Map(), dirty: true, position: null, part: null };
     let verts = 0;
     for (const o of objects) {
-      const rec = { o, batch: B, index: this.parts.length, geo: o.geometry, version: -1, mat: o.material, rel: new THREE.Matrix4(), ranges: null, moved: false, casting: false, base: verts };
+      const rec = { o, batch: B, index: this.parts.length, geo: o.geometry, version: -1, mat: o.material, key: castKey(o), rel: new THREE.Matrix4(), ranges: null, moved: false, casting: false, base: verts };
       this.relative(rec, rec.rel);
       rec.version = this.version(o.geometry);
       rec.ranges = ranges(o);
@@ -274,16 +297,19 @@ export class ShadowBatcher {
   // shown, its parts' own casting switched off. Returns what to switch back.
   before(camera) {
     this.stamp++;
-    const off = [];
+    // (nothing made anew each frame: the list is kept, and a change in what
+    // casts is found part by part)
+    const off = this._off || (this._off = []);
+    off.length = 0;
     const layers = camera.layers;
     for (const B of this.batches) {
-      let key = '';
+      let changed = false;
       let n = 0;
       for (const rec of B.parts) {
         if (rec.moved) continue;
         const o = rec.o;
         // a part that has moved on its own, or been changed, leaves for good
-        if (o.geometry !== rec.geo || o.material !== rec.mat || this.version(o.geometry) !== rec.version) {
+        if (o.geometry !== rec.geo || o.material !== rec.mat || this.version(o.geometry) !== rec.version || castKey(o) !== rec.key) {
           this.release(rec);
           continue;
         }
@@ -293,11 +319,13 @@ export class ShadowBatcher {
           continue;
         }
         rec.casting = this.casts(o, layers);
-        key += rec.casting ? '1' : '0';
+        if (rec.casting !== rec.wasCasting) {
+          rec.wasCasting = rec.casting;
+          changed = true;
+        }
         if (rec.casting) n++;
       }
-      if (B.dirty || key !== B.key) this.build(B);
-      B.key = key;
+      if (B.dirty || changed) this.build(B);
       B.dirty = false;
       // a stand-in is only worth it for two or more parts
       const use = n >= 2;
@@ -325,6 +353,9 @@ export class ShadowBatcher {
     rec.moved = true;
     rec.batch.dirty = true;
     this.members.delete(rec.o);
+    // (the part, its old geometry and material are not held on to: a bust
+    // swapping its geometry lets the old one go)
+    rec.o = rec.geo = rec.mat = null;
   }
 
   // The batch's stand-ins (one for each side its parts cast with): the

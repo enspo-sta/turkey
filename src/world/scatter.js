@@ -1098,6 +1098,10 @@ class ScatterType {
   }
 }
 
+// how far from the camera a plant's shadow can still fall in the shadow map
+// (the sun's shadow distance)
+const SHADOW_REACH2 = 260 * 260;
+
 export class Scatter {
   constructor(world, colliders, sharedUniforms, matTex) {
     this.world = world;
@@ -1647,7 +1651,16 @@ export class Scatter {
         if (!near) {
           this.sphere.center.set(ccx, t.y[list[0]] + 8, ccz);
           this.sphere.radius = CELL * 0.75 + 25;
-          if (!this.frustum.intersectsSphere(this.sphere)) continue;
+          if (!this.frustum.intersectsSphere(this.sphere)) {
+            // out of view, but its trees' shadows may fall into it (a low sun
+            // behind you): kept when the reach of the shadows is in view
+            const sv = this.shadowVec;
+            if (!sv || cd2 > SHADOW_REACH2) continue;
+            this.sphere.center.x += sv.x * 0.5;
+            this.sphere.center.z += sv.z * 0.5;
+            this.sphere.radius += sv.len * 0.5;
+            if (!this.frustum.intersectsSphere(this.sphere)) continue;
+          }
         }
         for (let q = 0; q < list.length; q++) {
           const idx = list[q];

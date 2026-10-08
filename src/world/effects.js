@@ -356,7 +356,18 @@ export class Effects {
   }
 
   resize(w, h, dpr) {
-    const s = (h * dpr) / 2 / Math.tan((this.game.camera.fov * Math.PI) / 360);
+    this.screenH = h * dpr;
+    this.scaleFov = null;
+    this.fitScale();
+  }
+
+  // The particles' size on screen for the view's height and its field of
+  // view, which the bow sight and the camera's zoom change as they go.
+  fitScale() {
+    const fov = this.game.camera.fov;
+    if (fov === this.scaleFov || !this.screenH) return;
+    this.scaleFov = fov;
+    const s = this.screenH / 2 / Math.tan((fov * Math.PI) / 360);
     this.soft.material.uniforms.uScale.value = s;
     this.glow.material.uniforms.uScale.value = s;
   }
@@ -433,6 +444,7 @@ export class Effects {
 
   update(dt) {
     const g = this.game;
+    this.fitScale();
     this.smokeT += dt;
     this.mistT += dt;
     this.fireT += dt;

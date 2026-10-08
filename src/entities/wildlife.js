@@ -128,16 +128,23 @@ export class Wildlife {
     // every shadow map is drawn with the herds in their low detail: the
     // renderer draws the shadow maps after it has listed the frame's meshes
     // (each with its geometry) and before it draws them
-    const shadowMap = game.renderer.shadowMap;
-    const drawShadows = shadowMap.render.bind(shadowMap);
-    shadowMap.render = (...args) => {
-      for (const h of this.herdList) h.shadowDetail(true);
-      try {
-        drawShadows(...args);
-      } finally {
-        for (const h of this.herdList) h.shadowDetail(false);
-      }
+    // (hooked again after a lost graphics context: three.js makes a new
+    // shadow map then; this listener runs before the shadow batcher's, so
+    // the order of the two hooks stays as it was)
+    const hook = () => {
+      const shadowMap = game.renderer.shadowMap;
+      const drawShadows = shadowMap.render.bind(shadowMap);
+      shadowMap.render = (...args) => {
+        for (const h of this.herdList) h.shadowDetail(true);
+        try {
+          drawShadows(...args);
+        } finally {
+          for (const h of this.herdList) h.shadowDetail(false);
+        }
+      };
     };
+    hook();
+    game.renderer.domElement.addEventListener('webglcontextrestored', hook);
     this.birds = [];
     this.whales = [];
     this.otters = [];

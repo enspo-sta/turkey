@@ -71,6 +71,9 @@ THREE.ShaderChunk.tonemapping_pars_fragment = THREE.ShaderChunk.tonemapping_pars
 }`
 );
 
+// the shaders' clocks start over after this many seconds (see frame)
+const SHADER_PERIOD = 7200;
+
 export class Game {
   constructor(container) {
     this.container = container;
@@ -272,7 +275,9 @@ export class Game {
     if (dt > 0.1) dt = 0.1;
     this.dt = dt;
     this.time += dt;
-    this.sharedUniforms.uTime.value = this.time;
+    // (the shaders' clock kept within two hours: a clock that grew all
+    // session would leave waves and swaying too few digits to move smoothly)
+    this.sharedUniforms.uTime.value = this.time % SHADER_PERIOD;
     const t0 = performance.now();
     for (const s of this.systems) s.update?.(dt, this);
     const t1 = performance.now();
@@ -373,6 +378,15 @@ export class Game {
     this.lastLight.copy(ld);
     this.terrain.update(cam.position.x, cam.position.z);
     this.detailCull?.update();
+    // where the plants' shadows fall, for keeping those whose shadows reach
+    // into the view (see scatter.js)
+    const sv = this.scatter.shadowVec || (this.scatter.shadowVec = { x: 0, z: 0, len: 0 });
+    const lh = Math.hypot(ld.x, ld.z);
+    if (ld.y > 0.035 && lh > 1e-3 && this.renderer.shadowMap.enabled) {
+      sv.len = Math.min(120, (28 * lh) / ld.y);
+      sv.x = (-ld.x / lh) * sv.len;
+      sv.z = (-ld.z / lh) * sv.len;
+    } else sv.len = sv.x = sv.z = 0;
     this.scatter.update(cam);
     this.props.update(dt, this.time, this.env);
     this.effects?.update(dt);
@@ -394,7 +408,7 @@ export class Game {
   updateFx() {
     const env = this.env;
     const w = env.weather;
-    FX.uFxTime.value = this.time;
+    FX.uFxTime.value = this.time % SHADER_PERIOD;
     const e = env.sunElevation;
     const clear = 1 - Math.min(1, Math.max(0, (w.cloud - 0.45) / 0.45));
     FX.uFxCausticStr.value = Math.min(1, Math.max(0, e / 25)) * (0.35 + 0.65 * clear) * (1 - w.rain * 0.8);

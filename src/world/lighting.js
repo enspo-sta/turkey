@@ -179,8 +179,14 @@ export class TerrainLighting {
     this.skyScene = quad(skyFrag, common);
     this.shadeScene = quad(horizonFrag, this.uniforms);
 
-    // sky visibility never changes: render it once
+    // sky visibility never changes: render it once (and again after the
+    // graphics context was lost and given back, which leaves the maps
+    // empty: then the shade map is redone whole too)
     this.draw(this.skyScene, this.skyRT, null);
+    renderer.domElement.addEventListener('webglcontextrestored', () => {
+      this.draw(this.skyScene, this.skyRT, null);
+      if (this.lastDir) this.refresh(this.lastDir);
+    });
     FX.uFxShade.value = this.shadeRT.texture;
     FX.uFxShadeTf.value.set(-DOMAIN, -DOMAIN, 1 / (2 * DOMAIN));
   }
@@ -200,6 +206,7 @@ export class TerrainLighting {
 
   // Refresh `count` bands of the mountain shadow map for light direction dir.
   update(dir, count = 1) {
+    this.lastDir = dir;
     this.uniforms.uLight.value.copy(dir);
     const h = this.size / this.bands;
     for (let i = 0; i < count; i++) {

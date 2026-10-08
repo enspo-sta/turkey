@@ -394,6 +394,15 @@ export class WaterSystem {
     this.waves = new WaveTexture(256);
     this.probe = null;
     this.levelT = 0;
+    // a lost graphics context given back leaves the reflection's faces
+    // empty: none is shown until all five are drawn again
+    renderer.domElement.addEventListener('webglcontextrestored', () => {
+      if (this.probe) {
+        this.probe.ready = false;
+        this.probe.next = 0;
+      }
+      this.primed = false;
+    });
     this.viewLevel = null;
     this.shared = {
       uTime: { value: 0 },
@@ -821,7 +830,7 @@ export class WaterSystem {
   // Returns whether the reflection was drawn.
   update(dt, rain, camera, scene) {
     const sh = this.shared;
-    sh.uTime.value += dt;
+    sh.uTime.value = (sh.uTime.value + dt) % 7200;
     sh.uRain.value = rain;
     const sun = this.env.sun;
     sh.uSunLight.value.copy(sun.color).multiplyScalar(sun.intensity);

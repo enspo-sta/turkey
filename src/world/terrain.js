@@ -270,7 +270,9 @@ export class Terrain {
   showBlocks() {
     for (const B of this.blocks) {
       const lod = B.parts[0].lod;
-      const whole = this.blocksOn && lod >= BLOCK_LOD && B.parts.every((c) => c.lod === lod);
+      let same = true;
+      for (const c of B.parts) if (c.lod !== lod) same = false;
+      const whole = this.blocksOn && lod >= BLOCK_LOD && same;
       if (whole && B.lod !== lod) {
         if (!B.geos[lod]) B.geos[lod] = mergeChunks(B.parts.map((c) => c.geos[lod]));
         B.mesh.geometry = B.geos[lod];

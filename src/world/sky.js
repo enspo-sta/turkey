@@ -308,6 +308,8 @@ function lerpKey(e, field, out) {
   return out.copy(_ca).lerp(_cb, t);
 }
 
+const _pole = new THREE.Vector3();
+
 export class Environment {
   constructor(scene, cloudTex) {
     this.scene = scene;
@@ -406,6 +408,12 @@ export class Environment {
   setShadowQuality(size, distance = 260) {
     if (size <= 0) {
       this.sun.castShadow = false;
+      // the map's memory given back (up to 64 MB on High): a phone that needs
+      // Low needs it most; three.js makes a new map if shadows come back on
+      if (this.sun.shadow.map) {
+        this.sun.shadow.map.dispose();
+        this.sun.shadow.map = null;
+      }
       return;
     }
     this.sun.castShadow = true;
@@ -595,7 +603,7 @@ export class Environment {
     eqVector(A.moon.ra, A.moon.dec, u.uMoonPos.value).applyMatrix3(M);
     eqVector(A.sun.ra, A.sun.dec, u.uMoonSun.value).applyMatrix3(M);
     const m = u.uMoonPos.value;
-    const pole = new THREE.Vector3(0, Math.sin(SITE.lat * DEG), -Math.cos(SITE.lat * DEG));
+    const pole = _pole.set(0, Math.sin(SITE.lat * DEG), -Math.cos(SITE.lat * DEG));
     u.uMoonUp.value.copy(pole).addScaledVector(m, -pole.dot(m)).normalize();
     // how much moonlight there is: up, and how full
     this.moonUp = smoothstep(-0.03, 0.15, m.y) * A.moon.illum;
