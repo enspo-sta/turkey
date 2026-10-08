@@ -818,6 +818,7 @@ export class WaterSystem {
   }
 
   // Per frame: the wave texture, one reflection face and the light uniforms.
+  // Returns whether the reflection was drawn.
   update(dt, rain, camera, scene) {
     const sh = this.shared;
     sh.uTime.value += dt;
@@ -839,6 +840,9 @@ export class WaterSystem {
       this.probe.update(this.renderer, scene, _probePos, this.primed ? 1 : 5);
       this.primed = true;
       sh.uReflOn.value = this.probe.ready ? 1 : 0;
+      // (drawn: every object's matrix in the world is up to date)
+      return true;
     }
+    return false;
   }
 }

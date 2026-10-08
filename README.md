@@ -45,7 +45,16 @@ voice included.
 | ![Starfall Clearing: the pod and the trees laid flat round it](docs/screenshots/crash.jpg) | ![Zib comes out from behind the pod](docs/screenshots/zib.jpg) |
 | ![Isaac Newton's bust in marble at the Tundra Observatory](docs/screenshots/newton.jpg) | ![The Journal's Scientists page](docs/screenshots/scientists.jpg) |
 
-What changed in the latest step (the lag at the start of a game fixed: the
+What changed in the latest step (the frame made cheaper for the processor
+without changing a pixel: the still parts of the sites and the cars drawn into
+the sun's shadow map together, each placed by its own matrix; far ground
+drawn four chunks at a time; grass that cannot be seen skipping its work; and
+every object's place worked out once a frame instead of twice), with 14 to 18
+per cent fewer draw calls and the drawing 5 per cent faster on the test
+machine, and the same moment drawn with the changes on and off matching pixel
+for pixel in ten views:
+[docs/frame-rate-same-picture.html](docs/frame-rate-same-picture.html).
+The step before it (the lag at the start of a game fixed: the
 sounds and Tesla's statue are made in workers, off the main thread, the tap
 that starts a game no longer rebuilds what has not changed, and the graphics
 are no longer stepped down for good in a game's first 20 seconds), measured
@@ -904,6 +913,7 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/world/bustcore.js` | The bust sculptor: faces, hair, beards, glasses and clothes of their time, and the finish (no three.js) |
 | `src/workers/sculpt.js` | The worker that sculpts the busts off the main thread (built separately and carried in the page as text) |
 | `src/world/detailcull.js` | Leaves out of the frame the parts too far away to cover a pixel |
+| `src/world/shadowbatch.js` | Draws the still parts of the sites and the parts of each car into the sun's shadow map together, each placed by its own matrix, in fewer draw calls and with the same shadow map to the bit |
 | `src/gameplay/science.js` | The science objectives and what each one teaches |
 | `src/gameplay/visitor.js` | (spoilers) The meteor outburst, the craft's fall, Starfall Clearing and Zib |
 | `src/util/sdfcore.js` | Sculpting with distance fields, and meshing them with surface nets a little at a time (no three.js, so a worker can run it) |
@@ -1060,6 +1070,8 @@ node tools/bake-cost.mjs [--file index.html] [--title SECS] [--main]   # what ma
 node tools/sound-measure.mjs dir [dir2] [--png]         # each take's loudness (its loudest 0.2 s and the whole take, weighted as ITU-R BS.1770 weights), level, peak, brightness, noisiness, bands, clicks (and the recorder's own glitches apart); two sheets side by side; --png draws each take's spectrogram
 node tools/shot.mjs tools/scenarios/busts-save.json     # plaques read, saved, reloaded and continued, the Journal's Scientists page, and the ten-plaque objective
 node tools/cull-compare.mjs [index.html]                 # the same view with and without leaving out the parts smaller than a pixel, compared pixel by pixel, on the Coast Road and at Hotrod Landing
+node tools/same-frame.mjs [index.html] [outdir] [--size WxH] [--dpr N] [--only=view,view]   # the frame-rate optimisations against the picture: ten views, each moment drawn with them on, on again, each off in turn and all off, compared pixel by pixel, with the draw calls
+node tools/pixel-compare.mjs a.html b.html [outdir] [--size WxH] [--dpr N] [--only=view,view]   # two builds' pictures of the same eight views compared pixel by pixel (seeded random numbers, the game's loop held, the clock stopped while stepping); the fish and a few particles still start where loading left them, so run a build against itself first
 node tools/first-frame.mjs [index.html]                  # loading time, the first frames after New game and the shaders built after loading, for this build or an older one
 node tools/load-compare.mjs old/index.html dist/index.html [--rounds N] [--out dir] # two or more builds opened in turns in a balanced order: the time until the game is ready, New game, and the first three frames, each with a 95% interval
 node tools/shader-check.mjs dev/index.html             # on a development build (node build.mjs --dev): every shader built at High, Medium and Low, at morning, sunset, night and in rain, and any that fail to compile with their error

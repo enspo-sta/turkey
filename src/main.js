@@ -19,6 +19,7 @@ import { SolarWalk } from './world/solarwalk.js';
 import { Tors } from './world/tors.js';
 import { TeslaMemorial } from './world/tesla.js';
 import { DetailCull } from './world/detailcull.js';
+import { ShadowBatcher } from './world/shadowbatch.js';
 import { Visitor } from './gameplay/visitor.js';
 import { Climbing } from './gameplay/climbing.js';
 import { Meteors } from './world/meteors.js';
@@ -196,6 +197,12 @@ class Session {
     // small parts far away are left out of the frame (see detailcull.js)
     g.detailCull = new DetailCull(g);
     for (const o of [g.props.group, g.observatory.group, g.racer.group, g.hotrod.group, g.pitstop.group, g.tors.group, g.solarwalk.group, g.tesla.group, g.boat.group, g.scientists.group]) g.detailCull.add(o);
+    // the parts that keep still go into the shadow map in a few draws, not
+    // one each (see shadowbatch.js): the sites' in the world, the cars' on
+    // the cars
+    g.shadowBatch = new ShadowBatcher(g);
+    for (const o of [g.props.group, g.observatory.group, g.pitstop.group, g.tors.group, g.solarwalk.group, g.tesla.group, g.scientists.group]) g.shadowBatch.addStatic(o);
+    for (const o of [g.hotrod.group, g.racer.group, g.boat.group]) g.shadowBatch.addRigid(o);
     // every light (the hot rod's headlight too) also shines in the water
     // reflections, so the probe and the main view share one light setup
     g.scene.traverse((o) => {
@@ -286,6 +293,8 @@ class Session {
     try {
       g.dt = 0;
       g.updateWorld(0);
+      // (things are added and shown below: the draw works out their places)
+      g.matricesFresh = false;
     } catch (e) {
       /* only an optimisation */
     }

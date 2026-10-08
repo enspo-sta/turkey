@@ -41,6 +41,33 @@ void main() {
   float r = aOffset.y;
   float show = step(r, density * 0.98) * fade;
   float h = texture2D(uHeight, tuv).r;
+  // A tuft that shows nothing (no grass here, or past the fade) or lies
+  // wholly outside the view is sent off screen at once, before the rest of
+  // the work: its triangles would have been empty or clipped all the same.
+  // Every part of a tuft stays within CULL_R of its root, bent by the
+  // strongest gust (the test is for a perspective view, as the camera's).
+  // (EARLY_OUT is always on in the game; tools/same-frame.mjs turns it off
+  // to check the picture is the same without it.)
+#ifdef EARLY_OUT
+  const float CULL_R = 4.0;
+  vec3 vr = (viewMatrix * vec4(wp.x, h, wp.y, 1.0)).xyz;
+  float P00 = projectionMatrix[0][0];
+  float P11 = projectionMatrix[1][1];
+  float P20 = projectionMatrix[2][0];
+  float P21 = projectionMatrix[2][1];
+  bool outside = projectionMatrix[3][3] == 0.0 && (
+    vr.z > CULL_R ||
+    dot(vec3(-P00, 0.0, -1.0 - P20), vr) < -CULL_R * length(vec2(P00, 1.0 + P20)) ||
+    dot(vec3(P00, 0.0, -1.0 + P20), vr) < -CULL_R * length(vec2(P00, 1.0 - P20)) ||
+    dot(vec3(0.0, -P11, -1.0 - P21), vr) < -CULL_R * length(vec2(P11, 1.0 + P21)) ||
+    dot(vec3(0.0, P11, -1.0 + P21), vr) < -CULL_R * length(vec2(P11, 1.0 - P21)));
+  if (show <= 0.0 || outside) {
+    vColor = vec3(0.0);
+    vSun = vec3(0.0);
+    gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+    return;
+  }
+#endif
   float ang = r * 43.0;
   float c = cos(ang), s = sin(ang);
   vec3 p = position;
@@ -224,6 +251,7 @@ export class GrassField {
       uniforms,
       vertexShader: vert,
       fragmentShader: frag,
+      defines: { EARLY_OUT: '' },
       side: THREE.DoubleSide,
       fog: true,
       lights: true,

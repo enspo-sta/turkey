@@ -9,6 +9,12 @@ const CHUNK = 64;
 const CHUNKS = CELLS / CHUNK;
 const LOD_STEP = [1, 2, 4, 8];
 const LOD_DIST = [165, 400, 820];
+// Far off, where a chunk is a small mesh and drawing it costs more in the
+// call than in its triangles, each square of BLOCK by BLOCK chunks at the
+// same level of detail is drawn as one mesh: the same triangles, in a
+// quarter of the draw calls
+const BLOCK = 2;
+const BLOCK_LOD = 2;
 
 // sRGB byte -> linear float lookup
 const LIN = new Float32Array(256);
@@ -200,6 +206,22 @@ export class Terrain {
       }
     }
     this.lodBias = 1;
+    // the far blocks (see BLOCK)
+    this.blocks = [];
+    this.blocksOn = true;
+    for (let bz = 0; bz < CHUNKS; bz += BLOCK) {
+      for (let bx = 0; bx < CHUNKS; bx += BLOCK) {
+        const parts = [];
+        for (let j = 0; j < BLOCK; j++) for (let i = 0; i < BLOCK; i++) parts.push(this.chunks[(bz + j) * CHUNKS + bx + i]);
+        const mesh = new THREE.Mesh(new THREE.BufferGeometry(), material);
+        mesh.receiveShadow = true;
+        mesh.castShadow = false;
+        mesh.matrixAutoUpdate = false;
+        mesh.visible = false;
+        this.group.add(mesh);
+        this.blocks.push({ parts, mesh, geos: [], lod: -1 });
+      }
+    }
   }
 
   // Build every chunk at its LOD for a camera position (used at load time).
@@ -238,6 +260,24 @@ export class Terrain {
         c.mesh.visible = true;
         c.lod = lod;
       }
+    }
+    this.showBlocks();
+  }
+
+  // A far block whose chunks are all at the same level is drawn whole.
+  // (blocksOn is always on in the game; tools/same-frame.mjs turns it off
+  // to check the picture is the same without it.)
+  showBlocks() {
+    for (const B of this.blocks) {
+      const lod = B.parts[0].lod;
+      const whole = this.blocksOn && lod >= BLOCK_LOD && B.parts.every((c) => c.lod === lod);
+      if (whole && B.lod !== lod) {
+        if (!B.geos[lod]) B.geos[lod] = mergeChunks(B.parts.map((c) => c.geos[lod]));
+        B.mesh.geometry = B.geos[lod];
+      }
+      B.lod = whole ? lod : -1;
+      B.mesh.visible = whole;
+      for (const c of B.parts) c.mesh.visible = !whole && c.lod >= 0;
     }
   }
 
@@ -340,6 +380,41 @@ export class Terrain {
     g.computeBoundingSphere();
     return g;
   }
+}
+
+// One mesh of several chunks' geometries at the same level of detail: their
+// vertices one after another, each chunk's triangles moved on to its own.
+function mergeChunks(geos) {
+  const names = ['position', 'normal', 'color', 'uv'];
+  let verts = 0;
+  let tris = 0;
+  for (const g of geos) {
+    verts += g.attributes.position.count;
+    tris += g.index.count;
+  }
+  const out = new THREE.BufferGeometry();
+  for (const n of names) {
+    const size = geos[0].attributes[n].itemSize;
+    const arr = new Float32Array(verts * size);
+    let o = 0;
+    for (const g of geos) {
+      arr.set(g.attributes[n].array, o);
+      o += g.attributes[n].array.length;
+    }
+    out.setAttribute(n, new THREE.BufferAttribute(arr, size));
+  }
+  const idx = verts > 65535 ? new Uint32Array(tris) : new Uint16Array(tris);
+  let o = 0;
+  let base = 0;
+  for (const g of geos) {
+    const src = g.index.array;
+    for (let i = 0; i < src.length; i++) idx[o + i] = src[i] + base;
+    o += src.length;
+    base += g.attributes.position.count;
+  }
+  out.setIndex(new THREE.BufferAttribute(idx, 1));
+  out.computeBoundingSphere();
+  return out;
 }
 
 // Distant mountains and far shore beyond the playable square.

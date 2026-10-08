@@ -379,10 +379,15 @@ export class Game {
     const rain = this.env.weather.rain;
     this.updateFx();
     this.updateExposure(dt);
-    this.water.update(dt, rain, cam, this.scene);
     this.scenery.update(dt);
     this.floaters.update(dt);
     this.grass.update(dt, cam.position, this.env.sun, this.env.hemi, 0.3 + rain * 0.8);
+    // last, so that the water's reflection, which brings every object's
+    // place in the world up to date as it is drawn, leaves them as the view
+    // will find them: the view need not work them all out again (see
+    // render). The three just above only change what they draw themselves,
+    // none of it in the reflection, so it shows the same as before them.
+    this.matricesFresh = this.water.update(dt, rain, cam, this.scene);
   }
 
   // Light-dependent inputs of the shared world shading.
@@ -472,6 +477,20 @@ export class Game {
   }
 
   render() {
+    // every object's place was worked out by the reflection just before
+    // (see updateWorld): once is enough for the frame
+    const fresh = this.matricesFresh;
+    this.matricesFresh = false;
+    if (!fresh) return this.draw();
+    this.scene.matrixWorldAutoUpdate = false;
+    try {
+      this.draw();
+    } finally {
+      this.scene.matrixWorldAutoUpdate = true;
+    }
+  }
+
+  draw() {
     const r = this.renderer;
     const world = this.drawWorld || (this.drawWorld = () => r.render(this.scene, this.camera));
     const overlay =
