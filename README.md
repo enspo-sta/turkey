@@ -45,6 +45,15 @@ voice included.
 | ![Starfall Clearing: the pod and the trees laid flat round it](docs/screenshots/crash.jpg) | ![Zib comes out from behind the pod](docs/screenshots/zib.jpg) |
 | ![Isaac Newton's bust in marble at the Tundra Observatory](docs/screenshots/newton.jpg) | ![The Journal's Scientists page](docs/screenshots/scientists.jpg) |
 
+The latest review (no code changed): a first-principles audit of the
+project and its way of working. No frame time has ever been measured on an
+iPhone. The game's own adaptation locks it on Low for good after 40 seconds
+at a steady 30 frames a second, which is how Safari runs in Low Power Mode.
+The iPhone app's silent-switch policy contradicts the web sound fix. And the
+test scenarios can fail only on a crash. Each finding comes with its
+confidence and how it is known:
+[docs/first-principles-audit.html](docs/first-principles-audit.html).
+
 What changed in the latest step (a full audit: nine reviewers read the
 whole game, 78 defects were found and 73 fixed outright, 3 in part; among
 them a bear from the last game that mauled a new player, a car saved on the

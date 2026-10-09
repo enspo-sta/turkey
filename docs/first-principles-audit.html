@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Working Without the Phone</title>
+<style>
+:root{color-scheme:dark;--bg:#101216;--surface:#181b21;--surface2:#1f232b;--border:#2a2f39;--text:#e7eaf0;--muted:#9aa3b1;--accent:#d9a441;--accent2:#56b6c2;--danger:#e06c75;--ok:#98c379}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 16px 56px}
+header{margin-bottom:22px}
+.kicker{text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:700;color:var(--accent2);margin-bottom:6px}
+h1{font-size:30px;line-height:1.2;margin:0 0 10px}
+h2{font-size:22px;line-height:1.25;margin:0 0 12px}
+h3{font-size:17px;margin:18px 0 8px}
+p,li{max-width:72ch}
+.lede{color:var(--text);font-size:18px;margin:0 0 12px}
+.links{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 0}
+.links a{display:inline-block;padding:8px 14px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--accent2);text-decoration:none;font-weight:600}
+a{color:var(--accent2)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;margin:0 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:12px}
+.grid figure.wide{grid-column:1/-1}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+@media (max-width:700px){.pair{grid-template-columns:1fr}}
+figure{margin:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+figure img{display:block;width:100%;height:auto}
+figcaption{padding:8px 10px;font-size:14px;color:var(--muted)}
+.sounds{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:12px}
+figure.sound{padding:0 0 10px}
+figure.sound figcaption b{color:var(--text)}
+figure.sound audio{display:block;width:calc(100% - 20px);margin:0 10px}
+.tag{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:0 0 6px;padding:2px 8px;border-radius:6px}
+.tag.before{background:#2a2f39;color:var(--muted)}
+.tag.after{background:#1d3a2a;color:var(--ok)}
+.tablewrap{overflow-x:auto;margin-top:10px}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:15px}
+th,td{border-bottom:1px solid var(--border);padding:8px 10px;text-align:left}
+th{color:var(--muted);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+table.text{min-width:0}
+td code{overflow-wrap:anywhere}
+@media (max-width:640px){table.text,table.text tbody,table.text tr,table.text td{display:block;width:auto}table.text thead{display:none}table.text tr{border-bottom:1px solid var(--border);padding:10px 0}table.text td{border:0;padding:2px 0;text-align:left}table.text td:first-child{font-weight:700}table.text td[data-label]::before{content:attr(data-label);display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}}
+.muted{color:var(--muted)}
+.note{color:var(--muted);font-size:14px;margin:6px 0 0}
+code{font-family:ui-monospace,Menlo,monospace;background:var(--surface2);padding:1px 5px;border-radius:5px;font-size:14px;overflow-wrap:anywhere}
+ul{padding-left:20px}
+pre{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;overflow-x:auto;margin:10px 0}
+pre code{background:none;padding:0;overflow-wrap:normal;white-space:pre}
+.chart{margin:14px 0 8px;max-width:760px}
+.conclusion{border-color:#3a3322}
+.conclusion .kicker{color:var(--accent)}
+footer{color:var(--muted);font-size:14px;border-top:1px solid var(--border);padding-top:14px;margin-top:24px}
+footer a{word-break:break-all}
+.clips{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:12px}
+.clipset{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.clipset b{display:block;margin-bottom:6px}
+.clip{display:flex;align-items:center;gap:8px;margin:4px 0}
+.clip audio{flex:1;min-width:0;height:34px}
+.clip .tag{margin:0;min-width:62px;text-align:center}
+.tag.new{background:#1d2f3a;color:var(--accent2)}
+.quote{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--text);overflow-wrap:anywhere}
+.fix{margin:0 0 12px}
+.fix .sev{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:1px 8px;border-radius:6px;margin-right:6px;background:var(--surface2);border:1px solid var(--border)}
+.sev.high{color:var(--danger)}
+.sev.medium{color:var(--accent)}
+.sev.low{color:var(--muted)}
+
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:4px 0 0}
+.legend i{display:inline-block;width:14px;height:3px;margin-right:6px;vertical-align:middle}
+.ok{color:var(--ok)}
+.bad{color:var(--danger)}
+ul.spaced li{margin-bottom:10px}
+table.reg td:nth-child(-n+3){white-space:nowrap}
+table.compact{min-width:0;font-size:14px}
+table.compact th,table.compact td{padding:6px 7px}
+table.compact tr.group th{color:var(--text);font-weight:700;padding-top:14px;text-align:left}
+.small{font-size:13px}
+table.compact td[data-label]::before{text-transform:none;letter-spacing:.02em;font-size:13px}
+table.reg td code{overflow-wrap:normal}
+@media (max-width:640px){table.text td:first-child{font-weight:400}}
+
+.claim{border-left:3px solid var(--accent2);padding-left:14px;margin:0 0 6px}
+.conf{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.pill{display:inline-block;font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);font-variant-numeric:tabular-nums}
+.pill.hi{color:var(--ok)}
+.pill.mid{color:var(--accent)}
+.pill.lo{color:var(--danger)}
+.pill.kind{color:var(--accent2)}
+dl.why{display:grid;grid-template-columns:minmax(120px,190px) 1fr;gap:6px 16px;margin:12px 0 0}
+dl.why dt{color:var(--muted);font-size:14px;font-weight:600}
+dl.why dd{margin:0;min-width:0}
+@media (max-width:640px){dl.why{grid-template-columns:1fr}dl.why dt{margin-top:8px}}
+.num{font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;margin-right:8px}
+.verdict{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin:12px 0}
+</style>
+</head>
+<body><div class="wrap">
+<header>
+<div class="kicker">First-principles audit · Hotrod Outdoor Alaska Fishing</div>
+<h1>Working Without the Phone</h1>
+<p class="lede">The code is not the weakest part of this project. The weakest part is how it gets checked. Every decision about frame rate so far was made without a single measurement from an iPhone, the phone the game is made for. And the game's own safety net can lock it on its lowest graphics for good, from a cause no optimisation can fix.</p>
+<p>This page sets out where I disagree with the project, my own past work included, and why. It covers what contradicts itself and what I expect will not work in practice. Every conclusion comes with its confidence and with how I know it: whether I ran it, read it in the code, recalled it, or am giving a judgement. It also says what would prove me wrong.</p>
+<div class="links"><a href="#method">Method</a><a href="#verdict">Verdict</a><a href="#findings">Findings</a><a href="#withdrawn">Withdrawn</a><a href="#agree">What is right</a><a href="#do">What to do</a><a href="#really">How confident, really</a><a href="#conclusion">What would change this</a></div>
+</header>
+
+<section class="card" id="method"><div class="kicker">Method</div><h2>How this audit was done</h2>
+<p>I went back to the basic question: the game is for an iPhone, so what does it take for it to run well and work there, and does the project as it stands give us a way to know? From there I checked the evidence the project holds:</p>
+<ul>
+<li>the git history: 108 commits;</li>
+<li>the task list: 141 tasks over the life of the project;</li>
+<li>the README: 1,170 lines;</li>
+<li>the 18 reports in <code>docs/</code>;</li>
+<li>the 25 tools and 140 test scenarios in <code>tools/</code>;</li>
+<li>the code that picks and changes the graphics preset;</li>
+<li>the iPhone app's wrapper in <code>ios/</code>;</li>
+<li>the sound start-up code;</li>
+<li>how photos are stored.</li>
+</ul>
+<p>Where a doubt could be settled by running something, I ran it. Two checks were new for this audit:</p>
+<ul>
+<li>I fed the game's own adaptation code steady frame rates and recorded what it did.</li>
+<li>I measured how much storage a full photo album takes. To do it I ran the 38 report screenshots through the game's own photo size and quality.</li>
+</ul>
+<p>Each conclusion below is marked with how I know it:</p>
+<ul>
+<li><b>Ran it:</b> I ran the code or did the arithmetic, and the result is shown.</li>
+<li><b>Read it:</b> I traced it in the code but did not run it.</li>
+<li><b>Recalled:</b> I know it about Safari or iOS from before, and could not read the source again here, because outbound requests are blocked in this environment.</li>
+<li><b>Judgement:</b> it is my opinion, and you may reasonably disagree.</li>
+</ul>
+<p>The percentage is how likely I think the claim is to be true.</p>
+</section>
+
+<section class="card" id="verdict"><div class="kicker">Verdict</div><h2>The short version</h2>
+<div class="verdict">
+<p><b>What I am most sure of.</b> The frame-rate work has been aimed blind. We don't know whether the phone is limited by its processor, its graphics chip, its heat or a frame cap. The last optimisation round measured a whole-frame change within the noise: 9.08 ms before and 8.94 ms after, on a desktop. A desktop cannot answer the question that matters.</p>
+<p><b>The most concrete defect.</b> I tested this one by running the game's own code. Forty seconds at a steady 30 frames a second steps the game from High to Low, and saves Low as your setting. It never steps back up, even after five minutes at a steady 60. I recall that Safari caps animation at 30 frames a second in Low Power Mode. If so, one session in Low Power Mode leaves the game on Low for good: no shadows, no water reflection, half the grass, and still the same 30 frames a second.</p>
+<p><b>The clearest contradiction.</b> The iPhone app is set to follow the silent switch, "like most iOS games". The sound fix I shipped last time asks the page to ignore the silent switch. Inside the app, the two policies fight.</p>
+<p><b>The deepest process problem.</b> I built precise tools for what I could measure: pixel-for-pixel comparisons, balanced timing rounds, 140 scenarios. I built nothing for what matters: the frame rate on your phone. On top of that, the scenarios cannot fail on wrong behaviour, only on a crash.</p>
+</div>
+</section>
+
+<section class="card" id="findings"><div class="kicker">Findings</div><h2>Findings, most important first</h2>
+
+<h3><span class="num">1</span>The frame-rate work has been aimed without one measurement from the phone</h3>
+<p class="claim">You have said more than once that the frame rate is too low. Each time I answered with optimisations measured on a desktop processor, with a software renderer standing in for the graphics chip. No number has ever come from an iPhone.</p>
+<dl class="why">
+<dt>Evidence</dt><dd>
+<p>Every measurement tool in <code>tools/</code> launches headless Chromium with SwiftShader. SwiftShader is a graphics chip written in software, running on the desktop processor.</p>
+<p>Task 136 was called "Find where the frame time goes on a phone", but it measured the desktop. Its report says "The test machine is a desktop processor" and "Whether it shows on the phone's graphics chip was not measured".</p>
+<p>The project's iPhone app already makes debug builds inspectable by Safari's Web Inspector (<code>isInspectable</code> in <code>GameViewController.swift</code>). Nobody has used that.</p></dd>
+<dt>Why it matters</dt><dd>A phone and a desktop differ in exactly the places that decide this:
+<ul>
+<li>how much a draw call costs the processor;</li>
+<li>how much a pixel costs the graphics chip;</li>
+<li>heat;</li>
+<li>Safari's frame pacing.</li>
+</ul>
+An optimisation that wins on the desktop can do nothing on the phone. The reverse also holds.</dd>
+<dt>How I know</dt><dd><b>Read it</b>: the launch arguments of every tool, the reports' own limits sections and the Swift source.</dd>
+<dt>What would prove me wrong</dt><dd>A trace from the phone showing that the desktop measurements predicted it well. Then nothing would have been lost by working blind, though nobody could have known that in advance.</dd>
+</dl>
+<div class="conf"><span class="pill hi">99%: no phone measurement exists</span><span class="pill mid">65%: this is the main reason the frame-rate complaints keep coming back</span><span class="pill kind">Read it</span></div>
+
+<h3><span class="num">2</span>The game's safety net can lock it on Low for good, from a cause it cannot fix</h3>
+<p class="claim">The game starts every device on High. It first lowers the resolution, then steps the preset down when frames take longer than 25 ms (under 40 frames a second). It saves the step-down as your setting, and nothing ever steps it back up.</p>
+<p>I fed the game's own <code>adaptResolution()</code> steady frame times. This used the final build, on a screen the size of an iPhone in landscape (844 by 390 points, pixel ratio 3), with no saved setting. The script is in the session's scratch folder as <code>fp/adapt.mjs</code>.</p>
+<div class="tablewrap"><table class="text">
+<thead><tr><th>Frame rate fed in</th><th>Preset</th><th>Resolution</th><th>Saved setting</th></tr></thead>
+<tbody>
+<tr><td>At the start</td><td data-label="Preset">High</td><td data-label="Resolution">2.00×</td><td data-label="Saved setting">none</td></tr>
+<tr><td>After 10 s at 30 frames a second</td><td data-label="Preset">High</td><td data-label="Resolution">1.00×</td><td data-label="Saved setting">none</td></tr>
+<tr><td>After 20 s at 30 frames a second</td><td data-label="Preset">High</td><td data-label="Resolution">1.00×</td><td data-label="Saved setting">none</td></tr>
+<tr><td>After 30 s at 30 frames a second</td><td data-label="Preset">Medium</td><td data-label="Resolution">1.00×</td><td data-label="Saved setting">Medium</td></tr>
+<tr><td>After 40 s at 30 frames a second</td><td data-label="Preset">Low</td><td data-label="Resolution">1.00×</td><td data-label="Saved setting">Low</td></tr>
+<tr><td>After 120 s at 30 frames a second</td><td data-label="Preset">Low</td><td data-label="Resolution">1.00×</td><td data-label="Saved setting">Low</td></tr>
+<tr><td>Then 5 minutes at a steady 60</td><td data-label="Preset" class="bad">Low</td><td data-label="Resolution" class="bad">1.00×</td><td data-label="Saved setting" class="bad">Low</td></tr>
+<tr><td>A fresh start on High, then 3 minutes at 45 frames a second</td><td data-label="Preset">High</td><td data-label="Resolution">2.00×</td><td data-label="Saved setting">none</td></tr>
+</tbody></table></div>
+<dl class="why">
+<dt>Three problems</dt><dd>
+<ul class="spaced">
+<li><b>A frame cap reads as a slow phone.</b> I recall that Safari on an iPhone limits animation to 30 frames a second in Low Power Mode. A phone that is merely hot also slows down. Dropping detail cannot raise a capped frame rate, so the game gives up all of its graphics and gains nothing.</li>
+<li><b>The drop is permanent.</b> After the cap or the heat is gone, the game stays on Low until you notice and change it in Settings. It tells you once, in a toast that lasts a few seconds. Low turns off the sun's shadows and the water's reflection, and draws 45% of the grass and 60% of the plants. That is far more "worse graphics" than anything I refused to do by hand (finding 5).</li>
+<li><b>Between 40 and 55 frames a second nothing happens.</b> At 45 frames a second the game stays on High at full resolution, with the frame time swinging. The game treats that band as fine. You have called it too low.</li>
+</ul></dd>
+<dt>A pattern of mine</dt><dd>Three rounds ago I saw part of this: "the graphics are no longer stepped down for good in a game's first 20 seconds" (<a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/docs/start-lag-fix.html">docs/start-lag-fix.html</a>). I patched the first 20 seconds and left the permanent drop in place for every second after. That treated the symptom I had measured, not the design that caused it.</dd>
+<dt>How I know</dt><dd><b>Ran it</b> for the game's behaviour: the table above comes from the shipped code. <b>Recalled</b> for Safari's 30-frame limit in Low Power Mode. I could not re-read a source here, and I am not certain of the exact conditions.</dd>
+<dt>What would prove me wrong</dt><dd>If your phone shows 60 frames a second in Low Power Mode, the cap I recall does not exist on your device. The permanent drop would still happen for any other spell of slow frames, a hot phone included.</dd>
+</dl>
+<div class="conf"><span class="pill hi">97%: the game behaves as in the table</span><span class="pill mid">75%: Safari caps at 30 in Low Power Mode</span><span class="pill lo">unknown: whether it has happened on your phone</span><span class="pill kind">Ran it · Recalled</span></div>
+<p class="note">You can check the last point in a minute. In the game's Settings, look at which Graphics button is lit. If it is LOW and you never chose it, this has happened. Then turn on "Show frame rate": the corner shows, for example, "45 FPS · HIGH · 2.00x". That one line is the most useful number this project could have.</p>
+
+<h3><span class="num">3</span>"Lowering the resolution doesn't help" was read as "the processor is the limit", but other causes fit equally well</h3>
+<p class="claim">The last frame-rate round reasoned that if lowering the resolution does not raise the frame rate, the limit is likely the processor rather than the graphics chip. That round then went after the processor's cost per draw call.</p>
+<dl class="why">
+<dt>Why I disagree with my own reasoning</dt><dd>The same observation fits at least three other causes, and the round did not rule any of them out:
+<ul>
+<li>a frame cap: Low Power Mode, as in finding 2;</li>
+<li>heat slowing the phone down;</li>
+<li>the graphics chip being limited by passes whose cost does not scale with the resolution: the 4096 by 2048 shadow atlas, the water's reflection and the bloom chain's smaller buffers.</li>
+</ul>
+"Likely" was in the report, but the whole round was then spent as if it were known.</dd>
+<dt>How I know</dt><dd><b>Read it</b>: the sentence is in <a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/docs/frame-rate-same-picture.html">docs/frame-rate-same-picture.html</a>. That the alternatives fit is plain logic. That any of them is the real cause on your phone is not known.</dd>
+<dt>What would prove me wrong</dt><dd>A Web Inspector timeline from the phone showing the processor busy for most of each frame, with Low Power Mode off and the phone cool.</dd>
+</dl>
+<div class="conf"><span class="pill hi">90%: the inference did not rule out the alternatives</span><span class="pill lo">50/50: whether the processor is in fact the limit</span><span class="pill kind">Read it · Judgement</span></div>
+
+<h3><span class="num">4</span>By its own numbers, the last frame-rate round could not have given you what you asked for</h3>
+<p class="claim">Going from 40 to 60 frames a second means going from 25 ms to 16.7 ms a frame. That is 8.3 ms saved. The round measured the whole frame at 9.08 ms before and 8.94 ms after, a difference of 0.14 ms. Its own confidence range ran from 0.46 ms faster to 0.18 ms slower, and it called this "no clear difference".</p>
+<dl class="why">
+<dt>Why it matters</dt><dd>
+<p>The round met the condition I had set for it: draw calls down 14 to 18% and every pixel unchanged. But it was about 60 times too small for the goal you had set. Even if a phone gained three times as much as the desktop, that is about 0.4 ms. The report states the numbers honestly, yet it leads with "Draw calls fell 14–18%", which reads like progress on your problem.</p>
+<p>I should have said plainly, before starting: changes that leave every pixel unchanged cannot give 8 ms here, so you will have to choose what to give up, or let me measure on the phone first.</p></dd>
+<dt>How I know</dt><dd><b>Ran it</b>: the figures are the round's own measurements, and the rest is arithmetic.</dd>
+<dt>What would prove me wrong</dt><dd>If the phone turned out to spend far more of its frame on draw calls than the desktop, say ten times the cost per call, then cutting 14 to 18% of the calls could matter there. That is possible, but nothing measured supports it.</dd>
+</dl>
+<div class="conf"><span class="pill hi">97%: the arithmetic</span><span class="pill mid">70%: the round made no difference you could feel on the phone</span><span class="pill kind">Ran it</span></div>
+
+<h3><span class="num">5</span>"Without worsening graphics" was read as "not one pixel", while the game itself drops whole shadow maps without asking</h3>
+<p class="claim">You asked me to optimise "without worsening graphics". I held the round to pixel-identical pictures, which is stricter than what you said. Meanwhile, the code I left in place switches to Low on its own (finding 2).</p>
+<dl class="why">
+<dt>The contradiction</dt><dd>I refused to change one pixel by hand, yet I shipped and kept a mechanism that removes the shadows, the reflection and half the vegetation automatically and for good. Each rule may look careful on its own, but together they make no sense. The pixel rule kept out changes that would most likely not be visible on a 6-inch screen and could save several milliseconds:
+<ul>
+<li>limiting the resolution to 1.75 instead of 2 times the screen's points: about 23% fewer pixels;</li>
+<li>drawing the bloom and the sun rays at a lower resolution;</li>
+<li>refreshing the far shadow cascades every other frame.</li>
+</ul>
+Each is a proposal, not something I measured on the phone.</dd>
+<dt>How I know</dt><dd><b>Read it</b> for both rules. <b>Judgement</b> that the cheaper changes would not be seen. Only you can say what "worsening" means to you.</dd>
+<dt>What would prove me wrong</dt><dd>You telling me that pixel-identical is exactly what you meant.</dd>
+</dl>
+<div class="conf"><span class="pill hi">95%: the two rules contradict each other</span><span class="pill mid">60%: you would accept changes you cannot see, for speed</span><span class="pill kind">Read it · Judgement</span></div>
+
+<h3><span class="num">6</span>The game grows faster than it is made fast</h3>
+<p class="claim">Of the 141 tasks, about 20 raised what each frame costs to draw, and 32 added new systems. 15 tasks were spent measuring or winning back speed or memory. The game is a fishing game that now also has hunting, bears, three vehicles, a boat, a paraglider, climbing, an observatory with a real sky, a Tesla memorial, 34 scientists' busts, an alien visitor's story, a photo album and an announcer.</p>
+<p>My sort of the tasks, written out in full:</p>
+<div class="tablewrap"><table class="text">
+<thead><tr><th>Kind</th><th>Tasks</th></tr></thead>
+<tbody>
+<tr><td>Raised the drawing cost (20)</td><td data-label="Tasks">14 translucent water; 15 visible fish; 16 better lighting; 17 more world detail; 22 finer grass; 26 more detailed trees; 27 detailed mountains; 28 shrubs and ground detail; 30 floating logs and flowers; 31 polish for iPhone 13 and newer; 33 cheap graphics tricks; 58 mountains, Bear Falls and fidelity; 67 Ruben's cabin and Hotrod Landing; 68 Kenai Trading Post; 69 the other buildings; 72 better caught fish; 73 rebuilt hot rod; 75 rebuilt arms; 110 asset quality "at no extra runtime cost"; 125 lowest-quality assets "within the budget"</td></tr>
+<tr><td>Added new systems (32)</td><td data-label="Tasks">18 more animals; 24 hands-free mode; 25 longbow; 29 insects; 34 minimap; 36 more fish and lures; 48 bigger map; 49 more rods; 50 arrow types; 52 announcer; 53 character customisation; 54 camera and album; 55 boat; 56 more adventure; 57 three fishing areas; 61 the secret's objects; 62 paraglider; 63 the secret's treasure; 71 strange things in the woods; 74 vehicle system and Formula 1 car; 76 astrophysics; 78 observatory site; 79 telescope screen; 80 meteors, satellites and sky guide; 85 climbing; 86 Tesla statue; 87 science objectives; 88 meteor shower, craft and alien; 94 scientists' statues; 102 recorded announcer voice; 129 rebuilt sound; 130 more fun</td></tr>
+<tr><td>Measured or won back speed and memory (15)</td><td data-label="Tasks">13 rendering cost baseline; 19 performance safeguards; 23 shader variant switching; 84 lag spikes; 92 frame-time baseline; 95 steady frame rate; 97 running out of memory; 104 the voice's frame cost; 107 build-comparison tool; 109 graphics baseline; 124 cost baseline and budget; 133 start lag measured; 134 start lag removed; 136 frame time "on a phone"; 137 frame cheaper without changing the picture</td></tr>
+</tbody></table></div>
+<dl class="why">
+<dt>Why it matters</dt><dd>On the only machine measured, the frame's biggest cost was three.js's work per draw call: in one profile, about 8.1 of 10.85 ms. Nearly every feature adds draw calls. So the project has worked against itself: features push the cost up, and rounds of careful work claw back a few per cent. Two rounds, 110 and 125, set themselves a budget. That was right, and it should be the rule for every feature.</dd>
+<dt>How I know</dt><dd><b>Read it</b> for the counts. The sort is a <b>judgement</b>: some tasks could go in two rows. That features are the main reason for the frame rate is also a judgement. Without a phone measurement I cannot split the cost between them.</dd>
+<dt>What would prove me wrong</dt><dd>A trace from the phone where the frame is dominated by one fixed cost unrelated to features, such as the high-precision buffer's bandwidth or the shadow atlas.</dd>
+</dl>
+<div class="conf"><span class="pill hi">95%: the counts</span><span class="pill lo">55%: features are the main reason for the frame rate</span><span class="pill kind">Read it · Judgement</span></div>
+
+<h3><span class="num">7</span>The tests cannot fail on wrong behaviour, only on a crash</h3>
+<p class="claim">The 140 scenarios run 866 evaluation steps. Each step logs a value, and nothing compares the value with what it should be. A scenario "passes" when the run exits without an error line (<a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/tools/shot.mjs#L55-L66">tools/shot.mjs</a>). "17 of 17 passed" in the last report meant "nothing threw an exception".</p>
+<dl class="why">
+<dt>Why it matters</dt><dd>
+<p>The worst bug the last audit found was a bear from the last game mauling a new player. It would have passed every scenario. The crash I introduced in the car code was caught only because it threw an exception.</p>
+<p>The values worth checking are already logged: health, money, the preset, positions, the save. Turning them into checks is cheap. The scenarios could compare them with expected ranges and fail when they fall outside.</p></dd>
+<dt>How I know</dt><dd><b>Read it</b>: the runner, and the summary script that wrote the regression table.</dd>
+<dt>What would prove me wrong</dt><dd>Checks elsewhere that I missed. I found none in the 25 tools.</dd>
+</dl>
+<div class="conf"><span class="pill hi">99%</span><span class="pill kind">Read it</span></div>
+
+<h3><span class="num">8</span>78 defects after two earlier audits says the code has outgrown reading</h3>
+<p class="claim">Task 59 was a full audit, and task 90 fixed a code review's findings. The latest audit still found 78 defects: the reviewers rated 2 high (a crash, getting stuck, lost data or wrong money), 27 medium and 49 low.</p>
+<dl class="why">
+<dt>What it means</dt><dd>
+<p>About 57,000 lines in 106 files, with many systems sharing state: bears, the session, saves, vehicles and the camera. Reading alone no longer keeps up. Several of the 78 came from one cause: state that belongs to a game but was not reset between games. I fixed that by building one reset (<code>resetSession</code>). That is the kind of fix that lasts.</p>
+<p>The rest was found by people reading code, and the next feature will bring the next set. Checks that fail (finding 7) and fewer, smaller features (finding 6) would do more than another audit.</p></dd>
+<dt>How I know</dt><dd><b>Read it</b> for the counts. <b>Judgement</b> for what they mean: a high count can also mean the latest audit was simply more thorough.</dd>
+<dt>What would prove me wrong</dt><dd>The next audit finding few defects after a round of new features.</dd>
+</dl>
+<div class="conf"><span class="pill mid">60%</span><span class="pill kind">Read it · Judgement</span></div>
+
+<h3><span class="num">9</span>The sound fix contradicts the iPhone app's own sound policy, and its cause was a guess</h3>
+<p class="claim">The iPhone app sets its audio session to "ambient" in <a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/ios/RubenHotrodFishing/AppDelegate.swift">AppDelegate.swift</a>, with the comment: "Game sound mixes with the player's own music and follows the silent switch, like most iOS games." My fix last time (<a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/src/audio/audio.js#L118">audio.js, playbackSession</a>) asks the page for the "playback" session, which ignores the silent switch.</p>
+<dl class="why">
+<dt>Why it matters</dt><dd>
+<p>In Safari, the fix does what it was meant to do: the game is heard with the silent switch on. Inside the app, if WebKit gives the page the audio session interface, the page's request overrides the app's stated policy. The game then ignores the switch the app promises to follow. "Playback" is also the kind of session that does not mix, so it may stop your own music.</p>
+<p>Second, I never confirmed that the silent switch was why you had no sound. It was the most likely cause I could think of. Other causes I did not rule out:</p>
+<ul>
+<li>no tap yet inside the game's frame;</li>
+<li>the volume;</li>
+<li>a Bluetooth device.</li>
+</ul></dd>
+<dt>Which policy is right</dt><dd>That is your decision, not mine. Most games follow the switch, and the app says so. A web page cannot tell whether the switch is on, so in Safari the "playback" request is the only way to be heard with it on. A consistent rule would be: in the app, leave the app's choice alone; in Safari, ask for playback. I have not made that change, because it depends on which behaviour you want.</dd>
+<dt>How I know</dt><dd><b>Read it</b> for both policies. <b>Recalled</b> that WebKit offers the audio session interface inside an app's web view, and that "playback" does not mix with other audio.</dd>
+<dt>What would prove me wrong</dt><dd>The app on an iPhone staying silent with the switch on: then the page's request does not reach the app's session, and there is no conflict in practice.</dd>
+</dl>
+<div class="conf"><span class="pill hi">95%: the two policies contradict each other</span><span class="pill mid">55%: the page's request overrides the app's inside the app</span><span class="pill mid">50%: the silent switch was your cause</span><span class="pill kind">Read it · Recalled</span></div>
+
+<h3><span class="num">10</span>My own way of working</h3>
+<ul class="spaced">
+<li><b>I measured what was easy to measure (95%, Judgement).</b> The pixel-comparison tool brings the game to the same moment and draws it seven ways. The timing tool runs balanced rounds. The 140 scenarios drive the game headless. Each was built with care, and none of them touches the phone. This is the streetlight effect: searching where the light is, not where the thing was lost (<a href="https://en.wikipedia.org/wiki/Streetlight_effect">Wikipedia, "Streetlight effect"</a>). The first tool should have been a way to get a frame-time line from your phone.</li>
+<li><b>I pushed unchecked work to the branch (Read it).</b> A rule of this environment is that the tree must be committed and pushed before I stop. Several times that made me push work in progress. One such commit contained a crash I had introduced in the car code. The checks on the final build caught it before the game was republished, so you never played it. But the branch held a broken build for a while.</li>
+<li><b>I answered "too low fps" with what I could do rather than with what was needed (80%, Judgement).</b> Each time, the honest first answer was: I cannot see your phone's frame rate, so please read me the frame-rate line. Each time I started an optimisation round instead.</li>
+<li><b>The reports are long, and the conclusion comes last (70%, Judgement).</b> There are 18 reports, and the README runs to 1,170 lines with a paragraph per round. They are complete and sourced, as you asked. But the sentence that matters most, such as "this made no difference you could feel", is usually in a limits section near the end, behind the good news.</li>
+<li><b>"Fixed" meant "fixed in a desktop browser" (99%, Read it).</b> Every report says nothing was tested on a real iPhone. It is said each time, at the bottom, and then the next round starts the same way.</li>
+</ul>
+</section>
+
+<section class="card" id="withdrawn"><div class="kicker">Concerns checked and withdrawn</div><h2>What I suspected and then found to be fine</h2>
+<ul class="spaced">
+<li><b>Photos in web storage.</b> I suspected that the photo album would fill the browser's web storage, which the save shares. I checked by running the 38 report screenshots through the game's own photo settings: 320 by 180 pixels, JPEG at quality 0.72. That gives 9,711 to 17,743 characters a photo, 13,473 on average. A full album, 72 subjects plus 8 roll pictures, comes to about 1,053 KB of text, or 2,105 KB if stored at two bytes a character. Browsers commonly allow 5 MiB of web storage per site. So it fits with room to spare, and the room-making fix from the last audit covers what is left. <b>Ran it</b> for the size; <b>Recalled</b> for the 5 MiB, which MDN documents. I withdraw the concern, at about 80%.</li>
+<li><b>One 3.2 MB file.</b> The whole game is one HTML file of 3,206,104 bytes, with no requests after loading. In the app, it is read from the phone itself. On the web, it is about one photo's worth of download. That is a sound choice for a game that must also run inside an artifact's frame. I am confident in this, at about 90% (<b>Judgement</b>).</li>
+<li><b>High as the default.</b> I nearly listed this as a mistake. High draws through a four-times multisampled high-precision buffer, with bloom, sun rays, a 4096 by 2048 shadow atlas and twice the resolution. But you asked for a game made for iPhone 13 and newer, and the adaptation is meant to cover weaker phones. What is wrong is the adaptation (finding 2), not the default. I disagree only mildly, at about 40% (<b>Judgement</b>).</li>
+</ul>
+</section>
+
+<section class="card" id="agree"><div class="kicker">What is right</div><h2>What I agree with</h2>
+<p>An audit that only finds fault would be miscalibrated too. These parts are sound, and I would keep them:</p>
+<ul class="spaced">
+<li><b>One file, no server.</b> The game runs the same way in the app, in a browser and inside an artifact.</li>
+<li><b>Sound made in a worker, and shaders compiled behind the loading bar.</b> Both were measured to remove real hitches at the start of a game.</li>
+<li><b>The app keeps its own copy of the save,</b> and puts it back if WebKit clears its storage. That is good defensive design for iOS, which can clear a web view's storage.</li>
+<li><b>One reset for each new game,</b> and fades that check that their game is still the one being played. That fixes a whole family of bugs, not one at a time.</li>
+<li><b>The car's movement in steps under a metre long.</b> It removes driving through trees at any frame rate, rather than tuning one case.</li>
+<li><b>The two asset rounds with a budget</b> (tasks 110 and 125). That is the rule finding 6 asks for.</li>
+<li><b>Lowering the resolution before lowering the preset,</b> and backing off after a rise that had to be undone. The idea is right. What is wrong is how it reads a frame cap and that the drop is permanent.</li>
+</ul>
+</section>
+
+<section class="card" id="do"><div class="kicker">What to do</div><h2>What I recommend, in order</h2>
+<p>None of this is done yet. You asked for an audit, and the first two steps need your phone or your decision.</p>
+<ol class="spaced">
+<li><b>Read me one line from your phone (5 minutes).</b> First turn off Low Power Mode in the iPhone's Settings, under Battery. In the game's Settings, note which Graphics button is lit, set it to HIGH and turn on "Show frame rate". Stand at Hotrod Landing for a minute and send me the line in the corner, such as "45 FPS · HIGH · 2.00x". Then do the same with Low Power Mode on. This alone settles findings 2 and 3, and tells us whether optimising can help at all.</li>
+<li><b>One trace with Safari's Web Inspector (30 minutes, needs a Mac).</b> Connect the iPhone to a Mac by cable, open the game in Safari or a debug build of the app, and record ten seconds in Safari's Timelines tab (<a href="https://developer.apple.com/documentation/safari-developer-tools/inspecting-ios">Apple: Inspecting iOS and iPadOS</a>). It shows how long the processor spends on each frame. That is what finding 4's round should have started from.</li>
+<li><b>Fix the adaptation.</b> Treat a steady 30 or 60 frames a second, with intervals that barely vary, as a cap, not as slowness. Let the preset step back up when there is room. Keep an automatic drop for the session only, or try one step up at the next start, and never overwrite a preset you chose yourself. This is a small change in <a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/src/game.js#L327">src/game.js</a>, and it follows directly from finding 2. It also targets the 40–55 band: aim for a steady 60, and step down from 50 rather than from 40.</li>
+<li><b>Decide the silent switch</b> (finding 9). Either follow the switch everywhere, play through it everywhere, or follow it in the app and play through it in Safari.</li>
+<li><b>Agree on what "without worsening graphics" means</b> (finding 5). For example, "nothing I would notice on the phone at arm's length". Then the cheaper changes are allowed, each shown to you side by side before it ships.</li>
+<li><b>Make the scenarios fail</b> (finding 7). Give each logged value an expected range and fail when it falls outside. Start with the 17 regression scenarios.</li>
+<li><b>A frame budget per feature, measured on the phone</b> (finding 6). Before a new feature ships, its cost in milliseconds on the phone is measured and fits the budget, or something else gives way.</li>
+</ol>
+</section>
+
+<section class="card" id="really"><div class="kicker">How confident, really</div><h2>How confident I am, and how I know</h2>
+<div class="tablewrap"><table class="text">
+<thead><tr><th>Claim</th><th>Confidence</th><th>Kind of evidence</th></tr></thead>
+<tbody>
+<tr><td>No frame-time measurement from an iPhone exists in the project</td><td data-label="Confidence">99%</td><td data-label="Kind of evidence">Read it: every tool, every report</td></tr>
+<tr><td>The scenarios fail only on crashes, never on wrong values</td><td data-label="Confidence">99%</td><td data-label="Kind of evidence">Read it: the runner</td></tr>
+<tr><td>The game locks itself on Low after 40 s at 30 frames a second and never steps back up</td><td data-label="Confidence">97%</td><td data-label="Kind of evidence">Ran it: the shipped code with steady frame times fed in</td></tr>
+<tr><td>The last round's whole-frame gain was 0.14 ms against the 8.3 ms needed</td><td data-label="Confidence">97%</td><td data-label="Kind of evidence">Ran it: the round's measurements and arithmetic</td></tr>
+<tr><td>The pixel rule and the automatic drop to Low contradict each other</td><td data-label="Confidence">95%</td><td data-label="Kind of evidence">Read it</td></tr>
+<tr><td>The app's sound policy and my web fix contradict each other</td><td data-label="Confidence">95%</td><td data-label="Kind of evidence">Read it</td></tr>
+<tr><td>The "processor-bound" inference did not rule out a cap, heat or fixed-cost passes</td><td data-label="Confidence">90%</td><td data-label="Kind of evidence">Read it, and logic</td></tr>
+<tr><td>A full photo album fits in web storage</td><td data-label="Confidence">80%</td><td data-label="Kind of evidence">Ran it for the size; Recalled for the quota</td></tr>
+<tr><td>Safari caps animation at 30 frames a second in Low Power Mode</td><td data-label="Confidence">75%</td><td data-label="Kind of evidence">Recalled</td></tr>
+<tr><td>Working blind is the main reason the frame-rate complaints keep coming back</td><td data-label="Confidence">65%</td><td data-label="Kind of evidence">Judgement</td></tr>
+<tr><td>You would accept changes you cannot see, for speed</td><td data-label="Confidence">60%</td><td data-label="Kind of evidence">Judgement</td></tr>
+<tr><td>The defect count shows the code has outgrown reading</td><td data-label="Confidence">60%</td><td data-label="Kind of evidence">Judgement</td></tr>
+<tr><td>Features are the main reason for the frame rate</td><td data-label="Confidence">55%</td><td data-label="Kind of evidence">Judgement</td></tr>
+<tr><td>Inside the app, the page's playback request overrides the app's ambient session</td><td data-label="Confidence">55%</td><td data-label="Kind of evidence">Recalled</td></tr>
+<tr><td>The silent switch was the reason you had no sound</td><td data-label="Confidence">50%</td><td data-label="Kind of evidence">Judgement</td></tr>
+<tr><td>The processor, not the graphics chip, limits the frame on your phone</td><td data-label="Confidence">50%</td><td data-label="Kind of evidence">Nothing: that is the point</td></tr>
+</tbody></table></div>
+<h3>How confident I really am</h3>
+<ul class="spaced">
+<li><b>The claims I ran or read are solid.</b> They are about what the code does and what the files say, and anyone can repeat them. If one is wrong, it is because I misread something, and the links let you check.</li>
+<li><b>My claims about the iPhone deserve a discount.</b> My track record in this project is the evidence. I called the frame "likely" processor-bound and acted as if it were known. I declared rounds "fixed" and the next audit found 78 defects. The silent switch went unnoticed through every round, a sound round included. So where I write 75% about Safari or iOS, read about 60%.</li>
+<li><b>I am auditing my own work, which pulls two ways.</b> One pull is to defend it. The other is to be harsh on it, because harshness looks thorough. I tried to counter both. I ran what could be run. I withdrew the concern that the numbers did not support (the photos). And I list what I think is right, not only what is wrong.</li>
+<li><b>The judgements are opinions about priorities.</b> On features against frame rate, what "worse" means, and how long reports should be, you know things I don't: what you enjoy in the game, and what you read. Weigh those claims as advice, not findings.</li>
+<li><b>The single most important uncertainty is cheap to remove.</b> One line from your phone's frame-rate readout would move several of the 50–75% claims to near certainty, one way or the other. That is why it is the first recommendation.</li>
+</ul>
+</section>
+
+<section class="card conclusion" id="conclusion"><div class="kicker">What would change this conclusion</div><h2>What would change this conclusion</h2>
+<ul class="spaced">
+<li><b>Your phone showing about 60 frames a second on High with Low Power Mode off.</b> Then the frame-rate complaints came from a cap, heat or a stuck Low preset, not from the game's cost. The answer is to fix the adaptation, not to optimise.</li>
+<li><b>Your phone showing 40–50 frames a second on High with Low Power Mode off, and a Web Inspector trace with the processor busy most of the frame.</b> Then the last round aimed at the right target but was far too small. The next step is fewer draw calls by a large factor: merging static objects, or drawing far scenery as images. Or you choose what to give up.</li>
+<li><b>The same, but with the processor mostly idle.</b> Then the graphics chip is the limit. Lowering the resolution, the bloom and the shadow work is the way to go, which is exactly what the pixel rule ruled out.</li>
+<li><b>The game being heard in the app with the silent switch on.</b> Then the sound contradiction is real in practice, and the policy needs your decision now.</li>
+<li><b>You saying "not one pixel" is what you meant.</b> Then finding 5 is withdrawn, and the frame rate can only come from the adaptation, a cap, or fewer features.</li>
+<li><b>The next audit after a feature round finding few defects.</b> Then finding 8 was wrong, and reading is keeping up after all.</li>
+</ul>
+</section>
+
+<footer>
+<p><b>Sources.</b> The web pages are cited, not re-read: outbound requests are blocked in this environment, and curl got a refusal from the network proxy. To allow hosts, open the cloud environment menu in the session's title bar, choose Edit and then Network access; see <a href="https://code.claude.com/docs/en/cloud-environments#network-access">https://code.claude.com/docs/en/cloud-environments#network-access</a>. Everything about the game was checked in its code and by running it.</p>
+<ul>
+<li>The graphics presets and the default: <a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/src/game.js#L30-L34">src/game.js, lines 30–34</a> and <a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/src/game.js#L84">line 84</a></li>
+<li>The adaptation: <a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/src/game.js#L327">src/game.js, adaptResolution</a></li>
+<li>The scenario runner: <a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/tools/shot.mjs">tools/shot.mjs</a></li>
+<li>The iPhone app's sound policy: <a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/ios/RubenHotrodFishing/AppDelegate.swift">ios/RubenHotrodFishing/AppDelegate.swift</a>, and the web view set-up: <a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/ios/RubenHotrodFishing/GameViewController.swift">GameViewController.swift</a></li>
+<li>The web sound fix: <a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/src/audio/audio.js#L118">src/audio/audio.js, playbackSession</a></li>
+<li>The photo size and quality: <a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/src/gameplay/camera.js">src/gameplay/camera.js</a></li>
+<li>The last frame-rate round's measurements: <a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/docs/frame-rate-same-picture.html">docs/frame-rate-same-picture.html</a></li>
+<li>The round that patched the first 20 seconds: <a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/docs/start-lag-fix.html">docs/start-lag-fix.html</a></li>
+<li>The last audit's 78 findings: <a href="https://github.com/enspo-sta/turkey/blob/claude/ruben-hotrod-fishing/docs/full-audit.html">docs/full-audit.html</a></li>
+<li>Audio sessions on the web, and the "playback" and "ambient" types: W3C, <i>Audio Session</i>, <a href="https://www.w3.org/TR/audio-session/">https://www.w3.org/TR/audio-session/</a>; MDN, "AudioSession", <a href="https://developer.mozilla.org/en-US/docs/Web/API/AudioSession">https://developer.mozilla.org/en-US/docs/Web/API/AudioSession</a></li>
+<li>The ambient category in an iPhone app, which follows the silent switch and mixes with other audio: Apple, "AVAudioSession.Category.ambient", <a href="https://developer.apple.com/documentation/avfaudio/avaudiosession/category/1616560-ambient">https://developer.apple.com/documentation/avfaudio/avaudiosession/category/1616560-ambient</a></li>
+<li>Animation frames and when browsers slow them: MDN, "Window: requestAnimationFrame() method", <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame">https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame</a>. Safari's 30-frame limit in Low Power Mode is recalled. I could not find and re-read WebKit's own record of it from here; WebKit's bug tracker is at <a href="https://bugs.webkit.org/">https://bugs.webkit.org/</a></li>
+<li>Web storage limits per site: MDN, "Storage quotas and eviction criteria", <a href="https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria">https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria</a></li>
+<li>Inspecting a web page or web view on an iPhone from a Mac: Apple, "Inspecting iOS and iPadOS", <a href="https://developer.apple.com/documentation/safari-developer-tools/inspecting-ios">https://developer.apple.com/documentation/safari-developer-tools/inspecting-ios</a>; WebKit, "Enabling the Inspection of Web Content in Apps", <a href="https://webkit.org/blog/13936/enabling-the-inspection-of-web-content-in-apps/">https://webkit.org/blog/13936/enabling-the-inspection-of-web-content-in-apps/</a></li>
+<li>The software graphics chip used in every measurement: SwiftShader, <a href="https://github.com/google/swiftshader">https://github.com/google/swiftshader</a></li>
+<li>Counting draw calls in three.js: "WebGLRenderer.info", <a href="https://threejs.org/docs/#api/en/renderers/WebGLRenderer.info">https://threejs.org/docs/#api/en/renderers/WebGLRenderer.info</a></li>
+<li>The streetlight effect: Wikipedia, <a href="https://en.wikipedia.org/wiki/Streetlight_effect">https://en.wikipedia.org/wiki/Streetlight_effect</a></li>
+<li>The game, its code, the tools and the history: <a href="https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing">https://github.com/enspo-sta/turkey/tree/claude/ruben-hotrod-fishing</a></li>
+</ul>
+</footer></div></body>
+</html>
