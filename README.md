@@ -746,9 +746,17 @@ Earlier rounds: [docs/fullscreen-voice-update.html](docs/fullscreen-voice-update
 - Graphics presets in Settings. High is the default (the game is made for
   iPhone 13 and newer) and adds a soft bloom on bright light, sun rays through
   the trees and ridges, a colour grade, the longest shadows and the densest
-  forests. Medium and Low run cooler on older devices. The game lowers its
-  resolution when frames run long and, unless you turn it off, steps the preset
-  down if that is not enough. Settings can also show the frame rate.
+  forests. Medium and Low run cooler on older devices. Below 50 frames a
+  second the game tries a lower resolution and then, unless you turn it off,
+  a cheaper preset, and keeps only a change that made the frames quicker: a
+  phone held at 30 frames a second by Low Power Mode keeps its picture. When
+  there is room again it steps back up. The preset you pick is never changed
+  for you; the level the game settles on is remembered apart from it, and
+  Settings says when it runs below your choice. Settings can also show the
+  frame rate, and **Check performance** measures about 15 seconds of play on
+  the device and says what holds the frame rate back (the processor, the
+  graphics chip, or a cap such as Low Power Mode), with one line to copy and
+  send.
 - Steady frames: every shader is compiled, and every kind of thing drawn once
   into a single pixel, behind the loading bar (the sun rays too, which
   otherwise draw only with the sun in view), so the first bear, the boat, a
@@ -971,8 +979,11 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/audio/voice.js`, `voice-clips.js` | The game's voice: every line and name as a small MP3 (made by `tools/voice`), decoded when first needed |
 | `src/ui/` | HUD, the small map, menus, the Trading Post, garage, map and journal, the observatory's screens, touch and keyboard input, and styles |
 | `src/ui/eyepiece.js`, `skyguide.js` | The telescope's eyepiece views, and the constellation figures and names drawn over the sky |
+| `src/ui/perfcheck.js` | The performance check in Settings: about 15 seconds of play measured on the device, the verdict on what holds the frame rate back, and a line to copy |
 | `ios/` | The Xcode project for the native iOS app |
-| `tools/shot.mjs`, `tools/scenarios/` | Headless screenshot and gameplay test harness with scripted scenarios |
+| `tools/check.mjs` | Every check before a push: the build, the frame budget and the regression scenarios |
+| `tools/budget.mjs`, `tools/budget.json` | The frame budget: draw calls and triangles of one High frame at ten fixed views |
+| `tools/shot.mjs`, `tools/scenarios/` | Headless screenshot and gameplay test harness with scripted scenarios, and their checks (`expect`, `check`, `strict`) |
 | `tools/perf-tour.mjs`, `tools/perf-compare.mjs`, `tools/perf-stats.mjs`, `tools/first-frame.mjs`, `tools/load-compare.mjs`, `tools/start-lag.mjs`, `tools/bake-cost.mjs`, `tools/shader-check.mjs`, `tools/gl-errors.mjs`, `tools/cpu-by-thread.py`, `tools/model-sheet.mjs` | Frame times along a scripted tour; two or more builds timed in turns in a balanced order, with the statistics that compare them; loading and the first frames of play, also for builds in turns; the first minute of a game frame by frame on a slowed processor, and what making the sound costs; every shader built without an error on a development build, and every draw call the browser rejects; one tour's processor time for every thread of the browser; and the animal models on a sheet with their triangle counts |
 | `tools/make-icons.mjs`, `tools/serve.mjs`, `tools/preview-map.mjs` | Icon drawing, the local network server, and a top-down map preview of the world |
 | `tools/mkstars.mjs` | Packs the stars, constellation figures, star names and Milky Way outline from the d3-celestial package into `src/world/skydata.js` |
@@ -981,6 +992,23 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `tools/lab/handlab.mjs` | Renders the first-person hand poses from four sides, for checking them |
 
 ## Testing
+
+Before every push: `node tools/check.mjs`. It builds the game, checks the
+frame budget and runs the regression scenarios, and exits with an error when
+anything failed:
+
+- **The frame budget** (`tools/budget.mjs`, `tools/budget.json`): the draw
+  calls and triangles of one High frame at ten fixed views. Draw calls are
+  the main measured cost of a frame, and both counts are the same on any
+  machine, unlike times. A feature that adds to them fits the budget, or the
+  budget is raised on purpose with `node tools/budget.mjs --update` and the
+  reason given in the commit.
+- **The regression scenarios** (19, listed in `tools/check.mjs`). Each value a
+  scenario reads carries an `expect`, the behaviour that must hold (a bear
+  that dies to the first arrow, a save that survives a reload, a phone held
+  at 30 frames a second that keeps High); a scenario fails on a wrong value,
+  not only on a crash. `"strict": true` also fails it on a step that could
+  not run (a tap target missing, a wait that timed out).
 
 `tools/shot.mjs` loads the built game in headless Chromium through
 [Playwright](https://playwright.dev/), runs a scripted scenario and saves

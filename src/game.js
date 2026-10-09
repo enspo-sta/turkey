@@ -228,12 +228,15 @@ export class Game {
     this.resize();
   }
 
-  setQuality(name) {
+  // Sets the preset's work (and, unless setDpr is false, its resolution).
+  setQuality(name, setDpr = true) {
     const q = QUALITY[name] || QUALITY.medium;
     this.qualityName = name;
     this.quality = q;
-    this.dpr = Math.min(window.devicePixelRatio || 1, q.dpr);
-    this.renderer.setPixelRatio(this.dpr);
+    if (setDpr) {
+      this.dpr = Math.min(window.devicePixelRatio || 1, q.dpr);
+      this.renderer.setPixelRatio(this.dpr);
+    }
     this.env.setShadowQuality(q.shadow, q.shadowDist);
     this.scatter.setFarShadows(q.farShadows);
     this.renderer.shadowMap.enabled = q.shadow > 0;
@@ -281,7 +284,9 @@ export class Game {
   }
 
   frame() {
+    const f0 = performance.now();
     let dt = this.timer.getDelta();
+    const rawDt = dt;
     this.adaptResolution(dt);
     if (dt > 0.1) dt = 0.1;
     this.dt = dt;
@@ -310,71 +315,213 @@ export class Game {
     st.game = st.game * 0.9 + (t1 - t0) * 0.1;
     st.world = st.world * 0.9 + (t2 - t1) * 0.1;
     st.render = st.render * 0.9 + (t3 - t2) * 0.1;
+    // the performance check's record: the time from one frame to the next,
+    // and the processor's own work on this one
+    this.frameProbe?.(rawDt, performance.now() - f0);
   }
 
   // A game has just started: for a while the work of its first moments (the
   // ground filling in around you, the sounds handed over) is no reason to
-  // step the graphics down for good, which would recompile every shader (a
-  // stall of its own) and lower the look for the rest of the game.
+  // step the graphics down, which would recompile every shader (a stall of
+  // its own) and lower the look.
   settleIn(secs) {
-    const a = this.adapt || (this.adapt = { avg: 1 / 60, t: 0, good: 0, clock: 0, hold: 0, backoff: 20 });
+    const a = this.adaptState();
     a.calmUntil = a.clock + secs;
-    a.slow = 0;
+    a.trial = null;
+    a.n = 0;
+    a.sum = 0;
+    a.t = 0;
+    a.goodRun = 0;
   }
 
-  // Dynamic resolution: drop the pixel ratio when frames run long, raise it
-  // again (up to the quality preset) when there is headroom.
-  adaptResolution(rawDt) {
-    if (!this.quality || rawDt <= 0 || rawDt > 0.5) return;
-    const a = this.adapt || (this.adapt = { avg: 1 / 60, t: 0, good: 0, clock: 0, hold: 0, backoff: 20 });
-    a.avg = a.avg * 0.95 + rawDt * 0.05;
-    a.t += rawDt;
-    a.clock += rawDt;
-    if (a.t < 2.5) return;
-    a.t = 0;
-    // Every change of resolution rebuilds the frame buffers, a hitch of its
-    // own. A step up that soon has to come back down means the device sits
-    // on the edge: wait longer each time before trying again, so the
-    // resolution does not see-saw (and stutter) every few seconds.
-    const maxDpr = Math.min(window.devicePixelRatio || 1, this.quality.dpr);
-    const minDpr = Math.min(1, maxDpr);
-    if (a.avg > 1 / 40 && this.dpr > minDpr + 0.01) {
-      this.dpr = Math.max(minDpr, this.dpr - 0.25);
-      this.renderer.setPixelRatio(this.dpr);
+  adaptState() {
+    return (this.adapt ||= { clock: 0, sum: 0, n: 0, t: 0, calmUntil: 0, trial: null, failed: [], goodRun: 0, downHold: 0, downBackoff: 60, upHold: { dpr: 0, preset: 0 }, upBackoff: { dpr: 20, preset: 60 }, last: 0 });
+  }
+
+  // The presets the graphics may run at: the player's own (High unless they
+  // picked another) and, with "Adjust graphics automatically" on, the
+  // cheaper ones below it.
+  presetsBelow() {
+    const order = ['high', 'medium', 'low'];
+    const top = this.ceiling || 'high';
+    const auto = this.state?.settings?.autoQuality !== false;
+    return auto ? order.slice(order.indexOf(top)) : [top];
+  }
+
+  maxDpr(q) {
+    return Math.min(window.devicePixelRatio || 1, QUALITY[q].dpr);
+  }
+
+  minDpr(q) {
+    return Math.min(1, this.maxDpr(q));
+  }
+
+  // Runs the graphics at preset q and resolution d (pixels per point, kept
+  // within what the preset allows). True when the preset changed.
+  setLevel(q, d) {
+    const presetChanged = q !== this.qualityName;
+    if (presetChanged) this.setQuality(q, false);
+    d = Math.round(Math.max(this.minDpr(q), Math.min(this.maxDpr(q), d)) * 100) / 100;
+    if (Math.abs(this.dpr - d) > 0.001 || presetChanged) {
+      this.dpr = d;
+      this.renderer.setPixelRatio(d);
       this.resize();
-      a.good = 0;
-      a.slow = 0;
-      if (a.clock - (a.raisedAt ?? -1e9) < 20) a.backoff = Math.min(600, a.backoff * 2);
-      a.hold = a.clock + a.backoff;
-    } else if (a.avg > 1 / 40 && this.started && !this.paused && !this.menuOpen && a.clock >= (a.calmUntil || 0)) {
-      // already at the lowest resolution: step the graphics preset down after
-      // a few slow checks in a row, if the player allows it (never while a
-      // game is settling in, see settleIn)
-      a.slow = (a.slow || 0) + 1;
-      const settings = this.state?.settings;
-      const next = this.qualityName === 'high' ? 'medium' : this.qualityName === 'medium' ? 'low' : null;
-      if (a.slow >= 3 && next && settings && settings.autoQuality !== false) {
-        a.slow = 0;
-        settings.quality = next;
-        this.setQuality(next);
-        this.state.saveSettings?.();
-        this.onQualityDrop?.(next);
-      }
-    } else if (a.avg < 1 / 55 && this.dpr < maxDpr - 0.01 && a.clock >= a.hold && !this.menuOpen) {
-      // (not while a menu is open: the view is drawn one frame in three
-      // then, and the frames look quicker than play will be)
-      a.good++;
-      if (a.good >= 4) {
-        this.dpr = Math.min(maxDpr, this.dpr + 0.25);
-        this.renderer.setPixelRatio(this.dpr);
-        this.resize();
-        a.good = 0;
-        a.raisedAt = a.clock;
-      }
-    } else {
-      a.good = 0;
-      a.slow = 0;
     }
+    return presetChanged;
+  }
+
+  // Where the graphics start: the player's preset at its full resolution,
+  // or the level the adaptation last settled on for it on this device.
+  startQuality() {
+    const s = this.state?.settings;
+    this.ceiling = (s && QUALITY[s.quality] && s.quality) || 'high';
+    const lv = s?.autoLevel;
+    const ok = lv && lv.ceiling === this.ceiling && lv.screen === (window.devicePixelRatio || 1) && this.presetsBelow().includes(lv.q);
+    if (ok) this.setLevel(lv.q, lv.d);
+    else this.setLevel(this.ceiling, this.maxDpr(this.ceiling));
+    const a = this.adaptState();
+    a.trial = null;
+    a.failed = [];
+  }
+
+  // The player picked a preset in Settings: it is the top from now on, and
+  // the adaptation starts over from it.
+  chooseQuality(name) {
+    const s = this.state.settings;
+    s.quality = name;
+    s.autoLevel = null;
+    this.state.saveSettings?.();
+    const a = this.adaptState();
+    a.downHold = 0;
+    a.upHold = { dpr: 0, preset: 0 };
+    this.startQuality();
+  }
+
+  // Adaptive graphics, on two dials: the resolution (in quarter steps down
+  // to one pixel per point) and the preset (down to Low, when the player
+  // allows it). Frame times are averaged over windows of 2.5 s.
+  // - Slower than 50 frames a second: one dial goes down to its cheapest
+  //   setting, as a trial: the resolution first, then the preset. It is
+  //   kept only if the frames then come quicker (by at least 8%); if not,
+  //   it is undone and the other dial is tried. When neither helps, the limit is not the
+  //   game's work (Low Power Mode holds Safari at 30 frames a second, a hot
+  //   phone slows down): the picture is left as it is, and no step down is
+  //   tried for a while.
+  // - Quicker than 57 frames a second for 10 s: one step back up (a quarter
+  //   of the resolution, or one preset; the resolution first), as a trial,
+  //   undone if the frames then drop below 50; each failed try waits
+  //   longer before the next.
+  // The level the adaptation settles on is remembered for the next game,
+  // apart from the player's own choice of preset, which it never changes.
+  adaptResolution(rawDt) {
+    if (!this.quality || this.adaptHold || rawDt <= 0 || rawDt > 0.5) return;
+    const a = this.adaptState();
+    a.clock += rawDt;
+    // only while playing: menus draw one frame in three, and a paused or
+    // settling game says nothing about play
+    if (!this.started || this.paused || this.menuOpen || a.clock < a.calmUntil) {
+      a.sum = 0;
+      a.n = 0;
+      a.t = 0;
+      return;
+    }
+    a.sum += rawDt;
+    a.n++;
+    a.t += rawDt;
+    if (a.t < 2.5) return;
+    const mean = a.sum / a.n;
+    a.sum = 0;
+    a.n = 0;
+    a.t = 0;
+    a.last = mean;
+    const SLOW = 1 / 50;
+    const GOOD = 1 / 57;
+    const tr = a.trial;
+    if (tr) {
+      // the first window after a change has its rebuilt buffers (and, for a
+      // preset, its shaders) in it: skipped
+      if (tr.skip > 0) {
+        tr.skip--;
+        return;
+      }
+      a.trial = null;
+      if (tr.dir < 0) {
+        if (mean < tr.before * 0.92 || mean <= SLOW) {
+          a.failed = [];
+          a.downBackoff = 60;
+          this.rememberLevel();
+          if (tr.kind === 'preset') this.onQualityChange?.(this.qualityName, 'down');
+        } else {
+          // no quicker: put it back; the other dial next, if still slow
+          this.setLevel(tr.q, tr.d);
+          a.failed.push(tr.kind);
+          a.goodRun = 0;
+        }
+        return;
+      }
+      if (mean > SLOW) {
+        this.setLevel(tr.q, tr.d);
+        a.upHold[tr.kind] = a.clock + a.upBackoff[tr.kind];
+        a.upBackoff[tr.kind] = Math.min(tr.kind === 'preset' ? 900 : 600, a.upBackoff[tr.kind] * 2);
+        a.goodRun = 0;
+      } else {
+        a.upBackoff[tr.kind] = tr.kind === 'preset' ? 60 : 20;
+        this.rememberLevel();
+        if (tr.kind === 'preset') this.onQualityChange?.(this.qualityName, 'up');
+      }
+      return;
+    }
+    const q = this.qualityName;
+    const d = this.dpr;
+    const presets = this.presetsBelow();
+    const pi = presets.indexOf(q);
+    if (mean > SLOW) {
+      a.goodRun = 0;
+      if (a.clock < a.downHold) return;
+      const can = [];
+      if (d > this.minDpr(q) + 0.01) can.push('dpr');
+      if (pi >= 0 && pi < presets.length - 1) can.push('preset');
+      const kind = can.find((k) => !a.failed.includes(k));
+      if (!kind) {
+        // nothing the game can lower helps: leave the picture alone
+        a.failed = [];
+        a.downHold = a.clock + a.downBackoff;
+        a.downBackoff = Math.min(600, a.downBackoff * 2);
+        return;
+      }
+      // (the dial goes to its cheapest setting at once: on a 60 Hz screen
+      // frames come on whole refreshes, so a small step can be cheaper and
+      // still show no quicker; if the cheapest helps, the steps back up
+      // below find the best setting that keeps the frames smooth)
+      if (kind === 'dpr') this.setLevel(q, this.minDpr(q));
+      else this.setLevel(presets[presets.length - 1], d);
+      a.trial = { dir: -1, kind, q, d, before: mean, skip: kind === 'preset' ? 2 : 1 };
+      return;
+    }
+    a.failed = [];
+    if (mean < GOOD) {
+      a.goodRun++;
+      if (a.goodRun < 4) return;
+      let kind = null;
+      if (d < this.maxDpr(q) - 0.01) kind = 'dpr';
+      else if (pi > 0) kind = 'preset';
+      if (!kind || a.clock < a.upHold[kind]) return;
+      a.goodRun = 0;
+      if (kind === 'dpr') this.setLevel(q, d + 0.25);
+      else this.setLevel(presets[pi - 1], d);
+      a.trial = { dir: 1, kind, q, d, skip: kind === 'preset' ? 2 : 1 };
+    } else a.goodRun = 0;
+  }
+
+  // The level the adaptation has settled on, kept for the next game.
+  rememberLevel() {
+    const s = this.state?.settings;
+    if (!s) return;
+    const top = this.qualityName === this.ceiling && Math.abs(this.dpr - this.maxDpr(this.ceiling)) < 0.01;
+    const lv = top ? null : { ceiling: this.ceiling, q: this.qualityName, d: this.dpr, screen: window.devicePixelRatio || 1 };
+    if (JSON.stringify(lv) === JSON.stringify(s.autoLevel ?? null)) return;
+    s.autoLevel = lv;
+    this.state.saveSettings?.();
   }
 
   updateWorld(dt) {

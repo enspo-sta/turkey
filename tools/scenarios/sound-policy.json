@@ -1,0 +1,9 @@
+{"width":844,"height":390,"dpr":2,"touch":true,"mobile":true,"strict":true,"timeout":300000,
+"init":"Object.defineProperty(navigator,'audioSession',{value:{type:'auto'},configurable:true}); Object.defineProperty(navigator,'userAgent',{value:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1',configurable:true});",
+"steps":[
+{"eval":"(()=>{const a=__rhf.game.audio; navigator.audioSession.type='auto'; a.playbackSession(); return navigator.audioSession.type})()","expect":"r==='playback'","label":"in Safari the game asks for the playback session, so it plays with the silent switch on"},
+{"eval":"(()=>{const a=__rhf.game.audio; window.webkit={messageHandlers:{store:{postMessage(){}},haptic:{postMessage(){}}}}; navigator.audioSession.type='auto'; a.playbackSession(); const t=navigator.audioSession.type; delete window.webkit; return {type:t, silent:!!a.silentEl}})()","expect":"r.type==='auto' && r.silent===false","label":"in the iPhone app the page leaves the app's own audio session alone (it follows the silent switch)"},
+{"tap":[422,300]},
+{"wait":1500},
+{"eval":"(()=>{const a=__rhf.game.audio; return {ctx:!!a.ctx, state:a.ctx&&a.ctx.state, type:navigator.audioSession.type}})()","expect":"r.ctx===true && r.type==='playback'","label":"the first tap starts the sound and keeps the playback session in Safari"}
+]}

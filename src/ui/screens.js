@@ -593,6 +593,7 @@ export class Screens {
     else if (n === 'shop') this.renderShop();
     else if (n === 'pause') this.renderPause();
     else if (n === 'settings') this.renderSettings();
+    else if (n === 'perf') this.renderPerf();
     else if (n === 'howto') this.renderHowto();
     else if (n === 'privacy') this.renderPrivacy();
     else if (n === 'lure') this.renderLures();
@@ -1626,12 +1627,17 @@ export class Screens {
     const st = g.state.settings;
     this.title.textContent = 'Settings';
     this.setTabs([], null);
-    const q = g.qualityName;
+    // the lit button is the player's own choice; what runs now can be below
+    // it while the adaptation keeps the frames smooth
+    const q = g.ceiling || 'high';
+    const lowered = g.qualityName !== q || Math.abs(g.dpr - g.maxDpr(q)) > 0.01;
     this.body.innerHTML = `<div class="settings">
       <div class="setting"><label>Graphics</label><div class="seg" id="s-quality">${['low', 'medium', 'high']
         .map((k) => `<button data-q="${k}" class="${q === k ? 'on' : ''}">${k.toUpperCase()}</button>`)
         .join('')}</div></div>
-      <p class="setting-note">High adds bloom, sun rays, the longest shadows and the densest forests. Medium and Low run cooler on older devices.</p>
+      <p class="setting-note">High adds bloom, sun rays, the longest shadows and the densest forests. Medium and Low run cooler on older devices.${
+        lowered ? ` <b>Running now: ${g.qualityName.toUpperCase()} at ${g.dpr.toFixed(2)}× resolution</b>, lowered for now to keep the game smooth; it goes back up when there is room.` : ''
+      }</p>
       <div class="setting"><label>Adjust graphics automatically</label><div class="seg" id="s-auto"><button data-v="0" class="${st.autoQuality === false ? 'on' : ''}">OFF</button><button data-v="1" class="${st.autoQuality === false ? '' : 'on'}">ON</button></div></div>
       <div class="setting"><label>Small map</label><div class="seg" id="s-minimap"><button data-v="0" class="${st.minimap === false ? 'on' : ''}">OFF</button><button data-v="1" class="${st.minimap === false ? '' : 'on'}">ON</button></div></div>
       <div class="setting"><label>Announcer voice</label><div class="seg" id="s-announcer"><button data-v="0" class="${st.announcer === false ? 'on' : ''}">OFF</button><button data-v="1" class="${st.announcer === false ? '' : 'on'}">ON</button></div></div>
@@ -1640,6 +1646,12 @@ export class Screens {
       <div class="setting"><label>Sky guide</label><div class="seg" id="s-skyGuide"><button data-v="0" class="${st.skyGuide === false ? 'on' : ''}">OFF</button><button data-v="1" class="${st.skyGuide === false ? '' : 'on'}">ON</button></div></div>
       <p class="setting-note">Names the constellations, bright stars and planets when you look up at a dark sky, and always from the observatory's deck chairs.</p>
       <div class="setting"><label>Show frame rate</label><div class="seg" id="s-fps"><button data-v="0" class="${st.showFps ? '' : 'on'}">OFF</button><button data-v="1" class="${st.showFps ? 'on' : ''}">ON</button></div></div>
+      <div class="setting"><label>Performance</label><button class="btn ghost" id="s-perf"${g.started ? '' : ' disabled'}>Check performance</button></div>
+      <p class="setting-note">${
+        g.started
+          ? 'About 15 seconds of play measured on this device: says what holds the frame rate back, with a line to copy and send.'
+          : 'Start or continue a game first: the check measures play.'
+      }${g.perfCheck?.result && !g.perfCheck.result.cancelled ? ' <a href="#" id="s-perf-last">Last result</a>' : ''}</p>
       <div class="setting"><label for="s-vol">Sound volume</label><input type="range" id="s-vol" min="0" max="1" step="0.05" value="${st.volume}"></div>
       <div class="setting"><label for="s-music">Music volume</label><input type="range" id="s-music" min="0" max="1" step="0.05" value="${st.music}"></div>
       <div class="setting"><label for="s-sens">Look sensitivity</label><input type="range" id="s-sens" min="0.4" max="2.2" step="0.05" value="${st.sens}"></div>
@@ -1653,15 +1665,26 @@ export class Screens {
       g.state.saveSettings();
       $('s-voice').textContent = g.announcer?.voiceName || 'Game voice';
     });
+    $('s-perf').addEventListener('click', () => {
+      if (!g.started || !g.perfCheck) return;
+      this.close();
+      g.perfCheck.start((res) => {
+        if (res.cancelled) g.hud.toast('Performance check stopped: a menu was opened');
+        else this.open('perf');
+      });
+    });
+    $('s-perf-last')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.current = 'perf';
+      this.render();
+    });
     $('s-privacy').addEventListener('click', () => {
       this.current = 'privacy';
       this.render();
     });
     this.body.querySelectorAll('#s-quality button').forEach((b) =>
       b.addEventListener('click', () => {
-        st.quality = b.dataset.q;
-        g.setQuality(b.dataset.q);
-        g.state.saveSettings();
+        g.chooseQuality(b.dataset.q);
         this.render();
       })
     );
@@ -1700,7 +1723,10 @@ export class Screens {
     this.body.querySelectorAll('#s-auto button').forEach((b) =>
       b.addEventListener('click', () => {
         st.autoQuality = b.dataset.v === '1';
+        // the presets it may use change: start again from the top
+        st.autoLevel = null;
         g.state.saveSettings();
+        g.startQuality();
         this.render();
       })
     );
@@ -1727,6 +1753,57 @@ export class Screens {
       ]);
     });
     $('s-done').addEventListener('click', () => (g.started ? this.open('pause') : this.close()));
+  }
+
+  // The performance check's result: the verdict, the numbers behind it and
+  // one line to copy and send.
+  renderPerf() {
+    const g = this.game;
+    const r = g.perfCheck?.result;
+    this.title.textContent = 'Performance';
+    this.setTabs([], null);
+    if (!r || r.cancelled) {
+      this.body.innerHTML = `<p class="catch-info">No result yet.</p><button class="btn big hot" id="pf-done">Done</button>`;
+      $('pf-done').addEventListener('click', () => this.open('settings'));
+      return;
+    }
+    const row = (k, v) => `<div class="setting"><label>${esc(k)}</label><span>${esc(v)}</span></div>`;
+    this.body.innerHTML = `<div class="settings">
+      <p class="catch-info" style="font-size:17px;color:var(--ink)">${esc(r.verdict)}</p>
+      ${row('Frame rate', `${r.fps.toFixed(1)} a second (the slowest 1%: ${r.low1.toFixed(0)})`)}
+      ${row('Time per frame', `${r.frameMs.toFixed(1)} ms`)}
+      ${row("The game's own work", `${r.cpuMs.toFixed(1)} ms a frame (${Math.round(r.share * 100)}%)`)}
+      ${row('Fewer pixels', r.lowFps ? `${r.lowFps.toFixed(1)} a second at ${r.lowDpr.toFixed(2)}× resolution` : r.lowDpr < r.dpr - 0.01 ? 'not tried (out of time)' : 'already at the lowest resolution')}
+      ${row('Graphics', `${r.preset.toUpperCase()} at ${r.dpr.toFixed(2)}× (your choice: ${String(r.top || 'high').toUpperCase()})`)}
+      ${row('Sound', r.sound)}
+      <p class="setting-note">The line to send:</p>
+      <textarea id="pf-line" readonly rows="5" style="width:100%;font:13px/1.4 ui-monospace,Menlo,monospace;background:rgba(0,0,0,.25);color:inherit;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px;resize:none">${esc(r.line)}</textarea>
+      <div class="dialog-actions"><button class="btn big" id="pf-copy">Copy</button><button class="btn big hot" id="pf-done">Done</button></div>
+    </div>`;
+    const ta = $('pf-line');
+    $('pf-copy').addEventListener('click', () => {
+      const done = () => {
+        $('pf-copy').textContent = 'Copied';
+      };
+      const fallback = () => {
+        ta.focus();
+        ta.select();
+        try {
+          if (document.execCommand('copy')) done();
+          else $('pf-copy').textContent = 'Selected: copy it';
+        } catch (e) {
+          $('pf-copy').textContent = 'Selected: copy it';
+        }
+      };
+      try {
+        const p = navigator.clipboard && navigator.clipboard.writeText(r.line);
+        if (p && p.then) p.then(done, fallback);
+        else fallback();
+      } catch (e) {
+        fallback();
+      }
+    });
+    $('pf-done').addEventListener('click', () => this.open('settings'));
   }
 
   renderHowto() {

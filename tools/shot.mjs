@@ -1,6 +1,14 @@
 // Headless screenshot harness. Loads dist/index.html in Chromium (SwiftShader
 // WebGL), waits for the game, runs optional scripted steps and saves PNGs.
 // Usage: node tools/shot.mjs <scenario.json|inline-json> [outdir]
+//
+// Checks: an eval step with "expect" (an expression of r, the eval's
+// result, run here in Node) fails when the expression is false or throws;
+// a "check" step (an expression run in the page) fails when it is not
+// true. "label" names either in the output. The run ends with a CHECKS line
+// and exits with code 1 when any check failed or the page threw an error;
+// with "strict": true in the scenario, also when a waitFor timed out, an
+// element to tap was missing, an eval threw or a shot failed.
 import { createRequire } from 'node:module';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -54,14 +62,51 @@ try {
 }
 console.log('ready after', Date.now() - t0, 'ms');
 const steps = scenario.steps || [{ wait: 1500 }, { shot: 'default' }];
+const checks = { passed: 0, failed: [] };
+const problems = [];
+const short = (v) => {
+  const t = typeof v === 'string' ? v : JSON.stringify(v);
+  return t && t.length > 300 ? t.slice(0, 300) + '…' : t;
+};
+const verdict = (label, ok, got, why) => {
+  if (ok) {
+    checks.passed++;
+    console.log(`CHECK ok: ${label}`);
+  } else {
+    checks.failed.push(label);
+    console.log(`CHECK FAILED: ${label}${why ? ` (${why})` : ''}; got ${short(got)}`);
+  }
+};
 for (const s of steps) {
   if (s.eval) {
     try {
       const r = await page.evaluate(s.eval);
       if (r !== undefined) console.log('eval:', typeof r === 'string' ? r : JSON.stringify(r));
+      if (s.expect) {
+        let ok = false;
+        let why = '';
+        try {
+          ok = !!new Function('r', `return (${s.expect});`)(r);
+        } catch (e) {
+          why = e.message;
+        }
+        verdict(s.label || s.expect, ok, r, why);
+      }
     } catch (e) {
       console.log('eval error:', e.message);
+      problems.push('eval error: ' + e.message.split('\n')[0]);
+      if (s.expect) verdict(s.label || s.expect, false, null, 'the eval threw: ' + e.message.split('\n')[0]);
     }
+  }
+  if (s.check) {
+    let r;
+    let why = '';
+    try {
+      r = await page.evaluate(s.check);
+    } catch (e) {
+      why = e.message.split('\n')[0];
+    }
+    verdict(s.label || s.check, r === true, r, why);
   }
   // evaluate to a data URL and save it as a file (debug images)
   if (s.saveEval) {
@@ -99,6 +144,7 @@ for (const s of steps) {
       await page.waitForFunction(s.waitFor, null, { timeout: s.timeout || 60000, polling: 250 });
     } catch (e) {
       console.log('waitFor timed out:', s.waitFor);
+      problems.push('waitFor timed out: ' + s.waitFor);
     }
   }
   if (s.tap) await page.touchscreen.tap(s.tap[0], s.tap[1]);
@@ -114,7 +160,10 @@ for (const s of steps) {
       const r = el.getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
     }, sel);
-    if (!box || !box.w) console.log('no element or not visible:', sel);
+    if (!box || !box.w) {
+      console.log('no element or not visible:', sel);
+      problems.push('no element or not visible: ' + sel);
+    }
     else {
       if (s.tapSel) await page.touchscreen.tap(box.x, box.y);
       else await page.mouse.click(box.x, box.y);
@@ -174,6 +223,7 @@ for (const s of steps) {
       console.log('shot', s.shot);
     } catch (e) {
       console.log('SHOT FAILED', s.shot, e.message.split('\n')[0]);
+      problems.push('shot failed: ' + s.shot);
       console.log(logs.slice(-40).join('\n'));
       break;
     }
@@ -181,3 +231,11 @@ for (const s of steps) {
 }
 console.log(logs.slice(0, 80).join('\n'));
 await browser.close();
+const pageErrors = logs.filter((l) => l.startsWith('[pageerror]'));
+const failedAll = checks.failed.length || pageErrors.length || (scenario.strict && problems.length);
+console.log(
+  `CHECKS ${checks.passed} passed, ${checks.failed.length} failed` +
+    (pageErrors.length ? `; ${pageErrors.length} page errors` : '') +
+    (scenario.strict && problems.length ? `; ${problems.length} problems: ${problems.join(' | ')}` : '')
+);
+if (failedAll) process.exitCode = 1;

@@ -51,7 +51,7 @@ const result = await esbuild.build({
   target: ['es2020', 'safari15'],
   write: false,
   legalComments: 'none',
-  define: { 'process.env.NODE_ENV': dev ? '"development"' : '"production"', __SCULPT_WORKER__: JSON.stringify(worker.outputFiles[0].text), __SOUND_WORKER__: JSON.stringify(soundWorker.outputFiles[0].text) },
+  define: { 'process.env.NODE_ENV': dev ? '"development"' : '"production"', __SCULPT_WORKER__: JSON.stringify(worker.outputFiles[0].text), __SOUND_WORKER__: JSON.stringify(soundWorker.outputFiles[0].text), __BUILD__: JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC') },
 });
 let js = result.outputFiles[0].text;
 // never let the script close its own tag when inlined

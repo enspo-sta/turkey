@@ -50,6 +50,7 @@ import { formatMoney, clamp, damp, wrapAngle } from './util/math.js';
 import { ROAD_HALF } from './world/worldgen.js';
 import { REFLECT_LAYER } from './world/water.js';
 import { reflectionMaterial } from './world/worldfx.js';
+import { PerfCheck } from './ui/perfcheck.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -73,7 +74,7 @@ class Session {
     $('app').classList.toggle('show-keys', !IS_TOUCH);
     g.input.sensitivity = g.state.settings.sens;
     g.input.invertY = g.state.settings.invert;
-    if (g.state.settings.quality) g.setQuality(g.state.settings.quality);
+    g.startQuality();
     g.effects = new Effects(g);
     g.scene.add(g.effects.group);
     g.audio = new AudioEngine(g);
@@ -132,6 +133,7 @@ class Session {
     // the scientists' busts, by the places their work belongs to
     g.scientists = new Scientists(g);
     g.screens = new Screens(g);
+    g.perfCheck = new PerfCheck(g);
     g.onEvent = (ev) => this.onEvent(ev);
     g.save = () => this.save();
     g.fastTravel = (id, hours) => this.fastTravel(id, hours);
@@ -149,7 +151,8 @@ class Session {
         })
       );
     };
-    g.onQualityDrop = (name) => g.hud.toast(`Graphics set to ${name.toUpperCase()} to keep the game smooth. Change it in Settings.`);
+    g.onQualityChange = (name, how) =>
+      g.hud.toast(how === 'up' ? `Graphics back up to ${name.toUpperCase()}` : `Graphics lowered to ${name.toUpperCase()} for now to keep the game smooth. They go back up when there is room.`);
     g.toTitle = () => this.toTitle();
     g.waitForDark = () => this.waitForDark();
     g.skySubjects = () => this.skySubjects();

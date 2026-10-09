@@ -35,7 +35,7 @@ export class GameState {
   constructor() {
     this.listeners = [];
     this.reset();
-    this.settings = { quality: null, volume: 0.8, music: 0.55, sens: 1, invert: false, haptics: true, showFps: false, autoQuality: true, minimap: true, announcer: true, voiceName: null, gameVoice: true, skyGuide: true };
+    this.settings = { quality: null, volume: 0.8, music: 0.55, sens: 1, invert: false, haptics: true, showFps: false, autoQuality: true, autoLevel: null, qv: 2, minimap: true, announcer: true, voiceName: null, gameVoice: true, skyGuide: true };
     this.loadSettings();
   }
 
@@ -532,6 +532,16 @@ export class GameState {
         // the game's own voice came after these settings: a device voice
         // picked before then gives way to it once (Settings can pick it again)
         if (!('gameVoice' in saved)) saved.voiceName = null;
+        // before version 2, the adaptation stored its own step down as the
+        // player's preset, and never raised it again: a phone held at 30
+        // frames a second by Low Power Mode was left on Low for good. A
+        // lower preset in those settings was most likely put there by the
+        // adaptation, so the game starts from High again and finds its
+        // level afresh (a preset picked by hand can be picked again)
+        if (!saved.qv) {
+          if ((saved.quality === 'low' || saved.quality === 'medium') && saved.autoQuality !== false) saved.quality = null;
+          saved.qv = 2;
+        }
         this.settings = { ...this.settings, ...saved, gameVoice: true };
       }
     } catch (e) {

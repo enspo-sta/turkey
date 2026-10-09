@@ -115,7 +115,12 @@ export class AudioEngine {
   // Safari 17 and later take the page's word for it (an audio session of
   // type playback); older ones need a media element playing, here a tenth
   // of a second of silence on a loop, started by the same tap.
+  // Not in the iPhone app: it sets its own audio session (ambient: the
+  // game mixes with the player's music and follows the silent switch, like
+  // most iOS games, see ios/RubenHotrodFishing/AppDelegate.swift), and the
+  // page asking for playback there would overrule it.
   playbackSession() {
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.store) return;
     try {
       if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback';
     } catch (e) {
