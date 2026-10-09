@@ -1,7 +1,17 @@
-{"width":844,"height":390,"touch":true,"mobile":true,"ua":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1","steps":[{"wait":1500},{"shot":"m0-title"},
-{"tap":[313,257]},{"wait":5000},{"shot":"m1-play"},
-{"eval":"(()=>{const g=__rhf.game; return 'mode '+g.player.mode+' started '+g.started+' touch '+g.input.usingTouch+' quality '+g.qualityName})()"},
-{"eval":"(()=>{const g=__rhf.game; g.player.tool='bow'; g.viewmodel.setTool('bow'); return 'bow'})()"},{"wait":3000},{"shot":"m2-bow"},
-{"eval":"(()=>{const g=__rhf.game; const c=g.hotrod; const e=c.exitPoint(1); g.player.tool='rod'; g.viewmodel.setTool('rod'); g.player.place(e.x,e.z,c.yaw); return 'car'})()"},{"wait":2500},
-{"eval":"__rhf.press('interact'); 'drive'"},{"wait":3000},{"shot":"m3-drive"}
+{"width":844,"height":390,"touch":true,"mobile":true,"ua":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1","strict":true,"steps":[
+{"wait":1500},
+{"shot":"m0-title"},
+{"tap":[313,257]},
+{"wait":5000},
+{"shot":"m1-play"},
+{"eval":"(()=>{const g=__rhf.game; return 'mode '+g.player.mode+' started '+g.started+' touch '+g.input.usingTouch+' quality '+g.qualityName})()","expect":"/^mode foot started true touch true quality (high|medium|low)$/.test(r)","label":"a tap on Play starts the game on foot with touch controls, at a known preset"},
+{"eval":"(()=>{const g=__rhf.game; g.player.tool='bow'; g.viewmodel.setTool('bow'); return 'bow'})()"},
+{"wait":3000},
+{"shot":"m2-bow"},
+{"eval":"(()=>{const g=__rhf.game; const c=g.hotrod; const e=c.exitPoint(1); g.player.tool='rod'; g.viewmodel.setTool('rod'); g.player.place(e.x,e.z,c.yaw); return 'car'})()"},
+{"wait":2500},
+{"eval":"__rhf.press('interact'); 'drive'"},
+{"wait":3000},
+{"check":"__rhf.game.player.mode==='drive' && __rhf.game.hotrod.occupied===true","label":"the interact press by the car puts the player in the driver's seat"},
+{"shot":"m3-drive"}
 ]}

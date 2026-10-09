@@ -1,81 +1,27 @@
-{
-"width": 960,
-"height": 540,
-"steps": [
-{
-"wait": 1000
-},
-{
-"eval": "__rhf.start(false)"
-},
-{
-"wait": 2500
-},
-{
-"eval": "(()=>{const g=__rhf.game; g.env.setTime(15); const T=g.tesla; const t0=performance.now(); T.finishSculpt(); const P=g.player; const p=g.world.place('tesla'); P.place(p.x, p.z, p.face); P.pitch=0.12; __rhf.settle(); return 'sculpted in '+(performance.now()-t0).toFixed(0)+' ms; place '+p.x.toFixed(1)+','+p.z.toFixed(1)+' top '+T.top.toFixed(2)+' head '+T.head.toFixed(2)+' m, power '+T.power.toFixed(0)+' kW, tris '+(T.statue.geometry.index.count/3)+', player y '+P.pos.y.toFixed(2)})()"
-},
-{
-"wait": 4000
-},
-{
-"shot": "tesla-front.jpg"
-},
-{
-"eval": "(()=>{const g=__rhf.game; __rhf.session.updateInteraction(); return 'interaction '+(g.interaction?g.interaction.label:'none')})()"
-},
-{
-"eval": "(()=>{const g=__rhf.game; const P=g.player; P.place(12.5, -415, 0); const T={x:2.6,z:-409}; P.yaw=Math.atan2(-(T.x-P.pos.x), -(T.z-P.pos.z)); P.pitch=0.05; __rhf.settle(); return 'three-quarter view'})()"
-},
-{
-"wait": 4000
-},
-{
-"shot": "tesla-34.jpg"
-},
-{
-"eval": "(()=>{const g=__rhf.game; const P=g.player; const c={x:10,z:-397.5}; P.place(c.x+4.5, c.z-4, 0); P.yaw=Math.atan2(-(c.x-P.pos.x), -(c.z-P.pos.z)); P.pitch=0.0; __rhf.settle(); g.tesla.runCoil(); for(let i=0;i<4;i++) g.tesla.update(0.05); return 'coil running '+g.tesla.coilRunning})()"
-},
-{
-"wait": 1500
-},
-{
-"shot": "tesla-coil.jpg"
-},
-{
-"eval": "(()=>{const g=__rhf.game; const P=g.player; P.place(-5.5+1.6, -421+1.4, 0); P.yaw=Math.atan2(-(-23.7-P.pos.x), -(-424-P.pos.z)); P.pitch=-0.42; __rhf.settle(); __rhf.session.updateInteraction(); return 'board: interaction '+(g.interaction?g.interaction.label:'none')})()"
-},
-{
-"wait": 4000
-},
-{
-"shot": "tesla-hydro.jpg"
-},
-{
-"eval": "(()=>{const g=__rhf.game; g.env.setTime(16.5); g.tesla.finishSculpt(); const P=g.player; P.tool='none'; g.viewmodel.setTool('none'); P.place(6.2, -407.6, 0); const T={x:2.6,z:-409}; P.yaw=Math.atan2(-(T.x-P.pos.x), -(T.z-P.pos.z)); P.pitch=0.38; __rhf.settle(); __rhf.session.updateInteraction(); return 'close: interaction '+(g.interaction?g.interaction.label:'none')+' y '+P.pos.y.toFixed(2)})()"
-},
-{
-"wait": 4000
-},
-{
-"shot": "tesla-close.jpg"
-},
-{
-"eval": "(()=>{const g=__rhf.game; const P=g.player; const pf=g.props.fallsPlatform; P.place(pf.x, pf.z, 0); P.yaw=Math.atan2(-(-23.7-P.pos.x), -(-426-P.pos.z)); P.pitch=-0.5; __rhf.settle(); return 'platform y '+P.pos.y.toFixed(1)})()"
-},
-{
-"wait": 4000
-},
-{
-"shot": "tesla-powerhouse.jpg"
-},
-{
-"eval": "(()=>{const g=__rhf.game; g.env.setTime(14); g.tesla.finishSculpt(); const P=g.player; P.tool='none'; g.viewmodel.setTool('none'); P.mode='glide'; P.mode='foot'; P.place(-58, -420, 0); P.pos.y = 52; P.yaw=Math.atan2(-(-23.7-P.pos.x), -(-428-P.pos.z)); P.pitch=-0.18; __rhf.settle(); return 'west bank y '+P.pos.y.toFixed(1)+' ground '+g.world.heightAt(-58,-420).toFixed(1)})()"
-},
-{
-"wait": 4000
-},
-{
-"shot": "tesla-plant.jpg"
-}
-]
-}
+{"width":960,"height":540,"strict":true,"steps":[
+{"wait":1000},
+{"eval":"__rhf.start(false)"},
+{"wait":2500},
+{"eval":"(()=>{const g=__rhf.game; g.env.setTime(15); const T=g.tesla; const t0=performance.now(); T.finishSculpt(); const P=g.player; const p=g.world.place('tesla'); P.place(p.x, p.z, p.face); P.pitch=0.12; __rhf.settle(); return 'sculpted in '+(performance.now()-t0).toFixed(0)+' ms; place '+p.x.toFixed(1)+','+p.z.toFixed(1)+' top '+T.top.toFixed(2)+' head '+T.head.toFixed(2)+' m, power '+T.power.toFixed(0)+' kW, tris '+(T.statue.geometry.index.count/3)+', player y '+P.pos.y.toFixed(2)})()","label":"the memorial is built: head from the water levels (not the 13.4 m fallback), power = 9.81 x 2.6 x 0.85 x head kW, a sculpted statue, the player at terrace height","expect":"((m) => !!m && +m[4] > 3 && +m[4] < 40 && m[4] !== '13.40' && Math.abs(+m[5] - 9.81 * 2.6 * 0.85 * +m[4]) <= 1 && +m[6] > 1000 && Math.abs(+m[7] - +m[3]) < 3)(r.match(/^sculpted in \\d+ ms; place (-?[\\d.]+),(-?[\\d.]+) top (-?[\\d.]+) head (-?[\\d.]+) m, power (\\d+) kW, tris (\\d+), player y (-?[\\d.]+)$/))"},
+{"wait":4000},
+{"shot":"tesla-front.jpg"},
+{"eval":"(()=>{const g=__rhf.game; __rhf.session.updateInteraction(); return 'interaction '+(g.interaction?g.interaction.label:'none')})()"},
+{"eval":"(()=>{const g=__rhf.game; const P=g.player; P.place(12.5, -415, 0); const T={x:2.6,z:-409}; P.yaw=Math.atan2(-(T.x-P.pos.x), -(T.z-P.pos.z)); P.pitch=0.05; __rhf.settle(); return 'three-quarter view'})()","label":"three-quarter view staged","expect":"r === 'three-quarter view'"},
+{"wait":4000},
+{"shot":"tesla-34.jpg"},
+{"eval":"(()=>{const g=__rhf.game; const P=g.player; const c={x:10,z:-397.5}; P.place(c.x+4.5, c.z-4, 0); P.yaw=Math.atan2(-(c.x-P.pos.x), -(c.z-P.pos.z)); P.pitch=0.0; __rhf.settle(); g.tesla.runCoil(); for(let i=0;i<4;i++) g.tesla.update(0.05); return 'coil running '+g.tesla.coilRunning})()","label":"the Tesla coil runs when started","expect":"r === 'coil running true'"},
+{"wait":1500},
+{"shot":"tesla-coil.jpg"},
+{"eval":"(()=>{const g=__rhf.game; const P=g.player; P.place(-5.5+1.6, -421+1.4, 0); P.yaw=Math.atan2(-(-23.7-P.pos.x), -(-424-P.pos.z)); P.pitch=-0.42; __rhf.settle(); __rhf.session.updateInteraction(); return 'board: interaction '+(g.interaction?g.interaction.label:'none')})()","label":"standing at the hydro board offers BEAR FALLS HYDRO","expect":"r === 'board: interaction BEAR FALLS HYDRO'"},
+{"wait":4000},
+{"shot":"tesla-hydro.jpg"},
+{"eval":"(()=>{const g=__rhf.game; g.env.setTime(16.5); g.tesla.finishSculpt(); const P=g.player; P.tool='none'; g.viewmodel.setTool('none'); P.place(6.2, -407.6, 0); const T={x:2.6,z:-409}; P.yaw=Math.atan2(-(T.x-P.pos.x), -(T.z-P.pos.z)); P.pitch=0.38; __rhf.settle(); __rhf.session.updateInteraction(); return 'close: interaction '+(g.interaction?g.interaction.label:'none')+' y '+P.pos.y.toFixed(2)})()","label":"on the terrace by the statue the plaque can be read","expect":"/^close: interaction READ THE PLAQUE y -?\\d+\\.\\d\\d$/.test(r)"},
+{"wait":4000},
+{"shot":"tesla-close.jpg"},
+{"eval":"(()=>{const g=__rhf.game; const P=g.player; const pf=g.props.fallsPlatform; P.place(pf.x, pf.z, 0); P.yaw=Math.atan2(-(-23.7-P.pos.x), -(-426-P.pos.z)); P.pitch=-0.5; __rhf.settle(); return 'platform y '+P.pos.y.toFixed(1)})()","label":"the falls platform has a real height","expect":"/^platform y -?\\d+\\.\\d$/.test(r)"},
+{"wait":4000},
+{"shot":"tesla-powerhouse.jpg"},
+{"eval":"(()=>{const g=__rhf.game; g.env.setTime(14); g.tesla.finishSculpt(); const P=g.player; P.tool='none'; g.viewmodel.setTool('none'); P.mode='glide'; P.mode='foot'; P.place(-58, -420, 0); P.pos.y = 52; P.yaw=Math.atan2(-(-23.7-P.pos.x), -(-428-P.pos.z)); P.pitch=-0.18; __rhf.settle(); return 'west bank y '+P.pos.y.toFixed(1)+' ground '+g.world.heightAt(-58,-420).toFixed(1)})()","label":"the west-bank view is staged above the ground there","expect":"((m) => !!m && +m[1] === 52 && Number.isFinite(+m[2]) && +m[2] < 52)(r.match(/^west bank y (-?[\\d.]+) ground (-?[\\d.]+)$/))"},
+{"wait":4000},
+{"shot":"tesla-plant.jpg"}
+]}
