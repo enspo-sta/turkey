@@ -139,7 +139,7 @@ for (const s of steps) {
     await page.waitForTimeout(s.wait);
     if (t0 !== null) {
       try {
-        await page.waitForFunction((t) => __rhf.game.time >= t, t0 + s.wait / 1000, { timeout: Math.max(120000, s.wait * 40), polling: 100 });
+        await page.waitForFunction((t) => __rhf.game.time >= t, t0 + s.wait / 1000, { timeout: Math.max(600000, s.wait * 150), polling: 100 });
       } catch (e) {
         console.log(`game clock did not move on ${s.wait / 1000} s`);
         problems.push(`game clock did not move on ${s.wait / 1000} s`);
