@@ -25,6 +25,7 @@
 {"wait":2500},
 {"eval":"(() => {\n    const g = __rhf.game;\n    // swing the chase cam round to the side for a look at Ruben\n    g.hotrod.camYaw = 1.9;\n    return 'cam yaw ' + g.hotrod.camYaw;\n  })()","label":"chase cam swung to the side","expect":"r === 'cam yaw 1.9'"},
 {"wait":2500},
+{"frames":2},
 {"check":"__rhf.game.player.mode === 'drive' && __rhf.game.hotrod.driver.visible === true","label":"in the chase view Ruben shows in the hot rod"},
 {"shot":"driver"},
 {"eval":"(() => {\n    const g = __rhf.game;\n    g.announcer.say('newSpecies', { sub: 'NORTHERN PIKE!', place: 'left' });\n    // keep the banner up for the picture\n    clearTimeout(g.hud.bannerT);\n    return 'shout';\n  })()","label":"the announcer shout is staged","expect":"r === 'shout'"},

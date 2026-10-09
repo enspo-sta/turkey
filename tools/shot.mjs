@@ -8,7 +8,10 @@
 // true. "label" names either in the output. The run ends with a CHECKS line
 // and exits with code 1 when any check failed or the page threw an error;
 // with "strict": true in the scenario, also when a waitFor timed out, an
-// element to tap was missing, an eval threw or a shot failed.
+// element to tap was missing, an eval threw or a shot failed. A "frames"
+// step waits until the game has drawn that many more frames: a check that
+// needs the game to have moved on uses it rather than a plain wait, which
+// can pass without a single frame on a slow software renderer.
 import { createRequire } from 'node:module';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -126,6 +129,17 @@ for (const s of steps) {
     console.log('viewport', s.viewport.join(' by '));
   }
   if (s.wait) await page.waitForTimeout(s.wait);
+  // wait until the game has drawn this many more frames (a plain wait can
+  // pass without a single frame on a slow software renderer)
+  if (s.frames) {
+    try {
+      const n0 = await page.evaluate(() => __rhf.game.menuFrame || 0);
+      await page.waitForFunction((n) => (__rhf.game.menuFrame || 0) >= n, n0 + s.frames, { timeout: s.timeout || 180000, polling: 100 });
+    } catch (e) {
+      console.log('frames timed out:', s.frames);
+      problems.push('frames timed out: ' + s.frames);
+    }
+  }
   // reload the page (to continue from a save) and wait for the game again
   if (s.reload) {
     // (loading the game can take longer than the default 30 s in software)
