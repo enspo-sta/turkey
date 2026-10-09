@@ -312,13 +312,16 @@ export class Bears {
           }
           // (a fish on the line is fought to the end first: the bear holds
           // back, sniffing, and comes on once it is landed or gone)
-          if (this.fishingBusy()) {
-            if (d < 34) b.targetSpeed = 0;
-          } else if (d < 42 || b.t <= 0) this.alert(b, 3.6);
+          // (with no fish to smell, or the player in a car or a boat, it
+          // turns away first: before, it raised the alarm (the banner, the
+          // growl, "Switch to your bow!", a dropped line) in the very frame
+          // it turned away)
           if (!onFoot || !fish) {
             b.state = 'retreat';
             b.t = 8;
-          }
+          } else if (this.fishingBusy()) {
+            if (d < 34) b.targetSpeed = 0;
+          } else if (d < 42 || b.t <= 0) this.alert(b, 3.6);
           break;
         }
         case 'alert': {

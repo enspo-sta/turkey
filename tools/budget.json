@@ -1,0 +1,46 @@
+{
+ "note": "Draw calls and triangles of one High frame at each view (tools/budget.mjs). Raise only on purpose.",
+ "margin": 0.03,
+ "views": {
+  "landing": {
+   "calls": 183,
+   "triangles": 1295379
+  },
+  "landing-back": {
+   "calls": 239,
+   "triangles": 1312272
+  },
+  "meadow-low": {
+   "calls": 224,
+   "triangles": 1421296
+  },
+  "road": {
+   "calls": 296,
+   "triangles": 1591579
+  },
+  "tesla": {
+   "calls": 238,
+   "triangles": 1523085
+  },
+  "evening": {
+   "calls": 186,
+   "triangles": 1146833
+  },
+  "mountains": {
+   "calls": 284,
+   "triangles": 1446964
+  },
+  "night": {
+   "calls": 172,
+   "triangles": 864739
+  },
+  "observatory-day": {
+   "calls": 164,
+   "triangles": 892481
+  },
+  "hotrod-low-sun": {
+   "calls": 229,
+   "triangles": 1360665
+  }
+ }
+}
