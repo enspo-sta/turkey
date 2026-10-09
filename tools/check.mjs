@@ -1,7 +1,7 @@
 // Every check before a push: builds the game, runs the frame budget
 // (tools/budget.mjs) and the regression scenarios (tools/shot.mjs, each with
 // its own checks), and exits with code 1 when anything failed.
-// Usage: node tools/check.mjs [--jobs N] [--only=name,name] [--no-budget] [--out dir]
+// Usage: node tools/check.mjs [--jobs N] [--only=name,name] [--no-budget] [--no-build] [--out dir]
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
@@ -30,9 +30,12 @@ const run = (cmd, argv, log) =>
   });
 
 const results = [];
-const b = await run('node', ['build.mjs'], `${OUT}/build.log`);
-console.log(`build: ${b.code === 0 ? 'ok' : 'FAILED'}`);
-if (b.code !== 0) process.exit(1);
+// (--no-build: two checks at once on the build already made)
+if (!args.includes('--no-build')) {
+  const b = await run('node', ['build.mjs'], `${OUT}/build.log`);
+  console.log(`build: ${b.code === 0 ? 'ok' : 'FAILED'}`);
+  if (b.code !== 0) process.exit(1);
+}
 if (!args.includes('--no-budget') && !ONLY.length) {
   const r = await run('node', ['tools/budget.mjs'], `${OUT}/budget.log`);
   const line = (r.text.match(/^BUDGET:.*$/m) || ['BUDGET: no result'])[0];

@@ -45,7 +45,18 @@ voice included.
 | ![Starfall Clearing: the pod and the trees laid flat round it](docs/screenshots/crash.jpg) | ![Zib comes out from behind the pod](docs/screenshots/zib.jpg) |
 | ![Isaac Newton's bust in marble at the Tundra Observatory](docs/screenshots/newton.jpg) | ![The Journal's Scientists page](docs/screenshots/scientists.jpg) |
 
-The latest review (no code changed): a first-principles audit of the
+What changed in the latest step (the audit's findings fixed: the
+graphics adaptation keeps a lower setting only when it makes the frames
+quicker, steps back up when there is room and never changes the preset you
+picked, so a phone held at 30 frames a second by Low Power Mode keeps High;
+**Check performance** in Settings measures about 15 seconds of play and
+says what holds the frame rate back, with a line to send; in the iPhone app
+the game follows the silent switch; a stalking bear with no fish to smell
+no longer sounds the alarm and makes you drop your line; and every
+regression scenario now fails on a wrong value, with a frame budget checked
+before every push): [docs/audit-fixes.html](docs/audit-fixes.html).
+
+The review before it (no code changed): a first-principles audit of the
 project and its way of working. No frame time has ever been measured on an
 iPhone. The game's own adaptation locks it on Low for good after 40 seconds
 at a steady 30 frames a second, which is how Safari runs in Low Power Mode.
