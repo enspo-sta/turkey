@@ -8,7 +8,9 @@
 // true. "label" names either in the output. The run ends with a CHECKS line
 // and exits with code 1 when any check failed or the page threw an error;
 // with "strict": true in the scenario, also when a waitFor timed out, an
-// element to tap was missing, an eval threw or a shot failed. A "frames"
+// element to tap was missing, an eval threw or a shot failed; and there
+// a "wait" also lasts until the game's own clock has moved on as far. A
+// "frames"
 // step waits until the game has drawn that many more frames: a check that
 // needs the game to have moved on uses it rather than a plain wait, which
 // can pass without a single frame on a slow software renderer.
@@ -128,7 +130,22 @@ for (const s of steps) {
     await page.setViewportSize({ width: s.viewport[0], height: s.viewport[1] });
     console.log('viewport', s.viewport.join(' by '));
   }
-  if (s.wait) await page.waitForTimeout(s.wait);
+  if (s.wait) {
+    // in a strict scenario a wait also lasts until the game's own clock has
+    // moved on as far (it moves at most a tenth of a second a frame): the
+    // scenario means three seconds of play, and on a slow software renderer
+    // three seconds of the wall clock can pass without a frame
+    const t0 = scenario.strict ? await page.evaluate(() => (window.__rhf && __rhf.game ? __rhf.game.time : null)).catch(() => null) : null;
+    await page.waitForTimeout(s.wait);
+    if (t0 !== null) {
+      try {
+        await page.waitForFunction((t) => __rhf.game.time >= t, t0 + s.wait / 1000, { timeout: Math.max(120000, s.wait * 40), polling: 100 });
+      } catch (e) {
+        console.log(`game clock did not move on ${s.wait / 1000} s`);
+        problems.push(`game clock did not move on ${s.wait / 1000} s`);
+      }
+    }
+  }
   // wait until the game has drawn this many more frames (a plain wait can
   // pass without a single frame on a slow software renderer)
   if (s.frames) {
