@@ -186,6 +186,15 @@ export class PostFX {
     this.size = new THREE.Vector2(0, 0);
     // every pass drawn, needed or not (see Session.warmDraw)
     this.warm = false;
+    // Each buffer cleared inside the pass that draws into it (see
+    // drawCleared and pass). On a phone's graphics chip a clear made on its
+    // own, with the shadow map drawn between it and the world, is likely a
+    // pass of its own: the cleared buffers written out to memory, then read
+    // back in by the world's pass. The picture is the same either way; off,
+    // the clears are made as they were (for comparing). The water's
+    // reflection follows it (WaterSystem.clearInPass, kept in step by the
+    // game's switch).
+    this.clearInPass = true;
     this._enabled = false;
     this._v = new THREE.Vector3();
     this._f = new THREE.Vector3();
@@ -234,7 +243,33 @@ export class PostFX {
   pass(material, target) {
     this.quad.material = material;
     this.renderer.setRenderTarget(target);
+    // (cleared, though the pass draws over every pixel: it then starts from
+    // nothing instead of reading the old picture in first; colour only, as
+    // the small buffers have no depth)
+    if (target !== null && this.clearInPass) this.renderer.clear(true, false, false);
     this.renderer.render(this.quadScene, this.quadCam);
+  }
+
+  // Draws `draw` (a render of the world) into the current target, cleared
+  // first. With clearInPass three.js makes the clear itself, inside its
+  // render: after the shadow map is drawn and the buffers are uploaded, as
+  // the first thing in the pass that draws the world. It is the same clear:
+  // no scene has a background of its own, so three.js clears colour, depth
+  // and stencil with the renderer's clear colour, as clear() did.
+  drawCleared(draw) {
+    const r = this.renderer;
+    if (!this.clearInPass) {
+      r.clear();
+      draw();
+      return;
+    }
+    const auto = r.autoClear;
+    r.autoClear = true;
+    try {
+      draw();
+    } finally {
+      r.autoClear = auto;
+    }
   }
 
   // Draws the frame: `drawWorld` renders the world into the current target;
@@ -246,8 +281,7 @@ export class PostFX {
     r.getDrawingBufferSize(this._size);
     this.setSize(this._size.x, this._size.y);
     r.setRenderTarget(this.scene);
-    r.clear();
-    drawWorld();
+    this.drawCleared(drawWorld);
 
     // bright pass and the chain down
     let src = this.scene.texture;

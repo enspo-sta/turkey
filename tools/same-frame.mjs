@@ -14,8 +14,13 @@
 // - grass early out: tufts with nothing to show, or wholly outside the view,
 //   skip their work (src/world/grass.js);
 // - one matrix update: the view reuses the places of things worked out for
-//   the water's reflection just before (src/game.js).
-// Usage: node tools/same-frame.mjs [build.html] [outdir] [--size WxH] [--dpr N] [--only=view,view]
+//   the water's reflection just before (src/game.js);
+// - clear in pass: the world's buffer (or the screen), the finish's buffers
+//   and the reflection's faces each cleared inside the pass that draws into
+//   them (src/world/post.js, src/game.js, src/world/water.js).
+// --quality draws at a preset of its own (low, medium or high; by default the
+// one the game starts with).
+// Usage: node tools/same-frame.mjs [build.html] [outdir] [--size WxH] [--dpr N] [--quality name] [--only=view,view]
 import { createRequire } from 'node:module';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -33,10 +38,11 @@ const opt = (name, def) => {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : def;
 };
-const plain = args.filter((a, i) => !a.startsWith('--') && !['--size', '--dpr'].includes(args[i - 1]));
+const plain = args.filter((a, i) => !a.startsWith('--') && !['--size', '--dpr', '--quality'].includes(args[i - 1]));
 const [FILE = 'dist/index.html', OUT = 'tools/out/same-frame'] = plain;
 const [VW, VH] = opt('--size', '640x360').split('x').map(Number);
 const DPR = +opt('--dpr', 1);
+const QUALITY = opt('--quality', '');
 const ONLY = (args.find((a) => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
 mkdirSync(OUT, { recursive: true });
 
@@ -55,7 +61,7 @@ const VIEWS = [
 ].filter(([n]) => !ONLY.length || ONLY.includes(n));
 
 // the drawings of each view: all on, all on again, each off in turn, all off
-const RUNS = ['on', 'on again', 'shadow batches off', 'terrain blocks off', 'grass early out off', 'one matrix update off', 'all off'];
+const RUNS = ['on', 'on again', 'shadow batches off', 'terrain blocks off', 'grass early out off', 'one matrix update off', 'clear in pass off', 'all off'];
 
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: VW, height: VH }, deviceScaleFactor: DPR });
@@ -79,7 +85,7 @@ page.on('console', (m) => {
 });
 await page.goto('file://' + resolve(FILE));
 await page.waitForFunction(() => window.__rhf && window.__rhf.ready, null, { timeout: 300000 });
-await page.evaluate(async () => {
+await page.evaluate(async (Q) => {
   __rhf.start(false);
   const g = __rhf.game;
   if (g.raf) cancelAnimationFrame(g.raf);
@@ -92,9 +98,19 @@ await page.evaluate(async () => {
   const S = g.scientists;
   for (let i = 0; i < 600 && S && (S.queue?.length || S.workers?.length); i++) await new Promise((r) => setTimeout(r, 100));
   g.tesla.finishSculpt?.();
-});
+  // (the preset's shaders are built by the frames drawn below, not by the
+  // game's warm-up draw at the change, which would come in between)
+  if (Q) {
+    const changed = g.onPostChanged;
+    g.onPostChanged = null;
+    g.setQuality(Q);
+    g.onPostChanged = changed;
+  }
+}, QUALITY);
 
-const out = { file: FILE, size: `${VW}x${VH}`, dpr: DPR, views: {}, logs };
+const quality = await page.evaluate(() => __rhf.game.qualityName);
+console.log(`quality ${quality}`);
+const out = { file: FILE, size: `${VW}x${VH}`, dpr: DPR, quality, views: {}, logs };
 for (const [name, setup] of VIEWS) {
   const r = await page.evaluate(
     ({ setup, RUNS }) => {
@@ -140,6 +156,16 @@ for (const [name, setup] of VIEWS) {
             else delete m.defines.EARLY_OUT;
             m.needsUpdate = true;
           }
+        }
+        // the clears; the reflection's latest face is drawn again, so that
+        // its clear is compared too (nothing has moved since, so the face
+        // comes out as it was)
+        const inPass = !off('clear in pass');
+        g.post.clearInPass = g.water.clearInPass = inPass;
+        const probe = g.water.probe;
+        if (probe) {
+          probe.next = (probe.next + probe.faces.length - 1) % probe.faces.length;
+          probe.update(g.renderer, g.scene, probe.camera.position, 1, inPass);
         }
         // (the reflection has just worked out every place, and nothing has
         // moved since: on, the view reuses them)

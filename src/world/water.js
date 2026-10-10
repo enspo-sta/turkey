@@ -354,8 +354,10 @@ class ReflectionProbe {
     this.floor.material.dispose();
   }
 
-  // Render `count` faces from position `pos`.
-  update(renderer, scene, pos, count = 1) {
+  // Render `count` faces from position `pos`. With `inPass` each face is
+  // cleared by three.js inside its render, after the buffers are uploaded,
+  // so the clear opens the pass that draws the face (see PostFX.drawCleared).
+  update(renderer, scene, pos, count = 1, inPass = true) {
     const cam = this.camera;
     if (cam.coordinateSystem !== renderer.coordinateSystem) {
       cam.coordinateSystem = renderer.coordinateSystem;
@@ -369,16 +371,22 @@ class ReflectionProbe {
     const prevFace = renderer.getActiveCubeFace();
     const prevLevel = renderer.getActiveMipmapLevel();
     const shadows = renderer.shadowMap.enabled;
+    const autoClear = renderer.autoClear;
     renderer.shadowMap.enabled = false;
-    for (let i = 0; i < count; i++) {
-      const face = this.faces[this.next];
-      this.next = (this.next + 1) % this.faces.length;
-      renderer.setRenderTarget(this.rt, face, 0);
-      renderer.clear();
-      renderer.render(scene, cam.children[face]);
-      if (this.next === 0) this.ready = true;
+    if (inPass) renderer.autoClear = true;
+    try {
+      for (let i = 0; i < count; i++) {
+        const face = this.faces[this.next];
+        this.next = (this.next + 1) % this.faces.length;
+        renderer.setRenderTarget(this.rt, face, 0);
+        if (!inPass) renderer.clear();
+        renderer.render(scene, cam.children[face]);
+        if (this.next === 0) this.ready = true;
+      }
+    } finally {
+      renderer.autoClear = autoClear;
+      renderer.shadowMap.enabled = shadows;
     }
-    renderer.shadowMap.enabled = shadows;
     renderer.setRenderTarget(prevTarget, prevFace, prevLevel);
   }
 }
@@ -393,6 +401,9 @@ export class WaterSystem {
     this.materials = [];
     this.waves = new WaveTexture(256);
     this.probe = null;
+    // the reflection's faces cleared inside the pass that draws them (kept
+    // in step with PostFX.clearInPass by the game's switch)
+    this.clearInPass = true;
     this.levelT = 0;
     // a lost graphics context given back leaves the reflection's faces
     // empty: none is shown until all five are drawn again
@@ -846,7 +857,7 @@ export class WaterSystem {
       }
       _probePos.copy(camera.position);
       if (this.viewLevel !== null && this.viewLevel < camera.position.y) _probePos.y = this.viewLevel + 0.3;
-      this.probe.update(this.renderer, scene, _probePos, this.primed ? 1 : 5);
+      this.probe.update(this.renderer, scene, _probePos, this.primed ? 1 : 5, this.clearInPass);
       this.primed = true;
       sh.uReflOn.value = this.probe.ready ? 1 : 0;
       // (drawn: every object's matrix in the world is up to date)

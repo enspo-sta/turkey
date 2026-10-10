@@ -212,6 +212,14 @@ export class Game {
 
     this.water = new WaterSystem(this.world, this.wtex, this.textures.waterNormal, this.env, renderer);
     this.scene.add(this.water.group);
+    // the world's buffer, the screen, the finish's buffers and the
+    // reflection's faces each cleared inside the pass that draws into them
+    // (see PostFX.drawCleared)
+    this.perfSwitches.set('8', {
+      label: 'clear in pass',
+      get: () => this.post.clearInPass,
+      set: (on) => (this.post.clearInPass = this.water.clearInPass = on),
+    });
     FX.uFxWaves.value = this.water.waves.texture;
     // volcano steam, clouds on the peaks and cascades down the cliffs
     this.scenery = new Scenery(this);
@@ -713,8 +721,9 @@ export class Game {
       return;
     }
     r.setRenderTarget(null);
-    r.clear();
-    world();
+    // (the screen cleared inside the world's pass, as the finish's buffer
+    // is; the hands below keep their own clear of the depth)
+    this.post.drawCleared(world);
     if (this.overlay && this.overlay.enabled) {
       r.clearDepth();
       overlay();
