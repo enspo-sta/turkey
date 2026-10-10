@@ -8,7 +8,7 @@
 // that rests on the ground or a perch has its origin at its feet, a swimmer
 // at its waterline.
 import * as THREE from 'three';
-import { fxPatch } from '../world/worldfx.js';
+import { fxPatch, casterDepthMaterial } from '../world/worldfx.js';
 import { ModelBuilder } from '../util/builder.js';
 import { OrganicBuilder, countershade, chain, toRgb, mixRgb, smooth01, noise3 } from './animalkit.js';
 
@@ -1316,11 +1316,12 @@ export function animatedMaterial(opts = {}) {
 
 // The shadow of an animated herd: the same limbs, so a walking animal's
 // shadow walks and a resting bird's shadow has its wings folded (one
-// program shared by every herd that casts a shadow)
+// program shared by every herd that casts a shadow; no colour written, see
+// casterDepthMaterial)
 let depthMat = null;
 export function animatedDepthMaterial() {
   if (depthMat) return depthMat;
-  depthMat = new THREE.MeshDepthMaterial();
+  depthMat = casterDepthMaterial(new THREE.MeshDepthMaterial());
   depthMat.onBeforeCompile = function (shader) {
     limbPatch(shader);
     fxPatch(shader, this);

@@ -6,6 +6,7 @@ import { clamp, lerp, smoothstep, DEG } from '../util/math.js';
 import { gameDate, skyAt, skyMatrix, eqVector, SITE } from './astro.js';
 import { Starfield, milkyWayTexture } from './stars.js';
 import { SpaceWeather } from './spaceweather.js';
+import { setCasterColorWrite } from './worldfx.js';
 
 const skyVert = /* glsl */ `
 varying vec3 vDir;
@@ -387,6 +388,9 @@ export class Environment {
     this.sun.shadow.normalBias = 0.45;
     this.sun.shadow.radius = 1.6;
     scene.add(this.sun);
+    // the shadow map made here, with a colour image of one byte a texel
+    // (see makeShadowMap); off (for comparing), three.js makes its own
+    this.leanShadowMap = true;
 
     this.hemi = new THREE.HemisphereLight(0xbcd4f0, 0x56603c, 1.0);
     scene.add(this.hemi);
@@ -430,6 +434,59 @@ export class Environment {
         this.sun.shadow.map = null;
       }
     }
+    // (at the start, at a new size, and back from Low: each time the map is
+    // made again)
+    if (this.leanShadowMap && !this.sun.shadow.map) this.makeShadowMap();
+  }
+
+  // The sun's shadow map as three.js makes it (WebGLShadowMap: both
+  // cascades side by side, the same depth texture, compared and filtered as
+  // it does), but with a colour image of one byte a texel instead of four.
+  // A target cannot be made without one, and nothing reads it: the shadows
+  // are looked up in the depth, and the casters' depth materials write no
+  // colour (casterDepthMaterial). That is 24 MB less memory on High, and a
+  // quarter of the colour written out to memory at the end of each shadow
+  // map's pass. three.js keeps a map it is given: it makes its own only
+  // while there is none, and otherwise only sizes it (the map type stays
+  // PCF). After a lost graphics context it makes the map's images again from
+  // this same object, so the one byte stays.
+  makeShadowMap() {
+    const sh = this.sun.shadow;
+    const w = sh.mapSize.x * sh.getFrameExtents().x;
+    const h = sh.mapSize.y * sh.getFrameExtents().y;
+    const map = new THREE.WebGLRenderTarget(w, h, {
+      format: THREE.RedFormat,
+      type: THREE.UnsignedByteType,
+      minFilter: THREE.NearestFilter,
+      magFilter: THREE.NearestFilter,
+      generateMipmaps: false,
+    });
+    // (24 bits, as three.js has it: the shadows come out the same to the bit)
+    const depth = new THREE.DepthTexture(w, h, THREE.UnsignedIntType);
+    depth.name = this.sun.name + '.shadowMap';
+    depth.format = THREE.DepthFormat;
+    depth.compareFunction = THREE.LessEqualCompare;
+    depth.minFilter = THREE.LinearFilter;
+    depth.magFilter = THREE.LinearFilter;
+    map.depthTexture = depth;
+    sh.map = map;
+    // (as three.js does when it makes the map)
+    sh.camera.updateProjectionMatrix();
+  }
+
+  // The lean shadow map switched (for comparing): the map in use given back,
+  // and made again here, or left for three.js to make at the next shadow
+  // map; the casters' colour written again while it is off.
+  setLeanShadowMap(on) {
+    if (on === this.leanShadowMap) return;
+    this.leanShadowMap = on;
+    setCasterColorWrite(!on);
+    const sh = this.sun.shadow;
+    if (sh.map) {
+      sh.map.dispose();
+      sh.map = null;
+    }
+    if (on && this.sun.castShadow) this.makeShadowMap();
   }
 
   // Advance time. Nights pass three times faster.

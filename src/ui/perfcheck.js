@@ -505,14 +505,15 @@ export class PerfCheck {
     // a caster of nothing drawn last into it (one more draw: see A2)
     const gl = rr.getContext();
     if (gl.invalidateFramebuffer) add('B4', "shadow map's colour not stored", () => this.addExtra('tail'));
-    // the stand-ins' matrices (shadowbatch.js) not uploaded again
+    // the stand-ins' matrices (shadowbatch.js) not filled in or uploaded
+    // again, before the shadow map's pass (preload) or in it (load)
     add('B5', 'stand-in matrices not uploaded', () => {
       const sb = g.shadowBatch;
       if (!sb) return () => {};
-      const load = sb.load;
-      return patch(sb, 'load', (object, cam) => {
+      const fill = sb.fill;
+      return patch(sb, 'fill', () => {
         if (sb.matrices) sb.loaded = sb.stamp;
-        return load.call(sb, object, cam);
+        else fill.call(sb);
       });
     });
     // the reflection's face not drawn (the view then works out the places

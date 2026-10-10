@@ -210,6 +210,19 @@ class Session {
     for (const o of [g.props.group, g.observatory.group, g.pitstop.group, g.tors.group, g.solarwalk.group, g.tesla.group, g.scientists.group]) g.shadowBatch.addStatic(o);
     for (const o of [g.hotrod.group, g.racer.group, g.boat.group]) g.shadowBatch.addRigid(o);
     g.perfSwitches.set('sb', { label: 'shadow batches', get: () => g.shadowBatch.enabled, set: (on) => (g.shadowBatch.enabled = on) });
+    // the shadow map's pass doing only what it needs: the stand-ins'
+    // matrices sent before the map is bound, their places kept once (see
+    // shadowbatch.js), and a colour image of one byte that the casters do
+    // not write (see Environment.makeShadowMap)
+    g.perfSwitches.set('3', {
+      label: 'atlas hygiene',
+      get: () => g.shadowBatch.preupload && g.shadowBatch.weld && g.env.leanShadowMap,
+      set: (on) => {
+        g.shadowBatch.preupload = on;
+        g.shadowBatch.setWeld(on);
+        g.env.setLeanShadowMap(on);
+      },
+    });
     // every light (the hot rod's headlight too) also shines in the water
     // reflections, so the probe and the main view share one light setup
     g.scene.traverse((o) => {

@@ -17,7 +17,12 @@
 //   the water's reflection just before (src/game.js);
 // - clear in pass: the world's buffer (or the screen), the finish's buffers
 //   and the reflection's faces each cleared inside the pass that draws into
-//   them (src/world/post.js, src/game.js, src/world/water.js).
+//   them (src/world/post.js, src/game.js, src/world/water.js);
+// - atlas hygiene: the sun's shadow map's pass doing only what it needs
+//   (src/world/shadowbatch.js, src/world/sky.js, src/world/worldfx.js), and
+//   each of its parts on its own: preupload, the stand-ins' matrices sent
+//   before the map is bound; atlas r8, a colour image of one byte that the
+//   casters do not write; batch weld, each stand-in's places kept once.
 // --quality draws at a preset of its own (low, medium or high; by default the
 // one the game starts with).
 // Usage: node tools/same-frame.mjs [build.html] [outdir] [--size WxH] [--dpr N] [--quality name] [--only=view,view]
@@ -61,7 +66,7 @@ const VIEWS = [
 ].filter(([n]) => !ONLY.length || ONLY.includes(n));
 
 // the drawings of each view: all on, all on again, each off in turn, all off
-const RUNS = ['on', 'on again', 'shadow batches off', 'terrain blocks off', 'grass early out off', 'one matrix update off', 'clear in pass off', 'all off'];
+const RUNS = ['on', 'on again', 'shadow batches off', 'terrain blocks off', 'grass early out off', 'one matrix update off', 'clear in pass off', 'atlas hygiene off', 'preupload off', 'atlas r8 off', 'batch weld off', 'all off'];
 
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: VW, height: VH }, deviceScaleFactor: DPR });
@@ -167,6 +172,12 @@ for (const [name, setup] of VIEWS) {
           probe.next = (probe.next + probe.faces.length - 1) % probe.faces.length;
           probe.update(g.renderer, g.scene, probe.camera.position, 1, inPass);
         }
+        // the shadow map's pass (a map made anew, by the game or by
+        // three.js, is drawn in the same render that uses it)
+        const hygiene = !off('atlas hygiene');
+        g.shadowBatch.preupload = hygiene && !off('preupload');
+        g.shadowBatch.setWeld(hygiene && !off('batch weld'));
+        g.env.setLeanShadowMap(hygiene && !off('atlas r8'));
         // (the reflection has just worked out every place, and nothing has
         // moved since: on, the view reuses them)
         g.matricesFresh = !off('one matrix update');

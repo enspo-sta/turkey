@@ -423,6 +423,26 @@ export function reflectionMaterial(mat) {
 
 let installed = false;
 
+// The depth materials that draw nearly all of the sun's shadow map: the
+// instanced casters' (below), the herds' (animalmodels.js) and the
+// stand-ins' (shadowbatch.js). The map's colour image is never read (the
+// shadows are looked up in its depth), so they write no colour into it. It
+// is the drawing's state, not part of the shader: switching it builds
+// nothing again. On in the game; off (for comparing) they write it as
+// three.js's own depth material does (see Environment.setLeanShadowMap).
+const casterDepth = { write: false, materials: [] };
+
+export function casterDepthMaterial(m) {
+  m.colorWrite = casterDepth.write;
+  casterDepth.materials.push(m);
+  return m;
+}
+
+export function setCasterColorWrite(on) {
+  casterDepth.write = on;
+  for (const m of casterDepth.materials) m.colorWrite = on;
+}
+
 // Make fxPatch the default for every material and key programs by the flags.
 export function installWorldFx() {
   if (installed) return;
@@ -439,8 +459,8 @@ export function installWorldFx() {
   // with per-instance colours, one without). With the one default depth
   // material for everything, the shadow pass would switch its shader between
   // these kinds of mesh several times a frame.
-  const depthPlain = new THREE.MeshDepthMaterial();
-  const depthTinted = new THREE.MeshDepthMaterial();
+  const depthPlain = casterDepthMaterial(new THREE.MeshDepthMaterial());
+  const depthTinted = casterDepthMaterial(new THREE.MeshDepthMaterial());
   Object.defineProperty(THREE.InstancedMesh.prototype, 'customDepthMaterial', {
     configurable: true,
     get() {

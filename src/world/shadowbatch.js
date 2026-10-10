@@ -2,10 +2,10 @@
 // is drawn into the shadow map with the same depth-only material, so meshes
 // can go there together: a stand-in made of exactly their triangles, drawn
 // in their place while the shadow map is drawn and never in the view. Each
-// part keeps its own vertices and is placed by its own matrix, worked out
-// as three.js works it out for a mesh of its own (the light's view times the
-// part's place, in double precision, then rounded once), so the shadow map
-// comes out the same to the bit. Two kinds:
+// part keeps its own vertices (each place once: see weld) and is placed by
+// its own matrix, worked out as three.js works it out for a mesh of its own
+// (the light's view times the part's place, in double precision, then
+// rounded once), so the shadow map comes out the same to the bit. Two kinds:
 // - in the world (addStatic): the parts of a site that never move, in cells
 //   (each cell's stand-in is left out of a cascade it does not reach);
 // - on a moving thing (addRigid): the parts of a car that keep still on it,
@@ -17,6 +17,7 @@
 // its stand-in for good and casts on its own again. So the shadow map gets
 // the same triangles as before, in fewer calls.
 import * as THREE from 'three';
+import { casterDepthMaterial } from './worldfx.js';
 
 const _m = new THREE.Matrix4();
 const _mv = new THREE.Matrix4();
@@ -107,6 +108,12 @@ export class ShadowBatcher {
     // (always on in the game; tools/same-frame.mjs turns it off to check the
     // picture is the same without it)
     this.enabled = true;
+    // The shadow map's pass doing only what it needs, on in the game (off,
+    // for comparing, as before): the parts' matrices sent before the map is
+    // bound (see preload), and each part's places kept once (see weld; to
+    // switch it, setWeld).
+    this.preupload = true;
+    this.weld = true;
     this.hook();
     // three.js makes a new shadow map when a lost graphics context comes
     // back: hooked again then
@@ -124,6 +131,8 @@ export class ShadowBatcher {
       this.shadow = shadow;
       const used = this.before(camera);
       try {
+        // (only when three.js draws the map this frame, with a stand-in in it)
+        if (this.preupload && used.length && (shadowMap.autoUpdate || shadowMap.needsUpdate) && (shadow.autoUpdate || shadow.needsUpdate)) this.preload(lights[0], camera);
         draw(lights, scene, camera);
       } finally {
         this.after(used);
@@ -136,7 +145,7 @@ export class ShadowBatcher {
   // comes in the stand-in's own matrix, which three.js sends with every draw
   // (see load).
   depthMaterial() {
-    const m = new THREE.MeshDepthMaterial();
+    const m = casterDepthMaterial(new THREE.MeshDepthMaterial());
     m.name = 'shadowBatchDepth';
     m.onBeforeCompile = (sh) => {
       sh.uniforms.uPartMatrices = this.matrixUniform = { value: null };
@@ -160,43 +169,70 @@ export class ShadowBatcher {
     return m;
   }
 
-  // Before a stand-in is drawn into a cascade: every part's matrix for every
-  // cascade, once a frame (the cascades' cameras are set by then), and the
-  // cascade's first row passed on in the stand-in's own matrix.
+  // Before the shadow map is bound: the cascades worked out (three.js works
+  // them out again just after, to the same values: they depend only on the
+  // light, the view and the map's size), every part's matrix filled in, and
+  // the texture sent to the graphics chip now. Sent at the first stand-in's
+  // draw instead, inside the shadow map's pass, it may make a phone's
+  // graphics chip end the pass to copy it in, the half-drawn map written out
+  // to memory and read back in after.
+  preload(light, camera) {
+    const shadow = this.shadow;
+    // (a map larger than the graphics chip allows is made smaller by
+    // three.js first, the cascades with it: left to the draws then)
+    const max = this.game.renderer.capabilities.maxTextureSize;
+    const ext = shadow.getFrameExtents();
+    if (shadow.mapSize.x * ext.x > max || shadow.mapSize.y * ext.y > max) return;
+    shadow.updateMatrices(light, camera);
+    this.fill();
+    // (until the stand-ins' shader is built, in the first shadow map they
+    // are drawn into, three.js sends the texture itself at that draw)
+    if (this.matrixUniform) this.game.renderer.initTexture(this.matrices);
+  }
+
+  // Before a stand-in is drawn into a cascade: the cascade's first row
+  // passed on in the stand-in's own matrix (the matrices filled in first,
+  // once a frame, if preload has not).
   load(object, shadowCamera) {
     const shadow = this.shadow;
     const cascades = shadow.getViewportCount();
-    const n = this.parts.length;
-    if (this.loaded !== this.stamp) {
-      this.loaded = this.stamp;
-      const rows = Math.max(1, cascades * n);
-      if (!this.matrices || this.matrices.image.height < rows) {
-        if (this.matrices) this.matrices.dispose();
-        const t = new THREE.DataTexture(new Float32Array(rows * 16), 4, rows, THREE.RGBAFormat, THREE.FloatType);
-        t.magFilter = THREE.NearestFilter;
-        t.minFilter = THREE.NearestFilter;
-        t.generateMipmaps = false;
-        t.name = 'shadowBatchMatrices';
-        this.matrices = t;
-        if (this.matrixUniform) this.matrixUniform.value = t;
-      }
-      const data = this.matrices.image.data;
-      for (let c = 0; c < cascades; c++) {
-        const inv = shadow.getCamera(c).matrixWorldInverse;
-        for (let i = 0; i < n; i++) {
-          const rec = this.parts[i];
-          if (rec.moved || !rec.casting) continue;
-          // as three.js does for a mesh of its own (WebGLShadowMap)
-          _mv.multiplyMatrices(inv, rec.o.matrixWorld);
-          data.set(_mv.elements, (c * n + i) * 16);
-        }
-      }
-      this.matrices.needsUpdate = true;
-    }
+    if (this.loaded !== this.stamp) this.fill();
     let c = 0;
     while (c < cascades && shadow.getCamera(c) !== shadowCamera) c++;
     object.modelViewMatrix.identity();
-    object.modelViewMatrix.elements[12] = c * n;
+    object.modelViewMatrix.elements[12] = c * this.parts.length;
+  }
+
+  // Every part's matrix for every cascade, once a frame (the cascades'
+  // cameras are set by then), marked to be sent to the graphics chip.
+  fill() {
+    const shadow = this.shadow;
+    const cascades = shadow.getViewportCount();
+    const n = this.parts.length;
+    this.loaded = this.stamp;
+    const rows = Math.max(1, cascades * n);
+    if (!this.matrices || this.matrices.image.height < rows) {
+      if (this.matrices) this.matrices.dispose();
+      const t = new THREE.DataTexture(new Float32Array(rows * 16), 4, rows, THREE.RGBAFormat, THREE.FloatType);
+      t.magFilter = THREE.NearestFilter;
+      t.minFilter = THREE.NearestFilter;
+      t.generateMipmaps = false;
+      t.name = 'shadowBatchMatrices';
+      this.matrices = t;
+      if (this.matrixUniform) this.matrixUniform.value = t;
+    }
+    const data = this.matrices.image.data;
+    for (let c = 0; c < cascades; c++) {
+      const inv = shadow.getCamera(c).matrixWorldInverse;
+      for (let i = 0; i < n; i++) {
+        const rec = this.parts[i];
+        if (rec.moved || !rec.casting) continue;
+        // as three.js does for a mesh of its own (WebGLShadowMap)
+        _mv.multiplyMatrices(inv, rec.o.matrixWorld);
+        data.set(_mv.elements, (c * n + i) * 16);
+      }
+    }
+    this.matrices.needsUpdate = true;
   }
 
   // The still parts under `root`, in cells of `cell` metres.
@@ -228,46 +264,94 @@ export class ShadowBatcher {
   }
 
   addBatch(frame, objects) {
-    const B = { frame, parts: [], meshes: new Map(), dirty: true, position: null, part: null };
+    const B = { frame, parts: [], meshes: new Map(), dirty: true, welded: null, unwelded: null, rawCount: 0 };
+    // each part's places, each kept once (base: where its first one goes),
+    // and where its vertices as they are would go (rawBase), for the weld
+    // switched off
     let verts = 0;
+    const kept = [];
     for (const o of objects) {
-      const rec = { o, batch: B, index: this.parts.length, geo: o.geometry, version: -1, mat: o.material, key: castKey(o), rel: new THREE.Matrix4(), ranges: null, moved: false, casting: false, base: verts };
+      const w = weld(o.geometry.attributes.position);
+      const rec = { o, batch: B, index: this.parts.length, geo: o.geometry, version: -1, mat: o.material, key: castKey(o), rel: new THREE.Matrix4(), ranges: null, moved: false, casting: false, base: verts, remap: w.remap, rawBase: B.rawCount };
       this.relative(rec, rec.rel);
       rec.version = this.version(o.geometry);
       rec.ranges = ranges(o);
-      verts += o.geometry.attributes.position.count;
+      verts += w.count;
+      B.rawCount += w.remap.length;
+      kept.push(w.position);
       B.parts.push(rec);
       this.parts.push(rec);
       this.members.set(o, rec);
     }
-    // every part's own vertices, as they are, and its number: when parts
-    // come and go only the list of triangles is put together again
+    // every part's own places and its number: when parts come and go only
+    // the list of triangles is put together again
     const pos = new Float32Array(verts * 3);
     const part = new Float32Array(verts);
     const sphere = new THREE.Box3();
-    for (const rec of B.parts) {
-      const p = rec.o.geometry.attributes.position;
-      for (let i = 0; i < p.count; i++) {
-        const k = rec.base + i;
-        pos[k * 3] = p.getX(i);
-        pos[k * 3 + 1] = p.getY(i);
-        pos[k * 3 + 2] = p.getZ(i);
-        part[k] = rec.index;
-        sphere.expandByPoint(_v.fromBufferAttribute(p, i).applyMatrix4(rec.rel));
-      }
-    }
-    B.position = new THREE.BufferAttribute(pos, 3);
-    B.part = new THREE.BufferAttribute(part, 1);
+    B.parts.forEach((rec, j) => {
+      const p = kept[j];
+      pos.set(p, rec.base * 3);
+      part.fill(rec.index, rec.base, rec.base + p.length / 3);
+      for (let i = 0; i < p.length; i += 3) sphere.expandByPoint(_v.fromArray(p, i).applyMatrix4(rec.rel));
+    });
+    B.welded = { position: new THREE.BufferAttribute(pos, 3), part: new THREE.BufferAttribute(part, 1) };
     // the bounds of all the parts where they stand, in the batch's frame
-    // (for leaving a stand-in out of a cascade it does not reach)
+    // (for leaving a stand-in out of a cascade it does not reach; a place
+    // met again changes neither the box nor the farthest)
     B.sphere = sphere.getBoundingSphere(new THREE.Sphere());
     let r2 = 0;
-    for (const rec of B.parts) {
-      const p = rec.o.geometry.attributes.position;
-      for (let i = 0; i < p.count; i++) r2 = Math.max(r2, B.sphere.center.distanceToSquared(_v.fromBufferAttribute(p, i).applyMatrix4(rec.rel)));
-    }
+    B.parts.forEach((rec, j) => {
+      const p = kept[j];
+      for (let i = 0; i < p.length; i += 3) r2 = Math.max(r2, B.sphere.center.distanceToSquared(_v.fromArray(p, i).applyMatrix4(rec.rel)));
+    });
     B.sphere.radius = Math.sqrt(r2);
     this.batches.push(B);
+  }
+
+  // The places the batch's stand-ins are drawn over: each kept once, or
+  // with the weld off every part's vertices as they are, every corner of
+  // every triangle its own (made from the kept ones when first asked for,
+  // the same to the bit).
+  vertices(B) {
+    if (this.weld) return B.welded;
+    if (!B.unwelded) {
+      const n = B.rawCount;
+      const pos = new Float32Array(n * 3);
+      const part = new Float32Array(n);
+      const src = B.welded.position.array;
+      for (const rec of B.parts) {
+        const map = rec.remap;
+        for (let i = 0; i < map.length; i++) {
+          const k = rec.rawBase + i;
+          const s = (rec.base + map[i]) * 3;
+          pos[k * 3] = src[s];
+          pos[k * 3 + 1] = src[s + 1];
+          pos[k * 3 + 2] = src[s + 2];
+          part[k] = rec.index;
+        }
+      }
+      B.unwelded = { position: new THREE.BufferAttribute(pos, 3), part: new THREE.BufferAttribute(part, 1) };
+    }
+    return B.unwelded;
+  }
+
+  // The weld switched (for comparing): each stand-in's geometry made again
+  // over the other places, the old one given back to the graphics chip; the
+  // lists of triangles are written again at the next shadow map.
+  setWeld(on) {
+    if (on === this.weld) return;
+    this.weld = on;
+    for (const B of this.batches) {
+      const v = this.vertices(B);
+      for (const mesh of B.meshes.values()) {
+        const old = mesh.geometry;
+        mesh.geometry = standIn(B, v, old.index.count);
+        old.dispose();
+      }
+      // (the vertices as they are kept only while in use)
+      if (on) B.unwelded = null;
+      B.dirty = true;
+    }
   }
 
   version(g) {
@@ -378,11 +462,7 @@ export class ShadowBatcher {
         // (the material is never drawn: the shadow map draws with its depth
         // material, which takes its side from this one, flipped as three.js
         // flips it)
-        const g = new THREE.BufferGeometry();
-        g.setAttribute('position', B.position);
-        g.setAttribute('partIndex', B.part);
-        g.setIndex(new THREE.BufferAttribute(new Uint32Array(all), 1));
-        g.boundingSphere = B.sphere;
+        const g = standIn(B, this.vertices(B), all);
         mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ side: side === THREE.BackSide ? THREE.FrontSide : side === THREE.FrontSide ? THREE.BackSide : THREE.DoubleSide, colorWrite: false }));
         mesh.customDepthMaterial = this.material;
         mesh.onBeforeShadow = (renderer, object, camera, shadowCamera) => this.load(object, shadowCamera);
@@ -398,8 +478,15 @@ export class ShadowBatcher {
       let io = 0;
       for (const [rec, r] of list) {
         const src = rec.o.geometry.index ? rec.o.geometry.index.array : null;
-        const base = rec.base;
-        for (let k = r.start; k < r.end; k++) idx[io++] = base + (src ? src[k] : k);
+        if (this.weld) {
+          // (each vertex by the place kept for it)
+          const base = rec.base;
+          const map = rec.remap;
+          for (let k = r.start; k < r.end; k++) idx[io++] = base + map[src ? src[k] : k];
+        } else {
+          const base = rec.rawBase;
+          for (let k = r.start; k < r.end; k++) idx[io++] = base + (src ? src[k] : k);
+        }
       }
       mesh.geometry.setDrawRange(0, io);
       index.clearUpdateRanges();
@@ -410,6 +497,70 @@ export class ShadowBatcher {
       mesh.userData.count = io;
     }
   }
+}
+
+// A stand-in's geometry: the batch's places, and a list of triangles with
+// room for all its parts (rewritten in place, see build).
+function standIn(B, v, count) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', v.position);
+  g.setAttribute('partIndex', v.part);
+  g.setIndex(new THREE.BufferAttribute(new Uint32Array(count), 1));
+  g.boundingSphere = B.sphere;
+  return g;
+}
+
+// A part's places, each kept once: the same three 32-bit floats, to the bit
+// (welded within a tolerance, a corner would move by a hair, and the shadow
+// with it). The stand-ins' depth drawing reads only a vertex's place and its
+// part's number, the same for the whole part, so vertices at one place are
+// one and the same to it. Built models come with three vertices to every
+// triangle (builder.js), each place repeated in every triangle that meets
+// there: a part keeps a third to a fifth of them, and the shadow map shades
+// each place once, not once for each of its triangles. Returns the places
+// kept, in the order first met, and for each vertex the number of the place
+// kept for it.
+function weld(p) {
+  const n = p.count;
+  const all = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    all[i * 3] = p.getX(i);
+    all[i * 3 + 1] = p.getY(i);
+    all[i * 3 + 2] = p.getZ(i);
+  }
+  const bits = new Uint32Array(all.buffer);
+  // the places kept, found again by a table of at least twice their number
+  let size = 16;
+  while (size < n * 2) size *= 2;
+  const mask = size - 1;
+  const slot = new Int32Array(size).fill(-1);
+  const kept = new Uint32Array(n * 3);
+  const remap = n <= 65536 ? new Uint16Array(n) : new Uint32Array(n);
+  let count = 0;
+  for (let i = 0; i < n; i++) {
+    const x = bits[i * 3];
+    const y = bits[i * 3 + 1];
+    const z = bits[i * 3 + 2];
+    let h = Math.imul(x, 0x9e3779b1) ^ Math.imul(y, 0x85ebca77) ^ Math.imul(z, 0xc2b2ae3d);
+    h = (h ^ (h >>> 16)) & mask;
+    for (;;) {
+      const s = slot[h];
+      if (s < 0) {
+        slot[h] = count;
+        kept[count * 3] = x;
+        kept[count * 3 + 1] = y;
+        kept[count * 3 + 2] = z;
+        remap[i] = count++;
+        break;
+      }
+      if (kept[s * 3] === x && kept[s * 3 + 1] === y && kept[s * 3 + 2] === z) {
+        remap[i] = s;
+        break;
+      }
+      h = (h + 1) & mask;
+    }
+  }
+  return { position: new Float32Array(kept.buffer, 0, count * 3), remap, count };
 }
 
 // (on a car a part's matrix is worked out again from the car's every frame,
