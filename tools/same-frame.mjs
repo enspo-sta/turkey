@@ -26,7 +26,11 @@
 // - shadow twins: the plants' shadows drawn by twins with each of their
 //   places once and instance buffers of their own, and no draw made of a
 //   plant's level, a reflection's copy or a kind of drift with nothing in it
-//   (src/world/scatter.js, src/world/shadowbatch.js, src/world/floaters.js).
+//   (src/world/scatter.js, src/world/shadowbatch.js, src/world/floaters.js);
+// - vegetation view cull: each plant level but the far trees' drawing in the
+//   view only the instances whose spheres meet it, culled one by one each
+//   time the view is drawn (src/world/scatter.js; the grass's cheaper order
+//   of tests is part of grass early out).
 // --quality draws at a preset of its own (low, medium or high; by default the
 // one the game starts with).
 // Usage: node tools/same-frame.mjs [build.html] [outdir] [--size WxH] [--dpr N] [--quality name] [--only=view,view]
@@ -70,7 +74,7 @@ const VIEWS = [
 ].filter(([n]) => !ONLY.length || ONLY.includes(n));
 
 // the drawings of each view: all on, all on again, each off in turn, all off
-const RUNS = ['on', 'on again', 'shadow batches off', 'terrain blocks off', 'grass early out off', 'one matrix update off', 'clear in pass off', 'atlas hygiene off', 'preupload off', 'atlas r8 off', 'batch weld off', 'shadow twins off', 'all off'];
+const RUNS = ['on', 'on again', 'shadow batches off', 'terrain blocks off', 'grass early out off', 'one matrix update off', 'clear in pass off', 'atlas hygiene off', 'preupload off', 'atlas r8 off', 'batch weld off', 'shadow twins off', 'vegetation view cull off', 'all off'];
 
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: VW, height: VH }, deviceScaleFactor: DPR });
@@ -187,6 +191,8 @@ for (const [name, setup] of VIEWS) {
         const twins = !off('shadow twins');
         g.scatter.setShadowTwins(twins);
         g.floaters.setSkipEmpty(twins);
+        // the plants the view draws culled one by one against it
+        g.scatter.setViewCull(!off('vegetation view cull'));
         // (the reflection has just worked out every place, and nothing has
         // moved since: on, the view reuses them)
         g.matricesFresh = !off('one matrix update');

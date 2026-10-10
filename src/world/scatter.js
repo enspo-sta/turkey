@@ -1,7 +1,9 @@
 // Vegetation and rocks: deterministic placement from the world's density
 // fields, rendered with per-type instanced meshes. Instances are re-bucketed
-// into near/far LODs around the camera with CPU frustum culling. The levels
-// that cast a shadow cast it by twins of their own (see setShadowTwins).
+// into near/far LODs around the camera with CPU frustum culling, and each
+// time the view is drawn the levels keep only the instances it can see (see
+// setViewCull). The levels that cast a shadow cast it by twins of their own
+// (see setShadowTwins).
 import * as THREE from 'three';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ModelBuilder, jitterGeometry } from '../util/builder.js';
@@ -15,6 +17,17 @@ const GRID = Math.ceil(SIZE / CELL);
 // the trees whose far level casts into the far shadow cascade on High (see
 // Scatter.setFarShadows)
 const FAR_SHADOWS = ['spruce', 'birch', 'blackSpruce', 'poplar', 'aspen'];
+// How far a plant's sway (swayMaterial) can carry a point, for each unit of
+// its sway amount and each square metre of height above its base: the sway
+// is (sin + 0.35 sin) (0.75 + 0.45 gust) + 0.55 gust, times 1.1 amount hh²,
+// along a wind of length 1, and a gust (fxGust in worldfx.js) is at most the
+// wind's strength, 1.45 in the heaviest rain (Game.updateFx); reckoned here
+// for a strength of 2.
+const SWAY_REACH = 1.1 * (1.35 * (0.75 + 0.45 * 2) + 0.55 * 2);
+// (and a little more round each plant, for the rounding of the places)
+const CULL_PAD = 0.05;
+// the view's planes, for ScatterType.cullView
+const PLANES = new Float64Array(24);
 
 function spruceNear() {
   const b = new ModelBuilder();
@@ -976,6 +989,8 @@ const LEAF_FRAG = /* glsl */ `
 function swayMaterial(uniforms, amount, { base = 1.0, doubleSide = false, bark = false, leafTex = null } = {}) {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true, side: doubleSide ? THREE.DoubleSide : THREE.FrontSide });
   mat.userData.fx = 'foliage';
+  // (for how far the sway can carry a point: see levelCull)
+  mat.userData.sway = { amount, base };
   // the sway amount is baked into the shader text, so key programs by it
   mat.customProgramCacheKey = () => 'sway' + amount + '/' + base + (bark ? '/bark' : '') + (leafTex ? '/leaves' : '') + '|fx:foliage';
   mat.onBeforeCompile = (shader) => {
@@ -1036,6 +1051,30 @@ function shadowShape(geo) {
   return g;
 }
 
+// What the view's cull (see Scatter.setViewCull) keeps of a level l: its
+// candidates, the instances buildType lists for it, by their places in the
+// kind's own lists (src) and the spheres round them (sph: centre and radius,
+// see ScatterType.bound); and which of them its buffers hold, in order, at
+// the front (kept, the first nk; -1 while they hold all the candidates as
+// buildType wrote them). Every point of the model lies within reach of its
+// sphere's centre, swaying in the strongest wind.
+function levelCull(l) {
+  const geo = l.geo;
+  if (!geo.boundingSphere) geo.computeBoundingSphere();
+  if (!geo.boundingBox) geo.computeBoundingBox();
+  const sway = l.material.userData.sway;
+  const hh = sway ? Math.max(geo.boundingBox.max.y - sway.base, 0) : 0;
+  return {
+    on: false,
+    centre: geo.boundingSphere.center.clone(),
+    reach: geo.boundingSphere.radius + (sway ? SWAY_REACH * sway.amount * hh * hh : 0),
+    src: new Int32Array(l.capacity),
+    sph: new Float32Array(l.capacity * 4),
+    kept: new (l.capacity < 65536 ? Uint16Array : Uint32Array)(l.capacity),
+    nk: -1,
+  };
+}
+
 class ScatterType {
   constructor(name, lods, opts) {
     this.name = name;
@@ -1061,6 +1100,21 @@ class ScatterType {
     // the twin it casts it with (see makeTwins)
     this.casts = lods.map((l) => !!l.shadow);
     this.twins = lods.map(() => null);
+    // how many instances buildType listed for each level (its candidates),
+    // and what the view's cull keeps of them (see Scatter.setViewCull): every
+    // level but the far trees', thousands of cones of a few triangles, not
+    // worth copying out again for each drawing
+    this.candidates = lods.map(() => 0);
+    this.culls = lods.map((l, i) => (this.isFar(i) ? null : levelCull(l)));
+    this.culls.forEach((cu, i) => {
+      if (cu) this.meshes[i].intersectsFrustum = (f) => this.cullView(i, f);
+    });
+  }
+
+  // Whether level i is a tree's far level (the trees' cones and octahedra
+  // out to 720 m).
+  isFar(i) {
+    return i === this.lods.length - 1 && FAR_SHADOWS.includes(this.name);
   }
 
   // Each level that can cast a shadow gets a twin drawn only into the
@@ -1074,7 +1128,7 @@ class ScatterType {
   // side.
   makeTwins(material) {
     this.lods.forEach((l, i) => {
-      if (!l.shadow && !(i === this.lods.length - 1 && FAR_SHADOWS.includes(this.name))) return;
+      if (!l.shadow && !this.isFar(i)) return;
       const tw = new THREE.InstancedMesh(shadowShape(l.geo), material(l.material), l.capacity);
       tw.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       tw.count = 0;
@@ -1093,6 +1147,136 @@ class ScatterType {
       tw.name = `${this.name}-lod-shadow`;
       this.twins[i] = tw;
     });
+  }
+
+  // Instance idx (its matrix filled out to 4x4, and its tint) into slot c of
+  // a level's instance buffers: by buildType, and by the view's cull, which
+  // so writes each instance to the bit as buildType does.
+  put(mesh, c, idx) {
+    const arr = mesh.instanceMatrix.array;
+    const o = c * 16;
+    const s = idx * 12;
+    const M = this.m;
+    arr[o] = M[s];
+    arr[o + 1] = M[s + 1];
+    arr[o + 2] = M[s + 2];
+    arr[o + 3] = 0;
+    arr[o + 4] = M[s + 3];
+    arr[o + 5] = M[s + 4];
+    arr[o + 6] = M[s + 5];
+    arr[o + 7] = 0;
+    arr[o + 8] = M[s + 6];
+    arr[o + 9] = M[s + 7];
+    arr[o + 10] = M[s + 8];
+    arr[o + 11] = 0;
+    arr[o + 12] = M[s + 9];
+    arr[o + 13] = M[s + 10];
+    arr[o + 14] = M[s + 11];
+    arr[o + 15] = 1;
+    if (mesh.instanceColor) {
+      const ca = mesh.instanceColor.array;
+      ca[c * 3] = this.tint[idx * 3];
+      ca[c * 3 + 1] = this.tint[idx * 3 + 1];
+      ca[c * 3 + 2] = this.tint[idx * 3 + 2];
+    }
+  }
+
+  // Candidate c of a level is instance idx, inside a sphere: the level's
+  // model's own, grown by the farthest its sway can carry a point (cu.reach),
+  // placed by the instance's matrix and scaled by its longest axis (a rock
+  // is stretched more one way than another, and leans).
+  bound(cu, c, idx) {
+    const M = this.m;
+    const s = idx * 12;
+    const C = cu.centre;
+    const q = c * 4;
+    cu.src[c] = idx;
+    cu.sph[q] = M[s] * C.x + M[s + 3] * C.y + M[s + 6] * C.z + M[s + 9];
+    cu.sph[q + 1] = M[s + 1] * C.x + M[s + 4] * C.y + M[s + 7] * C.z + M[s + 10];
+    cu.sph[q + 2] = M[s + 2] * C.x + M[s + 5] * C.y + M[s + 8] * C.z + M[s + 11];
+    const k = Math.max(M[s] * M[s] + M[s + 1] * M[s + 1] + M[s + 2] * M[s + 2], M[s + 3] * M[s + 3] + M[s + 4] * M[s + 4] + M[s + 5] * M[s + 5], M[s + 6] * M[s + 6] + M[s + 7] * M[s + 7] + M[s + 8] * M[s + 8]);
+    cu.sph[q + 3] = cu.reach * Math.sqrt(k) + CULL_PAD;
+  }
+
+  // The view's cull of level l, called by three.js as it goes through the
+  // scene for a camera that draws it (Game.camera's view, a photo's or the
+  // warm-up's; never the shadow map's, as the level does not cast, nor the
+  // reflection's, which draws only its own layer), and before it sends the
+  // level's buffers. Of the candidates, those whose spheres meet the view's
+  // frustum f are kept, in their order, at the front of the buffers; only
+  // the slots from the first that changed are written again and sent.
+  // Whether any are left to draw.
+  cullView(l, f) {
+    const cu = this.culls[l];
+    if (!cu.on) return true;
+    const mesh = this.meshes[l];
+    // (three.js works out a level's bounds once, the first time it draws it,
+    // from what its buffers hold, for its place in the order of the draws
+    // that share its material: from all its candidates, as without the cull)
+    if (mesh.boundingSphere === null) mesh.computeBoundingSphere();
+    // (the scatter's meshes stay where they were made, so an instance's
+    // matrix places it in the world)
+    const P = f.planes;
+    for (let j = 0; j < 6; j++) {
+      const p = P[j];
+      PLANES[j * 4] = p.normal.x;
+      PLANES[j * 4 + 1] = p.normal.y;
+      PLANES[j * 4 + 2] = p.normal.z;
+      PLANES[j * 4 + 3] = p.constant;
+    }
+    const n = this.candidates[l];
+    const sph = cu.sph;
+    const kept = cu.kept;
+    const was = cu.nk;
+    let k = 0;
+    // the first slot whose instance is not the one the buffers hold there
+    let from = was < 0 ? 0 : -1;
+    next: for (let i = 0; i < n; i++) {
+      const q = i * 4;
+      const x = sph[q];
+      const y = sph[q + 1];
+      const z = sph[q + 2];
+      const r = -sph[q + 3];
+      for (let j = 0; j < 24; j += 4) if (PLANES[j] * x + PLANES[j + 1] * y + PLANES[j + 2] * z + PLANES[j + 3] < r) continue next;
+      if (from < 0 && (k >= was || kept[k] !== i)) from = k;
+      kept[k++] = i;
+    }
+    if (from >= 0 && from < k) {
+      for (let p = from; p < k; p++) this.put(mesh, p, cu.src[kept[p]]);
+      const im = mesh.instanceMatrix;
+      im.clearUpdateRanges();
+      im.addUpdateRange(from * 16, (k - from) * 16);
+      im.needsUpdate = true;
+      const ic = mesh.instanceColor;
+      if (ic) {
+        ic.clearUpdateRanges();
+        ic.addUpdateRange(from * 3, (k - from) * 3);
+        ic.needsUpdate = true;
+      }
+    }
+    cu.nk = k;
+    mesh.count = k;
+    return k > 0;
+  }
+
+  // Level l's buffers given all its candidates again, in buildType's order
+  // and to the bit as it wrote them (its cull turned off).
+  uncull(l) {
+    const mesh = this.meshes[l];
+    const cu = this.culls[l];
+    const n = this.candidates[l];
+    for (let c = 0; c < n; c++) this.put(mesh, c, cu.src[c]);
+    mesh.count = n;
+    cu.nk = -1;
+    if (!n) return;
+    mesh.instanceMatrix.clearUpdateRanges();
+    mesh.instanceMatrix.addUpdateRange(0, n * 16);
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) {
+      mesh.instanceColor.clearUpdateRanges();
+      mesh.instanceColor.addUpdateRange(0, n * 3);
+      mesh.instanceColor.needsUpdate = true;
+    }
   }
 
   add(x, y, z, rot, scale, tint, sx = 1, sz = 1, tilt = 0) {
@@ -1308,6 +1492,9 @@ export class Scatter {
         this.shown(m);
       });
     }
+    // the view's own cull of the plants (see setViewCull), set with the
+    // casting: it is off for a level that casts its own shadow
+    this.viewCull = true;
     this.setCasting();
 
     this.lastPos = new THREE.Vector3(1e9, 0, 0);
@@ -1770,30 +1957,9 @@ export class Scatter {
           if (c >= lods[lod].capacity) continue;
           const arr = mesh.instanceMatrix.array;
           const o = c * 16;
-          const s = idx * 12;
-          const M = t.m;
-          arr[o] = M[s];
-          arr[o + 1] = M[s + 1];
-          arr[o + 2] = M[s + 2];
-          arr[o + 3] = 0;
-          arr[o + 4] = M[s + 3];
-          arr[o + 5] = M[s + 4];
-          arr[o + 6] = M[s + 5];
-          arr[o + 7] = 0;
-          arr[o + 8] = M[s + 6];
-          arr[o + 9] = M[s + 7];
-          arr[o + 10] = M[s + 8];
-          arr[o + 11] = 0;
-          arr[o + 12] = M[s + 9];
-          arr[o + 13] = M[s + 10];
-          arr[o + 14] = M[s + 11];
-          arr[o + 15] = 1;
-          if (mesh.instanceColor) {
-            const ca = mesh.instanceColor.array;
-            ca[c * 3] = t.tint[idx * 3];
-            ca[c * 3 + 1] = t.tint[idx * 3 + 1];
-            ca[c * 3 + 2] = t.tint[idx * 3 + 2];
-          }
+          t.put(mesh, c, idx);
+          // (and the candidate's sphere, for the view's cull)
+          if (t.culls[lod]) t.bound(t.culls[lod], c, idx);
           counts[lod] = c + 1;
           if (rm && rc < t.reflectCap) {
             rm.instanceMatrix.array.set(arr.subarray(o, o + 16), rc * 16);
@@ -1823,6 +1989,10 @@ export class Scatter {
     for (let l = 0; l < meshes.length; l++) {
       const mesh = meshes[l];
       mesh.count = counts[l];
+      t.candidates[l] = counts[l];
+      // (the buffers hold all the candidates again: the view's cull, if on,
+      // writes what it keeps of them anew when the view is next drawn)
+      if (t.culls[l]) t.culls[l].nk = -1;
       mesh.instanceMatrix.clearUpdateRanges();
       mesh.instanceMatrix.addUpdateRange(0, counts[l] * 16);
       mesh.instanceMatrix.needsUpdate = true;
@@ -1851,9 +2021,10 @@ export class Scatter {
   // A level (or a reflection's copy) with nothing in it is left out of the
   // drawing altogether while the twins are on: three.js sets an instanced
   // draw's shader and sends its uniforms before it finds there is nothing to
-  // draw.
-  shown(mesh) {
-    mesh.visible = !this.shadowTwins || mesh.count > 0;
+  // draw. n: how many it has (for a level, its candidates: with the view's
+  // cull on, its count is what the view kept of them the last time).
+  shown(mesh, n = mesh.count) {
+    mesh.visible = !this.shadowTwins || n > 0;
   }
 
   // The plants' shadows drawn by twins (on in the game). A level's own model
@@ -1870,7 +2041,9 @@ export class Scatter {
     this.shadowTwins = on;
     for (const t of Object.values(this.types)) {
       t.meshes.forEach((mesh, l) => {
-        this.shown(mesh);
+        this.shown(mesh, t.candidates[l]);
+        // (a level that casts holds all its candidates while the twins are
+        // off: the view's cull is off for it, see setCulling)
         if (on && t.twins[l]) this.fillTwin(mesh, t.twins[l]);
       });
       if (t.reflect) this.shown(t.reflect);
@@ -1891,6 +2064,44 @@ export class Scatter {
           tw.castShadow = t.casts[l];
           tw.visible = on && t.casts[l];
         }
+      });
+    }
+    this.setCulling();
+  }
+
+  // The view's own cull of the plants (on in the game). buildType lists for
+  // each level every instance within 70 m all round and, further out, those
+  // in a view much wider than the camera's, kept for a few metres' walk or a
+  // few degrees' turn, and three.js draws the whole list: in a portrait view
+  // three quarters and more of the plants' vertices are worked out for
+  // instances wholly off the screen. With the cull, each time the view is
+  // drawn every level keeps only the instances whose spheres meet it (see
+  // ScatterType.cullView), but the far trees' (see ScatterType.isFar). What
+  // it leaves out could have made no pixel, so the picture is the same. It
+  // is the view's alone: the levels' shadows are drawn by their twins from
+  // the whole lists (so it is off for a level that casts its own shadow, as
+  // with the twins off), and the reflection draws copies of its own.
+  // Off, for comparing, the levels draw their whole lists as before.
+  setViewCull(on) {
+    if (on === this.viewCull) return;
+    this.viewCull = on;
+    this.setCulling();
+  }
+
+  // Which levels the view's cull is on for: with it on, those that do not
+  // cast their own shadow (the shadow map would go past them for each of its
+  // cascades, with that cascade's frustum). A level turned off gets all its
+  // candidates back in its buffers.
+  setCulling() {
+    for (const t of Object.values(this.types)) {
+      t.meshes.forEach((mesh, l) => {
+        const cu = t.culls[l];
+        const on = this.viewCull && !mesh.castShadow;
+        if (!cu || on === cu.on) return;
+        cu.on = on;
+        cu.nk = -1;
+        mesh.frustumCulled = on;
+        if (!on) t.uncull(l);
       });
     }
   }
@@ -1930,9 +2141,11 @@ export class Scatter {
     this.lastPos.set(1e9, 0, 0);
   }
 
+  // Each kind's instances in all and, for each of its levels, its candidates
+  // (what buildType listed) and what the view drew of them the last time.
   stats() {
     const out = {};
-    for (const [k, t] of Object.entries(this.types)) out[k] = { total: t.count, drawn: t.meshes.map((m) => m.count) };
+    for (const [k, t] of Object.entries(this.types)) out[k] = { total: t.count, candidates: t.candidates.slice(), drawn: t.meshes.map((m) => m.count) };
     return out;
   }
 }

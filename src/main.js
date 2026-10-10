@@ -237,6 +237,15 @@ class Session {
         g.floaters.setSkipEmpty(on);
       },
     });
+    // each plant level (but the far trees') drawing in the view only the
+    // instances the view can see, culled one by one each time it is drawn
+    // (see Scatter.setViewCull); the grass's own cheaper order of tests is
+    // part of its early out (switch 'ge', see grass.js)
+    g.perfSwitches.set('2', {
+      label: 'vegetation view cull',
+      get: () => g.scatter.viewCull,
+      set: (on) => g.scatter.setViewCull(on),
+    });
     // every light (the hot rod's headlight too) also shines in the water
     // reflections, so the probe and the main view share one light setup
     g.scene.traverse((o) => {

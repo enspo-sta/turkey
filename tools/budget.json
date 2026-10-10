@@ -3,44 +3,44 @@
  "margin": 0.03,
  "views": {
   "landing": {
-   "calls": 183,
-   "triangles": 1295143
+   "calls": 180,
+   "triangles": 1119205
   },
   "landing-back": {
-   "calls": 239,
-   "triangles": 1312036
+   "calls": 235,
+   "triangles": 1166799
   },
   "meadow-low": {
-   "calls": 224,
-   "triangles": 1421060
+   "calls": 213,
+   "triangles": 1219707
   },
   "road": {
-   "calls": 297,
-   "triangles": 1594827
+   "calls": 286,
+   "triangles": 1356520
   },
   "tesla": {
-   "calls": 238,
-   "triangles": 1523085
+   "calls": 233,
+   "triangles": 1316213
   },
   "evening": {
-   "calls": 186,
-   "triangles": 1146597
+   "calls": 182,
+   "triangles": 1021153
   },
   "mountains": {
-   "calls": 284,
-   "triangles": 1446728
+   "calls": 280,
+   "triangles": 1306874
   },
   "night": {
-   "calls": 163,
-   "triangles": 830419
+   "calls": 158,
+   "triangles": 714770
   },
   "observatory-day": {
-   "calls": 155,
-   "triangles": 858161
+   "calls": 151,
+   "triangles": 732305
   },
   "hotrod-low-sun": {
-   "calls": 220,
-   "triangles": 1326345
+   "calls": 208,
+   "triangles": 1142086
   }
  }
 }
