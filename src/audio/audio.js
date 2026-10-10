@@ -119,14 +119,22 @@ export class AudioEngine {
   // game mixes with the player's music and follows the silent switch, like
   // most iOS games, see ios/RubenHotrodFishing/AppDelegate.swift), and the
   // page asking for playback there would overrule it.
+  // The page's word is not always taken: inside a frame (the game as a
+  // claude.ai artifact) Safari kept the session at "auto", and the game was
+  // mute with the switch on silent. So the silent loop also plays whenever
+  // the session did not become playback.
   playbackSession() {
     if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.store) return;
+    let taken = false;
     try {
-      if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback';
+      const s = navigator.audioSession;
+      if (s && s.type !== 'playback') s.type = 'playback';
+      taken = !!s && s.type === 'playback';
     } catch (e) {
       /* not this browser */
     }
-    if (navigator.audioSession || !/iPhone|iPad|iPod/.test(navigator.userAgent || '')) return;
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent || '') || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (taken || !ios) return;
     if (!this.silentEl) {
       const a = document.createElement('audio');
       a.setAttribute('playsinline', '');

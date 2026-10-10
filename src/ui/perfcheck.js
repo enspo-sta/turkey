@@ -164,7 +164,8 @@ export function analyse(r, g) {
   const ctx = a && a.ctx;
   const session = typeof navigator !== 'undefined' && navigator.audioSession ? navigator.audioSession.type : 'none';
   const inApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.store);
-  const sound = `${ctx ? ctx.state : 'not started'}, session ${session}, ${inApp ? 'in the app' : 'in the browser'}`;
+  const loop = a && a.silentEl && !a.silentEl.paused ? ', silent loop on' : '';
+  const sound = `${ctx ? ctx.state : 'not started'}, session ${session}${loop}, ${inApp ? 'in the app' : 'in the browser'}`;
   const ua = (navigator.userAgent.match(/(iPhone|iPad|Mac|Android|Windows|Linux)[^;)]*/) || [''])[0];
   const ios = (navigator.userAgent.match(/OS (\d+[_.]\d+)/) || [, ''])[1].replace('_', '.');
   const build = typeof __BUILD__ !== 'undefined' ? __BUILD__ : 'dev';
