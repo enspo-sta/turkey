@@ -1,15 +1,20 @@
 // Vegetation and rocks: deterministic placement from the world's density
 // fields, rendered with per-type instanced meshes. Instances are re-bucketed
-// into near/far LODs around the camera with CPU frustum culling.
+// into near/far LODs around the camera with CPU frustum culling. The levels
+// that cast a shadow cast it by twins of their own (see setShadowTwins).
 import * as THREE from 'three';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ModelBuilder, jitterGeometry } from '../util/builder.js';
 import { mulberry32, lerp, clamp, smoothstep, hash2 } from '../util/math.js';
 import { HALF, SIZE, ROAD_HALF, SURF } from './worldgen.js';
 import { fxPatch, reflectionMaterial } from './worldfx.js';
+import { weld } from './shadowbatch.js';
 
 const CELL = 50;
 const GRID = Math.ceil(SIZE / CELL);
+// the trees whose far level casts into the far shadow cascade on High (see
+// Scatter.setFarShadows)
+const FAR_SHADOWS = ['spruce', 'birch', 'blackSpruce', 'poplar', 'aspen'];
 
 function spruceNear() {
   const b = new ModelBuilder();
@@ -1005,6 +1010,32 @@ function swayMaterial(uniforms, amount, { base = 1.0, doubleSide = false, bark =
   return mat;
 }
 
+// A level's shape for the shadow map alone: its places only, each kept once
+// (the same three 32-bit floats, to the bit: see weld in shadowbatch.js),
+// and its triangles in the same order and winding over them. The shadow
+// map's depth drawing reads nothing of a vertex but its place, so the map
+// comes out the same to the bit, while each place is worked out once rather
+// than once for every triangle that meets there: a close spruce has 375
+// places to its 1,887 corners, a devil's club 762 to 2,784.
+function shadowShape(geo) {
+  const p = geo.attributes.position;
+  const w = weld(p);
+  const src = geo.index ? geo.index.array : null;
+  const n = src ? geo.index.count : p.count;
+  // (16-bit numbers while all fit below 65535, the one WebGL 2 keeps for
+  // starting a strip anew)
+  const idx = new (w.count < 65535 ? Uint16Array : Uint32Array)(n);
+  for (let k = 0; k < n; k++) idx[k] = w.remap[src ? src[k] : k];
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(w.position.slice(), 3));
+  g.setIndex(new THREE.BufferAttribute(idx, 1));
+  // (the same stretch of triangles drawn: a range over the vertices as they
+  // were is the same range over their numbers now; the plants' shapes have
+  // no groups)
+  g.setDrawRange(geo.drawRange.start, geo.drawRange.count);
+  return g;
+}
+
 class ScatterType {
   constructor(name, lods, opts) {
     this.name = name;
@@ -1025,6 +1056,42 @@ class ScatterType {
       }
       m.name = `${name}-lod`;
       return m;
+    });
+    // whether each level casts a shadow (the far trees' only on High), and
+    // the twin it casts it with (see makeTwins)
+    this.casts = lods.map((l) => !!l.shadow);
+    this.twins = lods.map(() => null);
+  }
+
+  // Each level that can cast a shadow gets a twin drawn only into the
+  // shadow map (see Scatter.setShadowTwins): its shape for the shadow map
+  // alone (shadowShape), with an instance buffer of its own that buildType
+  // fills with the level's instances, at the same slots, and no per-instance
+  // colour, which the shadow map never reads (three.js then draws it with
+  // the plain instanced depth material, worldfx.js, whose vertices are
+  // placed by the same code as the tinted one's). material(m) gives the
+  // twin's material for a level's material m: one that casts with the same
+  // side.
+  makeTwins(material) {
+    this.lods.forEach((l, i) => {
+      if (!l.shadow && !(i === this.lods.length - 1 && FAR_SHADOWS.includes(this.name))) return;
+      const tw = new THREE.InstancedMesh(shadowShape(l.geo), material(l.material), l.capacity);
+      tw.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      tw.count = 0;
+      // left out of every drawing, a cascade's too, while it has nothing in
+      // it; and gone past by the view while it has something (to send its
+      // instances before the shadow map is bound), never drawn there, as its
+      // material is hidden but while the shadow map is drawn
+      tw.frustumCulled = true;
+      tw.intersectsFrustum = () => tw.count > 0;
+      // (three.js would work its bounds out of the instances once, for an
+      // order of drawing in the view that it never takes part in)
+      tw.boundingSphere = new THREE.Sphere();
+      tw.receiveShadow = false;
+      tw.userData.shadowTwin = true;
+      // (named as its level, for the tools that sort the draws by name)
+      tw.name = `${this.name}-lod-shadow`;
+      this.twins[i] = tw;
     });
   }
 
@@ -1213,7 +1280,35 @@ export class Scatter {
         tint: true,
       }),
     };
-    for (const t of Object.values(this.types)) for (const m of t.meshes) this.group.add(m);
+    // The plants' shadows drawn by their levels' twins (see setShadowTwins),
+    // with one material for each way of casting. It is never drawn: the
+    // shadow map draws with its depth material, which takes its side from
+    // this one as from the plant's own (a front side casts with its back),
+    // and it is hidden but while the shadow map is drawn (see
+    // ShadowBatcher.shadowOnly).
+    const twinMaterials = new Map();
+    const twinMaterial = (m) => {
+      const key = `${m.side}/${m.shadowSide}`;
+      if (!twinMaterials.has(key)) {
+        const tm = new THREE.MeshBasicMaterial({ side: m.side, shadowSide: m.shadowSide, colorWrite: false, visible: false });
+        tm.name = 'scatterShadowTwin';
+        twinMaterials.set(key, tm);
+      }
+      return twinMaterials.get(key);
+    };
+    for (const t of Object.values(this.types)) t.makeTwins(twinMaterial);
+    this.twinMaterials = [...twinMaterials.values()];
+    this.shadowTwins = true;
+    // (each twin right after its level: the shadow map's draws in the same
+    // order as the levels' own)
+    for (const t of Object.values(this.types)) {
+      t.meshes.forEach((m, l) => {
+        this.group.add(m);
+        if (t.twins[l]) this.group.add(t.twins[l]);
+        this.shown(m);
+      });
+    }
+    this.setCasting();
 
     this.lastPos = new THREE.Vector3(1e9, 0, 0);
     this.lastDir = new THREE.Vector3(0, 0, 1);
@@ -1723,6 +1818,7 @@ export class Scatter {
         rm.instanceColor.addUpdateRange(0, rc * 3);
         rm.instanceColor.needsUpdate = true;
       }
+      this.shown(rm);
     }
     for (let l = 0; l < meshes.length; l++) {
       const mesh = meshes[l];
@@ -1735,15 +1831,77 @@ export class Scatter {
         mesh.instanceColor.addUpdateRange(0, counts[l] * 3);
         mesh.instanceColor.needsUpdate = true;
       }
+      this.shown(mesh);
+      if (this.shadowTwins && t.twins[l]) this.fillTwin(mesh, t.twins[l]);
+    }
+  }
+
+  // A twin given its level's instances, at the same slots: the matrices
+  // just written, in one copy (the instances' full lists stay here, so after
+  // a lost graphics context three.js sends them again whole).
+  fillTwin(mesh, tw) {
+    const n = mesh.count;
+    tw.instanceMatrix.array.set(mesh.instanceMatrix.array.subarray(0, n * 16));
+    tw.count = n;
+    tw.instanceMatrix.clearUpdateRanges();
+    tw.instanceMatrix.addUpdateRange(0, n * 16);
+    tw.instanceMatrix.needsUpdate = true;
+  }
+
+  // A level (or a reflection's copy) with nothing in it is left out of the
+  // drawing altogether while the twins are on: three.js sets an instanced
+  // draw's shader and sends its uniforms before it finds there is nothing to
+  // draw.
+  shown(mesh) {
+    mesh.visible = !this.shadowTwins || mesh.count > 0;
+  }
+
+  // The plants' shadows drawn by twins (on in the game). A level's own model
+  // has a vertex for every corner of every triangle (or, in the broadleaf
+  // models that share them, for every corner with a normal or colour of its
+  // own), and the shadow map shades each apart. Its twin (see
+  // ScatterType.makeTwins) draws the same triangles over places kept once
+  // (a spruce, a willow or a log keeps a fifth of its vertices, a broadleaf
+  // two thirds or more) to the same shadow map, bit for bit; and a level
+  // with nothing in it is not drawn at all (see shown).
+  // Off, for comparing, the plants cast as before.
+  setShadowTwins(on) {
+    if (on === this.shadowTwins) return;
+    this.shadowTwins = on;
+    for (const t of Object.values(this.types)) {
+      t.meshes.forEach((mesh, l) => {
+        this.shown(mesh);
+        if (on && t.twins[l]) this.fillTwin(mesh, t.twins[l]);
+      });
+      if (t.reflect) this.shown(t.reflect);
+    }
+    this.setCasting();
+  }
+
+  // Which meshes cast: a level that casts does it by its twin while the
+  // twins are on, by itself otherwise. A twin that casts nothing is hidden
+  // (the view then does not go past it, nor send its instances).
+  setCasting() {
+    const on = this.shadowTwins;
+    for (const t of Object.values(this.types)) {
+      t.meshes.forEach((mesh, l) => {
+        const tw = t.twins[l];
+        mesh.castShadow = t.casts[l] && !(on && tw);
+        if (tw) {
+          tw.castShadow = t.casts[l];
+          tw.visible = on && t.casts[l];
+        }
+      });
     }
   }
 
   // Distant tree LODs cast shadows into the far shadow cascade.
   setFarShadows(on) {
-    for (const n of ['spruce', 'birch', 'blackSpruce', 'poplar', 'aspen']) {
+    for (const n of FAR_SHADOWS) {
       const t = this.types[n];
-      t.meshes[t.meshes.length - 1].castShadow = on;
+      t.casts[t.casts.length - 1] = on;
     }
+    this.setCasting();
   }
 
   // Reflection stand-ins: every instance of the named types that is drawn at
@@ -1766,6 +1924,7 @@ export class Scatter {
       m.name = `${n}-reflect`;
       t.reflect = m;
       t.reflectCap = cap;
+      this.shown(m);
       this.group.add(m);
     }
     this.lastPos.set(1e9, 0, 0);

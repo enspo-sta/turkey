@@ -114,6 +114,13 @@ export class ShadowBatcher {
     // switch it, setWeld).
     this.preupload = true;
     this.weld = true;
+    // The materials of what is drawn only into the shadow map (the plants'
+    // shadow twins, see Scatter.setShadowTwins): hidden, so the view never
+    // draws it, and shown only while the shadow map is drawn. The view still
+    // goes past it first, and three.js sends a mesh's instances to the
+    // graphics chip as it goes past, hidden material or not: so they are
+    // sent before the map is bound, not at its draw in the map's pass.
+    this.shadowOnly = [];
     this.hook();
     // three.js makes a new shadow map when a lost graphics context comes
     // back: hooked again then
@@ -125,17 +132,23 @@ export class ShadowBatcher {
     const shadowMap = game.renderer.shadowMap;
     const draw = shadowMap.render.bind(shadowMap);
     shadowMap.render = (lights, scene, camera) => {
-      // (only the sun's cascades, drawn with the plain depth material)
-      const shadow = lights.length === 1 ? lights[0].shadow : null;
-      if (!this.enabled || !shadowMap.enabled || !shadow || !shadow.getCamera || lights[0].isPointLight || shadowMap.type === THREE.VSMShadowMap || scene !== game.scene) return draw(lights, scene, camera);
-      this.shadow = shadow;
-      const used = this.before(camera);
+      // (what is drawn only into the shadow map, shown for it alone)
+      for (const m of this.shadowOnly) m.visible = true;
       try {
-        // (only when three.js draws the map this frame, with a stand-in in it)
-        if (this.preupload && used.length && (shadowMap.autoUpdate || shadowMap.needsUpdate) && (shadow.autoUpdate || shadow.needsUpdate)) this.preload(lights[0], camera);
-        draw(lights, scene, camera);
+        // (only the sun's cascades, drawn with the plain depth material)
+        const shadow = lights.length === 1 ? lights[0].shadow : null;
+        if (!this.enabled || !shadowMap.enabled || !shadow || !shadow.getCamera || lights[0].isPointLight || shadowMap.type === THREE.VSMShadowMap || scene !== game.scene) return draw(lights, scene, camera);
+        this.shadow = shadow;
+        const used = this.before(camera);
+        try {
+          // (only when three.js draws the map this frame, with a stand-in in it)
+          if (this.preupload && used.length && (shadowMap.autoUpdate || shadowMap.needsUpdate) && (shadow.autoUpdate || shadow.needsUpdate)) this.preload(lights[0], camera);
+          draw(lights, scene, camera);
+        } finally {
+          this.after(used);
+        }
       } finally {
-        this.after(used);
+        for (const m of this.shadowOnly) m.visible = false;
       }
     };
   }
@@ -517,10 +530,11 @@ function standIn(B, v, count) {
 // one and the same to it. Built models come with three vertices to every
 // triangle (builder.js), each place repeated in every triangle that meets
 // there: a part keeps a third to a fifth of them, and the shadow map shades
-// each place once, not once for each of its triangles. Returns the places
-// kept, in the order first met, and for each vertex the number of the place
-// kept for it.
-function weld(p) {
+// each place once, not once for each of its triangles (the plants' shadow
+// twins are welded the same way: see scatter.js). Returns the places kept,
+// in the order first met, and for each vertex the number of the place kept
+// for it.
+export function weld(p) {
   const n = p.count;
   const all = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {

@@ -223,6 +223,20 @@ class Session {
         g.env.setLeanShadowMap(on);
       },
     });
+    // the plants' shadows drawn by twins with each of their places once and
+    // instance buffers of their own, whose material is shown only while the
+    // shadow map is drawn; and no draw made of a level, a reflection's copy
+    // or a kind of drift with nothing in it (see Scatter.setShadowTwins and
+    // Floaters.skipEmpty)
+    g.shadowBatch.shadowOnly.push(...g.scatter.twinMaterials);
+    g.perfSwitches.set('1', {
+      label: 'shadow twins',
+      get: () => g.scatter.shadowTwins && g.floaters.skipEmpty,
+      set: (on) => {
+        g.scatter.setShadowTwins(on);
+        g.floaters.setSkipEmpty(on);
+      },
+    });
     // every light (the hot rod's headlight too) also shines in the water
     // reflections, so the probe and the main view share one light setup
     g.scene.traverse((o) => {

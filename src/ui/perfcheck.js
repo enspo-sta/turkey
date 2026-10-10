@@ -539,14 +539,15 @@ export class PerfCheck {
 
     // C: what the view draws
     // vegetation out of the view only: drawn into the shadow map's two
-    // cascades as before
+    // cascades as before (the plants' shadow twins, never in the view, left
+    // as they are: see Scatter.setShadowTwins)
     add('C1', 'vegetation out of the view', () => {
       const sh = g.env.sun.shadow;
       const f0 = sh.getFrustum(0);
       const f1 = sh.getFrustum(1);
       const undo = [];
       g.scatter.group.traverse((o) => {
-        if (!o.isMesh || !o.layers.isEnabled(0)) return;
+        if (!o.isMesh || !o.layers.isEnabled(0) || o.userData.shadowTwin) return;
         const culled = o.frustumCulled;
         o.frustumCulled = true;
         const u = patch(o, 'intersectsFrustum', (f) => f === f0 || f === f1);

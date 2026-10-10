@@ -4,19 +4,19 @@
  "views": {
   "landing": {
    "calls": 183,
-   "triangles": 1295379
+   "triangles": 1295143
   },
   "landing-back": {
    "calls": 239,
-   "triangles": 1312272
+   "triangles": 1312036
   },
   "meadow-low": {
    "calls": 224,
-   "triangles": 1421296
+   "triangles": 1421060
   },
   "road": {
-   "calls": 296,
-   "triangles": 1591579
+   "calls": 297,
+   "triangles": 1594827
   },
   "tesla": {
    "calls": 238,
@@ -24,23 +24,23 @@
   },
   "evening": {
    "calls": 186,
-   "triangles": 1146833
+   "triangles": 1146597
   },
   "mountains": {
    "calls": 284,
-   "triangles": 1446964
+   "triangles": 1446728
   },
   "night": {
-   "calls": 172,
-   "triangles": 864739
+   "calls": 163,
+   "triangles": 830419
   },
   "observatory-day": {
-   "calls": 164,
-   "triangles": 892481
+   "calls": 155,
+   "triangles": 858161
   },
   "hotrod-low-sun": {
-   "calls": 229,
-   "triangles": 1360665
+   "calls": 220,
+   "triangles": 1326345
   }
  }
 }

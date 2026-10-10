@@ -413,8 +413,18 @@ export class Floaters {
         this.drifters.push({ K, mesh, slot: i, alive: false, dying: false, fade: 0, x: 0, z: 0, y: 0, yaw: 0, spin: 0, ph: this.rand() * 6.28, scale: 1, level: 0, fx: 0, fz: 0, s: 0, t: 0 });
       }
       K.mesh = mesh;
+      K.alive = 0;
       this.group.add(mesh);
     }
+    // A kind of drift with none of it on the river (away from the river: all
+    // of them) is left out of every drawing, the view's and the shadow map's,
+    // instead of drawn as its slots at no size, every vertex shaded and come
+    // to nothing: three.js sets an instanced draw's shader and sends its
+    // uniforms even when there is nothing to draw. On in the game; off, for
+    // comparing, as before (with the plants' shadow twins, whose switch this
+    // goes with: see Scatter.setShadowTwins).
+    this.skipEmpty = true;
+    for (const K of this.driftKinds) this.showDrift(K);
     this.riverS = 0;
     this.riverD = 1e9;
     this.riverT = 0;
@@ -700,6 +710,19 @@ export class Floaters {
     return true;
   }
 
+  // A kind of drift drawn with all its slots while any of it is on the
+  // river; with none, none drawn and no draw made (see skipEmpty).
+  showDrift(K) {
+    const on = !this.skipEmpty || K.alive > 0;
+    K.mesh.count = on ? K.count : 0;
+    K.mesh.visible = on;
+  }
+
+  setSkipEmpty(on) {
+    this.skipEmpty = on;
+    for (const K of this.driftKinds) this.showDrift(K);
+  }
+
   update(dt) {
     const g = this.game;
     this.time += dt;
@@ -718,7 +741,10 @@ export class Floaters {
     const near = this.riverD < DRIFT_RANGE;
     if (!near) this.filled = false;
     const fs = W.fallsS;
-    for (const K of this.driftKinds) K.dirty = false;
+    for (const K of this.driftKinds) {
+      K.dirty = false;
+      K.alive = 0;
+    }
     // top up a few a frame, but fill the whole river at once on arrival
     let spawns = this.filled ? 3 : 1e9;
     for (const d of this.drifters) {
@@ -791,9 +817,13 @@ export class Floaters {
       _s.setScalar(Math.max(0.001, sc));
       d.mesh.setMatrixAt(d.slot, _m.compose(_p, _q, _s));
       d.K.dirty = true;
+      d.K.alive++;
     }
     if (near) this.filled = true;
-    for (const K of this.driftKinds) if (K.dirty) K.mesh.instanceMatrix.needsUpdate = true;
+    for (const K of this.driftKinds) {
+      if (K.dirty) K.mesh.instanceMatrix.needsUpdate = true;
+      this.showDrift(K);
+    }
 
     // --- petals and leaves
     const fm = this.flakeMesh;
