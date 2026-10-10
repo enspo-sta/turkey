@@ -209,6 +209,7 @@ class Session {
     g.shadowBatch = new ShadowBatcher(g);
     for (const o of [g.props.group, g.observatory.group, g.pitstop.group, g.tors.group, g.solarwalk.group, g.tesla.group, g.scientists.group]) g.shadowBatch.addStatic(o);
     for (const o of [g.hotrod.group, g.racer.group, g.boat.group]) g.shadowBatch.addRigid(o);
+    g.perfSwitches.set('sb', { label: 'shadow batches', get: () => g.shadowBatch.enabled, set: (on) => (g.shadowBatch.enabled = on) });
     // every light (the hot rod's headlight too) also shines in the water
     // reflections, so the probe and the main view share one light setup
     g.scene.traverse((o) => {

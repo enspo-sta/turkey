@@ -1652,6 +1652,10 @@ export class Screens {
           ? 'About 15 seconds of play measured on this device: says what holds the frame rate back, with a line to copy and send.'
           : 'Start or continue a game first: the check measures play.'
       }${g.perfCheck?.result && !g.perfCheck.result.cancelled ? ' <a href="#" id="s-perf-last">Last result</a>' : ''}</p>
+      <div class="setting"><label>Detailed check</label><button class="btn ghost" id="s-perf-detail"${g.started ? '' : ' disabled'}>Time each part</button></div>
+      <p class="setting-note">For the developer: about four minutes standing still while each part of the drawing is timed on this device (the view changes as parts go off and on), then a line to copy and send.${
+        g.perfCheck?.detail ? ' <a href="#" id="s-perf-detail-last">Last result</a>' : ''
+      }</p>
       <div class="setting"><label for="s-vol">Sound volume</label><input type="range" id="s-vol" min="0" max="1" step="0.05" value="${st.volume}"></div>
       <div class="setting"><label for="s-music">Music volume</label><input type="range" id="s-music" min="0" max="1" step="0.05" value="${st.music}"></div>
       <div class="setting"><label for="s-sens">Look sensitivity</label><input type="range" id="s-sens" min="0.4" max="2.2" step="0.05" value="${st.sens}"></div>
@@ -1670,14 +1674,33 @@ export class Screens {
       this.close();
       g.perfCheck.start((res) => {
         if (res.cancelled) g.hud.toast('Performance check stopped: a menu was opened');
-        else this.open('perf');
+        else {
+          this.perfView = 'quick';
+          this.open('perf');
+        }
       });
     });
-    $('s-perf-last')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.current = 'perf';
-      this.render();
+    $('s-perf-detail').addEventListener('click', () => {
+      if (!g.started || !g.perfCheck || g.perfCheck.busy) return;
+      this.close();
+      g.perfCheck.startDetailed((res) => {
+        if (res.cancelled) g.hud.toast(`Detailed check stopped: ${res.why || 'a menu was opened'}. Everything is back as it was.`);
+        else if (g.started) {
+          this.perfView = 'detail';
+          this.open('perf');
+        }
+      });
     });
+    for (const [id, view] of [
+      ['s-perf-last', 'quick'],
+      ['s-perf-detail-last', 'detail'],
+    ])
+      $(id)?.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.perfView = view;
+        this.current = 'perf';
+        this.render();
+      });
     $('s-privacy').addEventListener('click', () => {
       this.current = 'privacy';
       this.render();
@@ -1756,10 +1779,12 @@ export class Screens {
   }
 
   // The performance check's result: the verdict, the numbers behind it and
-  // one line to copy and send.
+  // one line to copy and send. perfView picks the quick check's or the
+  // detailed check's.
   renderPerf() {
     const g = this.game;
-    const r = g.perfCheck?.result;
+    const detail = this.perfView === 'detail';
+    const r = detail ? g.perfCheck?.detail : g.perfCheck?.result;
     this.title.textContent = 'Performance';
     this.setTabs([], null);
     if (!r || r.cancelled) {
@@ -1768,16 +1793,37 @@ export class Screens {
       return;
     }
     const row = (k, v) => `<div class="setting"><label>${esc(k)}</label><span>${esc(v)}</span></div>`;
-    this.body.innerHTML = `<div class="settings">
-      <p class="catch-info" style="font-size:17px;color:var(--ink)">${esc(r.verdict)}</p>
+    let head;
+    if (detail) {
+      const n = (v, d = 1) => (Number.isFinite(v) ? v.toFixed(d) : '–');
+      const at = (s) => r.ladder.find((l) => l.s === s);
+      const ms = (s) => (at(s) ? `${n(at(s).ms)} ms at ${s.toFixed(2)}×` : 'not timed');
+      head = `<p class="catch-info" style="font-size:17px;color:var(--ink)">Each part of the drawing, timed on this device by what one frame costs with it left out (or with known work added), at 2.00× and at 0.50× resolution. For the developer: send the line below.${
+        r.outOfTime ? ' The check ran out of time: the parts not timed show a dash.' : ''
+      }</p>
+      ${row('Frame rate as played', `${n(r.fps)} a second at ${r.level}`)}
+      ${row('A0 one frame, timed alone', `${ms(2)}, ${ms(0.5)}`)}
+      ${r.fit ? row('A0 the part not from pixels', `${n(r.fit.fixed)} ms, plus ${n(r.fit.perMpx, 2)} ms a million pixels`) : ''}
+      ${r.A1 ? row('A1 with no draw calls', `${n(r.A1.ms2)} / ${n(r.A1.ms05)} ms (${Number.isFinite(r.A1.share) ? Math.round(r.A1.share * 100) : '–'}% of the frame at 0.50×)`) : ''}
+      ${r.A2 ? row('A2 one draw', `${n(r.A2.us2, 0)} / ${n(r.A2.us05, 0)} µs`) : ''}
+      ${r.A3 ? row('A3 100,000 vertices', `${n(r.A3.ms2, 2)} / ${n(r.A3.ms05, 2)} ms`) : ''}
+      <p class="setting-note">What each part saves (minus) or costs, in ms at 2.00× / 0.50×:</p>
+      ${r.windows
+        .map((w) => row(`${w.code} ${w.name}`, `${n(w.d2)} / ${n(w.d05)}${'px' in w ? (w.px === 0 ? ', picture unchanged' : Number.isFinite(w.px) ? `, ${w.px} pixels differ` : '') : ''}`))
+        .join('')}`;
+    } else {
+      head = `<p class="catch-info" style="font-size:17px;color:var(--ink)">${esc(r.verdict)}</p>
       ${row('Frame rate', `${r.fps.toFixed(1)} a second (the slowest 1%: ${r.low1.toFixed(0)})`)}
       ${row('Time per frame', `${r.frameMs.toFixed(1)} ms`)}
       ${row("The game's own work", `${r.cpuMs.toFixed(1)} ms a frame (${Math.round(r.share * 100)}%)`)}
       ${row('Fewer pixels', r.lowFps ? `${r.lowFps.toFixed(1)} a second at ${r.lowDpr.toFixed(2)}× resolution` : r.lowDpr < r.dpr - 0.01 ? 'not tried (out of time)' : 'already at the lowest resolution')}
       ${row('Graphics', `${r.preset.toUpperCase()} at ${r.dpr.toFixed(2)}× (your choice: ${String(r.top || 'high').toUpperCase()})`)}
-      ${row('Sound', r.sound)}
+      ${row('Sound', r.sound)}`;
+    }
+    this.body.innerHTML = `<div class="settings">
+      ${head}
       <p class="setting-note">The line to send:</p>
-      <textarea id="pf-line" readonly rows="5" style="width:100%;font:13px/1.4 ui-monospace,Menlo,monospace;background:rgba(0,0,0,.25);color:inherit;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px;resize:none">${esc(r.line)}</textarea>
+      <textarea id="pf-line" readonly rows="${detail ? 9 : 5}" style="width:100%;font:13px/1.4 ui-monospace,Menlo,monospace;background:rgba(0,0,0,.25);color:inherit;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px;resize:none">${esc(r.line)}</textarea>
       <div class="dialog-actions"><button class="btn big" id="pf-copy">Copy</button><button class="btn big hot" id="pf-done">Done</button></div>
     </div>`;
     const ta = $('pf-line');

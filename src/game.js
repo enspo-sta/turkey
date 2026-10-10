@@ -82,6 +82,13 @@ export class Game {
     this.time = 0;
     this.paused = false;
     this.qualityName = 'high';
+    // The frame-rate optimisations' switches, so each can be compared with
+    // the picture and the frame time it saves: key -> { label, get(), set(on) }.
+    // Every one is on in the game. The key is short, for the line of the
+    // detailed performance check, where its window is "D" + key (a number,
+    // with a letter for a part: '8', '3a'); the label is the name
+    // tools/same-frame.mjs gives its drawing with it off ('<label> off').
+    this.perfSwitches = new Map();
   }
 
   async init(progress = () => {}) {
@@ -171,8 +178,19 @@ export class Game {
 
     this.terrainMaterial = makeTerrainMaterial(this.textures.detail, this.textures.terrainDetail, this.wtex.surface);
     const terrainReflect = reflectionMaterial(this.terrainMaterial);
+    // (kept for the detailed performance check, which switches the ground's
+    // detail off in both)
+    this.terrainReflectMaterial = terrainReflect;
     this.terrain = new Terrain(this.world, this.terrainMaterial);
     this.scene.add(this.terrain.group);
+    this.perfSwitches.set('tb', {
+      label: 'terrain blocks',
+      get: () => this.terrain.blocksOn,
+      set: (on) => {
+        this.terrain.blocksOn = on;
+        this.terrain.showBlocks();
+      },
+    });
     this.farTerrain = buildFarTerrain(this.world, this.terrainMaterial);
     this.scene.add(this.farTerrain);
     // the reflection gets a coarser copy: a cube face 128 to 256 pixels
@@ -214,6 +232,19 @@ export class Game {
 
     this.grass = new GrassField(this.wtex, this.env);
     this.scene.add(this.grass.group);
+    const grassMats = [this.grass.grass.material, this.grass.flowers.material];
+    this.perfSwitches.set('ge', {
+      label: 'grass early out',
+      get: () => 'EARLY_OUT' in grassMats[0].defines,
+      set: (on) => {
+        for (const m of grassMats) {
+          if (('EARLY_OUT' in m.defines) === on) continue;
+          if (on) m.defines.EARLY_OUT = '';
+          else delete m.defines.EARLY_OUT;
+          m.needsUpdate = true;
+        }
+      },
+    });
     // driftwood, branches, petals and leaves on the water, pond lilies, ice floes
     this.floaters = new Floaters(this);
     this.scene.add(this.floaters.group);
@@ -278,7 +309,11 @@ export class Game {
     const loop = (t) => {
       this.raf = requestAnimationFrame(loop);
       this.timer.update(t);
-      this.frame();
+      // (the detailed performance check draws frames of its own meanwhile,
+      // with the clock stopped; the timer keeps ticking, so the first frame
+      // after it is an ordinary one)
+      if (this.frameOverride) this.frameOverride();
+      else this.frame();
     };
     this.raf = requestAnimationFrame(loop);
   }

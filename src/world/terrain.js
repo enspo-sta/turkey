@@ -65,7 +65,13 @@ export function makeTerrainMaterial(detailTex, matTex, surfaceTex) {
       )
       .replace(
         '#include <map_fragment>',
-        `#ifdef USE_MAP
+        `#ifdef TERRAIN_LITE
+          // (never in the game: the detailed performance check's ceiling for
+          // what the ground's detail costs, one constant tone in place of
+          // every read and rule below)
+          diffuseColor.rgb *= 0.8;
+        #else
+        #ifdef USE_MAP
           // top-down variation map; it would stretch into streaks on steep
           // faces, where the projected rock layers take over instead
           vec4 dA = texture2D( map, vMapUv );
@@ -168,7 +174,8 @@ export function makeTerrainMaterial(detailTex, matTex, surfaceTex) {
               tHeight *= 1.0 - fxPuddle;
             }
           #endif
-        }`
+        }
+        #endif`
       )
       .replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\nnormal = tBump( - vViewPosition, normal, tHeight );');
     fxPatch(shader, this);

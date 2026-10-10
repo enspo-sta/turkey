@@ -13,7 +13,7 @@ const opt = (name, def) => {
 const JOBS = +opt('--jobs', 3);
 const OUT = opt('--out', 'tools/out/check');
 const ONLY = (args.find((a) => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
-export const REGRESSION = ['fun', 'wardrobe', 'tesla', 'round-smoke', 'sites-draws', 'arms', 'catch', 'save', 'ui-check', 'mobile', 'layout-phone-small', 'voice-pick', 'bear', 'boat', 'climbing', 'secret-flight', 'eagle', 'graphics-adapt', 'sound-policy'];
+export const REGRESSION = ['fun', 'wardrobe', 'tesla', 'round-smoke', 'sites-draws', 'arms', 'catch', 'save', 'ui-check', 'mobile', 'layout-phone-small', 'voice-pick', 'bear', 'boat', 'climbing', 'secret-flight', 'eagle', 'graphics-adapt', 'sound-policy', 'perf-breakdown-check'];
 mkdirSync(OUT, { recursive: true });
 
 const run = (cmd, argv, log) =>

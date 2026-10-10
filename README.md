@@ -990,7 +990,7 @@ The only dependencies are [three.js](https://threejs.org/) for 3D rendering and
 | `src/audio/voice.js`, `voice-clips.js` | The game's voice: every line and name as a small MP3 (made by `tools/voice`), decoded when first needed |
 | `src/ui/` | HUD, the small map, menus, the Trading Post, garage, map and journal, the observatory's screens, touch and keyboard input, and styles |
 | `src/ui/eyepiece.js`, `skyguide.js` | The telescope's eyepiece views, and the constellation figures and names drawn over the sky |
-| `src/ui/perfcheck.js` | The performance check in Settings: about 15 seconds of play measured on the device, the verdict on what holds the frame rate back, and a line to copy |
+| `src/ui/perfcheck.js` | The performance check in Settings: about 15 seconds of play measured on the device, the verdict on what holds the frame rate back, and a line to copy; and the detailed check, about four minutes standing still, timing each part of the drawing (the passes, what the view draws, the optimisations' switches in `Game.perfSwitches`, each also checked pixel for pixel) at 2.00x and 0.50x, for the developer |
 | `ios/` | The Xcode project for the native iOS app |
 | `tools/check.mjs` | Every check before a push: the build, the frame budget and the regression scenarios |
 | `tools/budget.mjs`, `tools/budget.json` | The frame budget: draw calls and triangles of one High frame at ten fixed views |
@@ -1014,7 +1014,7 @@ anything failed:
   machine, unlike times. A feature that adds to them fits the budget, or the
   budget is raised on purpose with `node tools/budget.mjs --update` and the
   reason given in the commit.
-- **The regression scenarios** (19, listed in `tools/check.mjs`). Each value a
+- **The regression scenarios** (20, listed in `tools/check.mjs`). Each value a
   scenario reads carries an `expect`, the behaviour that must hold (a bear
   that dies to the first arrow, a save that survives a reload, a phone held
   at 30 frames a second that keeps High); a scenario fails on a wrong value,
