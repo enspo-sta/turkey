@@ -16,6 +16,8 @@
 // triangles are put together again; one that has moved (on its own) leaves
 // its stand-in for good and casts on its own again. So the shadow map gets
 // the same triangles as before, in fewer calls.
+// Each cascade of the map is also drawn with only the casters whose shadows
+// can fall where the view reads that cascade (see Reach).
 import * as THREE from 'three';
 import { casterDepthMaterial } from './worldfx.js';
 
@@ -23,6 +25,15 @@ const _m = new THREE.Matrix4();
 const _mv = new THREE.Matrix4();
 const _inv = new THREE.Matrix4();
 const _v = new THREE.Vector3();
+const _pm = new THREE.Matrix4();
+const _view = new THREE.Frustum();
+const _sphere = new THREE.Sphere();
+// how much lower than the lowest ground, lake or sea bed anything the
+// shadows fall on can be (a terrain chunk's skirt glimpsed through a crack)
+const FLOOR_PAD = 10;
+// how many numbers the cascades' receivers are worked out from (see
+// Reach.update)
+const KEY = 60;
 // the side a material's shadow is drawn with, as three.js chooses it
 const SHADOW_SIDE = { [THREE.FrontSide]: THREE.BackSide, [THREE.BackSide]: THREE.FrontSide, [THREE.DoubleSide]: THREE.DoubleSide };
 
@@ -121,6 +132,13 @@ export class ShadowBatcher {
     // graphics chip as it goes past, hidden material or not: so they are
     // sent before the map is bound, not at its draw in the map's pass.
     this.shadowOnly = [];
+    // Each cascade drawn with only the casters whose shadows can reach what
+    // the view reads it for (see Reach): on in the game (off, for comparing,
+    // every caster in a cascade's box is drawn into it, as before). This is
+    // the objects' half, tested by three.js through the cascades' frustums;
+    // the plants' twins have their own (Scatter.setReceiverCull).
+    this.receiverCull = true;
+    this.reach = new Reach(lowestGround(game));
     this.hook();
     // three.js makes a new shadow map when a lost graphics context comes
     // back: hooked again then
@@ -137,13 +155,16 @@ export class ShadowBatcher {
       try {
         // (only the sun's cascades, drawn with the plain depth material)
         const shadow = lights.length === 1 ? lights[0].shadow : null;
-        if (!this.enabled || !shadowMap.enabled || !shadow || !shadow.getCamera || lights[0].isPointLight || shadowMap.type === THREE.VSMShadowMap || scene !== game.scene) return draw(lights, scene, camera);
+        if (!shadowMap.enabled || !shadow || !shadow.getCamera || lights[0].isPointLight || shadowMap.type === THREE.VSMShadowMap || scene !== game.scene) return draw(lights, scene, camera);
+        // (whether three.js draws the map this frame)
+        const drawn = (shadowMap.autoUpdate || shadowMap.needsUpdate) && (shadow.autoUpdate || shadow.needsUpdate);
+        if (!this.enabled) return this.cascades(draw, drawn, lights, scene, camera);
         this.shadow = shadow;
         const used = this.before(camera);
         try {
-          // (only when three.js draws the map this frame, with a stand-in in it)
-          if (this.preupload && used.length && (shadowMap.autoUpdate || shadowMap.needsUpdate) && (shadow.autoUpdate || shadow.needsUpdate)) this.preload(lights[0], camera);
-          draw(lights, scene, camera);
+          // (only with a stand-in in it)
+          if (this.preupload && used.length && drawn) this.preload(lights[0], camera);
+          this.cascades(draw, drawn, lights, scene, camera);
         } finally {
           this.after(used);
         }
@@ -151,6 +172,59 @@ export class ShadowBatcher {
         for (const m of this.shadowOnly) m.visible = false;
       }
     };
+  }
+
+  // The map drawn by three.js (draw), each cascade with only the casters
+  // whose shadows can reach what the view reads it for, when that is on (see
+  // Reach): three.js asks the shadow for each cascade's frustum just before
+  // it goes through the scene for that cascade, and gets one that tests a
+  // caster as before and then, if it would be drawn, whether its shadow can
+  // reach. The plants' twins are split for the cascades before the frame
+  // (prepare); again here only if the map is drawn for another view.
+  cascades(draw, drawn, lights, scene, camera) {
+    const sc = this.game.scatter;
+    if (!drawn || !(this.receiverCull || (sc.receiverCull && sc.shadowTwins))) return draw(lights, scene, camera);
+    const light = lights[0];
+    const shadow = light.shadow;
+    const reach = this.reach;
+    const ok = reach.update(shadow, light, camera, this.game.renderer.capabilities.maxTextureSize);
+    sc.reachTwins(ok ? reach : null);
+    if (!ok) return draw(lights, scene, camera);
+    reach.objects = this.receiverCull;
+    reach.cut[0] = reach.cut[1] = 0;
+    // (the shadow's own method put back after, as it was)
+    const own = Object.prototype.hasOwnProperty.call(shadow, 'getFrustum');
+    const base = shadow.getFrustum;
+    shadow.getFrustum = (i) => reach.frustum(i, base.call(shadow, i));
+    try {
+      draw(lights, scene, camera);
+    } finally {
+      if (own) shadow.getFrustum = base;
+      else delete shadow.getFrustum;
+    }
+  }
+
+  // Before the frame is drawn (Game.draw): the cascades worked out for the
+  // view, and the plants' twins split for them (see Scatter.reachTwins), so
+  // that what changed in their buffers is sent as the view goes past them,
+  // before the shadow map is bound (see shadowOnly). Only when three.js will
+  // draw the map: otherwise the cascades it keeps are left as they are.
+  prepare(camera) {
+    const game = this.game;
+    const sc = game.scatter;
+    const sun = game.env.sun;
+    const shadow = sun.shadow;
+    const sm = game.renderer.shadowMap;
+    if (!sc.receiverCull || !sc.shadowTwins || !sm.enabled || !sun.castShadow || !sun.visible) return;
+    if (!(sm.autoUpdate || sm.needsUpdate) || !(shadow.autoUpdate || shadow.needsUpdate)) return;
+    // (the view and the light as three.js will find them: worked out again
+    // as it will, unless the reflection has just done it for the view to
+    // reuse, see Game.render)
+    if (game.scene.matrixWorldAutoUpdate) {
+      camera.updateMatrixWorld();
+      sun.updateMatrixWorld();
+    }
+    sc.reachTwins(this.reach.update(shadow, sun, camera, game.renderer.capabilities.maxTextureSize) ? this.reach : null);
   }
 
   // The depth material three.js draws shadows with, but each vertex placed
@@ -510,6 +584,217 @@ export class ShadowBatcher {
       mesh.userData.count = io;
     }
   }
+}
+
+// What each cascade of the sun's shadow map is read for, and whether a
+// caster's shadow can reach it. The view reads cascade i for what it shows
+// between two of its depths (three.js's cascade data: the first cascade
+// from the camera to the end of its fade into the next, the next from the
+// start of that fade to the shadows' end), and within its four sides: that
+// slice is the cascade's receivers. A caster inside a cascade's box whose
+// shadow cannot fall on its slice draws texels into it that nothing reads.
+// A shadow falls along the light, so the caster's sphere is swept along it
+// down to the lowest anything it falls on can be (the lowest ground, lake or
+// sea bed of the whole world, under the playable square and the far ring
+// alike: see lowestGround), and the caster is left out of the cascade when
+// both ends of the sweep lie wholly outside the same side of the slice.
+// The sphere is grown first by what lets a receiver read a texel off its
+// own place: the offset along its normal (the shadow's normalBias), the
+// filter's reach (radius 1.6 texels, three.js reads it in the atlas's
+// width) and the 2x2 texels each tap compares, with room to spare: four
+// texels in all. So every texel left out is one nothing reads, and the
+// picture is the same to the bit; the shadow map itself is not (texels no
+// fragment reads stay clear). The sun is never lower than 4.6 degrees (see
+// Environment.update): its sweeps are long then, and little is left out.
+// Worked out once for each view and light (update), and read by the
+// cascades' frustums (frustum) and the plants' twins (Scatter.reachTwins).
+export class Reach {
+  constructor(floor) {
+    this.floor = floor;
+    // what it was last worked out from (see update; next: this time's), and
+    // how many times that has changed: the twins keep the count they were
+    // split for
+    this.key = new Float64Array(KEY);
+    this.next = new Float64Array(KEY);
+    this.version = 0;
+    this.ok = false;
+    this.camera = null;
+    this.shadow = null;
+    // for each cascade: the planes round its slice (x, y, z, w; the view's
+    // four sides and one or two depths), how many, how much a caster's
+    // sphere is grown, and the planes of the cascade's own box
+    this.planes = [];
+    this.count = [];
+    this.pad = [];
+    this.box = [];
+    // the way the light goes
+    this.dx = 0;
+    this.dy = -1;
+    this.dz = 0;
+    // the frustums three.js is given for the cascades (see frustum), whether
+    // they test objects (ShadowBatcher.receiverCull), and how many casters
+    // each left out of its cascade in the last map (for tools)
+    this.frustums = [];
+    this.objects = true;
+    this.cut = [0, 0];
+  }
+
+  // For the view `camera` and the sun `light` with its `shadow`, as three.js
+  // will find them when it draws the map. Whether the cull can be used:
+  // not when three.js would make the map smaller than its size (its
+  // cascades would then differ from those worked out here).
+  update(shadow, light, camera, maxTexture) {
+    const k = this.next;
+    const lw = light.matrixWorld.elements;
+    k.set(camera.matrixWorld.elements, 0);
+    k.set(camera.matrixWorldInverse.elements, 16);
+    k.set(camera.projectionMatrix.elements, 32);
+    k[48] = lw[12];
+    k[49] = lw[13];
+    k[50] = lw[14];
+    k[51] = camera.near;
+    k[52] = camera.far;
+    k[53] = shadow.camera.near;
+    k[54] = shadow.camera.far;
+    k[55] = shadow.mapSize.x;
+    k[56] = shadow.mapSize.y;
+    k[57] = shadow.radius;
+    k[58] = shadow.normalBias;
+    k[59] = maxTexture;
+    let same = this.version > 0 && this.camera === camera && this.shadow === shadow;
+    for (let i = 0; same && i < KEY; i++) same = k[i] === this.key[i];
+    if (same) return this.ok;
+    this.key.set(k);
+    this.version++;
+    this.camera = camera;
+    this.shadow = shadow;
+    const ext = shadow.getFrameExtents();
+    this.ok = !!shadow._cascadeData && shadow.mapSize.x * ext.x <= maxTexture && shadow.mapSize.y * ext.y <= maxTexture;
+    if (!this.ok) return false;
+    // (three.js works them out again just before it draws the map, to the
+    // same values: they depend only on these)
+    shadow.updateMatrices(light, camera);
+    _pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    _view.setFromProjectionMatrix(_pm, camera.coordinateSystem, camera.reversedDepth);
+    // a point's depth in the view (what the shaders compare with the
+    // cascades' depths) is -z in the view's space: planes of equal depth,
+    // their distances in metres
+    const m = camera.matrixWorldInverse.elements;
+    const len = Math.hypot(m[2], m[6], m[10]);
+    const fx = m[2] / len;
+    const fy = m[6] / len;
+    const fz = m[10] / len;
+    const fw = m[14] / len;
+    _v.setFromMatrixPosition(light.matrixWorld).negate().normalize();
+    this.dx = _v.x;
+    this.dy = _v.y;
+    this.dz = _v.z;
+    const cascades = shadow.getViewportCount();
+    for (let c = 0; c < cascades; c++) {
+      if (!this.planes[c]) {
+        this.planes[c] = new Float64Array(24);
+        this.box[c] = new Float64Array(24);
+        this.frustums[c] = new CascadeFrustum(this, c);
+      }
+      const P = this.planes[c];
+      let p = 0;
+      for (let j = 0; j < 4; j++, p += 4) setPlane(P, p, _view.planes[j]);
+      const cd = shadow._cascadeData[c];
+      // read up to the end of the cascade (its fade included)
+      P.set([fx, fy, fz, fw + cd.y / len], p);
+      p += 4;
+      // and from its start (the first from anywhere in front of the camera)
+      if (cd.x > -1e9) {
+        P.set([-fx, -fy, -fz, -fw - cd.x / len], p);
+        p += 4;
+      }
+      this.count[c] = p / 4;
+      const sc = shadow.getCamera(c);
+      this.pad[c] = Math.abs(shadow.normalBias) + (4 * (sc.right - sc.left)) / shadow.mapSize.x + 0.01;
+      const B = shadow.getFrustum(c).planes;
+      for (let j = 0; j < 6; j++) setPlane(this.box[c], j * 4, B[j]);
+    }
+    return true;
+  }
+
+  // Whether a caster in the sphere (x, y, z, r) can cast a shadow that
+  // cascade c is read for.
+  reaches(c, x, y, z, r) {
+    const rr = r + this.pad[c];
+    // (a light along the horizon or from below: kept)
+    const down = -this.dy;
+    if (!(down > 1e-3)) return true;
+    const L = Math.max(0, (y + rr - this.floor) / down);
+    const ex = x + this.dx * L;
+    const ey = y + this.dy * L;
+    const ez = z + this.dz * L;
+    const P = this.planes[c];
+    for (let j = 0, n = this.count[c] * 4; j < n; j += 4) {
+      if (P[j] * x + P[j + 1] * y + P[j + 2] * z + P[j + 3] < -rr && P[j] * ex + P[j + 1] * ey + P[j + 2] * ez + P[j + 3] < -rr) return false;
+    }
+    return true;
+  }
+
+  // Whether the sphere meets cascade c's box (as three.js tests a sphere).
+  inBox(c, x, y, z, r) {
+    const B = this.box[c];
+    for (let j = 0; j < 24; j += 4) if (B[j] * x + B[j + 1] * y + B[j + 2] * z + B[j + 3] < -r) return false;
+    return true;
+  }
+
+  // The frustum three.js is given for cascade c, over the cascade's own
+  // (base, whose planes it shares).
+  frustum(c, base) {
+    const f = this.frustums[c];
+    f.base = base;
+    f.planes = base.planes;
+    return f;
+  }
+}
+
+function setPlane(out, o, plane) {
+  out[o] = plane.normal.x;
+  out[o + 1] = plane.normal.y;
+  out[o + 2] = plane.normal.z;
+  out[o + 3] = plane.constant;
+}
+
+// A cascade's frustum as three.js tests the casters against it: its box as
+// before (its own planes, and every other test of three.js's), and then,
+// for a caster that meets it, whether its shadow can reach the cascade's
+// receivers, by the same sphere three.js has just tested (an object's own,
+// as a herd's round this frame's animals, or else its geometry's, placed in
+// the world). Each cascade's has its number, for the plants' twins.
+class CascadeFrustum extends THREE.Frustum {
+  constructor(reach, cascade) {
+    super();
+    this.reach = reach;
+    this.cascade = cascade;
+    this.base = null;
+  }
+
+  intersectsObject(o) {
+    if (!this.base.intersectsObject(o)) return false;
+    const reach = this.reach;
+    if (!reach.objects) return true;
+    _sphere.copy(o.boundingSphere !== undefined ? o.boundingSphere : o.geometry.boundingSphere).applyMatrix4(o.matrixWorld);
+    const c = _sphere.center;
+    if (reach.reaches(this.cascade, c.x, c.y, c.z, _sphere.radius)) return true;
+    reach.cut[this.cascade]++;
+    return false;
+  }
+}
+
+// The lowest anything the sun's shadows fall on can be: the lowest ground,
+// lake or sea bed of the playable square and of the far ring round it, and
+// a little lower still (see FLOOR_PAD).
+function lowestGround(game) {
+  let y = Infinity;
+  for (const H of [game.world.h, game.farTerrain?.userData.grid?.H]) {
+    if (!H) continue;
+    for (let i = 0; i < H.length; i++) if (H[i] < y) y = H[i];
+  }
+  return Number.isFinite(y) ? y - FLOOR_PAD : -1e4;
 }
 
 // A stand-in's geometry: the batch's places, and a list of triangles with

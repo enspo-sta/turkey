@@ -3,7 +3,9 @@
 // into near/far LODs around the camera with CPU frustum culling, and each
 // time the view is drawn the levels keep only the instances it can see (see
 // setViewCull). The levels that cast a shadow cast it by twins of their own
-// (see setShadowTwins).
+// (see setShadowTwins), each drawn into a cascade of the shadow map only
+// with the instances whose shadows can reach what that cascade is read for
+// (see setReceiverCull).
 import * as THREE from 'three';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ModelBuilder, jitterGeometry } from '../util/builder.js';
@@ -1075,6 +1077,56 @@ function levelCull(l) {
   };
 }
 
+// How a level's twin is split for the shadow map's cascades (see
+// Scatter.reachTwins): its candidates by their places in the kind's own
+// lists (src) and the spheres round their shapes for the shadow map, which
+// do not sway (sph: centre and radius, see ScatterType.bound); which of them
+// its buffer holds, in order, at the front (held, the first nh; -1 while it
+// holds all the candidates as buildType wrote them): those whose shadows can
+// reach what the first cascade is read for (n0), then those that can reach
+// only the second's (n1). Split (on) for the receivers' version `at`.
+function twinSplit(capacity, geo) {
+  if (!geo.boundingSphere) geo.computeBoundingSphere();
+  return {
+    on: false,
+    centre: geo.boundingSphere.center.clone(),
+    reach: geo.boundingSphere.radius,
+    src: new Int32Array(capacity),
+    sph: new Float32Array(capacity * 4),
+    held: new (capacity < 65536 ? Uint16Array : Uint32Array)(capacity),
+    nh: -1,
+    n0: 0,
+    n1: 0,
+    at: -1,
+    // the cascade three.js is drawing (see makeTwins), and the count to put
+    // back after it
+    cascade: -1,
+    was: -1,
+  };
+}
+
+// (which of the two cascades each candidate's shadow can reach, for
+// ScatterType.splitTwin)
+let SPLIT = new Uint8Array(4096);
+
+// Slots from `start` (of `count`) of an instance buffer to be sent, with any
+// still waiting to be sent from before (three.js sends them all at once, then
+// forgets them).
+function sendRange(attr, start, count) {
+  const R = attr.updateRanges;
+  if (R.length) {
+    let end = start + count;
+    for (const r of R) {
+      start = Math.min(start, r.start);
+      end = Math.max(end, r.start + r.count);
+    }
+    attr.clearUpdateRanges();
+    count = end - start;
+  }
+  attr.addUpdateRange(start, count);
+  attr.needsUpdate = true;
+}
+
 class ScatterType {
   constructor(name, lods, opts) {
     this.name = name;
@@ -1100,6 +1152,7 @@ class ScatterType {
     // the twin it casts it with (see makeTwins)
     this.casts = lods.map((l) => !!l.shadow);
     this.twins = lods.map(() => null);
+    this.splits = lods.map(() => null);
     // how many instances buildType listed for each level (its candidates),
     // and what the view's cull keeps of them (see Scatter.setViewCull): every
     // level but the far trees', thousands of cones of a few triangles, not
@@ -1132,12 +1185,35 @@ class ScatterType {
       const tw = new THREE.InstancedMesh(shadowShape(l.geo), material(l.material), l.capacity);
       tw.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       tw.count = 0;
+      const s = (this.splits[i] = twinSplit(l.capacity, tw.geometry));
       // left out of every drawing, a cascade's too, while it has nothing in
       // it; and gone past by the view while it has something (to send its
       // instances before the shadow map is bound), never drawn there, as its
-      // material is hidden but while the shadow map is drawn
+      // material is hidden but while the shadow map is drawn. Split for the
+      // cascades (see Scatter.reachTwins), it is left out of a cascade none
+      // of whose instances' shadows can reach what that cascade is read for,
+      // and draws into the first only those whose can (its buffer's front),
+      // into the second those too and then the rest that can reach it.
       tw.frustumCulled = true;
-      tw.intersectsFrustum = () => tw.count > 0;
+      tw.intersectsFrustum = (f) => {
+        if (!s.on || f.cascade === undefined) return tw.count > 0;
+        s.cascade = f.cascade;
+        return (f.cascade === 0 ? s.n0 : s.n0 + s.n1) > 0;
+      };
+      // (three.js asks for a cascade's frustum test just before it draws the
+      // twin into it; shown whole for the warm-up draw, it is drawn as it is)
+      tw.onBeforeShadow = () => {
+        if (s.on && s.cascade === 0 && tw.frustumCulled && tw.count !== s.n0) {
+          s.was = tw.count;
+          tw.count = s.n0;
+        }
+      };
+      tw.onAfterShadow = () => {
+        if (s.was >= 0) {
+          tw.count = s.was;
+          s.was = -1;
+        }
+      };
       // (three.js would work its bounds out of the instances once, for an
       // order of drawing in the view that it never takes part in)
       tw.boundingSphere = new THREE.Sphere();
@@ -1277,6 +1353,73 @@ class ScatterType {
       mesh.instanceColor.addUpdateRange(0, n * 3);
       mesh.instanceColor.needsUpdate = true;
     }
+  }
+
+  // Level l's twin split for the cascades of `reach` (see
+  // Scatter.reachTwins): of its candidates, those whose spheres meet the
+  // first cascade's box and whose shadows can reach what it is read for go
+  // to the front of its buffer, in their order, then those that can do so
+  // only for the second; the rest, which draw nothing anyone sees, are left
+  // out. Only the slots from the first that changed are written again and
+  // sent (as the view goes past the twin, before the shadow map is bound).
+  splitTwin(l, reach) {
+    const tw = this.twins[l];
+    const s = this.splits[l];
+    const n = this.candidates[l];
+    if (SPLIT.length < n) SPLIT = new Uint8Array(n);
+    const sph = s.sph;
+    let n0 = 0;
+    let n1 = 0;
+    for (let i = 0; i < n; i++) {
+      const q = i * 4;
+      const x = sph[q];
+      const y = sph[q + 1];
+      const z = sph[q + 2];
+      const r = sph[q + 3];
+      if (reach.inBox(0, x, y, z, r) && reach.reaches(0, x, y, z, r)) {
+        SPLIT[i] = 0;
+        n0++;
+      } else if (reach.inBox(1, x, y, z, r) && reach.reaches(1, x, y, z, r)) {
+        SPLIT[i] = 1;
+        n1++;
+      } else SPLIT[i] = 2;
+    }
+    const held = s.held;
+    const was = s.nh;
+    // the first slot whose instance is not the one the buffer holds there
+    let from = was < 0 ? 0 : -1;
+    let k = 0;
+    for (let part = 0; part < 2; part++) {
+      for (let i = 0; i < n; i++) {
+        if (SPLIT[i] !== part) continue;
+        if (from < 0 && (k >= was || held[k] !== i)) from = k;
+        held[k++] = i;
+      }
+    }
+    if (from >= 0 && from < k) {
+      for (let p = from; p < k; p++) this.put(tw, p, s.src[held[p]]);
+      sendRange(tw.instanceMatrix, from * 16, (k - from) * 16);
+    }
+    s.nh = k;
+    s.n0 = n0;
+    s.n1 = n1;
+    s.on = true;
+    s.at = reach.version;
+    tw.count = k;
+  }
+
+  // Level l's twin given all its candidates again, in buildType's order and
+  // to the bit as it wrote them (no longer split).
+  wholeTwin(l) {
+    const tw = this.twins[l];
+    const s = this.splits[l];
+    const n = this.candidates[l];
+    for (let c = 0; c < n; c++) this.put(tw, c, s.src[c]);
+    tw.count = n;
+    s.on = false;
+    s.nh = -1;
+    s.at = -1;
+    if (n) sendRange(tw.instanceMatrix, 0, n * 16);
   }
 
   add(x, y, z, rot, scale, tint, sx = 1, sz = 1, tilt = 0) {
@@ -1483,6 +1626,8 @@ export class Scatter {
     for (const t of Object.values(this.types)) t.makeTwins(twinMaterial);
     this.twinMaterials = [...twinMaterials.values()];
     this.shadowTwins = true;
+    // the twins split for the shadow map's cascades (see setReceiverCull)
+    this.receiverCull = true;
     // (each twin right after its level: the shadow map's draws in the same
     // order as the levels' own)
     for (const t of Object.values(this.types)) {
@@ -1958,8 +2103,10 @@ export class Scatter {
           const arr = mesh.instanceMatrix.array;
           const o = c * 16;
           t.put(mesh, c, idx);
-          // (and the candidate's sphere, for the view's cull)
+          // (and the candidate's sphere, for the view's cull, and the one
+          // round its shape for the shadow map, for its twin's split)
           if (t.culls[lod]) t.bound(t.culls[lod], c, idx);
+          if (t.splits[lod]) t.bound(t.splits[lod], c, idx);
           counts[lod] = c + 1;
           if (rm && rc < t.reflectCap) {
             rm.instanceMatrix.array.set(arr.subarray(o, o + 16), rc * 16);
@@ -2002,20 +2149,24 @@ export class Scatter {
         mesh.instanceColor.needsUpdate = true;
       }
       this.shown(mesh);
-      if (this.shadowTwins && t.twins[l]) this.fillTwin(mesh, t.twins[l]);
+      if (this.shadowTwins && t.twins[l]) this.fillTwin(mesh, t.twins[l], t.splits[l]);
     }
   }
 
   // A twin given its level's instances, at the same slots: the matrices
   // just written, in one copy (the instances' full lists stay here, so after
-  // a lost graphics context three.js sends them again whole).
-  fillTwin(mesh, tw) {
+  // a lost graphics context three.js sends them again whole). Its split s,
+  // if any, is for the old list: split again before the next shadow map.
+  fillTwin(mesh, tw, s) {
     const n = mesh.count;
     tw.instanceMatrix.array.set(mesh.instanceMatrix.array.subarray(0, n * 16));
     tw.count = n;
     tw.instanceMatrix.clearUpdateRanges();
     tw.instanceMatrix.addUpdateRange(0, n * 16);
     tw.instanceMatrix.needsUpdate = true;
+    s.on = false;
+    s.nh = -1;
+    s.at = -1;
   }
 
   // A level (or a reflection's copy) with nothing in it is left out of the
@@ -2044,7 +2195,7 @@ export class Scatter {
         this.shown(mesh, t.candidates[l]);
         // (a level that casts holds all its candidates while the twins are
         // off: the view's cull is off for it, see setCulling)
-        if (on && t.twins[l]) this.fillTwin(mesh, t.twins[l]);
+        if (on && t.twins[l]) this.fillTwin(mesh, t.twins[l], t.splits[l]);
       });
       if (t.reflect) this.shown(t.reflect);
     }
@@ -2106,6 +2257,46 @@ export class Scatter {
     }
   }
 
+  // The twins drawn into each cascade of the shadow map only with the
+  // instances whose shadows can reach what the view reads that cascade for
+  // (on in the game; see Reach in shadowbatch.js). Each twin holds its
+  // candidates for a few metres' walk, all round the camera and out to the
+  // far trees' 720 m, and drew all of them into both cascades: those behind
+  // the view, or beside it, whose shadows fall away from it, drew texels
+  // nothing reads. Split for each view and light before the frame is drawn
+  // (ShadowBatcher.prepare), so what changed in a twin's buffer is sent
+  // before the shadow map is bound. Off, for comparing, each twin holds all
+  // its candidates again and draws them into both cascades, as before.
+  setReceiverCull(on) {
+    if (on === this.receiverCull) return;
+    this.receiverCull = on;
+    if (!on) this.reachTwins(null);
+  }
+
+  // The twins split for the cascades of `reach` (see ScatterType.splitTwin),
+  // each only when its candidates, or the view or the light, have changed
+  // since it was last; with no reach, each split one given all its
+  // candidates again (as when the cull cannot be used). A twin that casts
+  // nothing this frame is left as it is, as is one shown whole, for the
+  // warm-up draw, by the loader (main.js revealAll).
+  reachTwins(reach) {
+    if (!this.shadowTwins) return;
+    const use = this.receiverCull && reach;
+    for (const t of Object.values(this.types)) {
+      t.twins.forEach((tw, l) => {
+        if (!tw) return;
+        const s = t.splits[l];
+        if (!use) {
+          if (s.on) t.wholeTwin(l);
+          return;
+        }
+        if (!tw.visible || !tw.castShadow || !tw.frustumCulled) return;
+        if (s.on && s.at === reach.version) return;
+        t.splitTwin(l, reach);
+      });
+    }
+  }
+
   // Distant tree LODs cast shadows into the far shadow cascade.
   setFarShadows(on) {
     for (const n of FAR_SHADOWS) {
@@ -2142,10 +2333,18 @@ export class Scatter {
   }
 
   // Each kind's instances in all and, for each of its levels, its candidates
-  // (what buildType listed) and what the view drew of them the last time.
+  // (what buildType listed), what the view drew of them the last time and,
+  // for a level with a twin, what the twin drew into each cascade.
   stats() {
     const out = {};
-    for (const [k, t] of Object.entries(this.types)) out[k] = { total: t.count, candidates: t.candidates.slice(), drawn: t.meshes.map((m) => m.count) };
+    for (const [k, t] of Object.entries(this.types)) {
+      const cast = t.twins.map((tw, l) => {
+        if (!tw) return null;
+        const s = t.splits[l];
+        return s.on ? [s.n0, s.n0 + s.n1] : [tw.count, tw.count];
+      });
+      out[k] = { total: t.count, candidates: t.candidates.slice(), drawn: t.meshes.map((m) => m.count), cast };
+    }
     return out;
   }
 }

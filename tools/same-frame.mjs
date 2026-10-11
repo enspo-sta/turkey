@@ -34,7 +34,13 @@
 // - far terrain trim: the mountains beyond the playable square, and their
 //   copy in the water's reflection, drawn only from the first of their cells
 //   a view (or a face of the reflection) can see to the last, in the same
-//   order (src/world/terrain.js).
+//   order (src/world/terrain.js);
+// - cascade receiver cull: each cascade of the sun's shadow map drawn with
+//   only the casters whose shadows can reach what the view reads it for
+//   (src/world/shadowbatch.js, src/world/scatter.js, src/game.js), and each
+//   of its halves on its own: receiver cull objects, the objects tested as
+//   three.js goes through the scene for a cascade; receiver cull twins, the
+//   plants' shadow twins split for the cascades before the frame.
 // --quality draws at a preset of its own (low, medium or high; by default the
 // one the game starts with).
 // Usage: node tools/same-frame.mjs [build.html] [outdir] [--size WxH] [--dpr N] [--quality name] [--only=view,view]
@@ -78,7 +84,7 @@ const VIEWS = [
 ].filter(([n]) => !ONLY.length || ONLY.includes(n));
 
 // the drawings of each view: all on, all on again, each off in turn, all off
-const RUNS = ['on', 'on again', 'shadow batches off', 'terrain blocks off', 'grass early out off', 'one matrix update off', 'clear in pass off', 'atlas hygiene off', 'preupload off', 'atlas r8 off', 'batch weld off', 'shadow twins off', 'vegetation view cull off', 'far terrain trim off', 'all off'];
+const RUNS = ['on', 'on again', 'shadow batches off', 'terrain blocks off', 'grass early out off', 'one matrix update off', 'clear in pass off', 'atlas hygiene off', 'preupload off', 'atlas r8 off', 'batch weld off', 'shadow twins off', 'vegetation view cull off', 'far terrain trim off', 'cascade receiver cull off', 'receiver cull objects off', 'receiver cull twins off', 'all off'];
 
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: VW, height: VH }, deviceScaleFactor: DPR });
@@ -203,6 +209,11 @@ for (const [name, setup] of VIEWS) {
         g.floaters.setSkipEmpty(twins);
         // the plants the view draws culled one by one against it
         g.scatter.setViewCull(!off('vegetation view cull'));
+        // each cascade drawn with only the casters whose shadows can reach
+        // what it is read for (the twins split again as the frame is drawn)
+        const reach = !off('cascade receiver cull');
+        g.shadowBatch.receiverCull = reach && !off('receiver cull objects');
+        g.scatter.setReceiverCull(reach && !off('receiver cull twins'));
         // (the reflection has just worked out every place, and nothing has
         // moved since: on, the view reuses them)
         g.matricesFresh = !off('one matrix update');

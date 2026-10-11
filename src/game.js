@@ -717,6 +717,10 @@ export class Game {
 
   draw() {
     const r = this.renderer;
+    // the sun's cascades worked out for this view, and the plants' shadow
+    // twins split for them, before three.js goes through the scene (see
+    // ShadowBatcher.prepare)
+    this.shadowBatch?.prepare(this.camera);
     const world = this.drawWorld || (this.drawWorld = () => r.render(this.scene, this.camera));
     const overlay =
       this.drawOverlay ||

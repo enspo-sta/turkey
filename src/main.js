@@ -246,6 +246,19 @@ class Session {
       get: () => g.scatter.viewCull,
       set: (on) => g.scatter.setViewCull(on),
     });
+    // each cascade of the sun's shadow map drawn with only the casters whose
+    // shadows can reach what the view reads it for: the objects tested as
+    // three.js goes through the scene for the cascade, the plants' twins
+    // split for the cascades before the frame (see Reach in shadowbatch.js
+    // and Scatter.setReceiverCull)
+    g.perfSwitches.set('4', {
+      label: 'cascade receiver cull',
+      get: () => g.shadowBatch.receiverCull && g.scatter.receiverCull,
+      set: (on) => {
+        g.shadowBatch.receiverCull = on;
+        g.scatter.setReceiverCull(on);
+      },
+    });
     // every light (the hot rod's headlight too) also shines in the water
     // reflections, so the probe and the main view share one light setup
     g.scene.traverse((o) => {

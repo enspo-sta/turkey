@@ -550,7 +550,9 @@ export class PerfCheck {
         if (!o.isMesh || !o.layers.isEnabled(0) || o.userData.shadowTwin) return;
         const culled = o.frustumCulled;
         o.frustumCulled = true;
-        const u = patch(o, 'intersectsFrustum', (f) => f === f0 || f === f1);
+        // (a cascade's frustum as the receivers' cull gives it to three.js
+        // stands over the cascade's own: see Reach in shadowbatch.js)
+        const u = patch(o, 'intersectsFrustum', (f) => (f.base || f) === f0 || (f.base || f) === f1);
         undo.push(() => {
           u();
           o.frustumCulled = culled;
