@@ -195,10 +195,18 @@ export class Game {
     this.scene.add(this.farTerrain);
     // the reflection gets a coarser copy: a cube face 128 to 256 pixels
     // across cannot show the 20 m detail, and it is drawn every frame
-    const farReflect = new THREE.Mesh(buildFarTerrain(this.world, terrainReflect, 40, this.farTerrain.userData.grid).geometry, terrainReflect);
-    farReflect.frustumCulled = false;
-    farReflect.layers.set(REFLECT_LAYER);
-    this.farTerrain.add(farReflect);
+    this.farReflect = buildFarTerrain(this.world, terrainReflect, 40, this.farTerrain.userData.grid, REFLECT_LAYER);
+    this.farTerrain.add(this.farReflect);
+    // both drawn only from the first of their cells a view (or a face of
+    // the reflection) can see to the last (see FarTerrain in terrain.js)
+    this.perfSwitches.set('5', {
+      label: 'far terrain trim',
+      get: () => this.farTerrain.trimOn,
+      set: (on) => {
+        this.farTerrain.setTrim(on);
+        this.farReflect.setTrim(on);
+      },
+    });
     // coarse copy of the playable terrain, seen only by the reflection probe
     this.scene.add(buildReflectionTerrain(this.world, terrainReflect, REFLECT_LAYER));
     // mountain shadows and sky occlusion maps

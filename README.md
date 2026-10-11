@@ -1009,7 +1009,8 @@ frame budget and runs the regression scenarios, and exits with an error when
 anything failed:
 
 - **The frame budget** (`tools/budget.mjs`, `tools/budget.json`): the draw
-  calls and triangles of one High frame at ten fixed views. Draw calls are
+  calls and triangles of one High frame at ten fixed views, every pass
+  counted (the water's reflection and the waves too). Draw calls are
   the main measured cost of a frame, and both counts are the same on any
   machine, unlike times. A feature that adds to them fits the budget, or the
   budget is raised on purpose with `node tools/budget.mjs --update` and the

@@ -30,7 +30,11 @@
 // - vegetation view cull: each plant level but the far trees' drawing in the
 //   view only the instances whose spheres meet it, culled one by one each
 //   time the view is drawn (src/world/scatter.js; the grass's cheaper order
-//   of tests is part of grass early out).
+//   of tests is part of grass early out);
+// - far terrain trim: the mountains beyond the playable square, and their
+//   copy in the water's reflection, drawn only from the first of their cells
+//   a view (or a face of the reflection) can see to the last, in the same
+//   order (src/world/terrain.js).
 // --quality draws at a preset of its own (low, medium or high; by default the
 // one the game starts with).
 // Usage: node tools/same-frame.mjs [build.html] [outdir] [--size WxH] [--dpr N] [--quality name] [--only=view,view]
@@ -74,7 +78,7 @@ const VIEWS = [
 ].filter(([n]) => !ONLY.length || ONLY.includes(n));
 
 // the drawings of each view: all on, all on again, each off in turn, all off
-const RUNS = ['on', 'on again', 'shadow batches off', 'terrain blocks off', 'grass early out off', 'one matrix update off', 'clear in pass off', 'atlas hygiene off', 'preupload off', 'atlas r8 off', 'batch weld off', 'shadow twins off', 'vegetation view cull off', 'all off'];
+const RUNS = ['on', 'on again', 'shadow batches off', 'terrain blocks off', 'grass early out off', 'one matrix update off', 'clear in pass off', 'atlas hygiene off', 'preupload off', 'atlas r8 off', 'batch weld off', 'shadow twins off', 'vegetation view cull off', 'far terrain trim off', 'all off'];
 
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: VW, height: VH }, deviceScaleFactor: DPR });
@@ -170,6 +174,12 @@ for (const [name, setup] of VIEWS) {
             m.needsUpdate = true;
           }
         }
+        // the far mountains, in the view and the reflection, trimmed to what
+        // each view can see (set before the reflection's face is drawn again,
+        // below)
+        const trim = !off('far terrain trim');
+        g.farTerrain.setTrim(trim);
+        g.farReflect.setTrim(trim);
         // the clears; the reflection's latest face is drawn again, so that
         // its clear is compared too (nothing has moved since, so the face
         // comes out as it was)

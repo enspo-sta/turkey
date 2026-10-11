@@ -1,9 +1,11 @@
 // The frame budget: how many draw calls and triangles the High preset asks
-// of the device at ten fixed views, against the budget in
-// tools/budget.json. Draw calls are the measured main cost of a frame (the
-// processor's work per call), and both counts are the same on any machine,
-// unlike times: a feature that adds to them has to fit the budget, or the
-// budget is raised on purpose (--update) and the reason given in the commit.
+// of the device at ten fixed views, every pass of the frame counted (the
+// water's reflection, the waves, the shadow map and the view), against the
+// budget in tools/budget.json. Draw calls are the measured main cost of a
+// frame (the processor's work per call), and both counts are the same on
+// any machine, unlike times: a feature that adds to them has to fit the
+// budget, or the budget is raised on purpose (--update) and the reason given
+// in the commit.
 // Exits with code 1 when a view is over budget by more than the margin.
 // Usage: node tools/budget.mjs [build.html] [--update]
 import { createRequire } from 'node:module';
@@ -90,8 +92,15 @@ for (const [name, setup] of VIEWS) {
       g.updateWorld(1 / 60);
       g.render();
     }
+    // the frame counted whole: the water's reflection (one face of its cube),
+    // the waves and the band of the mountain-shadow map are drawn in
+    // updateWorld, before the view and the shadow map
     g.renderer.info.autoReset = false;
     g.renderer.info.reset();
+    g.dt = 1 / 60;
+    g.time += 1 / 60;
+    for (const s of g.systems) s.update?.(1 / 60, g);
+    g.updateWorld(1 / 60);
     g.render();
     const out = { calls: g.renderer.info.render.calls, triangles: g.renderer.info.render.triangles };
     g.renderer.info.autoReset = true;

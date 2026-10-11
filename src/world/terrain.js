@@ -15,6 +15,9 @@ const LOD_DIST = [165, 400, 820];
 // quarter of the draw calls
 const BLOCK = 2;
 const BLOCK_LOD = 2;
+// The far ring beyond the playable square is tested against a view in runs
+// of up to FAR_RUN cells of a row (see FarTerrain)
+const FAR_RUN = 16;
 
 // sRGB byte -> linear float lookup
 const LIN = new Float32Array(256);
@@ -426,11 +429,13 @@ function mergeChunks(geos) {
   return out;
 }
 
-// Distant mountains and far shore beyond the playable square.
+// Distant mountains and far shore beyond the playable square, drawn only
+// from the first of its cells a view can see to the last (see FarTerrain).
 // near: the spacing in the band round the playable square (20 m for the
 // view, 40 m for the water's reflection, where finer detail cannot show);
-// from: the height grid of a finer copy to take the heights from
-export function buildFarTerrain(world, material, near = 20, from = null) {
+// from: the height grid of a finer copy to take the heights from;
+// layer: the only layer it is seen on (the reflection's copy, by the probe)
+export function buildFarTerrain(world, material, near = 20, from = null, layer = 0) {
   // denser near the playable square so nearby slopes stay smooth
   const coords = [];
   const R = 6400;
@@ -500,7 +505,13 @@ export function buildFarTerrain(world, material, near = 20, from = null) {
       uv.push(x, z);
     }
   }
+  // the cells in the index's order as runs of up to FAR_RUN cells side by
+  // side in a row (see FarTerrain): where each starts in the index, and its
+  // bounds (min x, y, z, max x, y, z) from the heights of its corners
+  const runs = [];
+  const runRows = [];
   for (let j = 0; j < n - 1; j++) {
+    runRows.push(runs.length);
     for (let i = 0; i < n - 1; i++) {
       const inside = coords[i] >= -HALF && coords[i + 1] <= HALF && coords[j] >= -HALF && coords[j + 1] <= HALF;
       if (inside) continue;
@@ -508,9 +519,17 @@ export function buildFarTerrain(world, material, near = 20, from = null) {
       const b = a + 1;
       const c = a + n;
       const d = c + 1;
+      // (a new run at the start of each row, after the gap of the playable
+      // square, and when one is full)
+      let r = runs[runs.length - 1];
+      if (!r || r.j !== j || r.i + r.n !== i || r.n === FAR_RUN) runs.push((r = { j, i, n: 0, at: idx.length, y0: Infinity, y1: -Infinity }));
+      r.n++;
+      r.y0 = Math.min(r.y0, H[a], H[b], H[c], H[d]);
+      r.y1 = Math.max(r.y1, H[a], H[b], H[c], H[d]);
       idx.push(a, c, b, b, c, d);
     }
   }
+  runRows.push(runs.length);
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
@@ -518,12 +537,139 @@ export function buildFarTerrain(world, material, near = 20, from = null) {
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   g.setIndex(idx);
   g.computeBoundingSphere();
-  const mesh = new THREE.Mesh(g, material);
-  mesh.name = 'farTerrain';
-  mesh.matrixAutoUpdate = false;
+  const starts = new Int32Array(runs.length + 1);
+  const box = new Float32Array(runs.length * 6);
+  runs.forEach((r, k) => {
+    starts[k] = r.at;
+    box.set([coords[r.i], r.y0, coords[r.j], coords[r.i + r.n], r.y1, coords[r.j + 1]], k * 6);
+  });
+  starts[runs.length] = idx.length;
+  const mesh = new FarTerrain(g, material, layer, starts, box, Int32Array.from(runRows));
   // the height grid, reused for the distant part of the lighting maps
   mesh.userData.grid = { coords, H };
   return mesh;
+}
+
+// The distant mountains, drawn in one call as before, but only from the
+// first of its cells a view can see to the last. Drawn whole, the ring was
+// worked out vertex by vertex in every frame however little of it was in
+// view, and its copy in the water's reflection in every face of the cube,
+// the one that looks straight up at the sky too. Its index runs row by row
+// across the ring; each time a view (or a face of the reflection) draws it,
+// the runs of cells (see buildFarTerrain) are tested against the view from
+// the front of the index until one meets it, and from the back likewise, and
+// only the range between is drawn. Every cell before the first and after the
+// last lies wholly outside the view and could make no pixel in it, and the
+// cells drawn are drawn in the same order as before: far off, where depths
+// that differ by a few metres are stored as the same, the order decides
+// which of two cells shows, so the cells are never reordered (a split into
+// tiles or slices round the ring would reorder them, and change the odd
+// pixel). The ring keeps its bounds, and so its place in the order of
+// drawing among the ground's chunks, and the picture is the same.
+// Each row's runs are first tested together, by the bounds of the whole
+// row, so a row wholly out of view costs one test.
+// Off (Game.perfSwitches '5', for comparing), it is drawn whole, as before
+// (the reflection's copy untested, as it was).
+class FarTerrain extends THREE.Mesh {
+  // at: where each run of cells starts in the index (and, last, where the
+  // index ends); box: each run's bounds; rows: each row's first run (and,
+  // last, the number of runs)
+  constructor(geometry, material, layer, at, box, rows) {
+    super(geometry, material);
+    this.name = layer ? 'farTerrain-reflect' : 'farTerrain';
+    this.matrixAutoUpdate = false;
+    this.layers.set(layer);
+    // (off, the reflection's copy is drawn in every face, as it was)
+    this.culledWhole = !layer;
+    this.at = at;
+    // the bounds a metre larger all round, for the rounding (the ring never
+    // moves: these are where it is in the world)
+    this.box = box;
+    for (let k = 0; k < box.length; k += 6) {
+      for (let q = 0; q < 3; q++) {
+        box[k + q] -= 1;
+        box[k + 3 + q] += 1;
+      }
+    }
+    this.rows = rows;
+    this.rowBox = new Float32Array((rows.length - 1) * 6);
+    for (let r = 0; r < rows.length - 1; r++) {
+      const o = r * 6;
+      this.rowBox.fill(Infinity, o, o + 3);
+      this.rowBox.fill(-Infinity, o + 3, o + 6);
+      for (let k = rows[r]; k < rows[r + 1]; k++) {
+        for (let q = 0; q < 3; q++) {
+          this.rowBox[o + q] = Math.min(this.rowBox[o + q], box[k * 6 + q]);
+          this.rowBox[o + 3 + q] = Math.max(this.rowBox[o + 3 + q], box[k * 6 + 3 + q]);
+        }
+      }
+    }
+    // the range of the index the latest test chose (start, count)
+    this.range = [0, Infinity];
+    this.trimOn = false;
+    this.setTrim(true);
+  }
+
+  setTrim(on) {
+    this.trimOn = on;
+    this.frustumCulled = on || this.culledWhole;
+    this.geometry.setDrawRange(0, Infinity);
+  }
+
+  // Called by three.js with the view's frustum each time it lays out a view
+  // with the ring in it, before anything is drawn: the range to draw
+  // (nothing, when no cell meets the view)
+  intersectsFrustum(frustum) {
+    if (!this.trimOn) return super.intersectsFrustum(frustum);
+    const planes = frustum.planes;
+    const rows = this.rows;
+    const R = rows.length - 1;
+    let first = -1;
+    for (let r = 0; r < R && first < 0; r++) {
+      if (!meetsBox(planes, this.rowBox, r)) continue;
+      for (let k = rows[r]; k < rows[r + 1]; k++) {
+        if (meetsBox(planes, this.box, k)) {
+          first = k;
+          break;
+        }
+      }
+    }
+    if (first < 0) return false;
+    let last = first;
+    for (let r = R - 1; r >= 0 && rows[r + 1] - 1 > last; r--) {
+      if (!meetsBox(planes, this.rowBox, r)) continue;
+      for (let k = rows[r + 1] - 1; k > first && k >= rows[r]; k--) {
+        if (meetsBox(planes, this.box, k)) {
+          last = k;
+          break;
+        }
+      }
+    }
+    this.range[0] = this.at[first];
+    this.range[1] = this.at[last + 1] - this.at[first];
+    return true;
+  }
+
+  // the range chosen for the view being drawn: the ring casts no shadow, so
+  // no other view is tested between its test and its draw (the whole ring
+  // when drawn untested, as by the warm-up draw)
+  onBeforeRender() {
+    if (!this.trimOn) return;
+    if (this.frustumCulled) this.geometry.setDrawRange(this.range[0], this.range[1]);
+    else this.geometry.setDrawRange(0, Infinity);
+  }
+}
+
+// Whether the box k of b (min x, y, z, max x, y, z) is not wholly behind
+// any of the planes, as three.js tests a box against a frustum
+function meetsBox(planes, b, k) {
+  const o = k * 6;
+  for (let p = 0; p < 6; p++) {
+    const n = planes[p].normal;
+    const d = n.x * b[n.x > 0 ? o + 3 : o] + n.y * b[n.y > 0 ? o + 4 : o + 1] + n.z * b[n.z > 0 ? o + 5 : o + 2] + planes[p].constant;
+    if (d < 0) return false;
+  }
+  return true;
 }
 
 // Coarse single-mesh copy of the playable terrain (12.5 m grid) for the water
